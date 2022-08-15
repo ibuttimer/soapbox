@@ -14,3 +14,7 @@ _Acceptance Criteria:_
 * Criteria 1
 * Criteria 2
 
+_Tasks:_
+
+- [ ] Task 1 
+- [ ] Task 2
