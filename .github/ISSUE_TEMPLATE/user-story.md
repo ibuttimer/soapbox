@@ -2,8 +2,8 @@
 name: User Story
 about: Default user story template
 title: 'User Story: title'
-labels: user story
-assignees: ''
+labels: userstory, kanban
+assignees: ibuttimer
 
 ---
 
