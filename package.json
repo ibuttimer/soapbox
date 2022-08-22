@@ -1,0 +1,21 @@
+{
+  "name": "soapbox",
+  "version": "0.0.1",
+  "main": "tbc",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ibuttimer/soapbox.git"
+  },
+  "author": "Ian Buttimer",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ibuttimer/soapbox/issues"
+  },
+  "homepage": "https://github.com/ibuttimer/soapbox#readme",
+  "devDependencies": {
+    "jest": "^28.1.3"
+  }
+}
