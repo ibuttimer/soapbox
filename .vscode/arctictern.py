@@ -11,7 +11,7 @@ import subprocess
 import sys
 from os.path import exists
 
-BASE_URL = "https://raw.githubusercontent.com/Code-Institute-Org/gitpod-full-template/master/"
+BASE_URL = "https://raw.githubusercontent.com/Code-Institute-Org/gitpod-full-template/master/"  # noqa
 
 BACKUP = True
 MIGRATE = False
@@ -31,7 +31,7 @@ MIGRATE_FILE_LIST = [{"filename": ".theia/settings.json",
                      {"filename": ".theia/heroku_config.sh",
                       "url": ".vscode/heroku_config.sh"
                       },
-                      {"filename": ".theia/uptime.sh",
+                     {"filename": ".theia/uptime.sh",
                       "url": ".vscode/uptime.sh"
                       },
                      {"filename": ".theia/init_tasks.sh",
@@ -67,7 +67,7 @@ UPGRADE_FILE_LIST = [{"filename": ".vscode/client.cnf",
                       },
                      {"filename": ".vscode/make_url.py",
                       "url": ".vscode/make_url.py"
-                     },
+                      },
                      {"filename": ".vscode/arctictern.py",
                       "url": ".vscode/arctictern.py"
                       }]
@@ -89,7 +89,7 @@ def needs_upgrade():
         THIS_VERSION = 1.0
         with open(".vscode/version.txt", "w") as f:
             f.write(str(THIS_VERSION))
-    
+
     r = requests.get(BASE_URL + ".vscode/version.txt")
     CURRENT_VERSION = float(r.content)
     print(f"Upstream version: {CURRENT_VERSION}")
@@ -104,7 +104,7 @@ def build_post_upgrade():
     upgrades = json.loads(r.content.decode("utf-8"))
     content = ""
 
-    for k,v in upgrades.items():
+    for k, v in upgrades.items():
         if float(k) > THIS_VERSION:
             print(f"Adding version changes for {k} to post_upgrade.sh")
             content += v
@@ -113,8 +113,9 @@ def build_post_upgrade():
         content += FINAL_LINES
         with open(".vscode/post_upgrade.sh", "w") as f:
             f.writelines(content)
-    
-    print("Built post_upgrade.sh. Restart your workspace for it to take effect")
+
+    print(
+        "Built post_upgrade.sh. Restart your workspace for it to take effect")
 
 
 def process(file, suffix):
@@ -159,12 +160,13 @@ def start_migration():
         if input("Overwrite? Y/N ").lower() == "y":
             shutil.rmtree(".vscode")
         else:
-            print("You will need to manually remove the .theia directory after migration.")
+            print("You will need to manually remove the "
+                  ".theia directory after migration.")
 
     if MIGRATE and not os.path.isdir(".vscode"):
         print("Renaming directory")
         os.rename(".theia", ".vscode")
-    
+
     if not MIGRATE and needs_upgrade():
         build_post_upgrade()
 
@@ -181,13 +183,16 @@ if __name__ == "__main__":
 
     print("CI Template Migration Utility 0.2")
     print("---------------------------------")
-    print("The default action is to upgrade the workspace to the latest version.")
+    print("The default action is to upgrade the workspace "
+          "to the latest version.")
     print(f"Usage: python3 {sys.argv[0]} [--nobackup --migrate]")
 
     if not BACKUP:
-        print("If the --nobackup switch is provided, then changed files will not be backed up.")
+        print("If the --nobackup switch is provided, "
+              "then changed files will not be backed up.")
     if not MIGRATE:
-        print("If the --migrate switch is provided, the repo will be migrated from Theia to VS Code")
+        print("If the --migrate switch is provided, "
+              "the repo will be migrated from Theia to VS Code")
 
     print()
 
