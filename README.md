@@ -56,15 +56,18 @@ There are two requirements files:
 * [requirements-dev.txt](requirements-dev.txt) which installs extra development-only requirements in addition to the production requirements from [requirements.txt](requirements.txt) 
 
 ###### Table 1: Configuration settings
-| Key                      | Value                                                                                                                                                                              |
-|--------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| PORT                     | Port application is served on; default 8000                                                                                                                                        |
-| DEBUG                    | A boolean that turns on/off debug mode; set to any of 'true', 'on', 'ok', 'y', 'yes', '1' to enable                                                                                |
-| DEVELOPMENT              | A boolean that turns on/off development mode; set to any of 'true', 'on', 'ok', 'y', 'yes', '1' to enable                                                                          |
-| SECRET_KEY               | [Secret key](https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-SECRET_KEY) for a particular Django installation. See [Secret Key Generation](#secret-key-generation) |
-| DATABASE_URL             | [Database url](https://docs.djangoproject.com/en/4.1/ref/settings/#databases)                                                                                                      |
-| CLOUDINARY_URL           | [Cloudinary url](https://pypi.org/project/dj3-cloudinary-storage/)                                                                                                                 |
-| HEROKU_HOSTNAME          | [Hostname](https://docs.djangoproject.com/en/4.1/ref/settings/#allowed-hosts) of application on Heroku<br>__Note:__ Not required in local development mode                         |
+| Key                      | Value                                                                                                                                                                                                                                                              |
+|--------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| PORT                     | Port application is served on; default 8000                                                                                                                                                                                                                        |
+| DEBUG                    | A boolean that turns on/off debug mode; set to any of 'true', 'on', 'ok', 'y', 'yes', '1' to enable                                                                                                                                                                |
+| DEVELOPMENT              | A boolean that turns on/off development mode; set to any of 'true', 'on', 'ok', 'y', 'yes', '1' to enable                                                                                                                                                          |
+| SECRET_KEY               | [Secret key](https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-SECRET_KEY) for a particular Django installation. See [Secret Key Generation](#secret-key-generation)                                                                                 |
+| DATABASE_URL             | [Database url](https://docs.djangoproject.com/en/4.1/ref/settings/#databases)                                                                                                                                                                                      |
+| CLOUDINARY_URL           | [Cloudinary url](https://pypi.org/project/dj3-cloudinary-storage/)                                                                                                                                                                                                 |
+| HEROKU_HOSTNAME          | [Hostname](https://docs.djangoproject.com/en/4.1/ref/settings/#allowed-hosts) of application on Heroku<br>__Note:__ Not required in local development mode                                                                                                         |
+| HEROKU_DATABASE_URL      | Url of Heroku PostgreSQL database resource in Heroku app. Available from `DATABASE_URL` in Heroku app `Settings -> Config Vars`<br>__Note:__ Only required for admin purposes, see database configuration under [Cloud-based Deployment](#cloud-based-deployment)  |
+
+
 
 #### Environment variables
 Set environment variables corresponding to the keys in [Table 1: Configuration settings](#table-1-configuration-settings).
@@ -120,11 +123,11 @@ The following steps were followed to deploy the website:
     - Under `Config Vars` add the following environment variables
 
         | Key             | Value                                                                                                                         |
-        |-----------------|-------------------------------------------------------------------------------------------------------------------------------|
+        |-------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|
         | PORT            | 8000                                                                                                                          |
         | SECRET_KEY      | [Secret key](https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-SECRET_KEY) for a particular Django installation |
         | HEROKU_HOSTNAME | [Hostname](https://docs.djangoproject.com/en/4.1/ref/settings/#allowed-hosts) of application on Heroku                        |
-        |                 | The following keys are automatically added when `Resources` are provisioned                                                   |
+        |                 | _The following keys are automatically added when `Resources` are provisioned_                                                 |
         | DATABASE_URL    | [Database url](https://docs.djangoproject.com/en/4.1/ref/settings/#databases)                                                 |
         | CLOUDINARY_URL  | [Cloudinary url](https://pypi.org/project/dj3-cloudinary-storage/)                                                            |
 
@@ -138,6 +141,25 @@ The following steps were followed to deploy the website:
       __Note:__ To configure GitHub integration, you have to authenticate with GitHub. You only have to do this once per Heroku account. See [GitHub Integration (Heroku GitHub Deploys)](https://devcenter.heroku.com/articles/github-integration).
     - `Enable Automatic Deploys` under `Automatic deploys` to enable automatic deploys from GitHub following a GitHub push if desired.
     - The application may also be deployed manually using `Deploy Branch` under `Manual deploy`
+
+- Configure the database using the following commands:
+
+    - Initialise the database
+      ````shell
+      $ python manage.py migrate --database=heroku
+      ````
+    - Create a superuser
+
+      Enter `Username`, `Password` and optionally `Email address`.
+      ````shell
+      $ python manage.py createsuperuser --database=heroku
+      ````
+
+    __Note:__ Ensure to specify the `--database=heroku` option to apply the change to the database specified by the `HEROKU_DATABASE_URL` environment variable.
+
+
+
+
 
 The live website is available at [https://soapbox-opinions.herokuapp.com/](https://soapbox-opinions.herokuapp.com//)
 

@@ -13,15 +13,18 @@ DEVELOPMENT=true
 
 # Secret key for a particular Django installation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-SECRET_KEY
-SECRET_KEY='django-insecure-5d$p5=af129ny%qbwu!@a=_3z^mk7ip9hwu5rgemo%%%4b3svo'
+SECRET_KEY='this-is-a-very-secret-key'
 
-# Database url
+# The default database url
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
-DATABASE_URL=postgresql://postgres:P0stgr3spw0rd@localhost/soapbox
+DATABASE_URL=postgresql://username:password@localhost/soapbox
+
+# The database url for the Heroku database (only required for configuration purposes)
+HEROKU_DATABASE_URL=postgres://abcdefghijk:verylongstringofalphanumericchars@ec2-somewhere.datacentre.compute.amazonaws.com:5432/lmnopqrstuv
 
 # Cloudinary url
 # https://pypi.org/project/dj3-cloudinary-storage/
-CLOUDINARY_URL=cloudinary://752278318167823:26ETMIxTcL0WQqfatpC9eqrV_r8@dytiyi1cg
+CLOUDINARY_URL=cloudinary://1234567890123:abcdefghijklm@opqrstuv
 
 # hostname of application on Heroku; e.g. soapbox-opinions.herokuapp.com
 # https://docs.djangoproject.com/en/4.1/ref/settings/#allowed-hosts
