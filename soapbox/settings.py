@@ -32,17 +32,6 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #  SOFTWARE.
 
-#  MIT License
-#
-#
-#  Permission is hereby granted, free of charge, to any person obtaining a copy
-#  of this software and associated documentation files (the "Software"), to deal
-#  in the Software without restriction, including without limitation the rights
-#  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-#  copies of the Software, and to permit persons to whom the Software is
-#  furnished to do so, subject to the following conditions:
-#
-#
 import os
 import environ
 from pathlib import Path
@@ -132,19 +121,18 @@ DATABASES = {
     # The db() method is an alias for db_url().
     'default': env.db(),
 
+    # read os.environ['HEROKU_DATABASE_URL']
+    'heroku': env.db_url(
+        'HEROKU_DATABASE_URL',
+        default='sqlite:////tmp/my-tmp-sqlite.db'
+    ),
+
     # read os.environ['SQLITE_URL']
     'extra': env.db_url(
         'SQLITE_URL',
         default='sqlite:////tmp/my-tmp-sqlite.db'
     )
 }
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
 
 
 # Password validation
