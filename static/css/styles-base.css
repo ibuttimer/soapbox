@@ -1,0 +1,27 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Rubik:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+
+:root {
+    /* colour scheme https://coolors.co/f8ffe5-06d6a0-1b9aaa-ef476f-ffc43d */
+    --light-yellow: #f8ffe5ff;
+    --caribbean-green: #06d6a0ff;
+    --blue-munsell: #1b9aaaff;
+    --paradise-pink: #ef476fff;
+    --orange-yellow: #ffc43dff;
+
+    /* contrast colours by https://color.adobe.com/create/color-contrast-analyzer */
+    --orange-yellow-contrast: #3F5366;
+
+    --heading-font: 'Rubik', sans-serif;
+    --heading-font-weight: 400;
+    --heading-bold-font-weight: 700;
+    --paragraph-font: 'Barlow Condensed', sans-serif;
+    --paragraph-light-font-weight: 300;
+    --paragraph-font-weight: 400;
+    --paragraph-bold-font-weight: 600;
+}
+
+/* Colour classes */
+.theme-colour {
+    color: var(--orange-yellow);
+}

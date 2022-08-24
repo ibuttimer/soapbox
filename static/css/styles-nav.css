@@ -1,0 +1,8 @@
+
+/* Colour classes */
+.theme-colour-background {
+    background-color: var(--orange-yellow-contrast);
+    padding-left: 5px;
+    padding-right: 5px;
+    border-radius: 5px;
+}
