@@ -35,6 +35,8 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 import os
 import environ
 from pathlib import Path
+from django.contrib.messages import constants as messages
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -73,6 +75,14 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+
+    # The following apps are required by 'allauth':
+    #   django.contrib.auth, django.contrib.messages
+    # 'django.contrib.sites', says needs but ?
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+
     # https://pypi.org/project/dj3-cloudinary-storage/
     # If using for static and/or media files, make sure that cloudinary_storage
     # is before django.contrib.staticfiles
@@ -107,6 +117,9 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+
+                # `allauth` needs this from django
+                'django.template.context_processors.request',
             ],
         },
     },
@@ -114,6 +127,38 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'soapbox.wsgi.application'
 
+AUTH_USER_MODEL = 'user.User'
+
+# 'allauth' site id
+SITE_ID = 1
+# 'allauth' provider specific settings
+SOCIALACCOUNT_PROVIDERS = {
+}
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+
+AUTHENTICATION_BACKENDS = [
+    # Default setting, needed to login by username in Django admin,
+    # regardless of `allauth`
+    'django.contrib.auth.backends.ModelBackend',
+
+    # `allauth` specific authentication methods, such as login by e-mail
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+# ACCOUNT_SIGNUP_FORM_CLASS = 'user.forms.UserSignupForm'
+ACCOUNT_FORMS = {
+    'signup': 'user.forms.UserSignupForm'
+}
+
+# https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-MESSAGE_TAGS
+MESSAGE_TAGS = {
+    messages.DEBUG: 'alert-info',
+    messages.INFO: 'alert-info',
+    messages.SUCCESS: 'alert-success',
+    messages.WARNING: 'alert-warning',
+    messages.ERROR: 'alert-danger',
+}
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases

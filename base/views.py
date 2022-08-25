@@ -19,10 +19,26 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
-
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from soapbox import BASE_APP_NAME
 
 
-def get_base(request):
-    return render(request, f'{BASE_APP_NAME}/base.html')
+def get_landing(request: HttpRequest) -> HttpResponse:
+    """
+    Render landing page
+    :param request: request
+    :return: response
+    """
+    return render(request, f'{BASE_APP_NAME}/landing.html')
+
+
+def get_home(request: HttpRequest) -> HttpResponse:
+    """
+    Render home page
+    :param request: request
+    :return: response
+    """
+    return render(request, f'{BASE_APP_NAME}/home.html') \
+        if request.user and request.user.is_authenticated else \
+        get_landing(request)

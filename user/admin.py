@@ -22,13 +22,13 @@
 
 from django.contrib import admin
 from django_summernote.admin import SummernoteModelAdmin
-from .models import Contributor
+from .models import User
 
 # Register your models here.
 
 
-@admin.register(Contributor)
-class ContributorAdmin(SummernoteModelAdmin):
-    """ Class representing the Contributor model in the admin interface """
+@admin.register(User)
+class UserAdmin(SummernoteModelAdmin):
+    """ Class representing the User model in the admin interface """
     # apply summernote only to specific TextField in model
     summernote_fields = ('bio',)

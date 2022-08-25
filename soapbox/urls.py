@@ -37,10 +37,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from base import get_base
+from base import get_home
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('summernote/', include('django_summernote.urls')),
-    path('', get_base),
+    path('accounts/', include('allauth.urls')),
+    path('', get_home, name='soapbox-home'),
 ]

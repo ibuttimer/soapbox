@@ -21,7 +21,7 @@
 #  DEALINGS IN THE SOFTWARE.
 
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser
 from cloudinary.models import CloudinaryField
 
 # Values copied from django.contrib.auth.models.py::AbstractUser
@@ -30,18 +30,26 @@ USER_ATTRIB_LAST_NAME_MAX_LEN: int = 150
 USER_ATTRIB_USERNAME_MAX_LEN: int = 150
 # Values copied from django.db.models.fields::EmailField
 USER_ATTRIB_EMAIL_MAX_LEN: int = 254
+# Values copied from cloudinary.models::CloudinaryField
+USER_ATTRIB_AVATAR_MAX_LEN: int = 255
+
+USER_ATTRIB_BIO_MAX_LEN: int = 250
+USER_ATTRIB_CATEGORIES_MAX_LEN: int = 250
 
 
-class Contributor(User):
+class User(AbstractUser):
     """
-    Contributor model
+    Custom user model
+    (Recommended by
+    https://docs.djangoproject.com/en/4.1/topics/auth/customizing/#auth-custom-user)
     """
-    bio = models.CharField(max_length=250)
+    bio = models.CharField(max_length=USER_ATTRIB_BIO_MAX_LEN)
 
     # https://cloudinary.com/documentation/django_image_and_video_upload#django_forms_and_models
     avatar = CloudinaryField('image', default='placeholder', folder="soapbox")
 
-    categories = models.CharField(max_length=250, blank=True)
+    categories = models.CharField(
+        max_length=USER_ATTRIB_CATEGORIES_MAX_LEN, blank=True)
 
     class Meta:
         ordering = ["date_joined"]

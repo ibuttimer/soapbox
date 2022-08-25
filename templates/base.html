@@ -25,6 +25,8 @@
 <!DOCTYPE html>
 <html lang="en">
 
+{% load i18n %}
+
 {% load static %}
 <head>
     <meta charset="UTF-8">
@@ -51,7 +53,10 @@
 
     <script src="{% static 'js/script.js' %}"></script>
 
-    <title>SoapBox</title>
+    <title>{% block head_title %}{% endblock %}</title>
+    {% block extra_head %}
+    {% endblock %}
+
 </head>
 <body>
     <header class="container">
@@ -61,14 +66,14 @@
                         aria-controls="navbarToggler" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <a class="navbar-brand theme-colour-background" href="#">
+                <a class="navbar-brand theme-colour-background" href="/">
                     <img src="{% static 'img/bullhorn.svg' %}" alt="SoapBox logo" width="30" height="24" class="d-inline-block align-text-top">
                     <span class="theme-colour">SoapBox</span>
                 </a>
                 <div class="collapse navbar-collapse" id="navbarToggler">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link active" aria-current="page" href="#">Home</a>
+                            <a class="nav-link active" aria-current="page" href="/">Home</a>
                         </li>
                         {% if user.is_authenticated %}
                             <li class="nav-item">
@@ -86,14 +91,14 @@
                     <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                         {% if user.is_authenticated %}
                             <li class="nav-item">
-                                <a class="nav-link" href="#">Logout</a>
+                                <a class="nav-link" href="{% url 'account_logout' %}">Sign Out</a>
                             </li>
                         {% else %}
                             <li class="nav-item">
-                                <a class="nav-link" href="#">Signup</a>
+                                <a class="nav-link" href="{% url 'account_signup' %}">Register</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="#">Login</a>
+                                <a class="nav-link" href="{% url 'account_login' %}">Sign In</a>
                             </li>
                         {% endif %}
                     </ul>
@@ -103,6 +108,26 @@
     </header>
 
     <main class="flex-shrink-0">
+        {% for message in messages %}
+        <div class="container">
+            <div class="row">
+                <div class="col-md-8 offset-md-2 text-center alert {{ message.tags }} alert-dismissible fade show" id="msg" role="alert">
+                    {% if message.level == DEFAULT_MESSAGE_LEVELS.INFO %}
+                        <i class="fa-solid fa-circle-info"></i>
+                    {% elif message.level == DEFAULT_MESSAGE_LEVELS.SUCCESS %}
+                        <i class="fa-solid fa-circle-check"></i>
+                    {% elif message.level == DEFAULT_MESSAGE_LEVELS.WARNING %}
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                    {% elif message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    {% endif %}
+                    {{ message | safe }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
         {% block content %}
         <!-- Content Goes here -->
         {% endblock content %}

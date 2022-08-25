@@ -1,0 +1,38 @@
+{% extends "account/base.html" %}
+
+{% load i18n %}
+
+{% block head_title %}{% trans "Sign Out" %}{% endblock %}
+
+{% block content %}
+
+<div class="container text-center">
+  <div class="row">
+    <div class="col-md-8 mt-2 offset-md-2">
+      <h1>{% trans "Sign Out" %}</h1>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-8 mt-2 offset-md-2">
+
+      <p>{% trans 'Are you sure you want to sign out?' %}</p>
+
+      <form method="post" action="{% url 'account_logout' %}">
+        {% csrf_token %}
+        {% if redirect_field_value %}
+          <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}"/>
+        {% endif %}
+        <div class="row">
+          <div class="col-md-3 mt-2 offset-md-3">
+            <a class="btn btn-secondary" href="{% url 'soapbox-home' %}">{% trans "Cancel" %}</a>
+          </div>
+          <div class="col-md-3 mt-2">
+            <button class="btn btn-primary" type="submit">{% trans 'Sign Out' %}</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

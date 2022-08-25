@@ -85,6 +85,13 @@ A convenient method of generating a secret key is to run the following command a
 $ python -c "import secrets; print(secrets.token_urlsafe())"
 ```
 
+### Before first run
+Before running the application for the first time following cloning from the repository and setting up a new database,
+run the following command to create the necessary database tables. 
+
+```shell
+$ python manage.py migrate
+```
 
 
 ### Application structure
@@ -142,6 +149,18 @@ The following steps were followed to deploy the website:
       __Note:__ To configure GitHub integration, you have to authenticate with GitHub. You only have to do this once per Heroku account. See [GitHub Integration (Heroku GitHub Deploys)](https://devcenter.heroku.com/articles/github-integration).
     - `Enable Automatic Deploys` under `Automatic deploys` to enable automatic deploys from GitHub following a GitHub push if desired.
     - The application may also be deployed manually using `Deploy Branch` under `Manual deploy`
+
+
+
+(venvd) PS D:\tech\full stack\code-instutite\soapbox> git remote -v       
+heroku  https://git.heroku.com/soapbox-opinions.git (fetch)
+heroku  https://git.heroku.com/soapbox-opinions.git (push)
+origin  https://github.com/ibuttimer/soapbox.git (fetch)
+origin  https://github.com/ibuttimer/soapbox.git (push)
+
+
+git remote add pb https://github.com/paulboone/ticgit
+
 
 - Configure the database using the following commands:
 
