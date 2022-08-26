@@ -136,11 +136,48 @@
         {% endblock content %}
     </main>
 
-    <footer>
 
-    </footer>
+    <div class="container fixed-bottom">
+        <footer class="d-flex flex-wrap justify-content-between align-items-center py-3 my-4 border-top">
+            <div class="col-md-4 d-flex align-items-center">
+                <a href="/" class="me-2 mb-md-0 text-muted text-decoration-none lh-1">
+                    <img class="bi" width="24" height="24" src="{% static 'favicon-32x32-gray.png' %}" alt="SoapBox logo"/>
+                </a>
+                <span class="mb-md-0 text-muted">&copy; {{ copyright_year }} {{ copyright }}</span>
+            </div>
+
+            <div class="col-md-4 d-flex align-items-center justify-content-center">
+                <a href="/admin" target="_blank" rel="noopener"
+                   aria-label="visit admin page in another tab"
+                   class="socials">
+                    <i class="fa-solid fa-screwdriver-wrench text-muted"></i>
+                </a>
+            </div>
+
+            <ul class="nav col-md-4 justify-content-end list-unstyled d-flex">
+                {% for social in socials %}
+                    <li>
+                        <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="{{ social.name }}">
+                            <a href="{{ social.url }}" target="_blank" rel="noopener"
+                               aria-label="visit our {{ social.name }} page in another tab"
+                               class="socials">
+                                <i class="{{ social.icon }} text-muted"></i>
+                            </a>
+                        </span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </footer>
+    </div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.5/dist/umd/popper.min.js" integrity="sha384-Xe+8cL9oJa6tN/veChSP7q+mnSPaj5Bcu9mPX5F5xIGE0DVittaqT5lorf0EI7Vk" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.min.js" integrity="sha384-ODmDIVzN+pFdexxHEHFBQH3/9/vQ9uori45z4JjnFsRydbmQbmL5t1tQ0culUzyK" crossorigin="anonymous"></script>
+
+    <script>
+        /* Enable Bootstrap tooltips */
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+    </script>
 </body>
 </html>

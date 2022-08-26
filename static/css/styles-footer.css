@@ -1,0 +1,21 @@
+
+
+.socials {
+    color: var(--bs-body-color);
+    font-size: 1.5em;
+    padding-left: 0.6em;
+}
+
+
+/* tiny screens, 450px wide or less */ 
+@media screen and (max-width: 450px) {
+
+    .navbar-brand {
+        margin-right: 0;
+    }
+
+    /* hide logo in footer */
+    body > div > footer > div:nth-child(1) > a {
+        display: none;
+    }
+}
