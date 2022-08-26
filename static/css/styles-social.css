@@ -1,0 +1,32 @@
+
+
+/* Google OAuth app styling */ 
+.google {
+    background-color: #3f80e8;
+    border-color: #3f80e8;
+}
+.google:hover {
+    background-color: #ea4333;
+    border-color: #fbbe04;
+}
+.google:active {
+    background-color: #33a951;
+    border-color: #fbbe04;
+}
+
+/* Twitter OAuth app styling */ 
+.twitter {
+    background-color: #1d9bf0;
+    border-color: #1d9bf0;
+}
+.twitter:hover {
+    background-color: #fff;
+    border-color: #1d9bf0;
+    color: #1d9bf0;
+}
+.twitter:active {
+    background-color: #1d9bf0;
+    border-color: #1d9bf0;
+}
+
+

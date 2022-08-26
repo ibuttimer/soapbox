@@ -10,7 +10,7 @@
     "url": "git+https://github.com/ibuttimer/soapbox.git"
   },
   "author": "Ian Buttimer",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/ibuttimer/soapbox/issues"
   },

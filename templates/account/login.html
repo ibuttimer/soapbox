@@ -1,9 +1,14 @@
 {% extends "account/base.html" %}
 
 {% load i18n %}
+{% load static %}
 {% load account socialaccount %}
 
-{% block head_title %}{% trans "Sign In" %}{% endblock %}
+{% block head_title %}{% trans "Sign In" %}{% endblock head_title %}
+
+{% block extra_css %}
+  <link href="{% static 'css/styles-social.css' %}" rel="stylesheet">
+{% endblock extra_css %}
 
 {% block content %}
 
@@ -19,16 +24,22 @@
 
       {% if socialaccount_providers %}
         <p>{% blocktrans with site.name as site_name %}Please sign in with one
-        of your existing third party accounts. Or, <a href="{{ signup_url }}">sign up</a>
-        for a {{ site_name }} account and sign in below:{% endblocktrans %}</p>
+        of your existing third party accounts.{% endblocktrans %}</p>
 
         <div class="socialaccount_ballot">
 
-          <ul class="socialaccount_providers">
-            {% include "socialaccount/snippets/provider_list.html" with process="login" %}
-          </ul>
+          <div class="row">
+            <div class="col-md-8 mt-2 mb-2 offset-md-2">
+              {% include "socialaccount/snippets/provider_list.html" with process="login" %}
+            </div>
+          </div>
 
-          <div class="login-or">{% trans 'or' %}</div>
+          <div class="row">
+            <div class="col-md-8 mt-2 offset-md-2 text-center">
+              <p>Or <a href="{{ signup_url }}">sign up</a>
+                for an {{ site_name }} account and sign in below:
+            </div>
+          </div>
 
         </div>
 
@@ -45,7 +56,10 @@
     <div class="col-md-8 mt-2 offset-md-2">
       <form class="login" method="POST" action="{% url 'account_login' %}">
         {% csrf_token %}
+
+        {# TODO style errors display #}
         {{ form.as_p }}
+
         {% if redirect_field_value %}
           <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
         {% endif %}
@@ -62,4 +76,4 @@
   </div>
 </div>
 
-{% endblock %}
+{% endblock content %}

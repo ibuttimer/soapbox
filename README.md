@@ -40,7 +40,7 @@ Please see [Creating a virtual environment](https://packaging.python.org/guides/
 > __Note:__ Make sure to [activate the virtual environment](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#activating-a-virtual-environment).
 
 #### Environment Setup
-In the `soapbox` folder, run the following command to setup required environment artifacts:
+In a terminal window, in the `soapbox` folder, run the following command to setup required environment artifacts:
 ```shell
 > npm install
 ```
@@ -68,7 +68,6 @@ There are two requirements files:
 | HEROKU_DATABASE_URL      | Url of Heroku PostgreSQL database resource in Heroku app. Available from `DATABASE_URL` in Heroku app `Settings -> Config Vars`<br>__Note:__ Only required for admin purposes, see database configuration under [Cloud-based Deployment](#cloud-based-deployment)  |
 
 
-
 #### Environment variables
 Set environment variables corresponding to the keys in [Table 1: Configuration settings](#table-1-configuration-settings).
 
@@ -85,14 +84,98 @@ A convenient method of generating a secret key is to run the following command a
 $ python -c "import secrets; print(secrets.token_urlsafe())"
 ```
 
+#### Social Account Login
+In order to configure social account login, the following actions must be performed.
+
+##### Google
+The Google provider is [OAuth2](https://developers.google.com/identity/protocols/OAuth2) based, 
+and a Google app is needed to obtain a key and secret through the [Google Developer Console](https://console.developers.google.com/).
+
+- Login to the [Google Developer Console](https://console.developers.google.com/)
+- Click on the `Select a project` button and then select `New Project`
+* Give the project a name and click `Create`
+* Once created click `Select Project` on the notification or select the project from the `Select a project` modal
+* From the sidebar menu select [APIs & Services -> Credentials](https://console.cloud.google.com/apis/credentials)
+* Select `CREATE CREDENTIALS` and `OAuth client ID` from the dropdown as the type of credential
+* Select `Web application` as the application type, and specify a `Name`
+* Add the site domain name or test domain name in `Authorized JavaScript origins`
+* Add the `http://127.0.0.1:8000/accounts/google/login/callback/` in `Authorised redirect URIs`
+* Select `CREATE`
+* From the `OAuth client created` modal, copy the `Client ID` and `Client Secret` or download the information in JSON format.
+* From the sidebar menu select `APIs & Services -> OAuth consent screen`
+* Provide the following App information
+  * App name
+  * User support email
+  * App logo
+* Under `Authorised domains` add the site domain
+* Add an email address for `Developer contact information`
+* Select `SAVE AND CONTINUE`
+* Under `Authorised domains`, select `ADD OR REMOVE SCOPES` and check the boxes for `.../auth/userinfo.email` and `.../auth/userinfo.profile` 
+* Select `SAVE AND CONTINUE`
+* Under `Test users`, add the email address for the Google accounts to be used in testing
+* Select `SAVE AND CONTINUE`
+
+##### Twitter
+* Login to Twitter and signup to the [Developer Portal](https://developer.twitter.com/en/portal/dashboard)
+* Create a new app and save the Consumer Keys: `API Key`, `API Key Secret` and `Bearer Token`
+* Open the app in the dashboard and under `User authentication settings`, select `Set up`
+* Select `Web App, Automated App or Bot` for `Type of App`
+* Under `App info`, set
+  * `Callback URI / Redirect URL` to `http://127.0.0.1:8000/accounts/twitter/login/callback/`
+  * `Website URL` to the Heroku app URL, e.g. [https://soapbox-opinions.herokuapp.com/](https://soapbox-opinions.herokuapp.com//)
+  * `Organization name` to `SoapBox`
+* Select `Save`, and copy the OAuth 2.0 Client ID and Client Secret displayed, and store securely.
+* Select `Done`
+* It is necessary to [apply for Elevated access](https://developer.twitter.com/en/portal/products/elevated) to the Twitter API, in order to access to private resources.
+  Without Elevated access it is not possible to use Twitter as a sign in provider
+
+
 ### Before first run
 Before running the application for the first time following cloning from the repository and setting up a new database,
-run the following command to create the necessary database tables. 
+the following steps must be performed, from a terminal window, in the `soapbox` folder.
 
-```shell
+#### Initialise the database
+````shell
 $ python manage.py migrate
-```
+````
+#### Create a superuser
+Enter `Username`, `Password` and optionally `Email address`.
+````shell
+$ python manage.py createsuperuser
+````
 
+#### Configure authentication
+From [Configure authentication](https://django-allauth.readthedocs.io/en/latest/installation.html#post-installation)
+- Add a Site for your domain, in the database, matching settings.SITE_ID
+  - Login to `http://&lt;domain&gt;/admin/sites/site/` as the previously created superuser, e.g. http://127.0.0.1:8000/admin/sites/site/ 
+  - Add a Site for your domain, matching settings.SITE_ID (django.contrib.sites app).
+      
+    E.g.
+
+    | Domain name    | Display name   |
+    |----------------|----------------| 
+    | 127.0.0.1:8000 | my domain      | 
+
+- For each OAuth based provider, add a SocialApp in `http://&lt;domain&gt;/admin/socialaccount/socialapp/`, 
+  e.g. http://127.0.0.1:8000/admin/socialaccount/socialapp/, containing the required client credentials
+        
+  - Google
+    [django-allauth Google provider info](https://django-allauth.readthedocs.io/en/latest/providers.html#google)
+
+    | Provider | Name   | Client id                                        | Secret key                                        | 
+    |----------|--------|---------------------------------------------------|--------------------------------------------------| 
+    | google   | Google | `client_id` from the OAuth 2.0 Client credentials | `client_secret` from the OAuth 2.0 Client credentials | 
+
+    And add the Site for your domain to the `Chosen sites` list
+
+  - Twitter
+    [django-allauth Twitter provider info](https://django-allauth.readthedocs.io/en/latest/providers.html#twitter) 
+
+    | Provider | Name    | Client id                                         | Secret key                                        | 
+    |---------|----------|---------------------------------------------------|--------------------------------------------------| 
+    | twitter  | Twitter | `API Key` from the Consumer Keys | `API Key Secret` from the Consumer Keys | 
+
+    And add the Site for your domain to the `Chosen sites` list
 
 ### Application structure
 The application structure is as follows:
@@ -117,8 +200,18 @@ The application structure is as follows:
 
 The site was deployed on [Heroku](https://www.heroku.com).
 
+### Heroku CLI
+Optionally, the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli) may be used to update the application on Heroku.
+With the Heroku CLI installed, in a terminal window, in the `soapbox` folder:
+- Log in to your Heroku account and follow the prompts to create a new SSH public key.
+
+  ```shell
+  $ heroku login
+  ```
+
+### Deployment
 The following steps were followed to deploy the website:
-- Login to Heroku
+- Login to Heroku in a browser
 - From the dashboard select `New -> Create new app`
 - Set the value for `App name`, choose the appropriate region and click `Create app`
 - From the app settings, select the `Resources` tab.
@@ -149,37 +242,69 @@ The following steps were followed to deploy the website:
       __Note:__ To configure GitHub integration, you have to authenticate with GitHub. You only have to do this once per Heroku account. See [GitHub Integration (Heroku GitHub Deploys)](https://devcenter.heroku.com/articles/github-integration).
     - `Enable Automatic Deploys` under `Automatic deploys` to enable automatic deploys from GitHub following a GitHub push if desired.
     - The application may also be deployed manually using `Deploy Branch` under `Manual deploy`
+    - Alternatively, the application may be deployed via the [Heroku CLI](#heroku-cli).
+      After logging into the Heroku CLI in a terminal window, in the `soapbox` folder:
+        - Check the list of `git` remotes
 
+          ```shell
+          $ git remote -v
+          origin  https://github.com/ibuttimer/soapbox.git (fetch)
+          origin  https://github.com/ibuttimer/soapbox.git (push)
+          ```
 
+      - If there is no `git` remotes for `heroku` listed, add one 
 
-(venvd) PS D:\tech\full stack\code-instutite\soapbox> git remote -v       
-heroku  https://git.heroku.com/soapbox-opinions.git (fetch)
-heroku  https://git.heroku.com/soapbox-opinions.git (push)
-origin  https://github.com/ibuttimer/soapbox.git (fetch)
-origin  https://github.com/ibuttimer/soapbox.git (push)
+          ```shell
+          $ git remote add heroku https://git.heroku.com/soapbox-opinions.git
 
+          $ git remote -v       
+          heroku  https://git.heroku.com/soapbox-opinions.git (fetch)
+          heroku  https://git.heroku.com/soapbox-opinions.git (push)
+          origin  https://github.com/ibuttimer/soapbox.git (fetch)
+          origin  https://github.com/ibuttimer/soapbox.git (push)
+          ```
 
-git remote add pb https://github.com/paulboone/ticgit
+      - After committing change locally, push to Heroku
 
+          ```shell
+          $ git push heroku main
+          ```
 
-- Configure the database using the following commands:
+- Initialise the database and Create a superuser 
 
-    - Initialise the database
-      ````shell
-      $ python manage.py migrate --database=heroku
-      ````
-    - Create a superuser
+    Involves the same procedure as outlined in [Initialise the database](#initialise-the-database) and [Create a superuser](#create-a-superuser)
+    but may be run from the local machine. 
+    - From a [Development/Local Deployment](#developmentlocal-deployment) 
+      - Initialise the database
+        ````shell
+        $ python manage.py migrate --database=heroku
+        ````
+      - Create a superuser
 
-      Enter `Username`, `Password` and optionally `Email address`.
-      ````shell
-      $ python manage.py createsuperuser --database=heroku
-      ````
+        Enter `Username`, `Password` and optionally `Email address`.
+        ````shell
+        $ python manage.py createsuperuser --database=heroku
+        ````
 
-    __Note:__ Ensure to specify the `--database=heroku` option to apply the change to the database specified by the `HEROKU_DATABASE_URL` environment variable.
+      __Note:__ Ensure to specify the `--database=heroku` option to apply the change to the database specified by the `HEROKU_DATABASE_URL` environment variable.
 
+  - Alternatively, the [Heroku CLI](#heroku-cli) may be utilised.
 
+    After logging into the Heroku CLI in a terminal window, in the `soapbox` folder:
+      - Initialise the database
+        ````shell
+        $  heroku run python manage.py migrate --app soapbox-opinions
+        ````
+      - Create a superuser
 
+        Enter `Username`, `Password` and optionally `Email address`.
+        ````shell
+        $ heroku run python manage.py createsuperuser --app soapbox-opinions
+        ````
+- Configure authentication
 
+   Follow the same procedure as outlined in [Configure authentication](#configure-authentication) using the 
+   Heroku domain as `&lt;domain&gt;`, e.g. `soapbox-opinions.herokuapp.com` 
 
 The live website is available at [https://soapbox-opinions.herokuapp.com/](https://soapbox-opinions.herokuapp.com//)
 
@@ -199,3 +324,6 @@ The following resources were used to build the website.
 ### Code
 
 - [Secret Key Generation](#secret-key-generation) courtesy of [Humberto Rocha](https://humberto.io/blog/tldr-generate-django-secret-key/)
+- [Social Account Login](#social-account-login) and [Configure authentication](#configure-authentication) details courtesy of
+  [django-allauth](https://django-allauth.readthedocs.io/en/latest/overview.html) and [Geoffrey Mungai](https://www.section.io/engineering-education/django-google-oauth/)
+ 

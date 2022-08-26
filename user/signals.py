@@ -19,17 +19,47 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
+#
+from django.dispatch import receiver
+from allauth.account.signals import (
+    user_logged_in, user_logged_out, user_signed_up
+)
+from allauth.socialaccount.signals import (
+    pre_social_login, social_account_added, social_account_updated,
+    social_account_removed
+)
 
-from django.apps import AppConfig
-from django.utils.translation import gettext_lazy as _
+
+@receiver(user_logged_in)
+def user_logged_in_callback(sender, **kwargs):
+    print("user_logged_in!")
 
 
-class UserConfig(AppConfig):
-    """ Config class for user application """
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'user'
-    verbose_name = _("User Management")
+@receiver(user_logged_out)
+def user_logged_out_callback(sender, **kwargs):
+    print("user_logged_out!")
 
-    def ready(self):
-        # Implicitly connect signal handlers decorated with @receiver.
-        from . import signals
+
+@receiver(user_signed_up)
+def user_signed_up_callback(sender, **kwargs):
+    print("user_signed_up!")
+
+
+@receiver(pre_social_login)
+def pre_social_login_callback(sender, **kwargs):
+    print("pre_social_login!")
+
+
+@receiver(social_account_added)
+def social_account_added_callback(sender, **kwargs):
+    print("social_account_added!")
+
+
+@receiver(social_account_updated)
+def social_account_updated_callback(sender, **kwargs):
+    print("social_account_updated!")
+
+
+@receiver(social_account_removed)
+def social_account_removed_callback(sender, **kwargs):
+    print("social_account_removed!")

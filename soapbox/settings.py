@@ -78,10 +78,12 @@ INSTALLED_APPS = [
 
     # The following apps are required by 'allauth':
     #   django.contrib.auth, django.contrib.messages
-    # 'django.contrib.sites', says needs but ?
+    'django.contrib.sites',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.twitter',
 
     # https://pypi.org/project/dj3-cloudinary-storage/
     # If using for static and/or media files, make sure that cloudinary_storage
@@ -130,9 +132,30 @@ WSGI_APPLICATION = 'soapbox.wsgi.application'
 AUTH_USER_MODEL = 'user.User'
 
 # 'allauth' site id
-SITE_ID = 1
+SITE_ID = 2
 # 'allauth' provider specific settings
 SOCIALACCOUNT_PROVIDERS = {
+    "google": {
+        # For each OAuth based provider, either add a ``SocialApp``
+        # (``socialaccount`` app) containing the required client
+        # credentials, or list them here:
+        "APP": {
+        },
+        # These are provider-specific settings that can only be
+        # listed here:
+        "SCOPE": [
+            "profile",
+            "email",
+        ],
+        "AUTH_PARAMS": {
+            "access_type": "online",
+        }
+    },
+    "twitter": {
+        "APP": {
+        },
+    }
+
 }
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'

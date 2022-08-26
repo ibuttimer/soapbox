@@ -51,11 +51,14 @@
 
     <link href="{% static 'css/styles.css' %}" rel="stylesheet">
 
+    {% block extra_css %}
+    {% endblock extra_css %}
+
     <script src="{% static 'js/script.js' %}"></script>
 
-    <title>{% block head_title %}{% endblock %}</title>
+    <title>{% block head_title %}{% endblock head_title %}</title>
     {% block extra_head %}
-    {% endblock %}
+    {% endblock extra_head %}
 
 </head>
 <body>
