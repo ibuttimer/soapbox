@@ -19,37 +19,58 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
+from cloudinary.forms import CloudinaryFileField
 from django import forms
 from django.http import HttpRequest
 from django.utils.translation import gettext_lazy as _
 from allauth.account.forms import SignupForm
+from django_summernote.fields import SummernoteTextField
+from django_summernote.widgets import SummernoteWidget
 
-from .models import (
-    USER_ATTRIB_FIRST_NAME_MAX_LEN, USER_ATTRIB_LAST_NAME_MAX_LEN, User
-)
+from utils import update_field_widgets, error_messages, ErrorMsgs
+from .models import User
+
+
+_FIRST_NAME_FF = "first_name"
+_LAST_NAME_FF = "last_name"
+_EMAIL_FF = "email"
+_USERNAME_FF = "username"
+_PASSWORD_FF = "password1"
+_BIO_FF = "bio"
+_AVATAR = "avatar"
 
 
 class UserSignupForm(SignupForm):
     """ Custom user sign up form """
 
+    FIRST_NAME_FF = _FIRST_NAME_FF
+    LAST_NAME_FF = _LAST_NAME_FF
+    EMAIL_FF = _EMAIL_FF
+    USERNAME_FF = _USERNAME_FF
+    PASSWORD_FF = _PASSWORD_FF
+
     def __init__(self, *args, **kwargs):
         super(UserSignupForm, self).__init__(*args, **kwargs)
 
         # add first & last name fields
-        self.fields["first_name"] = forms.CharField(
+        self.fields[UserSignupForm.FIRST_NAME_FF] = forms.CharField(
             label=_("First name"),
-            max_length=USER_ATTRIB_FIRST_NAME_MAX_LEN,
-            widget=forms.TextInput(attrs={"placeholder": _("First name")}),
+            max_length=User.USER_ATTRIB_FIRST_NAME_MAX_LEN,
+            widget=forms.TextInput(attrs={
+                "placeholder": _("User first name")
+            }),
         )
-        self.fields["last_name"] = forms.CharField(
+        self.fields[UserSignupForm.LAST_NAME_FF] = forms.CharField(
             label=_("Last name"),
-            max_length=USER_ATTRIB_LAST_NAME_MAX_LEN,
-            widget=forms.TextInput(attrs={"placeholder": _("Last name")}),
+            max_length=User.USER_ATTRIB_LAST_NAME_MAX_LEN,
+            widget=forms.TextInput(attrs={
+                "placeholder": _("User last name")
+            }),
         )
 
         # reorder fields so first & last name appear at start
-        self.fields.move_to_end("last_name", last=False)
-        self.fields.move_to_end("first_name", last=False)
+        self.fields.move_to_end(UserSignupForm.LAST_NAME_FF, last=False)
+        self.fields.move_to_end(UserSignupForm.FIRST_NAME_FF, last=False)
 
     def signup(self, request: HttpRequest, user: User) -> None:
         """
@@ -58,3 +79,83 @@ class UserSignupForm(SignupForm):
         :param user: user object
         """
         pass
+
+
+class UserForm(forms.ModelForm):
+    """
+    Form to update a user.
+    """
+
+    FIRST_NAME_FF = _FIRST_NAME_FF
+    LAST_NAME_FF = _LAST_NAME_FF
+    EMAIL_FF = _EMAIL_FF
+    BIO_FF = _BIO_FF
+    AVATAR = _AVATAR
+
+    @staticmethod
+    def get_first_name_field_name():
+        return UserForm.FIRST_NAME_FF
+
+    first_name = forms.CharField(
+        label=_("First name"),
+        max_length=User.USER_ATTRIB_FIRST_NAME_MAX_LEN,
+        required=False)
+    last_name = forms.CharField(
+        label=_("Last name"),
+        max_length=User.USER_ATTRIB_LAST_NAME_MAX_LEN,
+        required=False)
+    email = forms.EmailField(
+        label=_("Email"),
+        widget=forms.TextInput(
+            attrs={
+                "type": "email",
+                "placeholder": _("E-mail address"),
+                "autocomplete": "email",
+            }
+        )
+    )
+
+    bio = SummernoteTextField()
+
+    # https://cloudinary.com/documentation/django_image_and_video_upload#django_forms_and_models
+    # avatar = CloudinaryFileField(
+    #     label=_("Avatar"),
+    #     required=False
+    # )
+
+    # categories = models.CharField(
+    #     max_length=User.USER_ATTRIB_CATEGORIES_MAX_LEN, blank=True)
+
+    class Meta:
+        model = User
+        fields = (_FIRST_NAME_FF, _LAST_NAME_FF, _EMAIL_FF, _BIO_FF,
+                  # _AVATAR
+                  )
+        non_bootstrap_fields = (_BIO_FF,
+                                # _AVATAR
+                                )
+        help_texts = {
+            _FIRST_NAME_FF: 'User first name.',
+            _LAST_NAME_FF: 'User last name.',
+            _EMAIL_FF: 'Email address of user.',
+            _BIO_FF: 'Biography of user.',
+            # _AVATAR: 'User avatar',
+        }
+        error_messages = error_messages(
+            model.MODEL_NAME,
+            *[ErrorMsgs(field, max_length=True)
+              for field in (_FIRST_NAME_FF, _LAST_NAME_FF)]
+        )
+        widgets = {
+            _BIO_FF: SummernoteWidget(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # add the bootstrap class to the widget
+        update_field_widgets(
+            self,
+            # exclude non-bootstrap fields
+            [field for field in UserForm.Meta.fields
+             if field not in UserForm.Meta.non_bootstrap_fields],
+            {'class': 'form-control'})

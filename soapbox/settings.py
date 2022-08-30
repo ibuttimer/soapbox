@@ -33,10 +33,12 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 import os
-import environ
 from pathlib import Path
+
+import environ
 from django.contrib.messages import constants as messages
 
+from .constants import BASE_APP_NAME, USER_APP_NAME
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -61,6 +63,46 @@ DEBUG = env('DEBUG')
 # https://docs.djangoproject.com/en/4.1/ref/clickjacking/
 # required for Summernote editor
 X_FRAME_OPTIONS = 'SAMEORIGIN'
+SUMMERNOTE_THEME = 'bs4'    # TODO bs5 not working at the moment
+# https://github.com/summernote/django-summernote#options
+SUMMERNOTE_CONFIG = {
+    # Using SummernoteWidget - iframe mode, default
+    'iframe': True,
+
+    # You can put custom Summernote settings
+    'summernote': {
+        # As an example, using Summernote Air-mode
+        'airMode': False,
+
+        # Change editor size
+        'width': '100%',
+        'height': '240',
+
+        # Use proper language setting automatically (default)
+        'lang': None,
+
+        # Toolbar customization
+        # https://summernote.org/deep-dive/#custom-toolbar-popover
+        'toolbar': [
+            ['style', ['style']],
+            ['font', ['bold', 'underline', 'clear']],
+            ['fontname', ['fontname']],
+            ['color', ['color']],
+            ['para', ['ul', 'ol', 'paragraph']],
+            ['table', ['table']],
+            ['insert', ['link', 'picture', 'video']],
+            ['view', ['fullscreen', 'codeview', 'help']],
+        ],
+    },
+    # Require users to be authenticated for uploading attachments.
+    'attachment_require_authentication': True,
+
+    # Lazy initialization
+    # If you want to initialize summernote at the bottom of page,
+    # set this as True and call `initSummernote()` on your page.
+    'lazy': False,
+    # TODO need to figure out initSummernote for admin site to enable this
+}
 
 if env('DEVELOPMENT'):
     ALLOWED_HOSTS = ['localhost', '127.0.0.1']
@@ -92,8 +134,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'cloudinary',
     'django_summernote',
-    'base',
-    'user',
+    BASE_APP_NAME,
+    USER_APP_NAME,
 ]
 
 MIDDLEWARE = [
@@ -122,6 +164,8 @@ TEMPLATES = [
 
                 # `allauth` needs this from django
                 'django.template.context_processors.request',
+                # soapbox context processors
+                'soapbox.context_processors.footer_context',
             ],
         },
     },
@@ -255,6 +299,7 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 MEDIA_URL = 'media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, MEDIA_URL)
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 

@@ -1,3 +1,4 @@
+
 #  MIT License
 #
 #  Copyright (c) 2022 Ian Buttimer
@@ -19,40 +20,47 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
+#
 
-from utils import append_slash, url_path
+def append_slash(url: str) -> str:
+    """
+    Append a slash to the specified url if necessary.
+    (See https://docs.djangoproject.com/en/4.1/misc/design-philosophies/#definitive-urls)
+    :param url: url string
+    :return: url string
+    """
+    result: str = url
+    if result[-1] != '/':
+        result = f"{url}/"
+    return result
 
-APP_NAME = "SoapBox"
-COPYRIGHT_YEAR = 2022
-COPYRIGHT = "Ian Buttimer"
 
-# Namespace related
-BASE_APP_NAME = "base"
-USER_APP_NAME = "user"
+def namespaced_url(*args: str) -> str:
+    """
+    Concatenate supplied arguments into a namespaced URL.
+    (See https://docs.djangoproject.com/en/4.1/topics/http/urls/)
+    :param args: elements of url
+    :return: url string
+    """
+    return ":".join(args)
 
-# Request methods
-GET = 'GET'
-PATCH = 'PATCH'
-POST = 'POST'
-DELETE = 'DELETE'
 
-# Base routes related
-HOME_URL = "/"
+def app_template_path(app: str, *args: str) -> str:
+    """
+    Concatenate supplied arguments into a relative path to a template file
+    :param app: name of app
+    :param args: elements of path
+    :return: path string
+    """
+    path = [app]
+    path.extend(args)
+    return "/".join(path)
 
-HOME_ROUTE_NAME = "home"
 
-# Admin routes related
-ADMIN_URL = append_slash("admin")
-
-# Accounts routes related
-ACCOUNTS_URL = append_slash("accounts")
-LOGIN_URL = url_path(ACCOUNTS_URL, "login")
-
-# Summernote routes related
-SUMMERNOTE_URL = append_slash("summernote")
-
-# User routes related
-USERS_URL = append_slash("users")
-USER_ID_URL = append_slash("<int:pk>")
-
-USER_ID_ROUTE_NAME = "user_id"
+def url_path(*args: str) -> str:
+    """
+    Concatenate arguments into a url path
+    :param args: elements of path
+    :return: path string
+    """
+    return "".join([append_slash(segment) for segment in args])

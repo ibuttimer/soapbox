@@ -1,3 +1,4 @@
+
 #  MIT License
 #
 #  Copyright (c) 2022 Ian Buttimer
@@ -19,40 +20,31 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
+#
 
-from utils import append_slash, url_path
+from django.http import HttpRequest, HttpResponse
+from django.shortcuts import render, redirect
 
-APP_NAME = "SoapBox"
-COPYRIGHT_YEAR = 2022
-COPYRIGHT = "Ian Buttimer"
 
-# Namespace related
-BASE_APP_NAME = "base"
-USER_APP_NAME = "user"
-
-# Request methods
-GET = 'GET'
-PATCH = 'PATCH'
-POST = 'POST'
-DELETE = 'DELETE'
-
-# Base routes related
-HOME_URL = "/"
-
-HOME_ROUTE_NAME = "home"
-
-# Admin routes related
-ADMIN_URL = append_slash("admin")
-
-# Accounts routes related
-ACCOUNTS_URL = append_slash("accounts")
-LOGIN_URL = url_path(ACCOUNTS_URL, "login")
-
-# Summernote routes related
-SUMMERNOTE_URL = append_slash("summernote")
-
-# User routes related
-USERS_URL = append_slash("users")
-USER_ID_URL = append_slash("<int:pk>")
-
-USER_ID_ROUTE_NAME = "user_id"
+def redirect_on_success_or_render(request: HttpRequest, success: bool,
+                                  redirect_to: str = '/',
+                                  template_path: str = None,
+                                  context: dict = None) -> HttpResponse:
+    """
+    Redirect if success, otherwise render the specified template.
+    :param request:         http request
+    :param success:         success flag
+    :param redirect_to:     a view name that can be resolved by `urls.reverse()`
+                            or a URL
+    :param template_path:   template to render
+    :param context:         context for template
+    :return: http response
+    """
+    response: HttpResponse
+    if success:
+        # success, redirect
+        response = redirect(redirect_to)
+    else:
+        # render template
+        response = render(request, template_path, context=context)
+    return response

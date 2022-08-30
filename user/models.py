@@ -22,19 +22,8 @@
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.utils.translation import gettext_lazy as _
 from cloudinary.models import CloudinaryField
-
-# Values copied from django.contrib.auth.models.py::AbstractUser
-USER_ATTRIB_FIRST_NAME_MAX_LEN: int = 150
-USER_ATTRIB_LAST_NAME_MAX_LEN: int = 150
-USER_ATTRIB_USERNAME_MAX_LEN: int = 150
-# Values copied from django.db.models.fields::EmailField
-USER_ATTRIB_EMAIL_MAX_LEN: int = 254
-# Values copied from cloudinary.models::CloudinaryField
-USER_ATTRIB_AVATAR_MAX_LEN: int = 255
-
-USER_ATTRIB_BIO_MAX_LEN: int = 250
-USER_ATTRIB_CATEGORIES_MAX_LEN: int = 250
 
 
 class User(AbstractUser):
@@ -43,13 +32,29 @@ class User(AbstractUser):
     (Recommended by
     https://docs.djangoproject.com/en/4.1/topics/auth/customizing/#auth-custom-user)
     """
-    bio = models.CharField(max_length=USER_ATTRIB_BIO_MAX_LEN)
+
+    MODEL_NAME = 'User'
+
+    # Values copied from django.contrib.auth.models.py::AbstractUser
+    USER_ATTRIB_FIRST_NAME_MAX_LEN: int = 150
+    USER_ATTRIB_LAST_NAME_MAX_LEN: int = 150
+    USER_ATTRIB_USERNAME_MAX_LEN: int = 150
+    # Values copied from django.db.models.fields::EmailField
+    USER_ATTRIB_EMAIL_MAX_LEN: int = 254
+    # Values copied from cloudinary.models::CloudinaryField
+    USER_ATTRIB_AVATAR_MAX_LEN: int = 255
+
+    USER_ATTRIB_BIO_MAX_LEN: int = 250
+    USER_ATTRIB_CATEGORIES_MAX_LEN: int = 250
+
+    bio = models.CharField(_('biography'), max_length=USER_ATTRIB_BIO_MAX_LEN)
 
     # https://cloudinary.com/documentation/django_image_and_video_upload#django_forms_and_models
-    avatar = CloudinaryField('image', default='placeholder', folder="soapbox")
+    avatar = CloudinaryField(
+        _('image'), default='placeholder', folder="soapbox")
 
     categories = models.CharField(
-        max_length=USER_ATTRIB_CATEGORIES_MAX_LEN, blank=True)
+        _('categories'), max_length=USER_ATTRIB_CATEGORIES_MAX_LEN, blank=True)
 
     class Meta:
         ordering = ["date_joined"]

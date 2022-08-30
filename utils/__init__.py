@@ -19,40 +19,20 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
+#
+from .misc import append_slash, namespaced_url, app_template_path, url_path
+from .views import redirect_on_success_or_render
+from .forms import update_field_widgets, error_messages, ErrorMsgs
 
-from utils import append_slash, url_path
+__all__ = [
+    'append_slash',
+    'namespaced_url',
+    'app_template_path',
+    'url_path',
 
-APP_NAME = "SoapBox"
-COPYRIGHT_YEAR = 2022
-COPYRIGHT = "Ian Buttimer"
+    'redirect_on_success_or_render',
 
-# Namespace related
-BASE_APP_NAME = "base"
-USER_APP_NAME = "user"
-
-# Request methods
-GET = 'GET'
-PATCH = 'PATCH'
-POST = 'POST'
-DELETE = 'DELETE'
-
-# Base routes related
-HOME_URL = "/"
-
-HOME_ROUTE_NAME = "home"
-
-# Admin routes related
-ADMIN_URL = append_slash("admin")
-
-# Accounts routes related
-ACCOUNTS_URL = append_slash("accounts")
-LOGIN_URL = url_path(ACCOUNTS_URL, "login")
-
-# Summernote routes related
-SUMMERNOTE_URL = append_slash("summernote")
-
-# User routes related
-USERS_URL = append_slash("users")
-USER_ID_URL = append_slash("<int:pk>")
-
-USER_ID_ROUTE_NAME = "user_id"
+    'update_field_widgets',
+    'error_messages',
+    'ErrorMsgs'
+]
