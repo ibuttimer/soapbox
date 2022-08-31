@@ -28,7 +28,7 @@ from .constants import (
     USERS_URL, USER_ID_URL, USER_ID_ROUTE_NAME,
     AVATAR_FOLDER, IMAGE_FILE_TYPES
 )
-from .settings import AVATAR_BLANK_URL
+from .settings import AVATAR_BLANK_URL, DEVELOPMENT
 
 __all__ = [
     'BASE_APP_NAME',
@@ -54,5 +54,6 @@ __all__ = [
     'AVATAR_FOLDER',
     'IMAGE_FILE_TYPES',
 
-    'AVATAR_BLANK_URL'
+    'AVATAR_BLANK_URL',
+    'DEVELOPMENT'
 ]

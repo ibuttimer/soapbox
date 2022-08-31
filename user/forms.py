@@ -27,7 +27,7 @@ from allauth.account.forms import SignupForm
 from django_summernote.fields import SummernoteTextField
 from django_summernote.widgets import SummernoteWidget
 
-from soapbox import IMAGE_FILE_TYPES
+from soapbox import IMAGE_FILE_TYPES, DEVELOPMENT
 from utils import update_field_widgets, error_messages, ErrorMsgs
 from .models import User
 
@@ -121,20 +121,25 @@ class UserForm(forms.ModelForm):
         )
     )
 
-    bio = SummernoteTextField()
+    bio = SummernoteTextField(blank=False)
 
-    # https://cloudinary.com/documentation/django_image_and_video_upload#django_forms_and_models
-    avatar = CloudinaryFileField(
-        label=_("Avatar"),
-        required=False,
-        options={
-            'folder': User.avatar.field.options['folder'],
-        },
-        widget=NoCurrentClearableFileInput(attrs={
+    avatar_args = {
+        "label": _("Avatar"),
+        "required": False,
+        "widget": NoCurrentClearableFileInput(attrs={
             # https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types#common_image_file_types
             "accept": ", ".join(IMAGE_FILE_TYPES)
         })
-    )
+    }
+    # ImageField for local dev, CloudinaryFileField for production
+    avatar = forms.ImageField(
+            **avatar_args
+        ) if DEVELOPMENT else CloudinaryFileField(
+            options={
+                'folder': User.avatar.field.options['folder'],
+            },
+            **avatar_args
+        )
 
     # categories = models.CharField(
     #     max_length=User.USER_ATTRIB_CATEGORIES_MAX_LEN, blank=True)

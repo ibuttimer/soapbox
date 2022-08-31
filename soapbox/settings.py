@@ -59,6 +59,7 @@ SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
+DEVELOPMENT = env('DEVELOPMENT')
 
 # https://docs.djangoproject.com/en/4.1/ref/clickjacking/
 # required for Summernote editor
@@ -302,17 +303,31 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
+# URL to use when referring to static files located in STATIC_ROOT
 STATIC_URL = 'static/'
-
+# https://docs.djangoproject.com/en/4.1/ref/settings/#staticfiles-storage
 STATICFILES_STORAGE = \
+    'django.contrib.staticfiles.storage.StaticFilesStorage' \
+    if DEVELOPMENT else \
     'cloudinary_storage.storage.StaticHashedCloudinaryStorage'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-STATICFILES_DIRS
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'staticfiles')
+]
+# absolute path to the directory where static files are collected for
+# deployment
+# https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-STATIC_ROOT
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 MEDIA_URL = 'media/'
+# https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-MEDIA_ROOT
 MEDIA_ROOT = os.path.join(BASE_DIR, MEDIA_URL)
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
+
+DEFAULT_FILE_STORAGE = \
+    'django.core.files.storage.FileSystemStorage' \
+    if DEVELOPMENT else \
+    'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field

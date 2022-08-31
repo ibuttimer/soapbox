@@ -25,7 +25,7 @@ from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
 from cloudinary.models import CloudinaryField
 
-from soapbox import AVATAR_FOLDER
+from soapbox import AVATAR_FOLDER, DEVELOPMENT
 
 
 class User(AbstractUser):
@@ -53,8 +53,11 @@ class User(AbstractUser):
 
     bio = models.CharField(_('biography'), max_length=USER_ATTRIB_BIO_MAX_LEN)
 
+    # ImageField for local dev, CloudinaryField for production
     # https://cloudinary.com/documentation/django_image_and_video_upload#django_forms_and_models
-    avatar = CloudinaryField(
+    avatar = models.ImageField(
+        _('image'), default=AVATAR_BLANK, upload_to=AVATAR_FOLDER, blank=True
+    ) if DEVELOPMENT else CloudinaryField(
         _('image'), default=AVATAR_BLANK, folder=AVATAR_FOLDER)
 
     categories = models.CharField(
