@@ -56,17 +56,18 @@ There are two requirements files:
 * [requirements-dev.txt](requirements-dev.txt) which installs extra development-only requirements in addition to the production requirements from [requirements.txt](requirements.txt) 
 
 ###### Table 1: Configuration settings
-| Key                      | Value                                                                                                                                                                                                                                                             |
-|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| PORT                     | Port application is served on; default 8000                                                                                                                                                                                                                       |
-| DEBUG                    | A boolean that turns on/off debug mode; set to any of 'true', 'on', 'ok', 'y', 'yes', '1' to enable                                                                                                                                                               |
-| DEVELOPMENT              | A boolean that turns on/off development mode; set to any of 'true', 'on', 'ok', 'y', 'yes', '1' to enable                                                                                                                                                         |
-| SECRET_KEY               | [Secret key](https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-SECRET_KEY) for a particular Django installation. See [Secret Key Generation](#secret-key-generation)                                                                                |
-| DATABASE_URL             | [Database url](https://docs.djangoproject.com/en/4.1/ref/settings/#databases)                                                                                                                                                                                     |
-| CLOUDINARY_URL           | [Cloudinary url](https://pypi.org/project/dj3-cloudinary-storage/)                                                                                                                                                                                                |
-| AVATAR_BLANK_URL         | Url of [blank avatar](static/img/avatar_blank.svg)                                                                                                                                                                                                                |
-| HEROKU_HOSTNAME          | [Hostname](https://docs.djangoproject.com/en/4.1/ref/settings/#allowed-hosts) of application on Heroku<br>__Note:__ Not required in local development mode                                                                                                        |
-| HEROKU_DATABASE_URL      | Url of Heroku PostgreSQL database resource in Heroku app. Available from `DATABASE_URL` in Heroku app `Settings -> Config Vars`<br>__Note:__ Only required for admin purposes, see database configuration under [Cloud-based Deployment](#cloud-based-deployment) |
+| Key                 | Value                                                                                                                                                                                                                                                             |
+|---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| PORT                | Port application is served on; default 8000                                                                                                                                                                                                                       |
+| DEBUG               | A boolean that turns on/off debug mode; set to any of 'true', 'on', 'ok', 'y', 'yes', '1' to enable                                                                                                                                                               |
+| DEVELOPMENT         | A boolean that turns on/off development mode; set to any of 'true', 'on', 'ok', 'y', 'yes', '1' to enable                                                                                                                                                         |
+| SECRET_KEY          | [Secret key](https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-SECRET_KEY) for a particular Django installation. See [Secret Key Generation](#secret-key-generation)                                                                                |
+| DATABASE_URL        | [Database url](https://docs.djangoproject.com/en/4.1/ref/settings/#databases)                                                                                                                                                                                     |
+| CLOUDINARY_URL      | [Cloudinary url](https://pypi.org/project/dj3-cloudinary-storage/)                                                                                                                                                                                                |
+| AVATAR_BLANK_URL    | Url of [blank avatar](static/img/avatar_blank.svg)                                                                                                                                                                                                                |
+| SITE_ID             | Id (primary key) of site in the `django_site` table of the database. See [Configure authentication](#configure-authentication).                                                                                                                                   |
+| HEROKU_HOSTNAME     | [Hostname](https://docs.djangoproject.com/en/4.1/ref/settings/#allowed-hosts) of application on Heroku<br>__Note:__ Not required in local development mode                                                                                                        |
+| HEROKU_DATABASE_URL | Url of Heroku PostgreSQL database resource in Heroku app. Available from `DATABASE_URL` in Heroku app `Settings -> Config Vars`<br>__Note:__ Only required for admin purposes, see database configuration under [Cloud-based Deployment](#cloud-based-deployment) |
 
 
 #### Environment variables
@@ -147,15 +148,17 @@ $ python manage.py createsuperuser
 
 #### Configure authentication
 From [Configure authentication](https://django-allauth.readthedocs.io/en/latest/installation.html#post-installation)
-- Add a Site for your domain, in the database, matching settings.SITE_ID
+- Add a Site for your domain in the database
   - Login to `http://&lt;domain&gt;/admin/sites/site/` as the previously created superuser, e.g. http://127.0.0.1:8000/admin/sites/site/ 
-  - Add a Site for your domain, matching settings.SITE_ID (django.contrib.sites app).
+  - Add a Site for your domain (django.contrib.sites app).
       
     E.g.
 
     | Domain name    | Display name   |
     |----------------|----------------| 
     | 127.0.0.1:8000 | my domain      | 
+
+    __Note:__ The id (primary key) of the site must be added to the application configuration. See `SITE_ID` in [Table 1: Configuration settings](#table-1-configuration-settings).
 
 - For each OAuth based provider, add a SocialApp in `http://&lt;domain&gt;/admin/socialaccount/socialapp/`, 
   e.g. http://127.0.0.1:8000/admin/socialaccount/socialapp/, containing the required client credentials
@@ -219,20 +222,27 @@ The following steps were followed to deploy the website:
     - Under `Add-ons` add the following
         1. `Heroku Postgres` - PostgreSQL [database as a service](https://elements.heroku.com/addons/heroku-postgresql)
         2. `Cloudinary - Image and Video Management` - [Cloudinary Image & Video Tools](https://elements.heroku.com/addons/cloudinary)
+
+            __Note:__ In order the access the dashboard for the provisioned Cloudinary account, use the [Heroku CLI](https://devcenter.heroku.com/articles/cloudinary#management-console)
+            ```shell
+            $ heroku addons:open cloudinary
+            ```
+
 - From the app settings, select the `Settings` tab.
     - Under `Buildpacks` add the following buildpacks
         1. `heroku/python`
     - Under `Config Vars` add the following environment variables
 
-        | Key               | Value                                                                                                                         |
-        -------------------|--------------------------------------------------------------------------------------------------------------------------------|
-        | PORT              | 8000                                                                                                                          |
-        | SECRET_KEY        | [Secret key](https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-SECRET_KEY) for a particular Django installation |
-        | HEROKU_HOSTNAME   | [Hostname](https://docs.djangoproject.com/en/4.1/ref/settings/#allowed-hosts) of application on Heroku                        |
-        |                   | _The following keys are automatically added when `Resources` are provisioned_                                                 |
-        | DATABASE_URL      | [Database url](https://docs.djangoproject.com/en/4.1/ref/settings/#databases)                                                 |
-        | CLOUDINARY_URL    | [Cloudinary url](https://pypi.org/project/dj3-cloudinary-storage/)                                                            |
-        | AVATAR_BLANK_URL  | Url of [blank avatar](static/img/avatar_blank.svg)                                                                            |
+        | Key               | Value                                                                                                                           |
+        |-------------------|---------------------------------------------------------------------------------------------------------------------------------|
+        | PORT              | 8000                                                                                                                            |
+        | SECRET_KEY        | [Secret key](https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-SECRET_KEY) for a particular Django installation   |
+        | HEROKU_HOSTNAME   | [Hostname](https://docs.djangoproject.com/en/4.1/ref/settings/#allowed-hosts) of application on Heroku                          |
+        |                   | _The following keys are automatically added when `Resources` are provisioned_                                                   |
+        | DATABASE_URL      | [Database url](https://docs.djangoproject.com/en/4.1/ref/settings/#databases)                                                   |
+        | CLOUDINARY_URL    | [Cloudinary url](https://pypi.org/project/dj3-cloudinary-storage/)                                                              |
+        | AVATAR_BLANK_URL  | Url of [blank avatar](static/img/avatar_blank.svg)                                                                              |
+        | SITE_ID           | Id (primary key) of site in the `django_site` table of the database. See [Configure authentication](#configure-authentication). |
 
         See [Table 1: Configuration settings](#table-1-configuration-settings) for details.
 

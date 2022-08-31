@@ -187,7 +187,7 @@ WSGI_APPLICATION = 'soapbox.wsgi.application'
 AUTH_USER_MODEL = 'user.User'
 
 # 'allauth' site id
-SITE_ID = 2
+SITE_ID = int(env('SITE_ID'))
 # 'allauth' provider specific settings
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
