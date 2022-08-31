@@ -60,7 +60,7 @@
                     disabled
                     {% endif %}
             >
-                <div class="row">
+                <div class="row mb-3">
                     <div class="col-6">
                         {# basic user form fields #}
 
@@ -76,10 +76,19 @@
                                 </div>
                             {% endif %}
                         {% endfor %}
+                    </div>
 
                     <div class="col-6">
                         {# user avatar field #}
 
+                        {% for field in form %}
+                        {% if field.name in img_fields %}
+                            <div class="preview">
+                                <img src="{{ avatar_url }}" width="100px" height="100px" alt="Avatar image">
+                            </div>
+                            {{ field }}
+                        {% endif %}
+                        {% endfor %}
 
                     </div>
                 </div>
@@ -109,10 +118,10 @@
             {% if not read_only %}
             <div class="row mb-3">
                 <div class="col-sm-2 offset-sm-3">
-                    <button type="reset" class="btn btn-secondary mb-1">Cancel</button>
+                    <a class="btn btn-secondary mb-1" href="{% url 'home' %}">{% trans "Cancel" %}</a>
                 </div>
                 <div class="col-sm-2 offset-sm-2">
-                    <button type="submit" class="btn btn-primary">Update</button>
+                    <button type="submit" class="btn btn-primary">{% trans "Update" %}</button>
                 </div>
             </div>
             {% endif %}
@@ -131,4 +140,58 @@
 <!--            initSummernote_id_bio();-->
 <!--        });-->
 <!--    </script>-->
+
+    <script>
+        /* Update preview image when file selected.
+           Based on https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/file#examples */
+
+        const input = document.querySelector('#id_avatar'); /* file input */
+        const preview = document.querySelector('.preview'); /* div containing preview image */
+
+        function updateImageDisplay() {
+            /* Update avatar preview */
+            const curFiles = input.files;
+            if (curFiles.length === 0) {
+                alert("No files currently selected for upload");
+            } else {
+                for (const file of curFiles) {
+                    if (validFileType(file)) {
+                        $(".preview img").prop("src", URL.createObjectURL(file));
+                    } else {
+                        alert(`${file.name} is not a valid file type. Please update your selection.`);
+                    }
+                }
+            }
+        }
+
+        // https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types
+        const fileTypes = [
+            {% for a in image_file_types %}
+                "{{ a }}"{% if forloop.revcounter0 > 0 %},{% endif %}
+            {% endfor %}
+        ];
+
+        function validFileType(file) {
+          return fileTypes.includes(file.type);
+        }
+
+        function returnFileSize(number) {
+          if (number < 1024) {
+            return `${number} bytes`;
+          } else if (number >= 1024 && number < 1048576) {
+            return `${(number / 1024).toFixed(1)} KB`;
+          } else if (number >= 1048576) {
+            return `${(number / 1048576).toFixed(1)} MB`;
+          }
+        }
+
+        $(document).ready(function() {
+            $('#id_avatar').on('change',
+                function(e) {
+                    updateImageDisplay();
+                });
+        });
+    </script>
+
+
 {% endblock extra_js_body %}

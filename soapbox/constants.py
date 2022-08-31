@@ -56,3 +56,13 @@ USERS_URL = append_slash("users")
 USER_ID_URL = append_slash("<int:pk>")
 
 USER_ID_ROUTE_NAME = "user_id"
+
+
+# cloudinary related
+AVATAR_FOLDER = "soapbox"
+
+# https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types#common_image_file_types
+IMAGE_FILE_TYPES = [
+    "image/apng", "image/avif", "image/gif", "image/jpeg", "image/png",
+    "image/svg+xml", "image/webp"
+]

@@ -25,7 +25,8 @@
 def append_slash(url: str) -> str:
     """
     Append a slash to the specified url if necessary.
-    (See https://docs.djangoproject.com/en/4.1/misc/design-philosophies/#definitive-urls)
+    (See
+    https://docs.djangoproject.com/en/4.1/misc/design-philosophies/#definitive-urls)
     :param url: url string
     :return: url string
     """

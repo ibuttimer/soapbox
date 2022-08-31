@@ -56,16 +56,17 @@ There are two requirements files:
 * [requirements-dev.txt](requirements-dev.txt) which installs extra development-only requirements in addition to the production requirements from [requirements.txt](requirements.txt) 
 
 ###### Table 1: Configuration settings
-| Key                      | Value                                                                                                                                                                                                                                                              |
-|--------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| PORT                     | Port application is served on; default 8000                                                                                                                                                                                                                        |
-| DEBUG                    | A boolean that turns on/off debug mode; set to any of 'true', 'on', 'ok', 'y', 'yes', '1' to enable                                                                                                                                                                |
-| DEVELOPMENT              | A boolean that turns on/off development mode; set to any of 'true', 'on', 'ok', 'y', 'yes', '1' to enable                                                                                                                                                          |
-| SECRET_KEY               | [Secret key](https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-SECRET_KEY) for a particular Django installation. See [Secret Key Generation](#secret-key-generation)                                                                                 |
-| DATABASE_URL             | [Database url](https://docs.djangoproject.com/en/4.1/ref/settings/#databases)                                                                                                                                                                                      |
-| CLOUDINARY_URL           | [Cloudinary url](https://pypi.org/project/dj3-cloudinary-storage/)                                                                                                                                                                                                 |
-| HEROKU_HOSTNAME          | [Hostname](https://docs.djangoproject.com/en/4.1/ref/settings/#allowed-hosts) of application on Heroku<br>__Note:__ Not required in local development mode                                                                                                         |
-| HEROKU_DATABASE_URL      | Url of Heroku PostgreSQL database resource in Heroku app. Available from `DATABASE_URL` in Heroku app `Settings -> Config Vars`<br>__Note:__ Only required for admin purposes, see database configuration under [Cloud-based Deployment](#cloud-based-deployment)  |
+| Key                      | Value                                                                                                                                                                                                                                                             |
+|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| PORT                     | Port application is served on; default 8000                                                                                                                                                                                                                       |
+| DEBUG                    | A boolean that turns on/off debug mode; set to any of 'true', 'on', 'ok', 'y', 'yes', '1' to enable                                                                                                                                                               |
+| DEVELOPMENT              | A boolean that turns on/off development mode; set to any of 'true', 'on', 'ok', 'y', 'yes', '1' to enable                                                                                                                                                         |
+| SECRET_KEY               | [Secret key](https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-SECRET_KEY) for a particular Django installation. See [Secret Key Generation](#secret-key-generation)                                                                                |
+| DATABASE_URL             | [Database url](https://docs.djangoproject.com/en/4.1/ref/settings/#databases)                                                                                                                                                                                     |
+| CLOUDINARY_URL           | [Cloudinary url](https://pypi.org/project/dj3-cloudinary-storage/)                                                                                                                                                                                                |
+| AVATAR_BLANK_URL         | Url of [blank avatar](static/img/avatar_blank.svg)                                                                                                                                                                                                                |
+| HEROKU_HOSTNAME          | [Hostname](https://docs.djangoproject.com/en/4.1/ref/settings/#allowed-hosts) of application on Heroku<br>__Note:__ Not required in local development mode                                                                                                        |
+| HEROKU_DATABASE_URL      | Url of Heroku PostgreSQL database resource in Heroku app. Available from `DATABASE_URL` in Heroku app `Settings -> Config Vars`<br>__Note:__ Only required for admin purposes, see database configuration under [Cloud-based Deployment](#cloud-based-deployment) |
 
 
 #### Environment variables
@@ -223,14 +224,15 @@ The following steps were followed to deploy the website:
         1. `heroku/python`
     - Under `Config Vars` add the following environment variables
 
-        | Key             | Value                                                                                                                         |
-        |-------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|
-        | PORT            | 8000                                                                                                                          |
-        | SECRET_KEY      | [Secret key](https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-SECRET_KEY) for a particular Django installation |
-        | HEROKU_HOSTNAME | [Hostname](https://docs.djangoproject.com/en/4.1/ref/settings/#allowed-hosts) of application on Heroku                        |
-        |                 | _The following keys are automatically added when `Resources` are provisioned_                                                 |
-        | DATABASE_URL    | [Database url](https://docs.djangoproject.com/en/4.1/ref/settings/#databases)                                                 |
-        | CLOUDINARY_URL  | [Cloudinary url](https://pypi.org/project/dj3-cloudinary-storage/)                                                            |
+        | Key               | Value                                                                                                                         |
+        -------------------|--------------------------------------------------------------------------------------------------------------------------------|
+        | PORT              | 8000                                                                                                                          |
+        | SECRET_KEY        | [Secret key](https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-SECRET_KEY) for a particular Django installation |
+        | HEROKU_HOSTNAME   | [Hostname](https://docs.djangoproject.com/en/4.1/ref/settings/#allowed-hosts) of application on Heroku                        |
+        |                   | _The following keys are automatically added when `Resources` are provisioned_                                                 |
+        | DATABASE_URL      | [Database url](https://docs.djangoproject.com/en/4.1/ref/settings/#databases)                                                 |
+        | CLOUDINARY_URL    | [Cloudinary url](https://pypi.org/project/dj3-cloudinary-storage/)                                                            |
+        | AVATAR_BLANK_URL  | Url of [blank avatar](static/img/avatar_blank.svg)                                                                            |
 
         See [Table 1: Configuration settings](#table-1-configuration-settings) for details.
 
@@ -320,6 +322,7 @@ The following resources were used to build the website.
 - Logo [bullhorn image](https://github.com/FortAwesome/Font-Awesome/blob/6.x/svgs/solid/bullhorn.svg), [Icons License](https://github.com/FortAwesome/Font-Awesome#license) [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), by [Font Awesome](https://fontawesome.com/)
 - The favicon for the site was generated by [RealFaviconGenerator](https://realfavicongenerator.net/) from [bullhorn image](https://github.com/FortAwesome/Font-Awesome/blob/6.x/svgs/solid/bullhorn.svg) , [Icons License](https://github.com/FortAwesome/Font-Awesome#license) [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), by [Font Awesome](https://fontawesome.com/)
 - Avatars courtesy of [AV̇ȦTARMAKER](https://avatarmaker.com/)
+- [Blank avatar image](static/img/avatar_blank.svg) by [WingTillDie](https://pixabay.com/users/wingtilldie-3058071/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=1577909) from [Pixabay](https://pixabay.com//?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=1577909)
 
 ### Code
 

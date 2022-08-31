@@ -26,6 +26,9 @@ HEROKU_DATABASE_URL=postgres://abcdefghijk:verylongstringofalphanumericchars@ec2
 # https://pypi.org/project/dj3-cloudinary-storage/
 CLOUDINARY_URL=cloudinary://1234567890123:abcdefghijklm@opqrstuv
 
+# Url of the blank avatar image
+AVATAR_BLANK_URL=https://res.cloudinary.com/abcdefghijklm/raw/upload/static/img/avatar_blank.svg
+
 # hostname of application on Heroku; e.g. soapbox-opinions.herokuapp.com
 # https://docs.djangoproject.com/en/4.1/ref/settings/#allowed-hosts
 #HEROKU_HOSTNAME = <app>.herokuapp.com

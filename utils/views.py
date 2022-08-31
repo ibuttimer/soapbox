@@ -34,8 +34,8 @@ def redirect_on_success_or_render(request: HttpRequest, success: bool,
     Redirect if success, otherwise render the specified template.
     :param request:         http request
     :param success:         success flag
-    :param redirect_to:     a view name that can be resolved by `urls.reverse()`
-                            or a URL
+    :param redirect_to:     a view name that can be resolved by
+                            `urls.reverse()` or a URL
     :param template_path:   template to render
     :param context:         context for template
     :return: http response

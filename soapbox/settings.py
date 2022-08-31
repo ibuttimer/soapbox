@@ -136,7 +136,18 @@ INSTALLED_APPS = [
     'django_summernote',
     BASE_APP_NAME,
     USER_APP_NAME,
+
+    # needs to be after app with django template overrides
+    'django.forms',
 ]
+
+# To supply custom templates to django widgets:
+# 1) Add 'django.forms' to INSTALLED_APPS; *after* the app with the overrides.
+# 2) Add FORM_RENDERER = 'django.forms.renderers.TemplatesSetting' to
+#    settings.py.
+# Courtesy of https://stackoverflow.com/a/52184422/4054609
+# https://docs.djangoproject.com/en/4.1/ref/forms/renderers/#django.forms.renderers.TemplatesSetting
+FORM_RENDERER = 'django.forms.renderers.TemplatesSetting'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -307,3 +318,6 @@ DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# url for blank avatar image
+AVATAR_BLANK_URL = env('AVATAR_BLANK_URL')

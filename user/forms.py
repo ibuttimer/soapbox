@@ -27,6 +27,7 @@ from allauth.account.forms import SignupForm
 from django_summernote.fields import SummernoteTextField
 from django_summernote.widgets import SummernoteWidget
 
+from soapbox import IMAGE_FILE_TYPES
 from utils import update_field_widgets, error_messages, ErrorMsgs
 from .models import User
 
@@ -37,7 +38,7 @@ _EMAIL_FF = "email"
 _USERNAME_FF = "username"
 _PASSWORD_FF = "password1"
 _BIO_FF = "bio"
-_AVATAR = "avatar"
+_AVATAR_FF = "avatar"
 
 
 class UserSignupForm(SignupForm):
@@ -81,6 +82,11 @@ class UserSignupForm(SignupForm):
         pass
 
 
+class NoCurrentClearableFileInput(forms.ClearableFileInput):
+    """ Customised ClearableFileInput form with different template """
+    template_name = "widgets/clearable_file_input.html"
+
+
 class UserForm(forms.ModelForm):
     """
     Form to update a user.
@@ -90,7 +96,7 @@ class UserForm(forms.ModelForm):
     LAST_NAME_FF = _LAST_NAME_FF
     EMAIL_FF = _EMAIL_FF
     BIO_FF = _BIO_FF
-    AVATAR = _AVATAR
+    AVATAR_FF = _AVATAR_FF
 
     @staticmethod
     def get_first_name_field_name():
@@ -118,28 +124,33 @@ class UserForm(forms.ModelForm):
     bio = SummernoteTextField()
 
     # https://cloudinary.com/documentation/django_image_and_video_upload#django_forms_and_models
-    # avatar = CloudinaryFileField(
-    #     label=_("Avatar"),
-    #     required=False
-    # )
+    avatar = CloudinaryFileField(
+        label=_("Avatar"),
+        required=False,
+        options={
+            'folder': User.avatar.field.options['folder'],
+        },
+        widget=NoCurrentClearableFileInput(attrs={
+            # https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types#common_image_file_types
+            "accept": ", ".join(IMAGE_FILE_TYPES)
+        })
+    )
 
     # categories = models.CharField(
     #     max_length=User.USER_ATTRIB_CATEGORIES_MAX_LEN, blank=True)
 
     class Meta:
         model = User
-        fields = (_FIRST_NAME_FF, _LAST_NAME_FF, _EMAIL_FF, _BIO_FF,
-                  # _AVATAR
-                  )
-        non_bootstrap_fields = (_BIO_FF,
-                                # _AVATAR
-                                )
+        fields = (
+            _FIRST_NAME_FF, _LAST_NAME_FF, _EMAIL_FF, _BIO_FF, _AVATAR_FF
+        )
+        non_bootstrap_fields = (_BIO_FF, _AVATAR_FF)
         help_texts = {
             _FIRST_NAME_FF: 'User first name.',
             _LAST_NAME_FF: 'User last name.',
             _EMAIL_FF: 'Email address of user.',
             _BIO_FF: 'Biography of user.',
-            # _AVATAR: 'User avatar',
+            _AVATAR_FF: 'User avatar',
         }
         error_messages = error_messages(
             model.MODEL_NAME,
