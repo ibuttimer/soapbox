@@ -63,7 +63,8 @@ class User(AbstractUser):
     USER_ATTRIB_BIO_MAX_LEN: int = 250
     USER_ATTRIB_CATEGORIES_MAX_LEN: int = 250
 
-    bio = models.CharField(_('biography'), max_length=USER_ATTRIB_BIO_MAX_LEN)
+    bio = models.CharField(_('biography'), max_length=USER_ATTRIB_BIO_MAX_LEN,
+                           blank=True)
 
     # ImageField for local dev, CloudinaryField for production
     # https://cloudinary.com/documentation/django_image_and_video_upload#django_forms_and_models
