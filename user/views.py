@@ -72,7 +72,7 @@ class UserDetail(LoginRequiredMixin, View):
             if User.AVATAR_BLANK in form.initial[UserForm.AVATAR_FF].url \
             else form.initial[UserForm.AVATAR_FF].url
 
-        return app_template_path(USER_APP_NAME, "profile_view.html"), {
+        return app_template_path(USER_APP_NAME, "profile.html"), {
             "user_profile": user_obj,
             "read_only": user_obj.id != request.user.id,
             "form": form,

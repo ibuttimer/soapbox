@@ -1,0 +1,4 @@
+DEBUG=on
+DEVELOPMENT=true
+TEST=true
+SITE_ID=2

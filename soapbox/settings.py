@@ -46,10 +46,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env(
     # set casting, default value
     DEBUG=(bool, False),
-    DEVELOPMENT=(bool, False)
+    DEVELOPMENT=(bool, False),
+    TEST=(bool, False)
 )
 # Take environment variables from .env file
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+os.environ.setdefault('ENV_FILE', '.env')
+environ.Env.read_env(
+    os.path.join(BASE_DIR, env('ENV_FILE'))
+)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -106,7 +110,8 @@ SUMMERNOTE_CONFIG = {
 }
 
 if env('DEVELOPMENT'):
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+    ALLOWED_HOSTS = ['testserver'] \
+        if env('TEST') else ['localhost', '127.0.0.1']
 else:
     ALLOWED_HOSTS = [env('HEROKU_HOSTNAME')]
 

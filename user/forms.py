@@ -30,25 +30,21 @@ from django_summernote.widgets import SummernoteWidget
 from soapbox import IMAGE_FILE_TYPES, DEVELOPMENT
 from utils import update_field_widgets, error_messages, ErrorMsgs
 from .models import User
-
-
-_FIRST_NAME_FF = "first_name"
-_LAST_NAME_FF = "last_name"
-_EMAIL_FF = "email"
-_USERNAME_FF = "username"
-_PASSWORD_FF = "password1"
-_BIO_FF = "bio"
-_AVATAR_FF = "avatar"
+from .common import (
+    FIRST_NAME, LAST_NAME, EMAIL, USERNAME, PASSWORD, PASSWORD_CONFIRM,
+    BIO, AVATAR
+)
 
 
 class UserSignupForm(SignupForm):
     """ Custom user sign up form """
 
-    FIRST_NAME_FF = _FIRST_NAME_FF
-    LAST_NAME_FF = _LAST_NAME_FF
-    EMAIL_FF = _EMAIL_FF
-    USERNAME_FF = _USERNAME_FF
-    PASSWORD_FF = _PASSWORD_FF
+    FIRST_NAME_FF = FIRST_NAME
+    LAST_NAME_FF = LAST_NAME
+    EMAIL_FF = EMAIL
+    USERNAME_FF = USERNAME
+    PASSWORD_FF = PASSWORD
+    PASSWORD_CONFIRM_FF = PASSWORD_CONFIRM
 
     def __init__(self, *args, **kwargs):
         super(UserSignupForm, self).__init__(*args, **kwargs)
@@ -73,6 +69,12 @@ class UserSignupForm(SignupForm):
         self.fields.move_to_end(UserSignupForm.LAST_NAME_FF, last=False)
         self.fields.move_to_end(UserSignupForm.FIRST_NAME_FF, last=False)
 
+    class Meta:
+        model = User
+        fields = [
+            FIRST_NAME, LAST_NAME, EMAIL, USERNAME, PASSWORD, PASSWORD_CONFIRM
+        ]
+
     def signup(self, request: HttpRequest, user: User) -> None:
         """
         Perform custom signup actions
@@ -92,11 +94,11 @@ class UserForm(forms.ModelForm):
     Form to update a user.
     """
 
-    FIRST_NAME_FF = _FIRST_NAME_FF
-    LAST_NAME_FF = _LAST_NAME_FF
-    EMAIL_FF = _EMAIL_FF
-    BIO_FF = _BIO_FF
-    AVATAR_FF = _AVATAR_FF
+    FIRST_NAME_FF = FIRST_NAME
+    LAST_NAME_FF = LAST_NAME
+    EMAIL_FF = EMAIL
+    BIO_FF = BIO
+    AVATAR_FF = AVATAR
 
     @staticmethod
     def get_first_name_field_name():
@@ -146,24 +148,24 @@ class UserForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = (
-            _FIRST_NAME_FF, _LAST_NAME_FF, _EMAIL_FF, _BIO_FF, _AVATAR_FF
-        )
-        non_bootstrap_fields = (_BIO_FF, _AVATAR_FF)
+        fields = [
+            FIRST_NAME, LAST_NAME, EMAIL, BIO, AVATAR
+        ]
+        non_bootstrap_fields = [BIO, AVATAR]
         help_texts = {
-            _FIRST_NAME_FF: 'User first name.',
-            _LAST_NAME_FF: 'User last name.',
-            _EMAIL_FF: 'Email address of user.',
-            _BIO_FF: 'Biography of user.',
-            _AVATAR_FF: 'User avatar',
+            FIRST_NAME: 'User first name.',
+            LAST_NAME: 'User last name.',
+            EMAIL: 'Email address of user.',
+            BIO: 'Biography of user.',
+            AVATAR: 'User avatar',
         }
         error_messages = error_messages(
             model.MODEL_NAME,
             *[ErrorMsgs(field, max_length=True)
-              for field in (_FIRST_NAME_FF, _LAST_NAME_FF)]
+              for field in (FIRST_NAME, LAST_NAME)]
         )
         widgets = {
-            _BIO_FF: SummernoteWidget(),
+            BIO: SummernoteWidget(),
         }
 
     def __init__(self, *args, **kwargs):

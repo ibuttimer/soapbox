@@ -27,6 +27,10 @@ from cloudinary.models import CloudinaryField
 
 from soapbox import AVATAR_FOLDER, DEVELOPMENT
 
+from .common import (
+    FIRST_NAME, LAST_NAME, BIO, AVATAR, CATEGORIES
+)
+
 
 class User(AbstractUser):
     """
@@ -36,6 +40,14 @@ class User(AbstractUser):
     """
 
     MODEL_NAME = 'User'
+    # field names
+    FIRST_NAME_FIELD = FIRST_NAME
+    LAST_NAME_FIELD = LAST_NAME
+    # EMAIL_FIELD and USERNAME_FIELD inherited from AbstractUser
+    PASSWORD_FIELD = 'password'
+    BIO_FIELD = BIO
+    AVATAR_FIELD = AVATAR
+    CATEGORIES_FIELD = CATEGORIES
 
     AVATAR_BLANK = 'avatar_blank'
 
