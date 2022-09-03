@@ -20,34 +20,36 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-import os
 
-import django
-
-from user.models import User
-
-# 'allauth' checks for 'django.contrib.sites', so django must be setup before
-# test
-os.environ.setdefault("ENV_FILE", ".test-env")
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "soapbox.settings")
-django.setup()
-
-from django.test import TestCase    # noqa
+from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 
-class TestUserModel(TestCase):
-    """
-    Test user model
-    https://docs.djangoproject.com/en/4.1/topics/testing/tools/
-    """
+_NAME_FIELD = "name"
+_DESCRIPTION_FIELD = "description"
 
-    def test_user_defaults(self):
-        user = User.objects.create()
-        self.assertIsNotNone(user)
-        self.assertEqual(user.first_name, '')
-        self.assertEqual(user.last_name, '')
-        self.assertEqual(user.username, '')
-        self.assertEqual(user.password, '')
-        self.assertEqual(user.email, '')
-        self.assertIn(User.AVATAR_FIELD, user.avatar.url)
-        self.assertEqual(user.bio, '')
+
+class Category(models.Model):
+    """ Categories model """
+
+    MODEL_NAME = 'Category'
+
+    # field names
+    NAME_FIELD = _NAME_FIELD
+    DESCRIPTION_FIELD = _DESCRIPTION_FIELD
+
+    CATEGORY_ATTRIB_NAME_MAX_LEN: int = 40
+    CATEGORY_ATTRIB_DESCRIPTION_MAX_LEN: int = 100
+
+    name = models.CharField(_('name'), max_length=CATEGORY_ATTRIB_NAME_MAX_LEN,
+                            unique=True)
+
+    description = models.CharField(
+        _('description'), max_length=CATEGORY_ATTRIB_DESCRIPTION_MAX_LEN,
+        blank=True)
+
+    class Meta:
+        ordering = [_NAME_FIELD]
+
+    def __str__(self):
+        return self.name

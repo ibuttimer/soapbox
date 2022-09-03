@@ -20,51 +20,38 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-import os
 from http import HTTPStatus
 
-import django
+from bs4 import BeautifulSoup
 from django.http import HttpResponse
 from django.urls import reverse
-from bs4 import BeautifulSoup
 
 from soapbox import USER_APP_NAME, USER_ID_ROUTE_NAME
 from user.models import User
-
-# 'allauth' checks for 'django.contrib.sites', so django must be setup before
-# test
-os.environ.setdefault("ENV_FILE", ".test-env")
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "soapbox.settings")
-django.setup()
-
-from django.test import TestCase    # noqa
+from opinions.models import Category
+from .base_user_test import BaseUserTest
 
 
-class TestProfileView(TestCase):
+class TestProfileView(BaseUserTest):
     """
     Test profile page view
     https://docs.djangoproject.com/en/4.1/topics/testing/tools/
     """
-    USER_INFO = {
-        User.FIRST_NAME_FIELD: "Joe",
-        User.LAST_NAME_FIELD: "Know_it_all",
-        User.USERNAME_FIELD: "joe.knowledge.all",
-        User.PASSWORD_FIELD: "more-than-8-not-like-user",
-        User.EMAIL_FIELD: "ask.joe@knowledge.all",
-        User.AVATAR_FIELD: "flattering-pic.jpg",
-        User.BIO_FIELD: "The man in the know",
-        # User.CATEGORIES_FIELD: "" TODO user categories test
-    }
 
     @classmethod
     def setUpTestData(cls):
         """ Set up data for the whole TestCase """
-        cls.user = User.objects.create(**TestProfileView.USER_INFO)
+        super(TestProfileView, TestProfileView).setUpTestData()
+        # assign categories to user
+        category_list = list(Category.objects.all())
+        cls.user.categories.add(
+            *[category for idx, category in enumerate(category_list)
+              if idx % 2]
+        )
 
     def login_user(self):
         """ Login user """
-        self.assertIsNotNone(TestProfileView.user)
-        self.client.force_login(TestProfileView.user)
+        BaseUserTest.login_user(self)
 
     def get_profile(self) -> HttpResponse:
         """ Get the profile page """
@@ -129,3 +116,5 @@ class TestProfileView(TestCase):
             if found:
                 break
         self.assertTrue(found)
+
+        # TODO check categories
