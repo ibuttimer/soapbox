@@ -26,6 +26,7 @@ from django.utils.translation import gettext_lazy as _
 from cloudinary.models import CloudinaryField
 
 from soapbox import AVATAR_FOLDER, DEVELOPMENT
+from opinions.models import Category
 
 from .common import (
     FIRST_NAME, LAST_NAME, BIO, AVATAR, CATEGORIES
@@ -73,8 +74,7 @@ class User(AbstractUser):
     ) if DEVELOPMENT else CloudinaryField(
         _('image'), default=AVATAR_BLANK, folder=AVATAR_FOLDER)
 
-    categories = models.CharField(
-        _('categories'), max_length=USER_ATTRIB_CATEGORIES_MAX_LEN, blank=True)
+    categories = models.ManyToManyField(Category)
 
     class Meta:
         ordering = ["date_joined"]

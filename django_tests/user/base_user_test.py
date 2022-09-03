@@ -35,19 +35,39 @@ django.setup()
 from django.test import TestCase    # noqa
 
 
-class TestUserModel(TestCase):
+class BaseUserTest(TestCase):
     """
-    Test user model
+    Base user test class
     https://docs.djangoproject.com/en/4.1/topics/testing/tools/
     """
+    USER_INFO = {
+        User.FIRST_NAME_FIELD: "Joe",
+        User.LAST_NAME_FIELD: "Know_it_all",
+        User.USERNAME_FIELD: "joe.knowledge.all",
+        User.PASSWORD_FIELD: "more-than-8-not-like-user",
+        User.EMAIL_FIELD: "ask.joe@knowledge.all",
+        User.AVATAR_FIELD: "flattering-pic.jpg",
+        User.BIO_FIELD: "The man in the know",
+    }
 
-    def test_user_defaults(self):
-        user = User.objects.create()
-        self.assertIsNotNone(user)
-        self.assertEqual(user.first_name, '')
-        self.assertEqual(user.last_name, '')
-        self.assertEqual(user.username, '')
-        self.assertEqual(user.password, '')
-        self.assertEqual(user.email, '')
-        self.assertIn(User.AVATAR_FIELD, user.avatar.url)
-        self.assertEqual(user.bio, '')
+    @staticmethod
+    def create_user() -> User:
+        """
+        Create test user
+        :return: test user
+        """
+        return User.objects.create(**BaseUserTest.USER_INFO)
+
+    @classmethod
+    def setUpTestData(cls):
+        """ Set up data for the whole TestCase """
+        cls.user = BaseUserTest.create_user()
+
+    @staticmethod
+    def login_user(test_instance):
+        """
+        Login user
+        :param test_instance: instance of user test case
+        """
+        test_instance.assertIsNotNone(test_instance.user)
+        test_instance.client.force_login(test_instance.user)

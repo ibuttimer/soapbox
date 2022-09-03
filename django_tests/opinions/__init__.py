@@ -20,34 +20,3 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-import os
-
-import django
-
-from user.models import User
-
-# 'allauth' checks for 'django.contrib.sites', so django must be setup before
-# test
-os.environ.setdefault("ENV_FILE", ".test-env")
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "soapbox.settings")
-django.setup()
-
-from django.test import TestCase    # noqa
-
-
-class TestUserModel(TestCase):
-    """
-    Test user model
-    https://docs.djangoproject.com/en/4.1/topics/testing/tools/
-    """
-
-    def test_user_defaults(self):
-        user = User.objects.create()
-        self.assertIsNotNone(user)
-        self.assertEqual(user.first_name, '')
-        self.assertEqual(user.last_name, '')
-        self.assertEqual(user.username, '')
-        self.assertEqual(user.password, '')
-        self.assertEqual(user.email, '')
-        self.assertIn(User.AVATAR_FIELD, user.avatar.url)
-        self.assertEqual(user.bio, '')
