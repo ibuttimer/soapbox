@@ -188,3 +188,7 @@ cloudinary_python.txt
 ### VS Code ###
 /doc/design/*.drawio.bkp
 /doc/design/*.dtmp
+
+# temp
+/doc/test/django_report/
+/doc/test/unittest_report/
