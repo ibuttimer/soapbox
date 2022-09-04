@@ -27,12 +27,13 @@ from allauth.account.forms import SignupForm
 from django_summernote.fields import SummernoteTextField
 from django_summernote.widgets import SummernoteWidget
 
+from opinions.models import Category
 from soapbox import IMAGE_FILE_TYPES, DEVELOPMENT
 from utils import update_field_widgets, error_messages, ErrorMsgs
 from .models import User
 from .common import (
     FIRST_NAME, LAST_NAME, EMAIL, USERNAME, PASSWORD, PASSWORD_CONFIRM,
-    BIO, AVATAR
+    BIO, AVATAR, CATEGORIES
 )
 
 
@@ -99,10 +100,7 @@ class UserForm(forms.ModelForm):
     EMAIL_FF = EMAIL
     BIO_FF = BIO
     AVATAR_FF = AVATAR
-
-    @staticmethod
-    def get_first_name_field_name():
-        return UserForm.FIRST_NAME_FF
+    CATEGORIES_FF = CATEGORIES
 
     first_name = forms.CharField(
         label=_("First name"),
@@ -143,8 +141,9 @@ class UserForm(forms.ModelForm):
             **avatar_args
         )
 
-    # categories = models.CharField(
-    #     max_length=User.USER_ATTRIB_CATEGORIES_MAX_LEN, blank=True)
+    categories = forms.ModelMultipleChoiceField(
+        queryset=Category.objects.all(), required=False
+    )
 
     class Meta:
         model = User

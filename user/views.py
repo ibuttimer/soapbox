@@ -68,6 +68,9 @@ class UserDetail(LoginRequiredMixin, View):
         """
         form = UserForm(instance=user_obj)
 
+        # set initial data
+        form[UserForm.CATEGORIES_FF].initial = list(user_obj.categories.all())
+        # avatar to display
         avatar_url = AVATAR_BLANK_URL \
             if User.AVATAR_BLANK in form.initial[UserForm.AVATAR_FF].url \
             else form.initial[UserForm.AVATAR_FF].url
@@ -83,6 +86,7 @@ class UserDetail(LoginRequiredMixin, View):
             ],
             'summernote_fields': [UserForm.BIO_FF],
             'img_fields': [UserForm.AVATAR_FF],
+            'other_fields': [UserForm.CATEGORIES_FF],
             'avatar_url': avatar_url,
             'image_file_types':
                 # svg not supported by Pillow which is used by ImageField in
@@ -114,10 +118,15 @@ class UserDetail(LoginRequiredMixin, View):
             for field in form.cleaned_data:
                 save_data = form.cleaned_data[field]
                 if field == UserForm.AVATAR_FF:
+                    if save_data is None:
+                        continue    # no change
                     if not save_data:
                         # user cleared, reset to placeholder
                         save_data = User.AVATAR_BLANK
-                setattr(user_obj, field, save_data)
+                if field == UserForm.CATEGORIES_FF:
+                    user_obj.categories.set(save_data)
+                else:
+                    setattr(user_obj, field, save_data)
             # save updated object
             user_obj.save()
             # django autocommits changes
