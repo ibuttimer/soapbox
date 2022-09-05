@@ -20,13 +20,14 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
+from datetime import datetime, MINYEAR, timezone
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-
-_NAME_FIELD = "name"
-_DESCRIPTION_FIELD = "description"
+from .common import (
+    NAME_FIELD, DESCRIPTION_FIELD, TITLE_FIELD, CONTENT_FIELD
+)
 
 
 class Category(models.Model):
@@ -35,8 +36,8 @@ class Category(models.Model):
     MODEL_NAME = 'Category'
 
     # field names
-    NAME_FIELD = _NAME_FIELD
-    DESCRIPTION_FIELD = _DESCRIPTION_FIELD
+    NAME_FIELD = NAME_FIELD
+    DESCRIPTION_FIELD = DESCRIPTION_FIELD
 
     CATEGORY_ATTRIB_NAME_MAX_LEN: int = 40
     CATEGORY_ATTRIB_DESCRIPTION_MAX_LEN: int = 100
@@ -49,7 +50,69 @@ class Category(models.Model):
         blank=True)
 
     class Meta:
-        ordering = [_NAME_FIELD]
+        ordering = [NAME_FIELD]
 
     def __str__(self):
         return self.name
+
+
+class Status(models.Model):
+    """ Statuses model """
+
+    MODEL_NAME = 'Status'
+
+    # field names
+    NAME_FIELD = NAME_FIELD
+
+    STATUS_ATTRIB_NAME_MAX_LEN: int = 40
+
+    name = models.CharField(_('name'), max_length=STATUS_ATTRIB_NAME_MAX_LEN,
+                            blank=False, unique=True)
+
+    class Meta:
+        ordering = [NAME_FIELD]
+
+    def __str__(self):
+        return self.name
+
+
+class Opinion(models.Model):
+    """ Opinions model """
+
+    MODEL_NAME = 'Opinion'
+
+    # field names
+    TITLE_FIELD = TITLE_FIELD
+    CONTENT_FIELD = CONTENT_FIELD
+
+    OPINION_ATTRIB_TITLE_MAX_LEN: int = 100
+    OPINION_ATTRIB_CONTENT_MAX_LEN: int = 1500
+    OPINION_ATTRIB_SLUG_MAX_LEN: int = 50
+
+    title = models.CharField(
+        _('title'), max_length=OPINION_ATTRIB_TITLE_MAX_LEN, blank=False,
+        unique=True)
+
+    content = models.CharField(
+        _('content'), max_length=OPINION_ATTRIB_CONTENT_MAX_LEN, blank=False)
+
+    categories = models.ManyToManyField(Category)
+
+    status = models.ForeignKey(Status, on_delete=models.CASCADE)
+
+    slug = models.SlugField(
+        _('slug'), max_length=OPINION_ATTRIB_SLUG_MAX_LEN, blank=False,
+        unique=True)
+
+    # TODO is img field required?
+
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    published = models.DateTimeField(
+        default=datetime(MINYEAR, 1, 1, tzinfo=timezone.utc))
+
+    class Meta:
+        ordering = [TITLE_FIELD]
+
+    def __str__(self):
+        return self.title
