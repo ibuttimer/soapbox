@@ -20,28 +20,18 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-import os
+from django.contrib import admin
 
-import django
-
-from opinions.models import Status
-
-# 'allauth' checks for 'django.contrib.sites', so django must be setup before
-# test
-os.environ.setdefault("ENV_FILE", ".test-env")
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "soapbox.settings")
-django.setup()
-
-from django.test import TestCase    # noqa
+from .models import Category, Status
 
 
-class TestStatusModel(TestCase):
-    """
-    Test status
-    https://docs.djangoproject.com/en/4.1/topics/testing/tools/
-    """
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    """ Class representing the Category model in the admin interface """
+    pass
 
-    def test_status_defaults(self):
-        status = Status.objects.create()
-        self.assertIsNotNone(status)
-        self.assertEqual(status.name, '')
+
+@admin.register(Status)
+class StatusAdmin(admin.ModelAdmin):
+    """ Class representing the Status model in the admin interface """
+    pass

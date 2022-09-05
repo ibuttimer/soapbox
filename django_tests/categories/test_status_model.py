@@ -19,52 +19,42 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
+#
 
-from utils import append_slash, url_path
+#  MIT License
+#
+#
+#  Permission is hereby granted, free of charge, to any person obtaining a copy
+#  of this software and associated documentation files (the "Software"), to
+#  deal in the Software without restriction, including without limitation the
+#  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+#  sell copies of the Software, and to permit persons to whom the Software is
+#  furnished to do so, subject to the following conditions:
+#
+#
+#
+import os
 
-APP_NAME = "SoapBox"
-COPYRIGHT_YEAR = 2022
-COPYRIGHT = "Ian Buttimer"
+import django
 
-# Namespace related
-BASE_APP_NAME = "base"
-USER_APP_NAME = "user"
-CATEGORIES_APP_NAME = "categories"
-OPINIONS_APP_NAME = "opinions"
+from categories.models import Status
 
-# Request methods
-GET = 'GET'
-PATCH = 'PATCH'
-POST = 'POST'
-DELETE = 'DELETE'
+# 'allauth' checks for 'django.contrib.sites', so django must be setup before
+# test
+os.environ.setdefault("ENV_FILE", ".test-env")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "soapbox.settings")
+django.setup()
 
-# Base routes related
-HOME_URL = "/"
-
-HOME_ROUTE_NAME = "home"
-
-# Admin routes related
-ADMIN_URL = append_slash("admin")
-
-# Accounts routes related
-ACCOUNTS_URL = append_slash("accounts")
-LOGIN_URL = url_path(ACCOUNTS_URL, "login")
-
-# Summernote routes related
-SUMMERNOTE_URL = append_slash("summernote")
-
-# User routes related
-USERS_URL = append_slash("users")
-USER_ID_URL = append_slash("<int:pk>")
-
-USER_ID_ROUTE_NAME = "user_id"
+from django.test import TestCase    # noqa
 
 
-# cloudinary related
-AVATAR_FOLDER = "soapbox"
+class TestStatusModel(TestCase):
+    """
+    Test status
+    https://docs.djangoproject.com/en/4.1/topics/testing/tools/
+    """
 
-# https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types#common_image_file_types
-IMAGE_FILE_TYPES = [
-    "image/apng", "image/avif", "image/gif", "image/jpeg", "image/png",
-    "image/svg+xml", "image/webp"
-]
+    def test_status_defaults(self):
+        status = Status.objects.create()
+        self.assertIsNotNone(status)
+        self.assertEqual(status.name, '')

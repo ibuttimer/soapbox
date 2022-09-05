@@ -27,7 +27,7 @@ from allauth.account.forms import SignupForm
 from django_summernote.fields import SummernoteTextField
 from django_summernote.widgets import SummernoteWidget
 
-from opinions.models import Category
+from categories.models import Category
 from soapbox import IMAGE_FILE_TYPES, DEVELOPMENT
 from utils import update_field_widgets, error_messages, ErrorMsgs
 from .models import User

@@ -38,7 +38,9 @@ from pathlib import Path
 import environ
 from django.contrib.messages import constants as messages
 
-from .constants import BASE_APP_NAME, USER_APP_NAME, OPINIONS_APP_NAME
+from .constants import (
+    BASE_APP_NAME, USER_APP_NAME, CATEGORIES_APP_NAME, OPINIONS_APP_NAME
+)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -140,6 +142,7 @@ INSTALLED_APPS = [
     'cloudinary',
     'django_summernote',
     BASE_APP_NAME,
+    CATEGORIES_APP_NAME,
     OPINIONS_APP_NAME,
     USER_APP_NAME,
 

@@ -20,29 +20,18 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-import os
 
-import django
-
-from opinions.models import Category
-
-# 'allauth' checks for 'django.contrib.sites', so django must be setup before
-# test
-os.environ.setdefault("ENV_FILE", ".test-env")
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "soapbox.settings")
-django.setup()
-
-from django.test import TestCase    # noqa
+from django.apps import AppConfig
+from django.utils.translation import gettext_lazy as _
 
 
-class TestCategoryModel(TestCase):
-    """
-    Test category
-    https://docs.djangoproject.com/en/4.1/topics/testing/tools/
-    """
+class CategoriesConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'categories'
+    verbose_name = _("Category Management")
 
-    def test_category_defaults(self):
-        category = Category.objects.create()
-        self.assertIsNotNone(category)
-        self.assertEqual(category.name, '')
-        self.assertEqual(category.description, '')
+
+class StatusesConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'statuses'
+    verbose_name = _("Status Management")
