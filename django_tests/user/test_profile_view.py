@@ -30,10 +30,12 @@ from soapbox import USER_APP_NAME
 from user import USER_ID_ROUTE_NAME
 from user.models import User
 from opinions.models import Category
+from ..soup_mixin import SoupMixin
+from ..category_mixin import CategoryMixin
 from .base_user_test_cls import BaseUserTest
 
 
-class TestProfileView(BaseUserTest):
+class TestProfileView(SoupMixin, CategoryMixin, BaseUserTest):
     """
     Test profile page view
     https://docs.djangoproject.com/en/4.1/topics/testing/tools/
@@ -118,67 +120,31 @@ class TestProfileView(BaseUserTest):
             response.content.decode("utf-8", errors="ignore"), features="lxml"
         )
         # check h1 tags for username
-        found = False
-        for h1 in soup.find_all('h1'):
-            found = user.username in h1.text
-            if found:
-                break
-        self.assertTrue(found)
+        TestProfileView.find_tag(self, soup.find_all('h1'),
+                                 lambda tag: user.username in tag.text)
 
         # check input tags for first/last name and email
-        inputs = [ip.get('value') for ip in soup.find_all('input')]
         for field in [user.FIRST_NAME_FIELD, User.LAST_NAME_FIELD,
                       User.EMAIL_FIELD]:
             with self.subTest(f'{field}'):
-                found = False
-                for ip in inputs:
-                    found = TestProfileView.USER_INFO[key][field] == ip
-                    if found:
-                        break
-                self.assertTrue(found)
+                TestProfileView.find_tag(
+                    self, soup.find_all('input'),
+                    lambda tag: user.username == tag.value)
 
         # check img tags for image
-        found = False
-        for img in soup.find_all('img'):
-            found = TestProfileView.USER_INFO[key][User.AVATAR_FIELD] \
-                    in img.get('src')
-            if found:
-                break
-        self.assertTrue(found)
+        TestProfileView.find_tag(
+            self, soup.find_all('img'),
+            lambda tag: TestProfileView.USER_INFO[key][User.AVATAR_FIELD]
+            in tag.get('src'))
 
         # check textarea tags for bio
-        found = False
-        for textarea in soup.find_all('textarea'):
-            found = user.bio in textarea.text
-            if found:
-                break
-        self.assertTrue(found)
+        self.find_tag(self, soup.find_all('textarea'),
+                      lambda tag: user.bio in tag.text)
 
         # check categories
-        category_options = [
-            opt for opt in soup.find_all(
-                lambda tag: tag.name == 'option'
-                and tag.has_attr('selected')
-                and tag.parent.name == 'select'
-            )]
-        for category in list(user.categories.all()):
-            with self.subTest(f'category {category}'):
-                tags = list(
-                    filter(
-                        lambda opt:
-                        category.id == int(opt['value']) and
-                        category.name == opt.text,
-                        category_options
-                    )
-                )
-                self.assertEqual(len(tags), 1)
+        TestProfileView.check_category_options(
+            self, soup, user.categories.all())
 
         # check read only
-        bingo = False
-        for fieldset in soup.find_all('fieldset'):
-            if is_readonly and fieldset.has_attr('disabled'):
-                bingo = True
-            elif not is_readonly and not fieldset.has_attr('disabled'):
-                bingo = True
-            break
-        self.assertTrue(bingo)
+        self.check_tag(self, soup.find_all('fieldset'), is_readonly,
+                       lambda tag: tag.has_attr('disabled'))

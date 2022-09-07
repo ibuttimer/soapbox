@@ -34,10 +34,11 @@ from user.models import User
 from categories.models import Category, Status
 from opinions.models import Opinion
 from ..soup_mixin import SoupMixin
+from ..category_mixin import CategoryMixin
 from ..user.base_user_test_cls import BaseUserTest
 
 
-class TestOpinionView(SoupMixin, BaseUserTest):
+class TestOpinionView(SoupMixin, CategoryMixin, BaseUserTest):
     """
     Test opinion page view
     https://docs.djangoproject.com/en/4.1/topics/testing/tools/
@@ -185,23 +186,8 @@ class TestOpinionView(SoupMixin, BaseUserTest):
                           lambda tag: opinion.content in tag.text)
 
         # check categories
-        category_options = [
-            opt for opt in soup.find_all(
-                lambda tag: tag.name == 'option'
-                and tag.has_attr('selected')
-                and tag.parent.name == 'select'
-            )]
-        for category in list(opinion.categories.all()):
-            with self.subTest(f'category {category}'):
-                tags = list(
-                    filter(
-                        lambda opt:
-                        category.id == int(opt['value']) and
-                        category.name == opt.text,
-                        category_options
-                    )
-                )
-                self.assertEqual(len(tags), 1)
+        TestOpinionView.check_category_options(
+            self, soup, opinion.categories.all())
 
         # check fieldset is disabled in read only mode
         self.check_tag(self, soup.find_all('fieldset'), is_readonly,
