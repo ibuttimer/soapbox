@@ -28,7 +28,7 @@ from django.views import View
 
 from soapbox import (
     USER_APP_NAME, HOME_ROUTE_NAME, IMAGE_FILE_TYPES, AVATAR_BLANK_URL,
-    DEVELOPMENT
+    DEVELOPMENT, DEV_IMAGE_FILE_TYPES
 )
 from utils import app_template_path, redirect_on_success_or_render
 from .forms import UserForm
@@ -89,11 +89,9 @@ class UserDetail(LoginRequiredMixin, View):
             'other_fields': [UserForm.CATEGORIES_FF],
             'avatar_url': avatar_url,
             'image_file_types':
-                # svg not supported by Pillow which is used by ImageField in
-                # dev mode
-                [img_type for img_type in IMAGE_FILE_TYPES
-                 if "svg" not in img_type]
-                if DEVELOPMENT else IMAGE_FILE_TYPES
+                # not all image types supported by Pillow which is used by
+                # ImageField in dev mode
+                DEV_IMAGE_FILE_TYPES if DEVELOPMENT else IMAGE_FILE_TYPES
         }
 
     def post(self, request: HttpRequest,

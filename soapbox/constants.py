@@ -63,11 +63,11 @@ OPINIONS_URL = append_slash("opinions")
 AVATAR_FOLDER = "soapbox"
 
 # https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types#common_image_file_types
-IMAGE_FILE_TYPES = [
-    "image/apng", "image/avif", "image/gif", "image/jpeg", "image/png",
-    "image/svg+xml", "image/webp"
+# Pillow which is used by ImageField in dev mode doesn't support avif or svg
+DEV_IMAGE_FILE_TYPES = [
+    "image/apng", "image/gif", "image/jpeg", "image/png", "image/webp"
 ]
-# TODO DEV_UNSUPPORTED_IMAGE_FILE_TYPES
-DEV_UNSUPPORTED_IMAGE_FILE_TYPES = [
+IMAGE_FILE_TYPES = DEV_IMAGE_FILE_TYPES.copy()
+IMAGE_FILE_TYPES.extend([
     "image/avif", "image/svg+xml"
-]
+])
