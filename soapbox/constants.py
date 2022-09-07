@@ -55,10 +55,9 @@ SUMMERNOTE_URL = append_slash("summernote")
 
 # User routes related
 USERS_URL = append_slash("users")
-USER_ID_URL = append_slash("<int:pk>")
 
-USER_ID_ROUTE_NAME = "user_id"
-
+# Opinion routes related
+OPINIONS_URL = append_slash("opinions")
 
 # cloudinary related
 AVATAR_FOLDER = "soapbox"
@@ -67,4 +66,8 @@ AVATAR_FOLDER = "soapbox"
 IMAGE_FILE_TYPES = [
     "image/apng", "image/avif", "image/gif", "image/jpeg", "image/png",
     "image/svg+xml", "image/webp"
+]
+# TODO DEV_UNSUPPORTED_IMAGE_FILE_TYPES
+DEV_UNSUPPORTED_IMAGE_FILE_TYPES = [
+    "image/avif", "image/svg+xml"
 ]

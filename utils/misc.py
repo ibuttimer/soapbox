@@ -1,4 +1,3 @@
-
 #  MIT License
 #
 #  Copyright (c) 2022 Ian Buttimer
@@ -21,6 +20,10 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
+import random
+import string
+import environ
+
 
 def append_slash(url: str) -> str:
     """
@@ -65,3 +68,24 @@ def url_path(*args: str) -> str:
     :return: path string
     """
     return "".join([append_slash(segment) for segment in args])
+
+
+def random_string_generator(
+        size=10, chars=string.ascii_letters + string.digits):
+    """
+    Generate a random string.
+    Based on code from https://stackoverflow.com/a/58853028/4054609
+    :param size: size of string to generate
+    :param chars: characters to generate string from
+    :return: string
+    """
+    return ''.join(random.choice(chars) for _ in range(size))
+
+
+def is_boolean_true(text: str) -> bool:
+    """
+    Check if `text` represents a boolean True value
+    :param text: string to check
+    :return: True if represents a boolean True value, otherwise False
+    """
+    return text.lower() in environ.Env.BOOLEAN_TRUE_STRINGS

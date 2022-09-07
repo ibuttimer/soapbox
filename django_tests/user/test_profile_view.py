@@ -26,7 +26,8 @@ from bs4 import BeautifulSoup
 from django.http import HttpResponse
 from django.urls import reverse
 
-from soapbox import USER_APP_NAME, USER_ID_ROUTE_NAME
+from soapbox import USER_APP_NAME
+from user import USER_ID_ROUTE_NAME
 from user.models import User
 from opinions.models import Category
 from .base_user_test_cls import BaseUserTest
@@ -52,13 +53,13 @@ class TestProfileView(BaseUserTest):
             )
             mod_num += 1
 
-    def login_user(self, name: str | None = None) -> User:
+    def login_user_by_key(self, name: str | None = None) -> User:
         """
         Login user
         :param name: name of user to login; default first user in list
         :returns logged-in user
         """
-        return BaseUserTest.login_user(self, name)
+        return BaseUserTest.login_user_by_key(self, name)
 
     def get_profile(self, user: User) -> HttpResponse:
         """
@@ -77,7 +78,7 @@ class TestProfileView(BaseUserTest):
 
     def test_get_profile(self):
         """ Test profile page uses correct template """
-        user = self.login_user()
+        user = self.login_user_by_key()
         response = self.get_profile(user)
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertTemplateUsed(response, f'{USER_APP_NAME}/profile.html')
@@ -85,14 +86,14 @@ class TestProfileView(BaseUserTest):
     def test_own_profile_content(self):
         """ Test profile page content for logged-in user"""
         _, key = TestProfileView.get_user_by_index(0)
-        user = self.login_user(key)
+        user = self.login_user_by_key(key)
         response = self.get_profile(user)
         self.verify_profile_content(user, key, response)
 
     def test_other_profile_content(self):
         """ Test profile page content for not logged-in user"""
         _, key = TestProfileView.get_user_by_index(0)
-        logged_in_user = self.login_user(key)
+        logged_in_user = self.login_user_by_key(key)
 
         user, key = TestProfileView.get_user_by_index(1)
 
@@ -106,7 +107,7 @@ class TestProfileView(BaseUserTest):
             ):
         """
         Verify profile page content for user
-        :param user: user to to check
+        :param user: user to check
         :param key: key for user
         :param response: profile response
         :param is_readonly: is readonly flag; default False

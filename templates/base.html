@@ -82,8 +82,21 @@
                             <a class="nav-link active" aria-current="page" href="/">Home</a>
                         </li>
                         {% if user.is_authenticated %}
-                            <li class="nav-item">
-                                <a class="nav-link disabled" href="#">Opinion</a>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Opinion
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'opinion_new' %}">New</a>
+                                    </li>
+<!--                                    <li>-->
+<!--                                        <a class="dropdown-item" href="{% url 'opinion_new' %}">Drafts</a>-->
+<!--                                    </li>-->
+<!--                                    <li>-->
+<!--                                        <a class="dropdown-item" href="{% url 'opinion_new' %}">Mine</a>-->
+<!--                                    </li>-->
+                                </ul>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link disabled">Category</a>

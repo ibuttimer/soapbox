@@ -31,7 +31,7 @@ from categories.models import Category
 from soapbox import IMAGE_FILE_TYPES, DEVELOPMENT
 from utils import update_field_widgets, error_messages, ErrorMsgs
 from .models import User
-from .common import (
+from .constants import (
     FIRST_NAME, LAST_NAME, EMAIL, USERNAME, PASSWORD, PASSWORD_CONFIRM,
     BIO, AVATAR, CATEGORIES
 )

@@ -20,40 +20,37 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-import os
 from datetime import datetime, timezone, MINYEAR
 
-import django
-
-from opinions.common import STATUS
-from opinions.models import Opinion
 from categories.models import Status
-
-# 'allauth' checks for 'django.contrib.sites', so django must be setup before
-# test
-os.environ.setdefault("ENV_FILE", ".test-env")
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "soapbox.settings")
-django.setup()
-
-from django.test import TestCase    # noqa
+from opinions.constants import STATUS_FIELD, USER_FIELD
+from opinions.models import Opinion
+from ..user.base_user_test_cls import BaseUserTest
 
 
-class TestOpinionModel(TestCase):
+class TestOpinionModel(BaseUserTest):
     """
     Test opinion
     https://docs.djangoproject.com/en/4.1/topics/testing/tools/
     """
 
+    @classmethod
+    def setUpTestData(cls):
+        """ Set up data for the whole TestCase """
+        super(TestOpinionModel, TestOpinionModel).setUpTestData()
+
     def test_opinion_defaults(self):
+        user, _ = TestOpinionModel.get_user_by_index(0)
         kwargs = {
-            STATUS: Status.objects.get(name='Draft')
+            STATUS_FIELD: Status.objects.get(name='Draft'),
+            USER_FIELD: user
         }
         opinion = Opinion.objects.create(**kwargs)
         self.assertIsNotNone(opinion)
         self.assertEqual(opinion.title, '')
         self.assertEqual(opinion.content, '')
         self.assertEqual(opinion.slug, '')
-        self.assertLess(opinion.created, datetime.now(tz=timezone.utc))
-        self.assertLess(opinion.updated, datetime.now(tz=timezone.utc))
+        self.assertLessEqual(opinion.created, datetime.now(tz=timezone.utc))
+        self.assertLessEqual(opinion.updated, datetime.now(tz=timezone.utc))
         self.assertEqual(opinion.published,
                          datetime(MINYEAR, 1, 1, 0, 0, tzinfo=timezone.utc))

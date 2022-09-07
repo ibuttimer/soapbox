@@ -101,7 +101,7 @@ class UserDetail(LoginRequiredMixin, View):
         """
         POST method to update User
         :param request: http request
-        :param pk: id of user to get
+        :param pk: id of user to update
         :param args: additional arbitrary arguments
         :param kwargs: additional keyword arguments
         :return: http response
@@ -112,6 +112,7 @@ class UserDetail(LoginRequiredMixin, View):
         user_obj = get_object_or_404(User, id=pk)
 
         form = UserForm(data=request.POST, files=request.FILES)
+        # TODO user form instance=user_obj
 
         if form.is_valid():
             # copy clean data to user object

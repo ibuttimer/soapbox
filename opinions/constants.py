@@ -20,14 +20,22 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
+from utils import append_slash
 
 # common field names
-FIRST_NAME = "first_name"
-LAST_NAME = "last_name"
-EMAIL = "email"
-USERNAME = "username"
-PASSWORD = "password1"
-PASSWORD_CONFIRM = "password2"
-BIO = "bio"
-AVATAR = "avatar"
-CATEGORIES = 'categories'
+TITLE_FIELD = "title"
+CONTENT_FIELD = "content"
+CATEGORIES_FIELD = 'categories'
+STATUS_FIELD = 'status'
+USER_FIELD = 'user'
+SLUG_FIELD = 'slug'
+CREATED_FIELD = 'created'
+UPDATED_FIELD = 'updated'
+PUBLISHED_FIELD = 'published'
+
+# Opinion routes related
+OPINION_NEW_URL = append_slash("new")
+OPINION_ID_URL = append_slash("<int:pk>")
+
+OPINION_NEW_ROUTE_NAME = "opinion_new"
+OPINION_ID_ROUTE_NAME = "opinion_id"
