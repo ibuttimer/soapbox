@@ -127,9 +127,12 @@ class TestProfileView(SoupMixin, CategoryMixin, BaseUserTest):
         for field in [user.FIRST_NAME_FIELD, User.LAST_NAME_FIELD,
                       User.EMAIL_FIELD]:
             with self.subTest(f'{field}'):
+                expected = getattr(user, field)
                 TestProfileView.find_tag(
                     self, soup.find_all('input'),
-                    lambda tag: user.username == tag.value)
+                    lambda tag: TestProfileView.equal_tag_attr(
+                        tag, 'value', expected)
+                )
 
         # check img tags for image
         TestProfileView.find_tag(
@@ -137,9 +140,16 @@ class TestProfileView(SoupMixin, CategoryMixin, BaseUserTest):
             lambda tag: TestProfileView.USER_INFO[key][User.AVATAR_FIELD]
             in tag.get('src'))
 
-        # check textarea tags for bio
-        self.find_tag(self, soup.find_all('textarea'),
-                      lambda tag: user.bio in tag.text)
+        # check for bio
+        if is_readonly:
+            # check for readonly_content div, can't check content as its
+            # replaced by javascript
+            self.find_tag(self, soup.find_all(id='readonly_content'),
+                          lambda tag: True)
+        else:
+            # check textarea tags for content
+            self.find_tag(self, soup.find_all('textarea'),
+                          lambda tag: user.bio in tag.text)
 
         # check categories
         TestProfileView.check_category_options(

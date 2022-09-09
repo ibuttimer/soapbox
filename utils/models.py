@@ -53,12 +53,20 @@ class SlugMixin:
         # slug should contain only letters, numbers, underscores or hyphens
         slug = slugify(title)
 
-        random_str = str(
+        # Base64 alphabet contains 'a-z', 'A-Z', '0-9', '+', '/', '='
+        # urlsafe_b64encode output contains 'a-z', 'A-Z', '0-9', '-', '_', '='
+        # so only problem used base64 for slug is padding '=' so replace
+        # with '_'
+        random_str = '-' + str(
             urlsafe_b64encode(
                 bytes(f'{datetime.now().timestamp()}',
                       encoding='utf-8')),
             encoding='utf-8'
-        ) + random_string_generator(random_size)
+        ).replace('=', '_') + random_string_generator(random_size)
+
+        if len(random_str) > max_len:
+            raise ValueError(
+                f'Slug random string length exceeds max allowed {max_len}')
 
         slugified = slug if len(slug) < max_len - len(random_str)\
             else slug[:max_len - len(random_str)]

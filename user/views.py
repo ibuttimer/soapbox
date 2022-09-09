@@ -109,23 +109,23 @@ class UserDetail(LoginRequiredMixin, View):
 
         user_obj = get_object_or_404(User, id=pk)
 
-        form = UserForm(data=request.POST, files=request.FILES)
-        # TODO user form instance=user_obj
+        form = UserForm(data=request.POST, files=request.FILES,
+                        instance=user_obj)
 
         if form.is_valid():
+            # normal fields are updated but ManyToMany aren't
             # copy clean data to user object
-            for field in form.cleaned_data:
-                save_data = form.cleaned_data[field]
-                if field == UserForm.AVATAR_FF:
-                    if save_data is None:
-                        continue    # no change
-                    if not save_data:
-                        # user cleared, reset to placeholder
-                        save_data = User.AVATAR_BLANK
-                if field == UserForm.CATEGORIES_FF:
-                    user_obj.categories.set(save_data)
-                else:
-                    setattr(user_obj, field, save_data)
+            user_obj.categories.set(
+                form.cleaned_data[UserForm.CATEGORIES_FF]
+            )
+            # special handing for avatar
+            save_data = form.cleaned_data[UserForm.AVATAR_FF]
+            if save_data is not None:
+                if not save_data:   # False for clear
+                    # user cleared, reset to placeholder
+                    save_data = User.AVATAR_BLANK
+                setattr(user_obj, UserForm.AVATAR_FF, save_data)
+
             # save updated object
             user_obj.save()
             # django autocommits changes

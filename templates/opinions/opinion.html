@@ -40,8 +40,8 @@
 {% endblock extra_js_head %}
 
 {% block content %}
-<div class="row text-center">
-    <div class="col-sm-8 mt-2 offset-sm-2">
+<article class="row text-center">
+    <div class="col-12 mt-2">
         <h1>{% trans "Opinion" %}</h1>
 
         <form
@@ -60,8 +60,9 @@
                     disabled
                     {% endif %}
             >
+                <!-- top row: category, updated/published/author, preview/draft/publish -->
                 <div class="row mb-3">
-                    <div class="col-sm-6">
+                    <div class="col-sm-3">
                         {% for field in form %}
                             {% if field.name in category_fields %}
                                 <div class="col-sm-2 text-start">
@@ -73,9 +74,39 @@
                             {% endif %}
                         {% endfor %}
                     </div>
-                    <div class="col-sm-6">
-                        <div class="row">
-                            {% if not read_only %}
+                    <div
+                         {% if read_only %}
+                            class="col-sm-9"
+                         {% else %}
+                             class="col-sm-3"
+                         {% endif %}
+                    >
+                        {% if opinion %}
+                            <table class="text-start">
+                                <tbody>
+                                    <tr>
+                                        <th scope="row">Published</th>
+                                        <td>{{ opinion.published | date:"DATETIME_FORMAT" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Updated</th>
+                                        <td>{{ opinion.updated | date:"DATETIME_FORMAT" }}</td>
+                                    </tr>
+                                    {% if read_only %}
+                                        <tr>
+                                            <th scope="row">Author</th>
+                                            <td>
+                                                <a href="{% url 'user_id' opinion.user.id %}">{{ opinion.user.username}}</a>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        {% endif %}
+                    </div>
+                    {% if not read_only %}
+                        <div class="col-sm-5">
+                            <div class="row">
                                 <div class="col-sm-4">
                                     <button type="submit" class="btn btn-outline-warning mb-1"
                                             formaction="{{ submit_url }}?status=draft&preview=true">
@@ -91,9 +122,14 @@
                                 <div class="col-sm-4">
                                     <button type="submit" class="btn btn-outline-success">{% trans "Publish" %}</button>
                                 </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-1">
+                            {% if not read_only %}
+                            <p><span class="badge rounded-pill {{ status_bg }}">{{ status }}</span></p>
                             {% endif %}
                         </div>
-                    </div>
+                    {% endif %}
                 </div>
 
                 {% for field in form %}
@@ -104,7 +140,7 @@
                             </div>
                             <div class="col-sm-10">
                                 {% if read_only %}
-                                    <div id="readonly_content">
+                                    <div id="readonly_content" class="text-start">
                                         <!-- content replaced -->
                                     </div>
                                 {% else %}
@@ -134,12 +170,7 @@
             {% endif %}
         </form>
     </div>
-    <div class="col-sm-2">
-        {% if not read_only %}
-            <p><span class="badge rounded-pill {{ status_bg }}">{{ status }}</span></p>
-        {% endif %}
-    </div>
-</div>
+</article>
 
 {% endblock content %}
 

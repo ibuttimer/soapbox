@@ -26,6 +26,7 @@ from django.urls import path
 from .constants import (
     OPINION_NEW_URL, OPINION_NEW_ROUTE_NAME,
     OPINION_ID_URL, OPINION_ID_ROUTE_NAME,
+    OPINION_SLUG_URL, OPINION_SLUG_ROUTE_NAME,
 )
 from . import views
 
@@ -33,6 +34,8 @@ from . import views
 urlpatterns = [
     path(OPINION_NEW_URL, views.OpinionCreate.as_view(),
          name=OPINION_NEW_ROUTE_NAME),
-    path(OPINION_ID_URL, views.OpinionDetail.as_view(),
+    path(OPINION_ID_URL, views.OpinionDetailById.as_view(),
          name=OPINION_ID_ROUTE_NAME),
+    path(OPINION_SLUG_URL, views.OpinionDetailBySlug.as_view(),
+         name=OPINION_SLUG_ROUTE_NAME),
 ]

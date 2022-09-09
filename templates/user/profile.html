@@ -40,8 +40,8 @@
 {% endblock extra_js_head %}
 
 {% block content %}
-<div class="row text-center">
-    <div class="col-sm-8 mt-2 offset-sm-2">
+<article article="row text-center">
+    <div class="col-12 mt-2">
         <h1>{% trans "Profile" %} <em>{{ user_profile.username }}</em></h1>
 
         <form
@@ -101,9 +101,9 @@
                             </div>
                             <div class="col-sm-10">
                                 {% if read_only %}
-                                    <textarea class="form-control text-start" id="bio" aria-label="biography">
-                                        {{ user_profile.bio }}
-                                    </textarea>
+                                    <div id="readonly_content" class="text-start">
+                                        <!-- content replaced -->
+                                    </div>
                                 {% else %}
                                     {{ field }}
                                 {% endif %}
@@ -134,7 +134,7 @@
             {% endif %}
         </form>
     </div>
-</div>
+</article>
 
 {% endblock content %}
 
@@ -148,6 +148,17 @@
 <!--        });-->
 <!--    </script>-->
 
+    {% if read_only %}
+        <script>
+                $(document).ready(function() {
+                    {% for field in form %}
+                        {% if field.name in summernote_fields %}
+                            $('#readonly_content').html('{{ field.initial | safe }}');
+                        {% endif %}
+                    {% endfor %}
+                });
+        </script>
+    {% endif %}
     <script>
         /* Update preview image when file selected.
            Based on https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/file#examples */

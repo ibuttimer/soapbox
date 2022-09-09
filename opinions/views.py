@@ -20,6 +20,8 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 
+from datetime import datetime, timezone
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest, HttpResponse
@@ -30,14 +32,17 @@ from django.views import View
 from soapbox import (
     OPINIONS_APP_NAME, HOME_ROUTE_NAME
 )
-from utils import app_template_path, redirect_on_success_or_render, \
-    is_boolean_true
+from user.models import User
+from utils import (
+    app_template_path, redirect_on_success_or_render, is_boolean_true
+)
 from categories import STATUS_DRAFT, STATUS_PUBLISHED, CATEGORY_UNASSIGNED
 from categories.models import Status, Category
 from .forms import OpinionForm
 from .models import Opinion
-from .constants import OPINION_NEW_ROUTE_NAME, OPINION_ID_ROUTE_NAME
-
+from .constants import (
+    OPINION_NEW_ROUTE_NAME, OPINION_ID_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME
+)
 
 TITLE_NEW = "Creation"
 TITLE_UPDATE = "Update"
@@ -81,6 +86,8 @@ class OpinionCreate(LoginRequiredMixin, View):
             form.instance.status = status
             form.instance.set_slug(form.instance.title)
 
+            _timestamp_opinion(form.instance)
+
             form.save()
             # django autocommits changes
             # https://docs.djangoproject.com/en/4.1/topics/db/transactions/#autocommit
@@ -103,8 +110,8 @@ class OpinionCreate(LoginRequiredMixin, View):
 
 
 def _render_form(form: OpinionForm, url: str, title: str,
-                 read_only: bool = False,
-                 opinion_obj: Opinion = None, status: Status = None) -> tuple[
+                 read_only: bool = False, opinion_obj: Opinion = None,
+                 status: Status = None) -> tuple[
         str, dict[str, Opinion | list[str] | OpinionForm | bool]]:
     """
     Render the opinion template
@@ -138,7 +145,19 @@ def _render_form(form: OpinionForm, url: str, title: str,
         'status': status_text,
         'status_bg':
             'bg-primary' if status_text == STATUS_DRAFT else 'bg-success',
+        'opinion': opinion_obj,
     }
+
+
+def _timestamp_opinion(opinion: Opinion):
+    """
+    Update opinion timestamps
+    :param opinion: opinion to update
+    """
+    timestamp = datetime.now(tz=timezone.utc)
+    opinion.updated = timestamp
+    if opinion.status == Status.objects.get(name=STATUS_PUBLISHED):
+        opinion.published = timestamp
 
 
 def _query_args(request: HttpRequest) -> tuple[Status, bool]:
@@ -169,16 +188,16 @@ class OpinionDetail(LoginRequiredMixin, View):
     """
 
     def get(self, request: HttpRequest,
-            pk: int, *args, **kwargs) -> HttpResponse:
+            identifier: [int, str], *args, **kwargs) -> HttpResponse:
         """
         GET method for Opinion
         :param request: http request
-        :param pk: id of opinion to get
+        :param identifier: id or slug of opinion to get
         :param args: additional arbitrary arguments
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        opinion_obj = get_object_or_404(Opinion, id=pk)
+        opinion_obj = self._get_opinion(identifier)
 
         template_path, context = _render_form(
             OpinionForm(instance=opinion_obj),
@@ -190,17 +209,26 @@ class OpinionDetail(LoginRequiredMixin, View):
         )
         return render(request, template_path, context=context)
 
+    def _get_opinion(self, identifier: [int, str]) -> Opinion:
+        """
+        Get opinion for specified identifier
+        :param identifier: id or slug of opinion to get
+        :return: opinion
+        """
+        query = {'id' if isinstance(identifier, int) else 'slug': identifier}
+        return get_object_or_404(Opinion, **query)
+
     def post(self, request: HttpRequest,
-             pk: int, *args, **kwargs) -> HttpResponse:
+             identifier: [int, str], *args, **kwargs) -> HttpResponse:
         """
         POST method to update Opinion
         :param request: http request
-        :param pk: id of opinion to update
+        :param identifier: id or slug of opinion to update
         :param args: additional arbitrary arguments
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        opinion_obj = get_object_or_404(Opinion, id=pk)
+        opinion_obj = self._get_opinion(identifier)
 
         if request.user.id != opinion_obj.user.id:
             raise PermissionDenied(
@@ -218,6 +246,8 @@ class OpinionDetail(LoginRequiredMixin, View):
 
             status, preview = _query_args(request)
             opinion_obj.status = status
+
+            _timestamp_opinion(opinion_obj)
 
             # save updated object
             opinion_obj.save()
@@ -244,4 +274,81 @@ class OpinionDetail(LoginRequiredMixin, View):
         :param opinion_obj: opinion
         :return: url
         """
+        raise NotImplementedError(
+            "'url' method must be overridden by sub classes")
+
+
+class OpinionDetailById(OpinionDetail):
+    """
+    Class-based view for individual opinion view/update by id
+    """
+
+    def get(self, request: HttpRequest,
+            pk: int, *args, **kwargs) -> HttpResponse:
+        """
+        GET method for Opinion
+        :param request: http request
+        :param pk: id of opinion to get
+        :param args: additional arbitrary arguments
+        :param kwargs: additional keyword arguments
+        :return: http response
+        """
+        return OpinionDetail.get(self, request, pk, *args, **kwargs)
+
+    def post(self, request: HttpRequest,
+             pk: int, *args, **kwargs) -> HttpResponse:
+        """
+        POST method to update Opinion
+        :param request: http request
+        :param pk: id of opinion to update
+        :param args: additional arbitrary arguments
+        :param kwargs: additional keyword arguments
+        :return: http response
+        """
+        return OpinionDetail.post(self, request, pk, *args, **kwargs)
+
+    def url(self, opinion_obj: Opinion) -> str:
+        """
+        Get url for opinion view/update
+        :param opinion_obj: opinion
+        :return: url
+        """
         return reverse(OPINION_ID_ROUTE_NAME, args=[opinion_obj.id])
+
+
+class OpinionDetailBySlug(OpinionDetail):
+    """
+    Class-based view for individual opinion view/update by slug
+    """
+
+    def get(self, request: HttpRequest,
+            slug: str, *args, **kwargs) -> HttpResponse:
+        """
+        GET method for Opinion
+        :param request: http request
+        :param slug: slug of opinion to get
+        :param args: additional arbitrary arguments
+        :param kwargs: additional keyword arguments
+        :return: http response
+        """
+        return OpinionDetail.get(self, request, slug, *args, **kwargs)
+
+    def post(self, request: HttpRequest,
+             slug: str, *args, **kwargs) -> HttpResponse:
+        """
+        POST method to update Opinion
+        :param request: http request
+        :param slug: slug of opinion to update
+        :param args: additional arbitrary arguments
+        :param kwargs: additional keyword arguments
+        :return: http response
+        """
+        return OpinionDetail.post(self, request, slug, *args, **kwargs)
+
+    def url(self, opinion_obj: Opinion) -> str:
+        """
+        Get url for opinion view/update
+        :param opinion_obj: opinion
+        :return: url
+        """
+        return reverse(OPINION_SLUG_ROUTE_NAME, args=[opinion_obj.slug])

@@ -27,7 +27,7 @@ from django.http import HttpResponse
 from django.urls import reverse
 
 from categories import STATUS_DRAFT, STATUS_PUBLISHED, CATEGORY_UNASSIGNED
-from opinions.constants import OPINION_NEW_ROUTE_NAME
+from opinions.constants import OPINION_NEW_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME
 from soapbox import OPINIONS_APP_NAME
 from opinions import OPINION_ID_ROUTE_NAME
 from user.models import User
@@ -112,36 +112,64 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseUserTest):
         """
         return BaseUserTest.login_user_by_id(self, pk)
 
-    def get_opinion(self, pk: int) -> HttpResponse:
+    def get_opinion_by_id(self, pk: int) -> HttpResponse:
         """
         Get the opinion page
-        :param pk - id of opinion
+        :param pk: id of opinion
         """
         return self.client.get(
             reverse(OPINION_ID_ROUTE_NAME, args=[pk]))
 
-    def test_not_logged_in_access_opinion(self):
-        """ Test must be logged in to access opinion """
-        response = self.get_opinion(TestOpinionView.opinions[0].id)
+    def get_opinion_by_slug(self, slug: str) -> HttpResponse:
+        """
+        Get the opinion page
+        :param slug: slug of opinion
+        """
+        return self.client.get(
+            reverse(OPINION_SLUG_ROUTE_NAME, args=[slug]))
+
+    def test_not_logged_in_access_by_id(self):
+        """ Test must be logged in to access opinion by id """
+        response = self.get_opinion_by_id(TestOpinionView.opinions[0].id)
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
-    def test_get_opinion(self):
-        """ Test opinion page uses correct template """
+    def test_not_logged_in_access_by_slug(self):
+        """ Test must be logged in to access opinion by slug """
+        response = self.get_opinion_by_slug(TestOpinionView.opinions[0].slug)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+
+    def test_get_opinion_by_id(self):
+        """ Test opinion page uses correct template by id """
         opinion = TestOpinionView.opinions[0]
         user = self.login_user_by_id(opinion.user.id)
-        response = self.get_opinion(opinion.id)
+        response = self.get_opinion_by_id(opinion.id)
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertTemplateUsed(response, f'{OPINIONS_APP_NAME}/opinion.html')
 
-    def test_get_own_opinion_content(self):
-        """ Test page content for opinion of logged-in user"""
+    def test_get_opinion_by_slug(self):
+        """ Test opinion page uses correct template by slug """
         opinion = TestOpinionView.opinions[0]
         user = self.login_user_by_id(opinion.user.id)
-        response = self.get_opinion(opinion.id)
+        response = self.get_opinion_by_slug(opinion.slug)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertTemplateUsed(response, f'{OPINIONS_APP_NAME}/opinion.html')
+
+    def test_get_own_opinion_by_id(self):
+        """ Test page content for opinion by id of logged-in user """
+        opinion = TestOpinionView.opinions[0]
+        user = self.login_user_by_id(opinion.user.id)
+        response = self.get_opinion_by_id(opinion.id)
         self.verify_opinion_content(opinion, response)
 
-    def test_get_other_opinion_content(self):
-        """ Test page content for opinion of not logged-in user"""
+    def test_get_own_opinion_by_slug(self):
+        """ Test page content for opinion by slug of logged-in user """
+        opinion = TestOpinionView.opinions[0]
+        user = self.login_user_by_id(opinion.user.id)
+        response = self.get_opinion_by_slug(opinion.slug)
+        self.verify_opinion_content(opinion, response)
+
+    def test_get_other_opinion_by_id(self):
+        """ Test page content for opinion by id of not logged-in user """
         _, key = TestOpinionView.get_user_by_index(0)
         logged_in_user = self.login_user_by_key(key)
 
@@ -153,7 +181,23 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseUserTest):
         opinion = opinions[0]
 
         self.assertNotEqual(logged_in_user, opinion.user)
-        response = self.get_opinion(opinion.id)
+        response = self.get_opinion_by_id(opinion.id)
+        self.verify_opinion_content(opinion, response, is_readonly=True)
+
+    def test_get_other_opinion_by_slug(self):
+        """ Test page content for opinion by slug of not logged-in user """
+        _, key = TestOpinionView.get_user_by_index(0)
+        logged_in_user = self.login_user_by_key(key)
+
+        opinions = list(
+            filter(lambda op: op.user.id != logged_in_user.id,
+                   TestOpinionView.opinions)
+        )
+        self.assertGreaterEqual(len(opinions), 1)
+        opinion = opinions[0]
+
+        self.assertNotEqual(logged_in_user, opinion.user)
+        response = self.get_opinion_by_slug(opinion.slug)
         self.verify_opinion_content(opinion, response, is_readonly=True)
 
     def verify_opinion_content(
@@ -177,7 +221,8 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseUserTest):
         self.assertTrue(inputs[0].get('value'), opinion.title)
 
         if is_readonly:
-            # check for readonly_content div, can't check content
+            # check for readonly_content div, can't check content as its
+            # replaced by javascript
             self.find_tag(self, soup.find_all(id='readonly_content'),
                           lambda tag: True)
         else:

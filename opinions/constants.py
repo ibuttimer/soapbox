@@ -36,6 +36,8 @@ PUBLISHED_FIELD = 'published'
 # Opinion routes related
 OPINION_NEW_URL = append_slash("new")
 OPINION_ID_URL = append_slash("<int:pk>")
+OPINION_SLUG_URL = append_slash("<slug:slug>")
 
 OPINION_NEW_ROUTE_NAME = "opinion_new"
 OPINION_ID_ROUTE_NAME = "opinion_id"
+OPINION_SLUG_ROUTE_NAME = "opinion_slug"
