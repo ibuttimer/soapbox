@@ -38,6 +38,10 @@ from ..category_mixin import CategoryMixin
 from ..user.base_user_test_cls import BaseUserTest
 
 
+OWN_OPINION_TEMPLATE = f'{OPINIONS_APP_NAME}/opinion_form.html'
+OTHER_OPINION_TEMPLATE = f'{OPINIONS_APP_NAME}/opinion_view.html'
+
+
 class TestOpinionView(SoupMixin, CategoryMixin, BaseUserTest):
     """
     Test opinion page view
@@ -138,27 +142,13 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseUserTest):
         response = self.get_opinion_by_slug(TestOpinionView.opinions[0].slug)
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
-    def test_get_opinion_by_id(self):
-        """ Test opinion page uses correct template by id """
-        opinion = TestOpinionView.opinions[0]
-        user = self.login_user_by_id(opinion.user.id)
-        response = self.get_opinion_by_id(opinion.id)
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertTemplateUsed(response, f'{OPINIONS_APP_NAME}/opinion.html')
-
-    def test_get_opinion_by_slug(self):
-        """ Test opinion page uses correct template by slug """
-        opinion = TestOpinionView.opinions[0]
-        user = self.login_user_by_id(opinion.user.id)
-        response = self.get_opinion_by_slug(opinion.slug)
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertTemplateUsed(response, f'{OPINIONS_APP_NAME}/opinion.html')
-
     def test_get_own_opinion_by_id(self):
         """ Test page content for opinion by id of logged-in user """
         opinion = TestOpinionView.opinions[0]
         user = self.login_user_by_id(opinion.user.id)
         response = self.get_opinion_by_id(opinion.id)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertTemplateUsed(response, OWN_OPINION_TEMPLATE)
         self.verify_opinion_content(opinion, response)
 
     def test_get_own_opinion_by_slug(self):
@@ -166,6 +156,8 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseUserTest):
         opinion = TestOpinionView.opinions[0]
         user = self.login_user_by_id(opinion.user.id)
         response = self.get_opinion_by_slug(opinion.slug)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertTemplateUsed(response, OWN_OPINION_TEMPLATE)
         self.verify_opinion_content(opinion, response)
 
     def test_get_other_opinion_by_id(self):
@@ -182,6 +174,8 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseUserTest):
 
         self.assertNotEqual(logged_in_user, opinion.user)
         response = self.get_opinion_by_id(opinion.id)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertTemplateUsed(response, OTHER_OPINION_TEMPLATE)
         self.verify_opinion_content(opinion, response, is_readonly=True)
 
     def test_get_other_opinion_by_slug(self):
@@ -198,6 +192,8 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseUserTest):
 
         self.assertNotEqual(logged_in_user, opinion.user)
         response = self.get_opinion_by_slug(opinion.slug)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertTemplateUsed(response, OTHER_OPINION_TEMPLATE)
         self.verify_opinion_content(opinion, response, is_readonly=True)
 
     def verify_opinion_content(
@@ -215,10 +211,11 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseUserTest):
         soup = BeautifulSoup(
             response.content.decode("utf-8", errors="ignore"), features="lxml"
         )
-        # check input tag for title
+        # check tag for title
         inputs = soup.find_all(id='id_title')
         self.assertEqual(len(inputs), 1)
-        self.assertTrue(inputs[0].get('value'), opinion.title)
+        title = inputs[0].text if is_readonly else inputs[0].get('value')
+        self.assertTrue(title, opinion.title)
 
         if is_readonly:
             # check for readonly_content div, can't check content as its
@@ -231,12 +228,23 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseUserTest):
                           lambda tag: opinion.content in tag.text)
 
         # check categories
-        TestOpinionView.check_category_options(
-            self, soup, opinion.categories.all())
+        if is_readonly:
+            TestOpinionView.check_categories(
+                self, soup,
+                lambda tag: tag.name == 'span'
+                and TestOpinionView.in_tag_attr(tag, 'class', 'badge'),
+                lambda category, tag: category.name == tag.text,
+                opinion.categories.all())
+        else:
+            TestOpinionView.check_category_options(
+                self, soup, opinion.categories.all())
 
         # check fieldset is disabled in read only mode
-        self.check_tag(self, soup.find_all('fieldset'), is_readonly,
-                       lambda tag: tag.has_attr('disabled'))
+        if is_readonly:
+            pass    # no fieldset in view mode
+        else:
+            self.check_tag(self, soup.find_all('fieldset'), is_readonly,
+                           lambda tag: tag.has_attr('disabled'))
 
         # check status only displayed if not read only,
         # i.e. current user's opinion
@@ -307,7 +315,7 @@ class TestOpinionCreate(SoupMixin, BaseUserTest):
         user = self.login_user_by_key(key)
         response = self.get_opinion()
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertTemplateUsed(response, f'{OPINIONS_APP_NAME}/opinion.html')
+        self.assertTemplateUsed(response, OWN_OPINION_TEMPLATE)
 
     def test_get_own_opinion_content(self):
         """ Test page content for opinion of logged-in user"""

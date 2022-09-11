@@ -79,7 +79,6 @@ class UserDetail(LoginRequiredMixin, View):
             "user_profile": user_obj,
             "read_only": user_obj.id != request.user.id,
             "form": form,
-            "auto_ids": {field: form.auto_id % field for field in form.fields},
             'lhs_fields': [
                 UserForm.FIRST_NAME_FF, UserForm.LAST_NAME_FF,
                 UserForm.EMAIL_FF

@@ -31,29 +31,47 @@ class CategoryMixin:
     """
 
     @staticmethod
-    def check_category_options(
+    def check_categories(
             test_case: TestCase, soup: BeautifulSoup,
+            find_func, filter_func,
             categories: QuerySet):
         """
         Check that the list of selected categories matches expected
         :param test_case: TestCase instance
         :param soup: BeautifulSoup object
+        :param find_func: function to find tags
+        :param filter_func: function to filter tags
         :param categories: expected categories
         """
         category_options = [
             opt for opt in soup.find_all(
-                lambda tag: tag.name == 'option'
-                and tag.has_attr('selected')
-                and tag.parent.name == 'select'
+                lambda tag: find_func(tag)
             )]
         for category in list(categories):
             with test_case.subTest(f'category {category}'):
                 tags = list(
                     filter(
-                        lambda opt:
-                            category.id == int(opt['value']) and
-                            category.name == opt.text,
+                        lambda tag: filter_func(category, tag),
                         category_options
                     )
                 )
                 test_case.assertEqual(len(tags), 1)
+
+    @staticmethod
+    def check_category_options(
+            test_case: TestCase, soup: BeautifulSoup,
+            categories: QuerySet):
+        """
+        Check that the list of selected categories in a multi-select
+        matches the expected
+        :param test_case: TestCase instance
+        :param soup: BeautifulSoup object
+        :param categories: expected categories
+        """
+        CategoryMixin.check_categories(
+            test_case, soup,
+            lambda tag: tag.name == 'option'
+            and tag.has_attr('selected') and tag.parent.name == 'select',
+            lambda category, opt: category.id == int(opt['value'])
+            and category.name == opt.text,
+            categories)

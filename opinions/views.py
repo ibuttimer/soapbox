@@ -20,7 +20,8 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 
-from datetime import datetime, timezone
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
@@ -46,6 +47,7 @@ from .constants import (
 
 TITLE_NEW = "Creation"
 TITLE_UPDATE = "Update"
+TITLE_OPINION = "Opinion"
 
 
 class OpinionCreate(LoginRequiredMixin, View):
@@ -63,7 +65,7 @@ class OpinionCreate(LoginRequiredMixin, View):
         :return: http response
         """
         template_path, context = _render_form(
-            OpinionForm(), self.url(), TITLE_NEW)
+            TITLE_NEW, submit_url=self.url(), form=OpinionForm())
         return render(request, template_path, context=context)
 
     def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
@@ -95,7 +97,8 @@ class OpinionCreate(LoginRequiredMixin, View):
 
             template_path, context = None, None
         else:
-            template_path, context = _render_form(form, self.url(), TITLE_NEW)
+            template_path, context = _render_form(
+                TITLE_NEW, submit_url=self.url(), form=form)
             success = False
 
         return redirect_on_success_or_render(
@@ -109,44 +112,96 @@ class OpinionCreate(LoginRequiredMixin, View):
         return reverse(OPINION_NEW_ROUTE_NAME)
 
 
-def _render_form(form: OpinionForm, url: str, title: str,
-                 read_only: bool = False, opinion_obj: Opinion = None,
-                 status: Status = None) -> tuple[
+def _render_form(title: str,
+                 submit_url: str = None,
+                 form: OpinionForm = None, opinion_obj: Opinion = None,
+                 read_only: bool = False, status: Status = None) -> tuple[
         str, dict[str, Opinion | list[str] | OpinionForm | bool]]:
     """
     Render the opinion template
-    :param form: form to display
-    :param url: form commit url
     :param title: title
-    :param read_only: read only flag, default False
+    :param submit_url: form commit url
+    :param form: form to display, default None
     :param opinion_obj: opinion object, default None
+    :param read_only: read only flag, default False
     :param status: status, default None
     :return: tuple of template path and context
     """
-    if status is None:
-        status = STATUS_DRAFT
+    context = _context(
+        title, submit_url=submit_url, form=form, opinion_obj=opinion_obj,
+        read_only=read_only, status=status
+    )
+    context.update({
+        'summernote_fields': [OpinionForm.CONTENT_FF],
+        'other_fields': [OpinionForm.TITLE_FF],
+        'category_fields': [OpinionForm.CATEGORIES_FF],
+    })
 
     # set initial data
     form[OpinionForm.CATEGORIES_FF].initial = [
         Category.objects.get(name=CATEGORY_UNASSIGNED)
     ] if opinion_obj is None else opinion_obj.categories.all()
 
+    return app_template_path(OPINIONS_APP_NAME, "opinion_form.html"), context
+
+
+def _context(title: str,
+             submit_url: str = None,
+             form: OpinionForm = None, opinion_obj: Opinion = None,
+             read_only: bool = False, status: Status = None) -> dict:
+    """
+    Generate the context for the template
+    :param title: title
+    :param submit_url: form commit url, default None
+    :param form: form to display, default None
+    :param opinion_obj: opinion object, default None
+    :param read_only: read only flag, default False
+    :param status: status, default None
+    :return: tuple of template path and context
+    """
+    if status is None:
+        status = STATUS_DRAFT
+
     status_text = status if isinstance(status, str) else status.name
 
-    return app_template_path(OPINIONS_APP_NAME, "opinion.html"), {
-        "read_only": read_only,
-        "form": form,
-        "auto_ids": {field: form.auto_id % field for field in form.fields},
-        'summernote_fields': [OpinionForm.CONTENT_FF],
-        'other_fields': [OpinionForm.TITLE_FF],
-        'category_fields': [OpinionForm.CATEGORIES_FF],
-        'submit_url': url,
+    context = {
         'title': title,
+        'read_only': read_only,
         'status': status_text,
         'status_bg':
             'bg-primary' if status_text == STATUS_DRAFT else 'bg-success',
-        'opinion': opinion_obj,
     }
+
+    if form is not None:
+        context['form'] = form
+        context['submit_url'] = submit_url
+
+    if opinion_obj is not None:
+        context['opinion'] = opinion_obj
+
+    return context
+
+
+def _render_view(title: str,
+                 opinion_obj: Opinion = None,
+                 read_only: bool = False, status: Status = None) -> tuple[
+        str, dict[str, Opinion | list[str] | OpinionForm | bool]]:
+    """
+    Render the opinion view
+    :param title: title
+    :param opinion_obj: opinion object, default None
+    :param read_only: read only flag, default False
+    :param status: status, default None
+    :return: tuple of template path and context
+    """
+    context = _context(
+        title, opinion_obj=opinion_obj, read_only=read_only, status=status
+    )
+    context.update({
+        'categories': opinion_obj.categories.all(),
+    })
+
+    return app_template_path(OPINIONS_APP_NAME, "opinion_view.html"), context
 
 
 def _timestamp_opinion(opinion: Opinion):
@@ -154,10 +209,12 @@ def _timestamp_opinion(opinion: Opinion):
     Update opinion timestamps
     :param opinion: opinion to update
     """
-    timestamp = datetime.now(tz=timezone.utc)
+    timestamp = datetime.now(tz=ZoneInfo("UTC"))
     opinion.updated = timestamp
     if opinion.status == Status.objects.get(name=STATUS_PUBLISHED):
-        opinion.published = timestamp
+        if opinion.published.year == 1:
+            # first time published
+            opinion.published = timestamp
 
 
 def _query_args(request: HttpRequest) -> tuple[Status, bool]:
@@ -199,13 +256,24 @@ class OpinionDetail(LoginRequiredMixin, View):
         """
         opinion_obj = self._get_opinion(identifier)
 
-        template_path, context = _render_form(
-            OpinionForm(instance=opinion_obj),
-            self.url(opinion_obj),
-            TITLE_UPDATE,
-            read_only=opinion_obj and opinion_obj.user.id != request.user.id,
-            opinion_obj=opinion_obj,
-            status=opinion_obj.status
+        read_only = opinion_obj and opinion_obj.user.id != request.user.id
+        render_args = {
+            'read_only': read_only,
+            'opinion_obj': opinion_obj,
+            'status': opinion_obj.status
+        }
+        if read_only:
+            renderer = _render_view
+        else:
+            renderer = _render_form
+            render_args.update({
+                'submit_url': self.url(opinion_obj),
+                'form': OpinionForm(instance=opinion_obj),
+            })
+
+        template_path, context = renderer(
+            opinion_obj.title if read_only else TITLE_UPDATE,
+            **render_args
         )
         return render(request, template_path, context=context)
 
