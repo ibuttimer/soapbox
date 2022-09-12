@@ -20,8 +20,14 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from .constants import OPINION_ID_ROUTE_NAME
 
-__all__ = [
-    'OPINION_ID_ROUTE_NAME'
-]
+from django import template
+
+register = template.Library()
+
+# https://docs.djangoproject.com/en/4.1/howto/custom-template-tags/#simple-tags
+
+
+@register.simple_tag
+def dict_value(dictionary: dict, key: str, default: str = ''):
+    return dictionary.get(key, default)

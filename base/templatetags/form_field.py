@@ -20,8 +20,15 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from .constants import OPINION_ID_ROUTE_NAME
 
-__all__ = [
-    'OPINION_ID_ROUTE_NAME'
-]
+from django import template
+from django.forms import ModelForm
+
+register = template.Library()
+
+# https://docs.djangoproject.com/en/4.1/howto/custom-template-tags/#simple-tags
+
+
+@register.simple_tag
+def form_field(form: ModelForm, key: str, default: str = ''):
+    return form[key] if key in form.fields else default

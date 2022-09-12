@@ -20,8 +20,28 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from .constants import OPINION_ID_ROUTE_NAME
 
-__all__ = [
-    'OPINION_ID_ROUTE_NAME'
+from django.urls import path
+
+from .constants import (
+    OPINION_NEW_URL, OPINION_NEW_ROUTE_NAME,
+    OPINION_ID_URL, OPINION_ID_ROUTE_NAME,
+    OPINION_SLUG_URL, OPINION_SLUG_ROUTE_NAME,
+    OPINION_PREVIEW_ID_URL, OPINION_PREVIEW_ID_ROUTE_NAME,
+    OPINION_STATUS_ID_URL, OPINION_STATUS_ID_ROUTE_NAME
+)
+from . import views
+
+
+urlpatterns = [
+    path(OPINION_NEW_URL, views.OpinionCreate.as_view(),
+         name=OPINION_NEW_ROUTE_NAME),
+    path(OPINION_ID_URL, views.OpinionDetailById.as_view(),
+         name=OPINION_ID_ROUTE_NAME),
+    path(OPINION_SLUG_URL, views.OpinionDetailBySlug.as_view(),
+         name=OPINION_SLUG_ROUTE_NAME),
+    path(OPINION_PREVIEW_ID_URL, views.OpinionDetailPreviewById.as_view(),
+         name=OPINION_PREVIEW_ID_ROUTE_NAME),
+    path(OPINION_STATUS_ID_URL, views.opinion_status_patch,
+         name=OPINION_STATUS_ID_ROUTE_NAME),
 ]

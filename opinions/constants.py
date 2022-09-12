@@ -20,8 +20,28 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from .constants import OPINION_ID_ROUTE_NAME
+from utils import append_slash, url_path
 
-__all__ = [
-    'OPINION_ID_ROUTE_NAME'
-]
+# common field names
+TITLE_FIELD = "title"
+CONTENT_FIELD = "content"
+CATEGORIES_FIELD = 'categories'
+STATUS_FIELD = 'status'
+USER_FIELD = 'user'
+SLUG_FIELD = 'slug'
+CREATED_FIELD = 'created'
+UPDATED_FIELD = 'updated'
+PUBLISHED_FIELD = 'published'
+
+# Opinion routes related
+OPINION_NEW_URL = append_slash("new")
+OPINION_ID_URL = append_slash("<int:pk>")
+OPINION_SLUG_URL = append_slash("<slug:slug>")
+OPINION_PREVIEW_ID_URL = url_path("preview", OPINION_ID_URL)
+OPINION_STATUS_ID_URL = url_path("status", OPINION_ID_URL)
+
+OPINION_NEW_ROUTE_NAME = "opinion_new"
+OPINION_ID_ROUTE_NAME = "opinion_id"
+OPINION_SLUG_ROUTE_NAME = "opinion_slug"
+OPINION_PREVIEW_ID_ROUTE_NAME = "preview_opinion_id"
+OPINION_STATUS_ID_ROUTE_NAME = "status_opinion_id"

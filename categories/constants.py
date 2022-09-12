@@ -20,8 +20,18 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from .constants import OPINION_ID_ROUTE_NAME
 
-__all__ = [
-    'OPINION_ID_ROUTE_NAME'
-]
+# common field names
+NAME_FIELD = "name"
+DESCRIPTION_FIELD = "description"
+
+STATUS_DRAFT = 'Draft'
+STATUS_PUBLISHED = 'Published'
+STATUS_PREVIEW = 'Preview'
+STATUS_WITHDRAWN = 'Withdrawn'
+STATUS_PENDING_REVIEW = 'Pending Review'
+STATUS_UNDER_REVIEW = 'Under Review'
+STATUS_APPROVED = 'Approved'
+STATUS_REJECTED = 'Rejected'
+
+CATEGORY_UNASSIGNED = 'Unassigned'

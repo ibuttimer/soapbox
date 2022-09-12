@@ -21,8 +21,9 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 
-from django.urls import path, re_path
-from soapbox import (
+from django.urls import path
+
+from .constants import (
     USER_ID_URL, USER_ID_ROUTE_NAME
 )
 from . import views

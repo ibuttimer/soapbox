@@ -19,44 +19,56 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
+#
+from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from .constants import (
-    BASE_APP_NAME, USER_APP_NAME, CATEGORIES_APP_NAME, OPINIONS_APP_NAME,
-    APP_NAME, COPYRIGHT_YEAR, COPYRIGHT,
-    GET, PATCH, POST, DELETE,
-    HOME_URL, HOME_ROUTE_NAME,
-    ADMIN_URL, ACCOUNTS_URL, SUMMERNOTE_URL,
-    USERS_URL, OPINIONS_URL,
-    AVATAR_FOLDER, IMAGE_FILE_TYPES, DEV_IMAGE_FILE_TYPES
+    NAME_FIELD, DESCRIPTION_FIELD
 )
-from .settings import AVATAR_BLANK_URL, DEVELOPMENT
 
-__all__ = [
-    'BASE_APP_NAME',
-    'USER_APP_NAME',
-    'CATEGORIES_APP_NAME',
-    'OPINIONS_APP_NAME',
-    'APP_NAME',
-    'COPYRIGHT_YEAR',
-    'COPYRIGHT',
 
-    'GET',
-    'PATCH',
-    'POST',
-    'DELETE',
+class Category(models.Model):
+    """ Categories model """
 
-    'HOME_URL',
-    'HOME_ROUTE_NAME',
-    'ADMIN_URL',
-    'ACCOUNTS_URL',
-    'SUMMERNOTE_URL',
-    'USERS_URL',
-    'OPINIONS_URL',
+    MODEL_NAME = 'Category'
 
-    'AVATAR_FOLDER',
-    'IMAGE_FILE_TYPES',
-    'DEV_IMAGE_FILE_TYPES',
+    # field names
+    NAME_FIELD = NAME_FIELD
+    DESCRIPTION_FIELD = DESCRIPTION_FIELD
 
-    'AVATAR_BLANK_URL',
-    'DEVELOPMENT'
-]
+    CATEGORY_ATTRIB_NAME_MAX_LEN: int = 40
+    CATEGORY_ATTRIB_DESCRIPTION_MAX_LEN: int = 100
+
+    name = models.CharField(_('name'), max_length=CATEGORY_ATTRIB_NAME_MAX_LEN,
+                            unique=True)
+
+    description = models.CharField(
+        _('description'), max_length=CATEGORY_ATTRIB_DESCRIPTION_MAX_LEN,
+        blank=True)
+
+    class Meta:
+        ordering = [NAME_FIELD]
+
+    def __str__(self):
+        return self.name
+
+
+class Status(models.Model):
+    """ Statuses model """
+
+    MODEL_NAME = 'Status'
+
+    # field names
+    NAME_FIELD = NAME_FIELD
+
+    STATUS_ATTRIB_NAME_MAX_LEN: int = 40
+
+    name = models.CharField(_('name'), max_length=STATUS_ATTRIB_NAME_MAX_LEN,
+                            blank=False, unique=True)
+
+    class Meta:
+        ordering = [NAME_FIELD]
+
+    def __str__(self):
+        return self.name

@@ -20,14 +20,3 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-NAME_FIELD = "name"
-DESCRIPTION_FIELD = "description"
-
-TITLE_FIELD = "title"
-CONTENT_FIELD = "content"
-CATEGORIES = 'categories'
-STATUS = 'status'
-SLUG = 'slug'
-CREATED = 'created'
-UPDATED = 'updated'
-PUBLISHED = 'published'

@@ -40,7 +40,9 @@ from django.contrib import admin
 from django.urls import path, include
 from base import get_home
 from soapbox import (
-    ADMIN_URL, ACCOUNTS_URL, SUMMERNOTE_URL, USERS_URL, USER_APP_NAME,
+    ADMIN_URL, ACCOUNTS_URL, SUMMERNOTE_URL,
+    USERS_URL, USER_APP_NAME,
+    OPINIONS_URL, OPINIONS_APP_NAME,
     settings, HOME_ROUTE_NAME
 )
 
@@ -49,6 +51,7 @@ urlpatterns = [
     path(SUMMERNOTE_URL, include('django_summernote.urls')),
     path(ACCOUNTS_URL, include('allauth.urls')),
     path(USERS_URL, include(f'{USER_APP_NAME}.urls')),
+    path(OPINIONS_URL, include(f'{OPINIONS_APP_NAME}.urls')),
     path('', get_home, name=HOME_ROUTE_NAME),
 ]
 

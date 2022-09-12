@@ -25,58 +25,17 @@ from datetime import datetime, MINYEAR, timezone
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from .common import (
-    NAME_FIELD, DESCRIPTION_FIELD, TITLE_FIELD, CONTENT_FIELD
+from user.models import User
+from categories.models import Category, Status
+from utils import SlugMixin
+from .constants import (
+    TITLE_FIELD, CONTENT_FIELD, CATEGORIES_FIELD, STATUS_FIELD,
+    USER_FIELD, SLUG_FIELD, CREATED_FIELD, UPDATED_FIELD,
+    PUBLISHED_FIELD
 )
 
 
-class Category(models.Model):
-    """ Categories model """
-
-    MODEL_NAME = 'Category'
-
-    # field names
-    NAME_FIELD = NAME_FIELD
-    DESCRIPTION_FIELD = DESCRIPTION_FIELD
-
-    CATEGORY_ATTRIB_NAME_MAX_LEN: int = 40
-    CATEGORY_ATTRIB_DESCRIPTION_MAX_LEN: int = 100
-
-    name = models.CharField(_('name'), max_length=CATEGORY_ATTRIB_NAME_MAX_LEN,
-                            unique=True)
-
-    description = models.CharField(
-        _('description'), max_length=CATEGORY_ATTRIB_DESCRIPTION_MAX_LEN,
-        blank=True)
-
-    class Meta:
-        ordering = [NAME_FIELD]
-
-    def __str__(self):
-        return self.name
-
-
-class Status(models.Model):
-    """ Statuses model """
-
-    MODEL_NAME = 'Status'
-
-    # field names
-    NAME_FIELD = NAME_FIELD
-
-    STATUS_ATTRIB_NAME_MAX_LEN: int = 40
-
-    name = models.CharField(_('name'), max_length=STATUS_ATTRIB_NAME_MAX_LEN,
-                            blank=False, unique=True)
-
-    class Meta:
-        ordering = [NAME_FIELD]
-
-    def __str__(self):
-        return self.name
-
-
-class Opinion(models.Model):
+class Opinion(SlugMixin, models.Model):
     """ Opinions model """
 
     MODEL_NAME = 'Opinion'
@@ -84,6 +43,13 @@ class Opinion(models.Model):
     # field names
     TITLE_FIELD = TITLE_FIELD
     CONTENT_FIELD = CONTENT_FIELD
+    CATEGORIES_FIELD = CATEGORIES_FIELD
+    STATUS_FIELD = STATUS_FIELD
+    USER_FIELD = USER_FIELD
+    SLUG_FIELD = SLUG_FIELD
+    CREATED_FIELD = CREATED_FIELD
+    UPDATED_FIELD = UPDATED_FIELD
+    PUBLISHED_FIELD = PUBLISHED_FIELD
 
     OPINION_ATTRIB_TITLE_MAX_LEN: int = 100
     OPINION_ATTRIB_CONTENT_MAX_LEN: int = 1500
@@ -95,6 +61,8 @@ class Opinion(models.Model):
 
     content = models.CharField(
         _('content'), max_length=OPINION_ATTRIB_CONTENT_MAX_LEN, blank=False)
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     categories = models.ManyToManyField(Category)
 
@@ -116,3 +84,11 @@ class Opinion(models.Model):
 
     def __str__(self):
         return self.title
+
+    def set_slug(self, title: str):
+        """
+        Set slug from specified title
+        :param title: title to generate slug from
+        """
+        self.slug = Opinion.generate_unique_slug(
+            self, Opinion.OPINION_ATTRIB_SLUG_MAX_LEN, title)

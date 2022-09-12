@@ -20,14 +20,3 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-
-# common field names
-FIRST_NAME = "first_name"
-LAST_NAME = "last_name"
-EMAIL = "email"
-USERNAME = "username"
-PASSWORD = "password1"
-PASSWORD_CONFIRM = "password2"
-BIO = "bio"
-AVATAR = "avatar"
-CATEGORIES = 'categories'

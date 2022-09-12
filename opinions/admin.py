@@ -22,22 +22,10 @@
 #
 from django.contrib import admin
 
-from .models import Category, Status, Opinion
-
-
-@admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
-    """ Class representing the Category model in the admin interface """
-    pass
-
-
-@admin.register(Status)
-class CategoryAdmin(admin.ModelAdmin):
-    """ Class representing the Status model in the admin interface """
-    pass
+from .models import Opinion
 
 
 @admin.register(Opinion)
-class CategoryAdmin(admin.ModelAdmin):
+class OpinionAdmin(admin.ModelAdmin):
     """ Class representing the Opinion model in the admin interface """
     pass
