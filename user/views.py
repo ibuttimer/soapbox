@@ -28,7 +28,7 @@ from django.views import View
 
 from soapbox import (
     USER_APP_NAME, HOME_ROUTE_NAME, IMAGE_FILE_TYPES, AVATAR_BLANK_URL,
-    DEVELOPMENT
+    DEVELOPMENT, DEV_IMAGE_FILE_TYPES
 )
 from utils import app_template_path, redirect_on_success_or_render
 from .forms import UserForm
@@ -79,7 +79,6 @@ class UserDetail(LoginRequiredMixin, View):
             "user_profile": user_obj,
             "read_only": user_obj.id != request.user.id,
             "form": form,
-            "auto_ids": {field: form.auto_id % field for field in form.fields},
             'lhs_fields': [
                 UserForm.FIRST_NAME_FF, UserForm.LAST_NAME_FF,
                 UserForm.EMAIL_FF
@@ -89,11 +88,9 @@ class UserDetail(LoginRequiredMixin, View):
             'other_fields': [UserForm.CATEGORIES_FF],
             'avatar_url': avatar_url,
             'image_file_types':
-                # svg not supported by Pillow which is used by ImageField in
-                # dev mode
-                [img_type for img_type in IMAGE_FILE_TYPES
-                 if "svg" not in img_type]
-                if DEVELOPMENT else IMAGE_FILE_TYPES
+                # not all image types supported by Pillow which is used by
+                # ImageField in dev mode
+                DEV_IMAGE_FILE_TYPES if DEVELOPMENT else IMAGE_FILE_TYPES
         }
 
     def post(self, request: HttpRequest,
@@ -101,7 +98,7 @@ class UserDetail(LoginRequiredMixin, View):
         """
         POST method to update User
         :param request: http request
-        :param pk: id of user to get
+        :param pk: id of user to update
         :param args: additional arbitrary arguments
         :param kwargs: additional keyword arguments
         :return: http response
@@ -111,22 +108,23 @@ class UserDetail(LoginRequiredMixin, View):
 
         user_obj = get_object_or_404(User, id=pk)
 
-        form = UserForm(data=request.POST, files=request.FILES)
+        form = UserForm(data=request.POST, files=request.FILES,
+                        instance=user_obj)
 
         if form.is_valid():
+            # normal fields are updated but ManyToMany aren't
             # copy clean data to user object
-            for field in form.cleaned_data:
-                save_data = form.cleaned_data[field]
-                if field == UserForm.AVATAR_FF:
-                    if save_data is None:
-                        continue    # no change
-                    if not save_data:
-                        # user cleared, reset to placeholder
-                        save_data = User.AVATAR_BLANK
-                if field == UserForm.CATEGORIES_FF:
-                    user_obj.categories.set(save_data)
-                else:
-                    setattr(user_obj, field, save_data)
+            user_obj.categories.set(
+                form.cleaned_data[UserForm.CATEGORIES_FF]
+            )
+            # special handing for avatar
+            save_data = form.cleaned_data[UserForm.AVATAR_FF]
+            if save_data is not None:
+                if not save_data:   # False for clear
+                    # user cleared, reset to placeholder
+                    save_data = User.AVATAR_BLANK
+                setattr(user_obj, UserForm.AVATAR_FF, save_data)
+
             # save updated object
             user_obj.save()
             # django autocommits changes

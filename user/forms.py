@@ -27,11 +27,11 @@ from allauth.account.forms import SignupForm
 from django_summernote.fields import SummernoteTextField
 from django_summernote.widgets import SummernoteWidget
 
-from opinions.models import Category
-from soapbox import IMAGE_FILE_TYPES, DEVELOPMENT
+from categories.models import Category
+from soapbox import IMAGE_FILE_TYPES, DEVELOPMENT, DEV_IMAGE_FILE_TYPES
 from utils import update_field_widgets, error_messages, ErrorMsgs
 from .models import User
-from .common import (
+from .constants import (
     FIRST_NAME, LAST_NAME, EMAIL, USERNAME, PASSWORD, PASSWORD_CONFIRM,
     BIO, AVATAR, CATEGORIES
 )
@@ -127,8 +127,10 @@ class UserForm(forms.ModelForm):
         "label": _("Avatar"),
         "required": False,
         "widget": NoCurrentClearableFileInput(attrs={
-            # https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types#common_image_file_types
-            "accept": ", ".join(IMAGE_FILE_TYPES)
+            # not all image types supported by Pillow which is used by
+            # ImageField in dev mode
+            "accept": ", ".join(
+                DEV_IMAGE_FILE_TYPES if DEVELOPMENT else IMAGE_FILE_TYPES)
         })
     }
     # ImageField for local dev, CloudinaryFileField for production

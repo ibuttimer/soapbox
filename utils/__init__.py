@@ -20,16 +20,22 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from .misc import append_slash, namespaced_url, app_template_path, url_path
+from .misc import (
+    append_slash, namespaced_url, app_template_path, url_path,
+    random_string_generator, is_boolean_true
+)
 from .views import redirect_on_success_or_render
 from .forms import update_field_widgets, error_messages, ErrorMsgs
 from .file import find_parent_of_folder
+from .models import SlugMixin
 
 __all__ = [
     'append_slash',
     'namespaced_url',
     'app_template_path',
     'url_path',
+    'random_string_generator',
+    'is_boolean_true',
 
     'redirect_on_success_or_render',
 
@@ -37,5 +43,7 @@ __all__ = [
     'error_messages',
     'ErrorMsgs',
 
-    'find_parent_of_folder'
+    'find_parent_of_folder',
+
+    'SlugMixin'
 ]

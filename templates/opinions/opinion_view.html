@@ -1,0 +1,124 @@
+<!--
+  ~ MIT License
+  ~
+  ~ Copyright (c) 2022 Ian Buttimer
+  ~
+  ~ Permission is hereby granted, free of charge, to any person obtaining a copy
+  ~ of this software and associated documentation files (the "Software"), to deal
+  ~ in the Software without restriction, including without limitation the rights
+  ~ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  ~ copies of the Software, and to permit persons to whom the Software is
+  ~ furnished to do so, subject to the following conditions:
+  ~
+  ~ The above copyright notice and this permission notice shall be included in
+  ~ all copies or substantial portions of the Software.
+  ~
+  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  ~ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  ~ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  ~ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  ~ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  ~ SOFTWARE.
+  -->
+
+{% extends "base.html" %}
+
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+{% load tz %}
+{% load dict_value %}
+
+{% block head_title %}SoapBox - {{ title | truncatechars:7 }}{% endblock %}
+
+{% block extra_js_head %}
+    <script src="https://code.jquery.com/jquery-3.6.1.min.js" integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous"></script>
+    <script>window.jQuery || document.write('<script type="text/javascript" src="{% static 'jquery/jquery-3.6.1.min.js' %}"><\/script>')</script>
+{% endblock extra_js_head %}
+
+{% block content %}
+<article class="row text-center">
+    <div class="col-12 mt-2">
+
+        <!-- preview banner -->
+        {% if is_preview %}
+        <div class="alert alert-warning" role="alert">
+            <div class="row">
+                <div class="col-sm-8">
+                    <h3>Preview</h3>
+                </div>
+                <div class="col-sm-2">
+                    <a class="btn btn-outline-warning mb-1" href="{% url 'opinion_id' opinion.id %}">
+                        {% trans "Edit" %}
+                    </a>
+                </div>
+                <div class="col-sm-2">
+                    <button type="button" class="btn btn-outline-success" onclick="updateStatus('publish')">
+                        {% trans "Publish" %}
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="row mb-3">
+            <h1 id="id_title">{{ opinion.title }}</h1>
+        </div>
+
+        <!-- top row: category, updated/published/author, preview/draft/publish -->
+        <div class="row mb-3">
+            <div class="col-sm-4">
+                {% for category in categories %}
+                    <span class="badge rounded-pill text-bg-info">{{ category.name }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="col-sm-3">
+                {% if opinion.published.year > 1 %}
+                    <p><strong>Published</strong> {{ opinion.published | localtime | naturaltime  }}  {{ TIME_ZONE }}</p>
+                {% endif %}
+            </div>
+            <div class="col-sm-3">
+                <p><strong>Updated</strong> {{ opinion.updated | localtime | naturaltime }}</p>
+            </div>
+            <div class="col-sm-2">
+                <p><strong>Author</strong> <a href="{% url 'user_id' opinion.user.id %}">{{ opinion.user.username }}</a></p>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div id="readonly_content" class="text-start">
+                {{ opinion.content | safe }}
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-sm-2 offset-sm-5">
+                <a class="btn btn-secondary mb-1" href="{% url 'home' %}">{% trans "Done" %}</a>
+            </div>
+        </div>
+    </div>
+</article>
+
+{% endblock content %}
+
+{% block extra_js_body %}
+    <script>
+        /**
+         * Update status of current opinion
+         * :param new_status: new status, one of 'publish', 'preview' or 'draft'
+         */
+        function updateStatus(new_status) {
+            $.ajax({
+                url: "{% url 'status_opinion_id' opinion.id %}?status=" + new_status,
+                method: 'patch',
+                headers: {
+                    'X-CSRFTOKEN': '{{ csrf_token }}'
+                }
+            }).done(function(data) {
+                document.location.href = data.redirect;
+            });
+        }
+    </script>
+{% endblock extra_js_body %}

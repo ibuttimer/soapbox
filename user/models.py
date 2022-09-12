@@ -26,9 +26,9 @@ from django.utils.translation import gettext_lazy as _
 from cloudinary.models import CloudinaryField
 
 from soapbox import AVATAR_FOLDER, DEVELOPMENT
-from opinions.models import Category
+from categories.models import Category
 
-from .common import (
+from .constants import (
     FIRST_NAME, LAST_NAME, BIO, AVATAR, CATEGORIES
 )
 

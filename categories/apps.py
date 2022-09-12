@@ -21,13 +21,17 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 
-# common field names
-FIRST_NAME = "first_name"
-LAST_NAME = "last_name"
-EMAIL = "email"
-USERNAME = "username"
-PASSWORD = "password1"
-PASSWORD_CONFIRM = "password2"
-BIO = "bio"
-AVATAR = "avatar"
-CATEGORIES = 'categories'
+from django.apps import AppConfig
+from django.utils.translation import gettext_lazy as _
+
+
+class CategoriesConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'categories'
+    verbose_name = _("Category Management")
+
+
+class StatusesConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'statuses'
+    verbose_name = _("Status Management")

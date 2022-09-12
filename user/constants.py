@@ -20,8 +20,20 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from .constants import OPINION_ID_ROUTE_NAME
+from utils import append_slash
 
-__all__ = [
-    'OPINION_ID_ROUTE_NAME'
-]
+# common field names
+FIRST_NAME = "first_name"
+LAST_NAME = "last_name"
+EMAIL = "email"
+USERNAME = "username"
+PASSWORD = "password1"
+PASSWORD_CONFIRM = "password2"
+BIO = "bio"
+AVATAR = "avatar"
+CATEGORIES = 'categories'
+
+# User routes related
+USER_ID_URL = append_slash("<int:pk>")
+
+USER_ID_ROUTE_NAME = "user_id"

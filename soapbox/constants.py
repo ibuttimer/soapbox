@@ -29,6 +29,7 @@ COPYRIGHT = "Ian Buttimer"
 # Namespace related
 BASE_APP_NAME = "base"
 USER_APP_NAME = "user"
+CATEGORIES_APP_NAME = "categories"
 OPINIONS_APP_NAME = "opinions"
 
 # Request methods
@@ -54,16 +55,19 @@ SUMMERNOTE_URL = append_slash("summernote")
 
 # User routes related
 USERS_URL = append_slash("users")
-USER_ID_URL = append_slash("<int:pk>")
 
-USER_ID_ROUTE_NAME = "user_id"
-
+# Opinion routes related
+OPINIONS_URL = append_slash("opinions")
 
 # cloudinary related
 AVATAR_FOLDER = "soapbox"
 
 # https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types#common_image_file_types
-IMAGE_FILE_TYPES = [
-    "image/apng", "image/avif", "image/gif", "image/jpeg", "image/png",
-    "image/svg+xml", "image/webp"
+# Pillow which is used by ImageField in dev mode doesn't support avif or svg
+DEV_IMAGE_FILE_TYPES = [
+    "image/apng", "image/gif", "image/jpeg", "image/png", "image/webp"
 ]
+IMAGE_FILE_TYPES = DEV_IMAGE_FILE_TYPES.copy()
+IMAGE_FILE_TYPES.extend([
+    "image/avif", "image/svg+xml"
+])
