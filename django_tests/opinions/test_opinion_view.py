@@ -31,9 +31,10 @@ from categories import (
     STATUS_DRAFT, STATUS_PREVIEW, STATUS_PUBLISHED, CATEGORY_UNASSIGNED
 )
 from categories.models import Category, Status
-from opinions import OPINION_ID_ROUTE_NAME
-from opinions.constants import OPINION_NEW_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME, \
+from opinions import (
+    OPINION_ID_ROUTE_NAME, OPINION_NEW_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME,
     OPINION_PREVIEW_ID_ROUTE_NAME
+)
 from opinions.models import Opinion
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
