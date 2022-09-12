@@ -21,33 +21,50 @@
 #  DEALINGS IN THE SOFTWARE.
 
 from datetime import datetime
+from enum import Enum
+from http import HTTPStatus
 from zoneinfo import ZoneInfo
 
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, HttpResponseNotAllowed, \
+    JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.views import View
+from django.views.decorators.http import require_http_methods
 
-from soapbox import (
-    OPINIONS_APP_NAME, HOME_ROUTE_NAME
+from categories import (
+    STATUS_DRAFT, STATUS_PUBLISHED, STATUS_PREVIEW, CATEGORY_UNASSIGNED
 )
-from user.models import User
-from utils import (
-    app_template_path, redirect_on_success_or_render, is_boolean_true
-)
-from categories import STATUS_DRAFT, STATUS_PUBLISHED, CATEGORY_UNASSIGNED
 from categories.models import Status, Category
+from soapbox import (
+    OPINIONS_APP_NAME, HOME_ROUTE_NAME, GET, PATCH
+)
+from utils import (
+    app_template_path, redirect_on_success_or_render
+)
+from .constants import (
+    OPINION_NEW_ROUTE_NAME, OPINION_ID_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME,
+    OPINION_PREVIEW_ID_ROUTE_NAME
+)
 from .forms import OpinionForm
 from .models import Opinion
-from .constants import (
-    OPINION_NEW_ROUTE_NAME, OPINION_ID_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME
-)
 
 TITLE_NEW = "Creation"
 TITLE_UPDATE = "Update"
 TITLE_OPINION = "Opinion"
+
+READ_ONLY = 'read_only'     # read-only mode
+OWN_ONLY = 'own_only'       # access to own opinions only
+
+
+class QueryStatus(Enum):
+    """ Enum representing status query params """
+    DRAFT = 'draft'
+    PUBLISH = 'publish'
+    PREVIEW = 'preview'
 
 
 class OpinionCreate(LoginRequiredMixin, View):
@@ -82,7 +99,7 @@ class OpinionCreate(LoginRequiredMixin, View):
 
         if form.is_valid():
             # save new object
-            status, preview = _query_args(request)
+            status, query = _query_args(request)
 
             form.instance.user = request.user
             form.instance.status = status
@@ -166,7 +183,7 @@ def _context(title: str,
 
     context = {
         'title': title,
-        'read_only': read_only,
+        READ_ONLY: read_only,
         'status': status_text,
         'status_bg':
             'bg-primary' if status_text == STATUS_DRAFT else 'bg-success',
@@ -199,6 +216,7 @@ def _render_view(title: str,
     )
     context.update({
         'categories': opinion_obj.categories.all(),
+        'is_preview': status.name == STATUS_PREVIEW if status else False
     })
 
     return app_template_path(OPINIONS_APP_NAME, "opinion_view.html"), context
@@ -217,26 +235,54 @@ def _timestamp_opinion(opinion: Opinion):
             opinion.published = timestamp
 
 
-def _query_args(request: HttpRequest) -> tuple[Status, bool]:
+def _query_args(request: HttpRequest) -> tuple[Status, QueryStatus]:
     """
     Get query arguments from request query
     :param request: http request
-    :return: tuple of Status and preview flag
+    :return: tuple of Status and QueryStatus
     """
     # query params are in request.GET
     # maybe slightly unorthodox, but saves defining 3 routes
     # https://docs.djangoproject.com/en/4.1/ref/request-response/#querydict-objects
     status = STATUS_DRAFT
+    query = QueryStatus.DRAFT
     if 'status' in request.GET:
-        if request.GET['status'].lower() == 'publish':
-            status = STATUS_PUBLISHED
+        req_status = request.GET['status'].lower()
+        for status_name, query_opt in [
+            (STATUS_PUBLISHED, QueryStatus.PUBLISH),
+            (STATUS_PREVIEW, QueryStatus.PREVIEW)
+        ]:
+            if req_status == query_opt.name.lower():
+                status = status_name
+                query = query_opt
+                break
 
     status = Status.objects.get(name=status)
 
-    preview = is_boolean_true(request.GET['preview']) \
-        if 'preview' in request.GET else False
+    return status, query
 
-    return status, preview
+
+def _own_opinion_check(request: HttpRequest, opinion_obj: Opinion):
+    """
+    Check request user is opinion author
+    :param request: http request
+    :param opinion_obj: opinion
+    """
+    if request.user.id != opinion_obj.user.id:
+        raise PermissionDenied(
+            "Opinions may only be updated by their authors")
+
+
+def _published_check(request: HttpRequest, opinion_obj: Opinion):
+    """
+    Check requested opinion is published
+    :param request: http request
+    :param opinion_obj: opinion
+    """
+    if request.user.id != opinion_obj.user.id and \
+            opinion_obj.status.name != STATUS_PUBLISHED:
+        raise PermissionDenied(
+            "Opinion unavailable")
 
 
 class OpinionDetail(LoginRequiredMixin, View):
@@ -256,9 +302,18 @@ class OpinionDetail(LoginRequiredMixin, View):
         """
         opinion_obj = self._get_opinion(identifier)
 
-        read_only = opinion_obj and opinion_obj.user.id != request.user.id
+        if OWN_ONLY in kwargs and kwargs[OWN_ONLY]:
+            # perform own opinion check
+            _own_opinion_check(request, opinion_obj)
+
+        # perform published check, other users don't have access to
+        # unpublished opinions
+        _published_check(request, opinion_obj)
+
+        read_only = opinion_obj and opinion_obj.user.id != request.user.id \
+            if READ_ONLY not in kwargs else kwargs[READ_ONLY]
         render_args = {
-            'read_only': read_only,
+            READ_ONLY: read_only,
             'opinion_obj': opinion_obj,
             'status': opinion_obj.status
         }
@@ -297,10 +352,12 @@ class OpinionDetail(LoginRequiredMixin, View):
         :return: http response
         """
         opinion_obj = self._get_opinion(identifier)
+        success = True                      # default to success
+        success_route = HOME_ROUTE_NAME     # on success default route
+        success_args = []                   # on success route args
 
-        if request.user.id != opinion_obj.user.id:
-            raise PermissionDenied(
-                "Opinions may only be updated by their authors")
+        # perform own opinion check
+        _own_opinion_check(request, opinion_obj)
 
         form = OpinionForm(data=request.POST, files=request.FILES,
                            instance=opinion_obj)
@@ -312,7 +369,7 @@ class OpinionDetail(LoginRequiredMixin, View):
                 form.cleaned_data[OpinionForm.CATEGORIES_FF]
             )
 
-            status, preview = _query_args(request)
+            status, query = _query_args(request)
             opinion_obj.status = status
 
             _timestamp_opinion(opinion_obj)
@@ -321,7 +378,12 @@ class OpinionDetail(LoginRequiredMixin, View):
             opinion_obj.save()
             # django autocommits changes
             # https://docs.djangoproject.com/en/4.1/topics/db/transactions/#autocommit
-            success = True
+
+            if query == QueryStatus.PREVIEW:
+                # saved show preview
+                success_route = OPINION_PREVIEW_ID_ROUTE_NAME
+                success_args = [opinion_obj.id]
+            # else redirect to home
 
             template_path, context = None, None
         else:
@@ -334,7 +396,8 @@ class OpinionDetail(LoginRequiredMixin, View):
             success = False
 
         return redirect_on_success_or_render(
-            request, success, HOME_ROUTE_NAME, template_path, context)
+            request, success, success_route, *success_args,
+            template_path=template_path, context=context)
 
     def url(self, opinion_obj: Opinion) -> str:
         """
@@ -384,6 +447,49 @@ class OpinionDetailById(OpinionDetail):
         return reverse(OPINION_ID_ROUTE_NAME, args=[opinion_obj.id])
 
 
+class OpinionDetailPreviewById(OpinionDetail):
+    """
+    Class-based view for individual opinion preview by id
+    """
+
+    def get(self, request: HttpRequest,
+            pk: int, *args, **kwargs) -> HttpResponse:
+        """
+        GET method for Opinion
+        :param request: http request
+        :param pk: id of opinion to get
+        :param args: additional arbitrary arguments
+        :param kwargs: additional keyword arguments
+        :return: http response
+        """
+        # preview is readonly and user can only preview their own opinions
+        preview_kwargs = kwargs.copy()
+        preview_kwargs[READ_ONLY] = True
+        preview_kwargs[OWN_ONLY] = True
+        return OpinionDetail.get(self, request, pk, *args, **preview_kwargs)
+
+    def post(self, request: HttpRequest,
+             pk: int, *args, **kwargs) -> HttpResponse:
+        """
+        POST method for Opinion preview not allowed
+        :param request: http request
+        :param pk: id of opinion to update
+        :param args: additional arbitrary arguments
+        :param kwargs: additional keyword arguments
+        :return: http response
+        """
+        # POST no allowed for preview
+        return HttpResponseNotAllowed([GET])
+
+    def url(self, opinion_obj: Opinion) -> str:
+        """
+        Get url for opinion view/update
+        :param opinion_obj: opinion
+        :return: url
+        """
+        return reverse(OPINION_PREVIEW_ID_ROUTE_NAME, args=[opinion_obj.id])
+
+
 class OpinionDetailBySlug(OpinionDetail):
     """
     Class-based view for individual opinion view/update by slug
@@ -420,3 +526,26 @@ class OpinionDetailBySlug(OpinionDetail):
         :return: url
         """
         return reverse(OPINION_SLUG_ROUTE_NAME, args=[opinion_obj.slug])
+
+
+@login_required
+@require_http_methods([PATCH])
+def opinion_status_patch(request: HttpRequest, pk: int) -> HttpResponse:
+    """
+    Class-based view for opinion.
+    :param request: http request
+    :param pk:      id of opinion
+    :return:
+    """
+    opinion_obj = get_object_or_404(Opinion, pk=pk)
+
+    _own_opinion_check(request, opinion_obj)
+
+    status, query = _query_args(request)
+
+    opinion_obj.status = status
+    opinion_obj.save()
+
+    return JsonResponse({
+        'redirect': '/'
+    }, status=HTTPStatus.OK)

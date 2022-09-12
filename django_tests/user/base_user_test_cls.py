@@ -97,6 +97,10 @@ class BaseUserTest(TestCase):
         )[index % len(BaseUserTest.USER_INFO)]
 
     @staticmethod
+    def num_users():
+        return len(BaseUserTest.USER_INFO)
+
+    @staticmethod
     def login_user_by_key(test_instance, name: str | None = None) -> User:
         """
         Login user

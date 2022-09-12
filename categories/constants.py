@@ -27,6 +27,7 @@ DESCRIPTION_FIELD = "description"
 
 STATUS_DRAFT = 'Draft'
 STATUS_PUBLISHED = 'Published'
+STATUS_PREVIEW = 'Preview'
 STATUS_WITHDRAWN = 'Withdrawn'
 STATUS_PENDING_REVIEW = 'Pending Review'
 STATUS_UNDER_REVIEW = 'Under Review'

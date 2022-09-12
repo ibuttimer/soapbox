@@ -144,9 +144,9 @@ The Opinion Compose page will have the following features:
 The Opinion Preview page will have the following features:
 - Allow users to preview the appearance of draft opinions.
 
-| Large screen                         | Small screen |
-|--------------------------------------|--------------|
-| ![](img/soapbox-compose-large.png)   | TODO         |
+| Large screen                       | Small screen |
+|------------------------------------|--------------|
+| ![](img/soapbox-preview-large.png) | TODO         |
 
 ## Category page
 

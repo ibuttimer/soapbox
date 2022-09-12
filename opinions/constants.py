@@ -20,7 +20,7 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from utils import append_slash
+from utils import append_slash, url_path
 
 # common field names
 TITLE_FIELD = "title"
@@ -37,7 +37,11 @@ PUBLISHED_FIELD = 'published'
 OPINION_NEW_URL = append_slash("new")
 OPINION_ID_URL = append_slash("<int:pk>")
 OPINION_SLUG_URL = append_slash("<slug:slug>")
+OPINION_PREVIEW_ID_URL = url_path("preview", OPINION_ID_URL)
+OPINION_STATUS_ID_URL = url_path("status", OPINION_ID_URL)
 
 OPINION_NEW_ROUTE_NAME = "opinion_new"
 OPINION_ID_ROUTE_NAME = "opinion_id"
 OPINION_SLUG_ROUTE_NAME = "opinion_slug"
+OPINION_PREVIEW_ID_ROUTE_NAME = "preview_opinion_id"
+OPINION_STATUS_ID_ROUTE_NAME = "status_opinion_id"

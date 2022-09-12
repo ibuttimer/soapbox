@@ -28,6 +28,7 @@ from django.shortcuts import render, redirect
 
 def redirect_on_success_or_render(request: HttpRequest, success: bool,
                                   redirect_to: str = '/',
+                                  *args,
                                   template_path: str = None,
                                   context: dict = None) -> HttpResponse:
     """
@@ -36,6 +37,8 @@ def redirect_on_success_or_render(request: HttpRequest, success: bool,
     :param success:         success flag
     :param redirect_to:     a view name that can be resolved by
                             `urls.reverse()` or a URL
+    :param args:            optional args for view name, (`urls.reverse()`
+                            used to reverse-resolve the name)
     :param template_path:   template to render
     :param context:         context for template
     :return: http response
@@ -43,7 +46,7 @@ def redirect_on_success_or_render(request: HttpRequest, success: bool,
     response: HttpResponse
     if success:
         # success, redirect
-        response = redirect(redirect_to)
+        response = redirect(redirect_to, *args)
     else:
         # render template
         response = render(request, template_path, context=context)
