@@ -60,7 +60,7 @@ class BaseUserTest(TestCase):
     }
 
     @staticmethod
-    def create_user() -> dict:
+    def create_users() -> dict:
         """
         Create test users
         :return: dict of test users
@@ -73,7 +73,7 @@ class BaseUserTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         """ Set up data for the whole TestCase """
-        cls.users = BaseUserTest.create_user()
+        cls.users = BaseUserTest.create_users()
 
     @classmethod
     def get_user_by_index(cls, index: int) -> tuple[User, str]:

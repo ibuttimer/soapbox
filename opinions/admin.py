@@ -22,10 +22,16 @@
 #
 from django.contrib import admin
 
-from .models import Opinion
+from .models import Opinion, Review
 
 
 @admin.register(Opinion)
 class OpinionAdmin(admin.ModelAdmin):
     """ Class representing the Opinion model in the admin interface """
+    pass
+
+
+@admin.register(Review)
+class OpinionAdmin(admin.ModelAdmin):
+    """ Class representing the Review model in the admin interface """
     pass

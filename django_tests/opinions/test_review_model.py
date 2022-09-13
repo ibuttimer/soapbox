@@ -24,34 +24,36 @@ from datetime import datetime, timezone, MINYEAR
 
 from categories import STATUS_DRAFT
 from categories.models import Status
-from opinions.constants import STATUS_FIELD, USER_FIELD
-from opinions.models import Opinion
-from ..user.base_user_test_cls import BaseUserTest
+from opinions.models import Review
+from .base_opinion_test_cls import BaseOpinionTest
 
 
-class TestOpinionModel(BaseUserTest):
+class TestReviewModel(BaseOpinionTest):
     """
-    Test opinion
+    Test review
     https://docs.djangoproject.com/en/4.1/topics/testing/tools/
     """
 
     @classmethod
     def setUpTestData(cls):
         """ Set up data for the whole TestCase """
-        super(TestOpinionModel, TestOpinionModel).setUpTestData()
+        super(TestReviewModel, TestReviewModel).setUpTestData()
 
-    def test_opinion_defaults(self):
-        user, _ = TestOpinionModel.get_user_by_index(0)
+    def test_review_defaults(self):
+        requested, _ = TestReviewModel.get_user_by_index(0)
+        reviewer, _ = TestReviewModel.get_user_by_index(1)
+        opinion = TestReviewModel.opinions[0]
         kwargs = {
-            STATUS_FIELD: Status.objects.get(name=STATUS_DRAFT),
-            USER_FIELD: user
+            Review.OPINION_FIELD: opinion,
+            Review.REQUESTED_FIELD: requested,
+            Review.REVIEWER_FIELD: reviewer,
+            Review.STATUS_FIELD: Status.objects.get(name=STATUS_DRAFT),
         }
-        opinion = Opinion.objects.create(**kwargs)
-        self.assertIsNotNone(opinion)
-        self.assertEqual(opinion.title, '')
-        self.assertEqual(opinion.content, '')
-        self.assertEqual(opinion.slug, '')
-        self.assertLessEqual(opinion.created, datetime.now(tz=timezone.utc))
-        self.assertLessEqual(opinion.updated, datetime.now(tz=timezone.utc))
-        self.assertEqual(opinion.published,
+        review = Review.objects.create(**kwargs)
+        self.assertIsNotNone(review)
+        self.assertEqual(review.reason, '')
+        self.assertEqual(review.comment, '')
+        self.assertLessEqual(review.created, datetime.now(tz=timezone.utc))
+        self.assertLessEqual(review.updated, datetime.now(tz=timezone.utc))
+        self.assertEqual(review.resolved,
                          datetime(MINYEAR, 1, 1, 0, 0, tzinfo=timezone.utc))

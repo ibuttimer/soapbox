@@ -22,6 +22,7 @@
 #
 import re
 from http import HTTPStatus
+import json
 
 from bs4 import BeautifulSoup
 from django.http import HttpResponse
@@ -35,83 +36,40 @@ from opinions import (
     OPINION_ID_ROUTE_NAME, OPINION_NEW_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME,
     OPINION_PREVIEW_ID_ROUTE_NAME
 )
+from opinions.constants import OPINION_STATUS_ID_ROUTE_NAME
 from opinions.models import Opinion
+from opinions.views import QueryStatus
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from ..category_mixin import CategoryMixin
 from ..soup_mixin import SoupMixin
 from ..user.base_user_test_cls import BaseUserTest
+from .base_opinion_test_cls import BaseOpinionTest
 
 OPINION_FORM_TEMPLATE = f'{OPINIONS_APP_NAME}/opinion_form.html'
 OPINION_VIEW_TEMPLATE = f'{OPINIONS_APP_NAME}/opinion_view.html'
 
-STATUSES = [STATUS_DRAFT, STATUS_PREVIEW, STATUS_PUBLISHED]
+# query params to match BaseOpinionTest.STATUSES
+QUERY_PARAMS = {
+    STATUS_DRAFT: QueryStatus.DRAFT,
+    STATUS_PREVIEW: QueryStatus.PREVIEW,
+    STATUS_PUBLISHED: QueryStatus.PUBLISH,
+}
 
 BY_ID = 'id'
 BY_SLUG = 'slug'
 
 
-class TestOpinionView(SoupMixin, CategoryMixin, BaseUserTest):
+class TestOpinionView(SoupMixin, CategoryMixin, BaseOpinionTest):
     """
     Test opinion page view
     https://docs.djangoproject.com/en/4.1/topics/testing/tools/
     """
-    OPINION_INFO = [{
-            Opinion.TITLE_FIELD: opinion[0],
-            Opinion.CONTENT_FIELD: opinion[1],
-        } for opinion in [
-            ("Title 1 informative", "Very informative opinion"),
-            ("Title 2 controversial", "Very controversial opinion"),
-            ("Title 3 ground-breaking", "Ground-breaking opinion"),
-        ]
-    ]
-
-    @staticmethod
-    def create_opinion(index: int, user: User, status: Status,
-                       categories: list[Category]) -> Opinion:
-
-        kwargs = TestOpinionView.OPINION_INFO[index].copy()
-        kwargs[Opinion.TITLE_FIELD] = \
-            f'{kwargs[Opinion.TITLE_FIELD]} {user.first_name}'
-        kwargs[Opinion.USER_FIELD] = user
-        kwargs[Opinion.STATUS_FIELD] = status
-        kwargs[Opinion.SLUG_FIELD] = Opinion.generate_slug(
-            Opinion.OPINION_ATTRIB_SLUG_MAX_LEN,
-            kwargs[Opinion.TITLE_FIELD])
-        opinion = Opinion(**kwargs)
-        opinion.save()
-        opinion.categories.set(categories)
-        opinion.save()
-        return opinion
 
     @classmethod
     def setUpTestData(cls):
         """ Set up data for the whole TestCase """
         super(TestOpinionView, TestOpinionView).setUpTestData()
-        # create opinions
-        category_list = list(Category.objects.all())
-
-        cls.opinions = []
-
-        for user_idx in range(TestOpinionView.num_users()):
-            user, _ = TestOpinionView.get_user_by_index(user_idx)
-
-            for index in range(len(TestOpinionView.OPINION_INFO)):
-
-                mod_num = user_idx + index + 2
-                categories = [
-                    category for idx, category in enumerate(category_list)
-                    if idx % mod_num
-                ]
-
-                opinion = TestOpinionView.create_opinion(
-                    index,
-                    user,
-                    Status.objects.get(
-                        name=STATUSES[index % len(STATUSES)]),
-                    categories
-                )
-                cls.opinions.append(opinion)
 
     def login_user_by_key(self, name: str | None = None) -> User:
         """
@@ -301,7 +259,7 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseUserTest):
         """
         self.check_other_opinion_access(BY_ID)
 
-    def test_get_other_opinion_access__by_slug(self):
+    def test_get_other_opinion_access_by_slug(self):
         """
         Test access to unpublished opinions by slug of not logged-in user
         """
@@ -320,6 +278,7 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseUserTest):
                 opinions = self.get_own_opinions(logged_in_user, status)
                 opinion = opinions[0]
 
+                self.assertEqual(logged_in_user, opinion.user)
                 response = self.get_opinion_preview(opinion.id)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
                 self.assertTemplateUsed(response, OPINION_VIEW_TEMPLATE)
@@ -338,10 +297,71 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseUserTest):
                 # get list of other users' opinions
                 opinions = self.get_other_users_opinions(
                     logged_in_user, status)
+                self.assertGreaterEqual(len(opinions), 1)
                 opinion = opinions[0]
 
                 self.assertNotEqual(logged_in_user, opinion.user)
                 response = self.get_opinion_preview(opinion.id)
+                self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_own_opinion_status_patch(self):
+        """
+        Test access to setting status of own opinions
+        """
+        opinion = TestOpinionView.opinions[0]
+        logged_in_user = self.login_user_by_id(opinion.user.id)
+        self.assertEqual(logged_in_user, opinion.user)
+
+        # get statuses and sort so current is last in list in order to
+        # return opinion to initial state
+        statuses = list(
+            Status.objects.filter(name__in=BaseOpinionTest.STATUSES)
+        )
+        statuses.sort(key=lambda s: 1 if s == opinion.status else 0)
+
+        query_params = list(map(lambda s: QUERY_PARAMS[s.name], statuses))
+
+        for index in range(len(statuses)):
+            status = statuses[index]
+            with self.subTest(f'status {status}'):
+                url = reverse(OPINION_STATUS_ID_ROUTE_NAME, args=[opinion.id])
+                response = self.client.patch(
+                    f'{url}?status={query_params[index].value}'
+                )
+                result = json.loads(response.content)
+                self.assertEqual(response.status_code, HTTPStatus.OK)
+                self.assertEqual(result['status'], status.name)
+
+    def test_other_opinion_status_patch(self):
+        """
+        Test access to setting status of other users' opinions
+        """
+        opinion = TestOpinionView.opinions[0]
+        logged_in_user = self.login_user_by_id(opinion.user.id)
+        self.assertEqual(logged_in_user, opinion.user)
+
+        # get list of other users' opinions
+        opinions = self.get_other_users_opinions(
+            logged_in_user, STATUS_DRAFT)
+        self.assertGreaterEqual(len(opinions), 1)
+        opinion = opinions[0]
+
+        # get statuses and sort so current is last in list in order to
+        # return opinion to initial state
+        statuses = list(
+            Status.objects.filter(name__in=BaseOpinionTest.STATUSES)
+        )
+        statuses.sort(key=lambda s: 1 if s == opinion.status else 0)
+
+        query_params = list(map(lambda s: QUERY_PARAMS[s.name], statuses))
+
+        for index in range(len(statuses)):
+            status = statuses[index]
+            with self.subTest(f'status {status}'):
+                url = reverse(OPINION_STATUS_ID_ROUTE_NAME, args=[opinion.id])
+                response = self.client.patch(
+                    f'{url}?status={query_params[index].value}'
+                )
                 self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
     def verify_opinion_content(
