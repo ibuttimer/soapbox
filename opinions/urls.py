@@ -30,18 +30,22 @@ from .constants import (
     OPINION_PREVIEW_ID_URL, OPINION_PREVIEW_ID_ROUTE_NAME,
     OPINION_STATUS_ID_URL, OPINION_STATUS_ID_ROUTE_NAME
 )
-from . import views
+from .views_create import OpinionCreate
+from .views_by_id import (
+    OpinionDetailById, OpinionDetailBySlug, OpinionDetailPreviewById,
+    opinion_status_patch
+)
 
 
 urlpatterns = [
-    path(OPINION_NEW_URL, views.OpinionCreate.as_view(),
+    path(OPINION_NEW_URL, OpinionCreate.as_view(),
          name=OPINION_NEW_ROUTE_NAME),
-    path(OPINION_ID_URL, views.OpinionDetailById.as_view(),
+    path(OPINION_ID_URL, OpinionDetailById.as_view(),
          name=OPINION_ID_ROUTE_NAME),
-    path(OPINION_SLUG_URL, views.OpinionDetailBySlug.as_view(),
+    path(OPINION_SLUG_URL, OpinionDetailBySlug.as_view(),
          name=OPINION_SLUG_ROUTE_NAME),
-    path(OPINION_PREVIEW_ID_URL, views.OpinionDetailPreviewById.as_view(),
+    path(OPINION_PREVIEW_ID_URL, OpinionDetailPreviewById.as_view(),
          name=OPINION_PREVIEW_ID_ROUTE_NAME),
-    path(OPINION_STATUS_ID_URL, views.opinion_status_patch,
+    path(OPINION_STATUS_ID_URL, opinion_status_patch,
          name=OPINION_STATUS_ID_ROUTE_NAME),
 ]

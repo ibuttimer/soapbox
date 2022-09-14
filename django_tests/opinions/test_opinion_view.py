@@ -28,18 +28,17 @@ from bs4 import BeautifulSoup
 from django.http import HttpResponse
 from django.urls import reverse
 
+from soapbox import OPINIONS_APP_NAME
 from categories import (
     STATUS_DRAFT, STATUS_PREVIEW, STATUS_PUBLISHED, CATEGORY_UNASSIGNED
 )
 from categories.models import Category, Status
 from opinions import (
     OPINION_ID_ROUTE_NAME, OPINION_NEW_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME,
-    OPINION_PREVIEW_ID_ROUTE_NAME
+    OPINION_PREVIEW_ID_ROUTE_NAME, OPINION_STATUS_ID_ROUTE_NAME
 )
-from opinions.constants import OPINION_STATUS_ID_ROUTE_NAME
 from opinions.models import Opinion
-from opinions.views import QueryStatus
-from soapbox import OPINIONS_APP_NAME
+from opinions.views_utils import QueryStatus
 from user.models import User
 from ..category_mixin import CategoryMixin
 from ..soup_mixin import SoupMixin
