@@ -1,8 +1,25 @@
 
+
+/* custom properties */
+:root {
+    --user-icon-height: 50px;
+    --user-icon-width: 50px;
+    --user-icon-radius: 10px;
+
+}
+
+
 /* Colour classes */
 .theme-colour-background {
     background-color: var(--orange-yellow-contrast);
     padding-left: 5px;
     padding-right: 5px;
     border-radius: 5px;
+}
+
+/* user icon */
+.div__user-icon {
+    width: var(--user-icon-width);
+    height: var(--user-icon-height);
+    border-radius: var(--user-icon-radius);
 }

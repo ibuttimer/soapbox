@@ -33,6 +33,13 @@ CREATED_FIELD = 'created'
 UPDATED_FIELD = 'updated'
 PUBLISHED_FIELD = 'published'
 
+OPINION_FIELD = 'opinion'
+REQUESTED_FIELD = 'requested'
+REASON_FIELD = 'reason'
+REVIEWER_FIELD = 'reviewer'
+COMMENT_FIELD = 'comment'
+RESOLVED_FIELD = 'resolved'
+
 # Opinion routes related
 OPINION_NEW_URL = append_slash("new")
 OPINION_ID_URL = append_slash("<int:pk>")
@@ -45,3 +52,7 @@ OPINION_ID_ROUTE_NAME = "opinion_id"
 OPINION_SLUG_ROUTE_NAME = "opinion_slug"
 OPINION_PREVIEW_ID_ROUTE_NAME = "preview_opinion_id"
 OPINION_STATUS_ID_ROUTE_NAME = "status_opinion_id"
+
+# permissions related
+CLOSE_REVIEW_PERM = "close_review"
+WITHDRAW_REVIEW_PERM = "withdraw_review"

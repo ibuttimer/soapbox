@@ -31,7 +31,10 @@ from utils import SlugMixin
 from .constants import (
     TITLE_FIELD, CONTENT_FIELD, CATEGORIES_FIELD, STATUS_FIELD,
     USER_FIELD, SLUG_FIELD, CREATED_FIELD, UPDATED_FIELD,
-    PUBLISHED_FIELD
+    PUBLISHED_FIELD,
+    OPINION_FIELD, REQUESTED_FIELD, REASON_FIELD,
+    REVIEWER_FIELD, COMMENT_FIELD, RESOLVED_FIELD,
+    CLOSE_REVIEW_PERM, WITHDRAW_REVIEW_PERM
 )
 
 
@@ -72,8 +75,6 @@ class Opinion(SlugMixin, models.Model):
         _('slug'), max_length=OPINION_ATTRIB_SLUG_MAX_LEN, blank=False,
         unique=True)
 
-    # TODO is img field required?
-
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     published = models.DateTimeField(
@@ -92,3 +93,55 @@ class Opinion(SlugMixin, models.Model):
         """
         self.slug = Opinion.generate_unique_slug(
             self, Opinion.OPINION_ATTRIB_SLUG_MAX_LEN, title)
+
+
+class Review(models.Model):
+    """ Reviews model """
+
+    MODEL_NAME = 'Review'
+
+    # field names
+    OPINION_FIELD = OPINION_FIELD
+    REQUESTED_FIELD = REQUESTED_FIELD
+    REASON_FIELD = REASON_FIELD
+    REVIEWER_FIELD = REVIEWER_FIELD
+    COMMENT_FIELD = COMMENT_FIELD
+    STATUS_FIELD = STATUS_FIELD
+    CREATED_FIELD = CREATED_FIELD
+    UPDATED_FIELD = UPDATED_FIELD
+    RESOLVED_FIELD = RESOLVED_FIELD
+
+    REVIEW_ATTRIB_REASON_MAX_LEN: int = 500
+    REVIEW_ATTRIB_COMMENT_MAX_LEN: int = 500
+
+    opinion = models.ForeignKey(Opinion, on_delete=models.CASCADE)
+
+    requested = models.ForeignKey(User, on_delete=models.CASCADE,
+                                  related_name='requested_by')
+
+    reason = models.CharField(
+        _('reason'), max_length=REVIEW_ATTRIB_REASON_MAX_LEN, blank=False)
+
+    reviewer = models.ForeignKey(User, on_delete=models.CASCADE,
+                                 related_name='reviewed_by')
+
+    comment = models.CharField(
+        _('comment'), max_length=REVIEW_ATTRIB_COMMENT_MAX_LEN, blank=False)
+
+    status = models.ForeignKey(Status, on_delete=models.CASCADE)
+
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    resolved = models.DateTimeField(
+        default=datetime(MINYEAR, 1, 1, tzinfo=timezone.utc))
+
+    class Meta:
+        permissions = [
+            (CLOSE_REVIEW_PERM,
+             "Can close a review by setting its status to resolved"),
+            (WITHDRAW_REVIEW_PERM,
+             "Can close a review by setting its status to withdrawn"),
+        ]
+
+    def __str__(self):
+        return f'Review: {self.opinion.title}'

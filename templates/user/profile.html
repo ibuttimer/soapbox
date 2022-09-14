@@ -26,6 +26,7 @@
 
 {% load i18n %}
 {% load static %}
+{% load form_field %}
 
 {% block head_title %}SoapBox - Profile{% endblock %}
 
@@ -40,8 +41,8 @@
 {% endblock extra_js_head %}
 
 {% block content %}
-<article article="row text-center">
-    <div class="col-12 mt-2">
+<article article="row">
+    <div class="col-12 mt-2 text-center">
         <h1>{% trans "Profile" %} <em>{{ user_profile.username }}</em></h1>
 
         <form
@@ -80,57 +81,72 @@
 
                     <div class="col-6">
                         {# user avatar field #}
-
-                        {% for field in form %}
-                        {% if field.name in img_fields %}
-                            <div class="preview">
-                                <img src="{{ avatar_url }}" width="100px" height="100px" alt="Avatar image">
-                            </div>
-                            {{ field }}
+                        <div class="preview">
+                            <img src="{{ avatar_url }}" width="100px" height="100px" alt="Avatar image">
+                        </div>
+                        {% if not read_only %}
+                            {% form_field form 'avatar' as avatar_field %}
+                            {{ avatar_field }}
                         {% endif %}
-                        {% endfor %}
-
                     </div>
                 </div>
 
-                {% for field in form %}
-                    {% if field.name in summernote_fields %}
-                        <div class="row mb-3">
-                            <div class="col-sm-2 text-start">
-                                <label for="{{ field.name }}" class="form-label">{{ field.label }}</label>
+                {% form_field form 'bio' as bio_field %}
+                <div class="row mb-3">
+                    <div class="col-sm-2 text-start">
+                        <label for="{{ bio_field.auto_id }}" class="form-label">{{ bio_field.label }}</label>
+                    </div>
+                    <div class="col-sm-10">
+                        {% if read_only %}
+                            <div id="readonly_content" class="text-start">
+                                <!-- content replaced -->
                             </div>
-                            <div class="col-sm-10">
-                                {% if read_only %}
-                                    <div id="readonly_content" class="text-start">
-                                        <!-- content replaced -->
-                                    </div>
-                                {% else %}
-                                    {{ field }}
-                                {% endif %}
-                            </div>
+                        {% else %}
+                            {{ bio_field }}
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% form_field form 'categories' as categories_field %}
+                <div class="row mb-3">
+                    <div class="col-sm-2 text-start">
+                        <label for="{{ categories_field.auto_id }}" class="form-label">{{ categories_field.label }}</label>
+                    </div>
+                    <div class="col-sm-10">
+                        {% if read_only %}
+                            <ul class="list-group list-group-horizontal-sm">
+                                {% for category in categories_field.initial %}
+                                    <li class="list-group-item li__category">{{ category }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            {{ categories_field }}
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if is_super %}
+                    {% form_field form 'groups' as groups_field %}
+                    <div class="row mb-3">
+                        <div class="col-sm-2 text-start">
+                            <label for="{{ groups_field.auto_id }}" class="form-label">{{ groups_field.label }}</label>
                         </div>
-                    {% elif field.name in other_fields %}
-                        <div class="row mb-3">
-                            <div class="col-sm-2 text-start">
-                                <label for="{{ field.name }}" class="form-label">{{ field.label }}</label>
-                            </div>
-                            <div class="col-sm-10">
-                                {{ field }}
-                            </div>
+                        <div class="col-sm-10">
+                            {{ groups_field }}
                         </div>
-                    {% endif %}
-                {% endfor %}
+                    </div>
+                {% endif %}
             </fieldset>
 
             {% if not read_only %}
-            <div class="row mb-3">
-                <div class="col-sm-2 offset-sm-3">
-                    <a class="btn btn-secondary mb-1" href="{% url 'home' %}">{% trans "Cancel" %}</a>
+                <div class="row mb-3">
+                    <div class="col-sm-2 offset-sm-3">
+                        <a class="btn btn-secondary mb-1" href="{% url 'home' %}">{% trans "Cancel" %}</a>
+                    </div>
+                    <div class="col-sm-2 offset-sm-2">
+                        <button type="submit" class="btn btn-primary">{% trans "Update" %}</button>
+                    </div>
                 </div>
-                <div class="col-sm-2 offset-sm-2">
-                    <button type="submit" class="btn btn-primary">{% trans "Update" %}</button>
-                </div>
-            </div>
             {% endif %}
         </form>
     </div>
@@ -151,11 +167,8 @@
     {% if read_only %}
         <script>
                 $(document).ready(function() {
-                    {% for field in form %}
-                        {% if field.name in summernote_fields %}
-                            $('#readonly_content').html('{{ field.initial | safe }}');
-                        {% endif %}
-                    {% endfor %}
+                    {% form_field form 'bio' as bio_field %}
+                    $('#readonly_content').html('{{ bio_field.initial | safe }}');
                 });
         </script>
     {% endif %}

@@ -23,6 +23,9 @@
 import random
 import string
 import environ
+from enum import Enum
+
+from django.db import models
 
 
 def append_slash(url: str) -> str:
@@ -89,3 +92,32 @@ def is_boolean_true(text: str) -> bool:
     :return: True if represents a boolean True value, otherwise False
     """
     return text.lower() in environ.Env.BOOLEAN_TRUE_STRINGS
+
+
+class Crud(Enum):
+    """
+    Enum to map standard CRUD terms to Django models default permissions
+    """
+    CREATE = 'add'
+    READ = 'view'
+    UPDATE = 'change'
+    DELETE = 'delete'
+
+
+def permission_name(
+        model: [str, models.Model], op: Crud, app_label: str = None) -> str:
+    """
+    Generate a permission name.
+    See
+    https://docs.djangoproject.com/en/4.1/topics/auth/default/#default-permissions
+    :param model: model or model name
+    :param op: CRUD operation
+    :param app_label:
+        app label for models defined outside of an application in
+        INSTALLED_APPS, default none
+    :return: permission string
+    """
+    perm = f'{app_label}.' if app_label else ''
+    if not isinstance(model, str):
+        model = model._meta.model_name
+    return f'{perm}{op.value}_{model}'

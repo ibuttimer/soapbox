@@ -29,6 +29,8 @@ from allauth.socialaccount.signals import (
     social_account_removed
 )
 
+from .permissions import add_to_authors
+
 
 @receiver(user_logged_in)
 def user_logged_in_callback(sender, **kwargs):
@@ -43,6 +45,7 @@ def user_logged_out_callback(sender, **kwargs):
 @receiver(user_signed_up)
 def user_signed_up_callback(sender, **kwargs):
     print("user_signed_up!")
+    add_to_authors(kwargs['user'])
 
 
 @receiver(pre_social_login)

@@ -70,22 +70,25 @@ class UserDetail(LoginRequiredMixin, View):
 
         # set initial data
         form[UserForm.CATEGORIES_FF].initial = list(user_obj.categories.all())
+        if request.user.is_superuser:
+            # groups only displayed when superuser looking
+            form[UserForm.GROUPS_FF].initial = list(user_obj.groups.all())
+
         # avatar to display
         avatar_url = AVATAR_BLANK_URL \
             if User.AVATAR_BLANK in form.initial[UserForm.AVATAR_FF].url \
             else form.initial[UserForm.AVATAR_FF].url
 
+        read_only = user_obj.id != request.user.id
+
         return app_template_path(USER_APP_NAME, "profile.html"), {
             "user_profile": user_obj,
-            "read_only": user_obj.id != request.user.id,
+            "read_only": read_only and not request.user.is_superuser,
             "form": form,
             'lhs_fields': [
                 UserForm.FIRST_NAME_FF, UserForm.LAST_NAME_FF,
                 UserForm.EMAIL_FF
             ],
-            'summernote_fields': [UserForm.BIO_FF],
-            'img_fields': [UserForm.AVATAR_FF],
-            'other_fields': [UserForm.CATEGORIES_FF],
             'avatar_url': avatar_url,
             'image_file_types':
                 # not all image types supported by Pillow which is used by
@@ -103,7 +106,7 @@ class UserDetail(LoginRequiredMixin, View):
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        if request.user.id != pk:
+        if request.user.id != pk and not request.user.is_superuser:
             raise PermissionDenied("Users may only update their own profile")
 
         user_obj = get_object_or_404(User, id=pk)
@@ -117,6 +120,11 @@ class UserDetail(LoginRequiredMixin, View):
             user_obj.categories.set(
                 form.cleaned_data[UserForm.CATEGORIES_FF]
             )
+            if request.user.is_superuser:
+                # groups only updated when superuser looking
+                user_obj.groups.set(
+                    form.cleaned_data[UserForm.GROUPS_FF]
+                )
             # special handing for avatar
             save_data = form.cleaned_data[UserForm.AVATAR_FF]
             if save_data is not None:
@@ -140,4 +148,5 @@ class UserDetail(LoginRequiredMixin, View):
             success = False
 
         return redirect_on_success_or_render(
-            request, success, HOME_ROUTE_NAME, template_path, context)
+            request, success, HOME_ROUTE_NAME,
+            template_path=template_path, context=context)
