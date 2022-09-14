@@ -16,6 +16,11 @@ class Migration(migrations.Migration):
         ('opinions', '0002_opinion_user'),
     ]
 
+    # NOTE: when reversing this migration the content type is left in
+    # the 'django_content_type' table and permissions are left in
+    # the 'auth_permission' table, but it doesn't cause a problem when
+    # it's reapplied.
+
     operations = [
         migrations.CreateModel(
             name='Review',

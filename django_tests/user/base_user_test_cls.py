@@ -25,6 +25,7 @@ import os
 import django
 
 from user.models import User
+from user.permissions import add_to_authors
 
 # 'allauth' checks for 'django.contrib.sites', so django must be setup before
 # test
@@ -74,6 +75,8 @@ class BaseUserTest(TestCase):
     def setUpTestData(cls):
         """ Set up data for the whole TestCase """
         cls.users = BaseUserTest.create_users()
+        for user in cls.users.values():
+            add_to_authors(user)
 
     @classmethod
     def get_user_by_index(cls, index: int) -> tuple[User, str]:

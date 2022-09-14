@@ -32,8 +32,14 @@ PASSWORD_CONFIRM = "password2"
 BIO = "bio"
 AVATAR = "avatar"
 CATEGORIES = 'categories'
+GROUPS = 'groups'
+
+AUTHOR_GROUP = 'Author'
+MODERATOR_GROUP = 'Moderator'
 
 # User routes related
 USER_ID_URL = append_slash("<int:pk>")
+USER_USERNAME_URL = append_slash("<str:pk>")
 
 USER_ID_ROUTE_NAME = "user_id"
+USER_USERNAME_ROUTE_NAME = "user_id"

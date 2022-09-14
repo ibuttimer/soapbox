@@ -75,3 +75,20 @@ class CategoryMixin:
             lambda category, opt: category.id == int(opt['value'])
             and category.name == opt.text,
             categories)
+
+    @staticmethod
+    def check_category_list(
+            test_case: TestCase, soup: BeautifulSoup,
+            categories: QuerySet):
+        """
+        Check that the list of selected categories in a unordered list
+        matches the expected
+        :param test_case: TestCase instance
+        :param soup: BeautifulSoup object
+        :param categories: expected categories
+        """
+        CategoryMixin.check_categories(
+            test_case, soup,
+            lambda tag: tag.name == 'li' and tag.parent.name == 'ul',
+            lambda category, opt: category.name == opt.text,
+            categories)

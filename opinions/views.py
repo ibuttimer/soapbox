@@ -43,7 +43,7 @@ from soapbox import (
     OPINIONS_APP_NAME, HOME_ROUTE_NAME, GET, PATCH
 )
 from utils import (
-    app_template_path, redirect_on_success_or_render
+    app_template_path, redirect_on_success_or_render, permission_name, Crud
 )
 from .constants import (
     OPINION_NEW_ROUTE_NAME, OPINION_ID_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME,
@@ -81,6 +81,8 @@ class OpinionCreate(LoginRequiredMixin, View):
         :param kwargs: additional keyword arguments
         :return: http response
         """
+        _permission_check(request, Crud.CREATE)
+
         template_path, context = _render_form(
             TITLE_NEW, submit_url=self.url(), form=OpinionForm())
         return render(request, template_path, context=context)
@@ -93,6 +95,8 @@ class OpinionCreate(LoginRequiredMixin, View):
         :param kwargs: additional keyword arguments
         :return: http response
         """
+        _permission_check(request, Crud.CREATE)
+
         form = OpinionForm(data=request.POST, files=request.FILES)
 
         # TODO preview route
@@ -119,7 +123,8 @@ class OpinionCreate(LoginRequiredMixin, View):
             success = False
 
         return redirect_on_success_or_render(
-            request, success, HOME_ROUTE_NAME, template_path, context)
+            request, success, HOME_ROUTE_NAME,
+            template_path=template_path, context=context)
 
     def url(self) -> str:
         """
@@ -262,6 +267,17 @@ def _query_args(request: HttpRequest) -> tuple[Status, QueryStatus]:
     return status, query
 
 
+def _permission_check(request: HttpRequest, op: Crud):
+    """
+    Check request user has specified permission
+    :param request: http request
+    :param op: Crud operation to check
+    """
+    if not request.user.has_perm(
+            permission_name(Opinion, op, app_label=OPINIONS_APP_NAME)):
+        raise PermissionDenied("Insufficient permissions")
+
+
 def _own_opinion_check(request: HttpRequest, opinion_obj: Opinion):
     """
     Check request user is opinion author
@@ -300,6 +316,8 @@ class OpinionDetail(LoginRequiredMixin, View):
         :param kwargs: additional keyword arguments
         :return: http response
         """
+        _permission_check(request, Crud.READ)
+
         opinion_obj = self._get_opinion(identifier)
 
         if OWN_ONLY in kwargs and kwargs[OWN_ONLY]:
@@ -351,6 +369,8 @@ class OpinionDetail(LoginRequiredMixin, View):
         :param kwargs: additional keyword arguments
         :return: http response
         """
+        _permission_check(request, Crud.UPDATE)
+
         opinion_obj = self._get_opinion(identifier)
         success = True                      # default to success
         success_route = HOME_ROUTE_NAME     # on success default route
@@ -462,6 +482,8 @@ class OpinionDetailPreviewById(OpinionDetail):
         :param kwargs: additional keyword arguments
         :return: http response
         """
+        _permission_check(request, Crud.READ)
+
         # preview is readonly and user can only preview their own opinions
         preview_kwargs = kwargs.copy()
         preview_kwargs[READ_ONLY] = True
@@ -478,7 +500,7 @@ class OpinionDetailPreviewById(OpinionDetail):
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        # POST no allowed for preview
+        # POST not allowed for preview
         return HttpResponseNotAllowed([GET])
 
     def url(self, opinion_obj: Opinion) -> str:
@@ -537,6 +559,8 @@ def opinion_status_patch(request: HttpRequest, pk: int) -> HttpResponse:
     :param pk:      id of opinion
     :return:
     """
+    _permission_check(request, Crud.UPDATE)
+
     opinion_obj = get_object_or_404(Opinion, pk=pk)
 
     _own_opinion_check(request, opinion_obj)
@@ -547,5 +571,6 @@ def opinion_status_patch(request: HttpRequest, pk: int) -> HttpResponse:
     opinion_obj.save()
 
     return JsonResponse({
-        'redirect': '/'
+        'redirect': '/',
+        'status': opinion_obj.status.name
     }, status=HTTPStatus.OK)

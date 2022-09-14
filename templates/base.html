@@ -111,6 +111,14 @@
                         {% if user.is_authenticated %}
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    {% if is_super %}
+                                        <i class="fa-solid fa-user-ninja"></i>
+                                    {% elif is_moderator %}
+                                        <i class="fa-solid fa-user-plus"></i>
+                                    {% elif is_author %}
+                                        <i class="fa-solid fa-user"></i>
+                                    {% endif %}
+                                    &nbsp;
                                     {% if user.first_name %}
                                         {{ user.first_name }}
                                     {% else %}

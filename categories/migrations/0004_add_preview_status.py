@@ -14,8 +14,13 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunSQL(
-            [("INSERT INTO categories_status (name) VALUES (%s);", [name])])
-        for name in [
+            sql=[
+                ("INSERT INTO categories_status (name) VALUES (%s);", [name])
+            ],
+            reverse_sql=[
+                ("DELETE FROM categories_status WHERE name=%s;", [name])
+            ]
+        ) for name in [
             STATUS_PREVIEW
         ]
     ]

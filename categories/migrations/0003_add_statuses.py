@@ -13,9 +13,18 @@ class Migration(migrations.Migration):
         ('categories', '0002_add_initial_categories'),
     ]
 
+    # https://docs.djangoproject.com/en/4.1/ref/migration-operations/#runsql
+
     operations = [
         migrations.RunSQL(
-            [("INSERT INTO categories_status (name) VALUES (%s);", [name])])
+            sql=[
+                ("INSERT INTO categories_status (name) VALUES (%s);",
+                 [name])
+            ],
+            reverse_sql=[
+                ("DELETE FROM categories_status WHERE name=%s;",
+                 [name])]
+        )
         for name in [
             STATUS_DRAFT, STATUS_PUBLISHED, STATUS_WITHDRAWN,
             STATUS_PENDING_REVIEW, STATUS_UNDER_REVIEW, STATUS_APPROVED,

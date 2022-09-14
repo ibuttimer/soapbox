@@ -13,35 +13,41 @@ class Migration(migrations.Migration):
     # https://docs.djangoproject.com/en/4.1/ref/migration-operations/#runsql
     operations = [
         migrations.RunSQL(
-            [("INSERT INTO categories_category (name, description) "
-              "VALUES (%s, %s);", [name, desc])]) for name, desc in [
-                (CATEGORY_UNASSIGNED, 'Category currently unassigned'),
-                ('News', 'Opinions on current affairs'),
-                ('Sport', 'Opinions on sport'),
-                ('Technology', 'Opinions on technology'),
-                ('Weather', 'Opinions on the weather'),
-                ('Entertainment', 'Opinions on entertainment in general'),
-                ('Film', 'Opinions on films/movies'),
-                ('Theatre', 'Opinions on theatre'),
-                ('Television', 'Opinions on television'),
-                ('Cooking', 'Cookery-related opinions'),
-                ('Restaurants', 'Opinions on restaurants'),
-                ('Motoring', 'Motoring-related opinions'),
-                ('Motorbikes', 'Motorbike-related opinions'),
-                ('Trains', 'Train-related opinions'),
-                ('Planes', 'Plane-related opinions'),
-                ('Ships', 'Ship-related opinions'),
-                ('Sailing', 'Sailing-related opinions'),
-                ('Food', 'Food-related opinions'),
-                ('Politics', 'Opinions on politics'),
-                ('Tax', 'Opinions on taxes'),
-                ('Climate change', 'Opinions on climate change'),
-                ('Toys', 'Toy-related opinions'),
-                ('Gardening', 'Gardening-related opinions'),
-                ('Architecture', 'Architecture-related opinions'),
-                ('Travel', 'Travel-related opinions'),
-                ('Newspapers', 'Newspaper-related opinions'),
-                ('Literature', 'Literature-related opinions'),
-                ('Art', 'Art-related opinions'),
+            sql=[
+                ("INSERT INTO categories_category (name, description) "
+                 "VALUES (%s, %s);", [name, desc])
+            ],
+            reverse_sql=[
+                ("DELETE FROM categories_category WHERE name=%s;", [name])
             ]
+        ) for name, desc in [
+            (CATEGORY_UNASSIGNED, 'Category currently unassigned'),
+            ('News', 'Opinions on current affairs'),
+            ('Sport', 'Opinions on sport'),
+            ('Technology', 'Opinions on technology'),
+            ('Weather', 'Opinions on the weather'),
+            ('Entertainment', 'Opinions on entertainment in general'),
+            ('Film', 'Opinions on films/movies'),
+            ('Theatre', 'Opinions on theatre'),
+            ('Television', 'Opinions on television'),
+            ('Cooking', 'Cookery-related opinions'),
+            ('Restaurants', 'Opinions on restaurants'),
+            ('Motoring', 'Motoring-related opinions'),
+            ('Motorbikes', 'Motorbike-related opinions'),
+            ('Trains', 'Train-related opinions'),
+            ('Planes', 'Plane-related opinions'),
+            ('Ships', 'Ship-related opinions'),
+            ('Sailing', 'Sailing-related opinions'),
+            ('Food', 'Food-related opinions'),
+            ('Politics', 'Opinions on politics'),
+            ('Tax', 'Opinions on taxes'),
+            ('Climate change', 'Opinions on climate change'),
+            ('Toys', 'Toy-related opinions'),
+            ('Gardening', 'Gardening-related opinions'),
+            ('Architecture', 'Architecture-related opinions'),
+            ('Travel', 'Travel-related opinions'),
+            ('Newspapers', 'Newspaper-related opinions'),
+            ('Literature', 'Literature-related opinions'),
+            ('Art', 'Art-related opinions'),
+        ]
     ]

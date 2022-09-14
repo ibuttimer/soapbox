@@ -26,6 +26,7 @@ from django.utils.translation import gettext_lazy as _
 from allauth.account.forms import SignupForm
 from django_summernote.fields import SummernoteTextField
 from django_summernote.widgets import SummernoteWidget
+from django.contrib.auth.models import Group
 
 from categories.models import Category
 from soapbox import IMAGE_FILE_TYPES, DEVELOPMENT, DEV_IMAGE_FILE_TYPES
@@ -33,7 +34,7 @@ from utils import update_field_widgets, error_messages, ErrorMsgs
 from .models import User
 from .constants import (
     FIRST_NAME, LAST_NAME, EMAIL, USERNAME, PASSWORD, PASSWORD_CONFIRM,
-    BIO, AVATAR, CATEGORIES
+    BIO, AVATAR, CATEGORIES, GROUPS
 )
 
 
@@ -101,6 +102,7 @@ class UserForm(forms.ModelForm):
     BIO_FF = BIO
     AVATAR_FF = AVATAR
     CATEGORIES_FF = CATEGORIES
+    GROUPS_FF = GROUPS
 
     first_name = forms.CharField(
         label=_("First name"),
@@ -147,10 +149,14 @@ class UserForm(forms.ModelForm):
         queryset=Category.objects.all(), required=False
     )
 
+    groups = forms.ModelMultipleChoiceField(
+        queryset=Group.objects.all(), required=False
+    )
+
     class Meta:
         model = User
         fields = [
-            FIRST_NAME, LAST_NAME, EMAIL, BIO, AVATAR
+            FIRST_NAME, LAST_NAME, EMAIL, BIO, AVATAR, CATEGORIES, GROUPS
         ]
         non_bootstrap_fields = [BIO, AVATAR]
         help_texts = {

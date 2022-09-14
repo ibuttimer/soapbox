@@ -152,8 +152,12 @@ class TestProfileView(SoupMixin, CategoryMixin, BaseUserTest):
                           lambda tag: user.bio in tag.text)
 
         # check categories
-        TestProfileView.check_category_options(
-            self, soup, user.categories.all())
+        if is_readonly:
+            TestProfileView.check_category_list(
+                self, soup, user.categories.all())
+        else:
+            TestProfileView.check_category_options(
+                self, soup, user.categories.all())
 
         # check read only
         self.check_tag(self, soup.find_all('fieldset'), is_readonly,

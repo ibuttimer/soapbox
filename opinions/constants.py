@@ -54,5 +54,5 @@ OPINION_PREVIEW_ID_ROUTE_NAME = "preview_opinion_id"
 OPINION_STATUS_ID_ROUTE_NAME = "status_opinion_id"
 
 # permissions related
-CLOSE_REVIEW_PERM = "close_review",
+CLOSE_REVIEW_PERM = "close_review"
 WITHDRAW_REVIEW_PERM = "withdraw_review"
