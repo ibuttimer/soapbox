@@ -24,6 +24,7 @@
 from django.urls import path
 
 from .constants import (
+    OPINIONS_URL, OPINIONS_ROUTE_NAME,
     OPINION_NEW_URL, OPINION_NEW_ROUTE_NAME,
     OPINION_ID_URL, OPINION_ID_ROUTE_NAME,
     OPINION_SLUG_URL, OPINION_SLUG_ROUTE_NAME,
@@ -35,9 +36,12 @@ from .views_by_id import (
     OpinionDetailById, OpinionDetailBySlug, OpinionDetailPreviewById,
     opinion_status_patch
 )
+from .views_list import OpinionList
 
 
 urlpatterns = [
+    path(OPINIONS_URL, OpinionList.as_view(),
+         name=OPINIONS_ROUTE_NAME),
     path(OPINION_NEW_URL, OpinionCreate.as_view(),
          name=OPINION_NEW_ROUTE_NAME),
     path(OPINION_ID_URL, OpinionDetailById.as_view(),

@@ -29,8 +29,8 @@ from user.models import User
 from categories.models import Category, Status
 from utils import SlugMixin
 from .constants import (
-    TITLE_FIELD, CONTENT_FIELD, CATEGORIES_FIELD, STATUS_FIELD,
-    USER_FIELD, SLUG_FIELD, CREATED_FIELD, UPDATED_FIELD,
+    TITLE_FIELD, CONTENT_FIELD, EXCERPT_FIELD, CATEGORIES_FIELD,
+    STATUS_FIELD, USER_FIELD, SLUG_FIELD, CREATED_FIELD, UPDATED_FIELD,
     PUBLISHED_FIELD,
     OPINION_FIELD, REQUESTED_FIELD, REASON_FIELD,
     REVIEWER_FIELD, COMMENT_FIELD, RESOLVED_FIELD,
@@ -46,6 +46,7 @@ class Opinion(SlugMixin, models.Model):
     # field names
     TITLE_FIELD = TITLE_FIELD
     CONTENT_FIELD = CONTENT_FIELD
+    EXCERPT_FIELD = EXCERPT_FIELD
     CATEGORIES_FIELD = CATEGORIES_FIELD
     STATUS_FIELD = STATUS_FIELD
     USER_FIELD = USER_FIELD
@@ -55,7 +56,8 @@ class Opinion(SlugMixin, models.Model):
     PUBLISHED_FIELD = PUBLISHED_FIELD
 
     OPINION_ATTRIB_TITLE_MAX_LEN: int = 100
-    OPINION_ATTRIB_CONTENT_MAX_LEN: int = 1500
+    OPINION_ATTRIB_CONTENT_MAX_LEN: int = 2500
+    OPINION_ATTRIB_EXCERPT_MAX_LEN: int = 150
     OPINION_ATTRIB_SLUG_MAX_LEN: int = 50
 
     title = models.CharField(
@@ -64,6 +66,9 @@ class Opinion(SlugMixin, models.Model):
 
     content = models.CharField(
         _('content'), max_length=OPINION_ATTRIB_CONTENT_MAX_LEN, blank=False)
+
+    excerpt = models.CharField(
+        _('excerpt'), max_length=OPINION_ATTRIB_EXCERPT_MAX_LEN, blank=True)
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 

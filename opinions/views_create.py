@@ -26,21 +26,21 @@ from django.http import (
     HttpRequest, HttpResponse
 )
 from django.shortcuts import render
-from django.urls import reverse
 from django.views import View
 
 from soapbox import (
     HOME_ROUTE_NAME
 )
 from utils import (
-    redirect_on_success_or_render, Crud
+    redirect_on_success_or_render, Crud, reverse_q
 )
 from .constants import (
     OPINION_NEW_ROUTE_NAME
 )
 from .forms import OpinionForm
 from .views_utils import (
-    permission_check, query_args, timestamp_opinion, render_form
+    permission_check, opinion_save_query_args, timestamp_opinion, render_form,
+    generate_excerpt
 )
 
 TITLE_NEW = "Creation"
@@ -82,11 +82,13 @@ class OpinionCreate(LoginRequiredMixin, View):
 
         if form.is_valid():
             # save new object
-            status, query = query_args(request)
+            status, query = opinion_save_query_args(request)
 
             form.instance.user = request.user
             form.instance.status = status
             form.instance.set_slug(form.instance.title)
+
+            form.instance.excerpt = generate_excerpt(form.instance.content)
 
             timestamp_opinion(form.instance)
 
@@ -110,4 +112,4 @@ class OpinionCreate(LoginRequiredMixin, View):
         Get url for opinion creation
         :return: url
         """
-        return reverse(OPINION_NEW_ROUTE_NAME)
+        return reverse_q(OPINION_NEW_ROUTE_NAME)

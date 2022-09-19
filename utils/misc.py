@@ -26,6 +26,7 @@ import environ
 from enum import Enum
 
 from django.db import models
+from django.urls import reverse as django_reverse
 
 
 def append_slash(url: str) -> str:
@@ -71,6 +72,26 @@ def url_path(*args: str) -> str:
     :return: path string
     """
     return "".join([append_slash(segment) for segment in args])
+
+
+def reverse_q(viewname, urlconf=None, args=None, kwargs=None,
+              current_app=None, query_kwargs: dict = None) -> str:
+    """
+    Wrapper to add query argument support to django's standard `reverse`
+    :param viewname:  URL pattern name or the callable view object
+    :param urlconf:
+            URLconf module containing the URL patterns to use for reversing
+    :param args: arguments for url
+    :param kwargs: keyword args
+    :param current_app: application to which the view belongs
+    :param query_kwargs: query arguments
+    :return: str
+    """
+    url = django_reverse(viewname, urlconf=urlconf, args=args, kwargs=kwargs,
+                         current_app=current_app)
+    if query_kwargs:
+        url = f'{url}?{"&".join([f"{k}={v}" for k,v in query_kwargs.items()])}'
+    return url
 
 
 def random_string_generator(

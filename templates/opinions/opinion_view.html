@@ -28,7 +28,6 @@
 {% load static %}
 {% load humanize %}
 {% load tz %}
-{% load dict_value %}
 
 {% block head_title %}SoapBox - {{ title | truncatechars:7 }}{% endblock %}
 
@@ -69,14 +68,14 @@
         <!-- top row: category, updated/published/author, preview/draft/publish -->
         <div class="row mb-3">
             <div class="col-sm-4">
-                {% for category in categories %}
+                {% for category in opinion.categories.all %}
                     <span class="badge rounded-pill text-bg-info">{{ category.name }}</span>
                 {% endfor %}
             </div>
 
             <div class="col-sm-3">
                 {% if opinion.published.year > 1 %}
-                    <p><strong>Published</strong> {{ opinion.published | localtime | naturaltime  }}  {{ TIME_ZONE }}</p>
+                    <p><strong>Published</strong> {{ opinion.published | localtime | naturaltime  }}</p>
                 {% endif %}
             </div>
             <div class="col-sm-3">

@@ -26,7 +26,6 @@ import json
 
 from bs4 import BeautifulSoup
 from django.http import HttpResponse
-from django.urls import reverse
 
 from soapbox import OPINIONS_APP_NAME
 from categories import (
@@ -37,6 +36,8 @@ from opinions import (
     OPINION_ID_ROUTE_NAME, OPINION_NEW_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME,
     OPINION_PREVIEW_ID_ROUTE_NAME, OPINION_STATUS_ID_ROUTE_NAME
 )
+from utils import reverse_q
+from opinions.constants import STATUS_QUERY
 from opinions.models import Opinion
 from opinions.views_utils import QueryStatus
 from user.models import User
@@ -92,7 +93,7 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseOpinionTest):
         :param pk: id of opinion
         """
         return self.client.get(
-            reverse(OPINION_ID_ROUTE_NAME, args=[pk]))
+            reverse_q(OPINION_ID_ROUTE_NAME, args=[pk]))
 
     def get_opinion_by_slug(self, slug: str) -> HttpResponse:
         """
@@ -100,7 +101,7 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseOpinionTest):
         :param slug: slug of opinion
         """
         return self.client.get(
-            reverse(OPINION_SLUG_ROUTE_NAME, args=[slug]))
+            reverse_q(OPINION_SLUG_ROUTE_NAME, args=[slug]))
 
     def get_opinion_by(
             self, identifier: [int, str], opinion_by: str) -> HttpResponse:
@@ -120,7 +121,7 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseOpinionTest):
         :param pk: id of opinion
         """
         return self.client.get(
-            reverse(OPINION_PREVIEW_ID_ROUTE_NAME, args=[pk]))
+            reverse_q(OPINION_PREVIEW_ID_ROUTE_NAME, args=[pk]))
 
     def test_not_logged_in_access_by_id(self):
         """ Test must be logged in to access opinion by id """
@@ -131,7 +132,6 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseOpinionTest):
         """ Test must be logged in to access opinion by slug """
         response = self.get_opinion_by(
             TestOpinionView.opinions[0].slug, BY_SLUG)
-        # response = self.get_opinion_by_slug(TestOpinionView.opinions[0].slug)
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
     def check_get_own_opinion(self, opinion_by: str):
@@ -323,10 +323,12 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseOpinionTest):
         for index in range(len(statuses)):
             status = statuses[index]
             with self.subTest(f'status {status}'):
-                url = reverse(OPINION_STATUS_ID_ROUTE_NAME, args=[opinion.id])
-                response = self.client.patch(
-                    f'{url}?status={query_params[index].value}'
-                )
+                url = reverse_q(
+                    OPINION_STATUS_ID_ROUTE_NAME, args=[opinion.id],
+                    query_kwargs={
+                        STATUS_QUERY: query_params[index].value
+                    })
+                response = self.client.patch(url)
                 result = json.loads(response.content)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
                 self.assertEqual(result['status'], status.name)
@@ -357,10 +359,12 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseOpinionTest):
         for index in range(len(statuses)):
             status = statuses[index]
             with self.subTest(f'status {status}'):
-                url = reverse(OPINION_STATUS_ID_ROUTE_NAME, args=[opinion.id])
-                response = self.client.patch(
-                    f'{url}?status={query_params[index].value}'
-                )
+                url = reverse_q(
+                    OPINION_STATUS_ID_ROUTE_NAME, args=[opinion.id],
+                    query_kwargs={
+                        STATUS_QUERY: query_params[index].value
+                    })
+                response = self.client.patch(url)
                 self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
     def verify_opinion_content(
@@ -478,7 +482,7 @@ class TestOpinionCreate(SoupMixin, BaseUserTest):
         Get the opinion create page
         """
         return self.client.get(
-            reverse(OPINION_NEW_ROUTE_NAME))
+            reverse_q(OPINION_NEW_ROUTE_NAME))
 
     def test_not_logged_in_access_opinion(self):
         """ Test must be logged in to access opinion """

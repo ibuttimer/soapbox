@@ -54,7 +54,9 @@ class OpinionForm(forms.ModelForm):
         max_length=Opinion.OPINION_ATTRIB_TITLE_MAX_LEN,
         required=True)
 
-    content = SummernoteTextField(blank=False)
+    content = SummernoteTextField(
+        max_length=Opinion.OPINION_ATTRIB_CONTENT_MAX_LEN,
+        blank=False)
 
     categories = forms.ModelMultipleChoiceField(
         queryset=Category.objects.all(), required=True

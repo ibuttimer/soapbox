@@ -29,7 +29,6 @@ from django.http import (
     HttpRequest, HttpResponse, HttpResponseNotAllowed, JsonResponse
 )
 from django.shortcuts import render, get_object_or_404
-from django.urls import reverse
 from django.views import View
 from django.views.decorators.http import require_http_methods
 
@@ -45,11 +44,11 @@ from soapbox import (
     OPINIONS_APP_NAME, HOME_ROUTE_NAME, GET, PATCH
 )
 from utils import (
-    app_template_path, redirect_on_success_or_render, Crud
+    app_template_path, redirect_on_success_or_render, Crud, reverse_q
 )
 from .views_utils import (
-    permission_check, query_args, timestamp_opinion, own_opinion_check,
-    published_check, QueryStatus, get_context, render_form
+    permission_check, opinion_save_query_args, timestamp_opinion,
+    own_opinion_check, published_check, QueryStatus, get_context, render_form
 )
 from .forms import OpinionForm
 from .models import Opinion
@@ -150,7 +149,7 @@ class OpinionDetail(LoginRequiredMixin, View):
                 form.cleaned_data[OpinionForm.CATEGORIES_FF]
             )
 
-            status, query = query_args(request)
+            status, query = opinion_save_query_args(request)
             opinion_obj.status = status
 
             timestamp_opinion(opinion_obj)
@@ -248,7 +247,7 @@ class OpinionDetailById(OpinionDetail):
         :param opinion_obj: opinion
         :return: url
         """
-        return reverse(OPINION_ID_ROUTE_NAME, args=[opinion_obj.id])
+        return reverse_q(OPINION_ID_ROUTE_NAME, args=[opinion_obj.id])
 
 
 class OpinionDetailPreviewById(OpinionDetail):
@@ -293,7 +292,7 @@ class OpinionDetailPreviewById(OpinionDetail):
         :param opinion_obj: opinion
         :return: url
         """
-        return reverse(OPINION_PREVIEW_ID_ROUTE_NAME, args=[opinion_obj.id])
+        return reverse_q(OPINION_PREVIEW_ID_ROUTE_NAME, args=[opinion_obj.id])
 
 
 class OpinionDetailBySlug(OpinionDetail):
@@ -331,7 +330,7 @@ class OpinionDetailBySlug(OpinionDetail):
         :param opinion_obj: opinion
         :return: url
         """
-        return reverse(OPINION_SLUG_ROUTE_NAME, args=[opinion_obj.slug])
+        return reverse_q(OPINION_SLUG_ROUTE_NAME, args=[opinion_obj.slug])
 
 
 @login_required
@@ -349,7 +348,7 @@ def opinion_status_patch(request: HttpRequest, pk: int) -> HttpResponse:
 
     own_opinion_check(request, opinion_obj)
 
-    status, query = query_args(request)
+    status, query = opinion_save_query_args(request)
 
     opinion_obj.status = status
     opinion_obj.save()

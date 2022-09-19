@@ -1,13 +1,24 @@
 
+main {
+    margin-bottom: 120px;
+}
 
 .socials {
     color: var(--bs-body-color);
     font-size: 1.5em;
-    padding-left: 0.6em;
+    padding-left: 0.3em;
+    padding-right: 0.3em;
 }
 
+/* tiny screens, 315px wide or less */
+@media screen and (max-width: 315px) {
 
-/* tiny screens, 450px wide or less */ 
+    main {
+        margin-bottom: 155px;
+    }
+}
+
+/* tiny screens, 450px wide or less */
 @media screen and (max-width: 450px) {
 
     .navbar-brand {

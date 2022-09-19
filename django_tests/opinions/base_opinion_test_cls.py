@@ -20,12 +20,18 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from categories import (
     STATUS_DRAFT, STATUS_PREVIEW, STATUS_PUBLISHED
 )
 from categories.models import Category, Status
+from opinions.constants import (
+    OPINION_PAGINATION_ON_EACH_SIDE, OPINION_PAGINATION_ON_ENDS
+)
 from opinions.models import Opinion
+from opinions.views_utils import generate_excerpt, OpinionPerPage
 from user.models import User
 from ..user.base_user_test_cls import BaseUserTest
 
@@ -46,18 +52,27 @@ class BaseOpinionTest(BaseUserTest):
     ]
     STATUSES = [STATUS_DRAFT, STATUS_PREVIEW, STATUS_PUBLISHED]
 
+    opinions: list[Opinion]
+
     @staticmethod
     def create_opinion(index: int, user: User, status: Status,
                        categories: list[Category]) -> Opinion:
 
-        kwargs = BaseOpinionTest.OPINION_INFO[index].copy()
+        kwargs = BaseOpinionTest.OPINION_INFO[
+            index % len(BaseOpinionTest.OPINION_INFO)].copy()
         kwargs[Opinion.TITLE_FIELD] = \
-            f'{kwargs[Opinion.TITLE_FIELD]} {user.first_name}'
+            f'{kwargs[Opinion.TITLE_FIELD]} {user.first_name} {index}'
         kwargs[Opinion.USER_FIELD] = user
         kwargs[Opinion.STATUS_FIELD] = status
+        if status.name == STATUS_PUBLISHED:
+            kwargs[Opinion.PUBLISHED_FIELD] = \
+                datetime(2022, 1, 1, tzinfo=ZoneInfo("UTC")) + \
+                timedelta(minutes=index + 1)
         kwargs[Opinion.SLUG_FIELD] = Opinion.generate_slug(
             Opinion.OPINION_ATTRIB_SLUG_MAX_LEN,
             kwargs[Opinion.TITLE_FIELD])
+        kwargs[Opinion.EXCERPT_FIELD] = generate_excerpt(
+            kwargs[Opinion.CONTENT_FIELD])
         opinion = Opinion(**kwargs)
         opinion.save()
         opinion.categories.set(categories)
@@ -72,24 +87,45 @@ class BaseOpinionTest(BaseUserTest):
         category_list = list(Category.objects.all())
 
         cls.opinions = []
+        num_templates = len(BaseOpinionTest.OPINION_INFO)
 
+        def get_categories(u_idx, idx):
+            m_num = (u_idx + idx + 2) % len(category_list)
+            if m_num == 0:
+                m_num = 2
+            return [
+                category for idx, category in enumerate(category_list)
+                if idx % m_num == 0
+            ]
+
+        # add a draft/preview/published opinion for each user
+        user_idx = 0
         for user_idx in range(BaseOpinionTest.num_users()):
             user, _ = BaseOpinionTest.get_user_by_index(user_idx)
 
-            for index in range(len(BaseOpinionTest.OPINION_INFO)):
-
-                mod_num = user_idx + index + 2
-                categories = [
-                    category for idx, category in enumerate(category_list)
-                    if idx % mod_num
-                ]
-
+            for index in range(num_templates):
                 opinion = BaseOpinionTest.create_opinion(
-                    index,
+                    (user_idx * num_templates) + index,
                     user,
                     Status.objects.get(
                         name=BaseOpinionTest.STATUSES[
                             index % len(BaseOpinionTest.STATUSES)]),
-                    categories
+                    get_categories(user_idx, index)
                 )
                 cls.opinions.append(opinion)
+
+        # add enough published opinions to get pagination ellipsis
+        published = Status.objects.get(name=STATUS_PUBLISHED)
+        num_pages = ((OPINION_PAGINATION_ON_ENDS + 1) * 2) + \
+                    (OPINION_PAGINATION_ON_EACH_SIDE * 2) + 1
+        start = num_templates * BaseOpinionTest.num_users()
+        for index in range(
+                start,
+                start + (num_pages * OpinionPerPage.FIFTEEN.arg)):
+            opinion = BaseOpinionTest.create_opinion(
+                index,
+                user,
+                published,
+                get_categories(user_idx, index)
+            )
+            cls.opinions.append(opinion)

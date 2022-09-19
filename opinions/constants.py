@@ -25,6 +25,7 @@ from utils import append_slash, url_path
 # common field names
 TITLE_FIELD = "title"
 CONTENT_FIELD = "content"
+EXCERPT_FIELD = "excerpt"
 CATEGORIES_FIELD = 'categories'
 STATUS_FIELD = 'status'
 USER_FIELD = 'user'
@@ -41,17 +42,27 @@ COMMENT_FIELD = 'comment'
 RESOLVED_FIELD = 'resolved'
 
 # Opinion routes related
+OPINIONS_URL = ""
 OPINION_NEW_URL = append_slash("new")
 OPINION_ID_URL = append_slash("<int:pk>")
 OPINION_SLUG_URL = append_slash("<slug:slug>")
 OPINION_PREVIEW_ID_URL = url_path("preview", OPINION_ID_URL)
 OPINION_STATUS_ID_URL = url_path("status", OPINION_ID_URL)
 
+OPINIONS_ROUTE_NAME = "opinions"
 OPINION_NEW_ROUTE_NAME = "opinion_new"
 OPINION_ID_ROUTE_NAME = "opinion_id"
 OPINION_SLUG_ROUTE_NAME = "opinion_slug"
 OPINION_PREVIEW_ID_ROUTE_NAME = "preview_opinion_id"
 OPINION_STATUS_ID_ROUTE_NAME = "status_opinion_id"
+
+ORDER_QUERY = 'order'
+PAGE_QUERY = 'page'
+PER_PAGE_QUERY = 'perpage'
+STATUS_QUERY = 'status'
+
+OPINION_PAGINATION_ON_EACH_SIDE = 1
+OPINION_PAGINATION_ON_ENDS = 1
 
 # permissions related
 CLOSE_REVIEW_PERM = "close_review"

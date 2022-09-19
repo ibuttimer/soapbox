@@ -18,3 +18,5 @@ _Tasks:_
 
 - [ ] Task 1 
 - [ ] Task 2
+
+_Estimate (XS, S, M, L, XL):_ **S**
