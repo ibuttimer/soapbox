@@ -34,7 +34,8 @@ class CategoryMixin:
     def check_categories(
             test_case: TestCase, soup: BeautifulSoup,
             find_func, filter_func,
-            categories: QuerySet):
+            categories: QuerySet,
+            msg: str = ''):
         """
         Check that the list of selected categories matches expected
         :param test_case: TestCase instance
@@ -42,13 +43,14 @@ class CategoryMixin:
         :param find_func: function to find tags
         :param filter_func: function to filter tags
         :param categories: expected categories
+        :param msg: message
         """
         category_options = [
             opt for opt in soup.find_all(
                 lambda tag: find_func(tag)
             )]
         for category in list(categories):
-            with test_case.subTest(f'category {category}'):
+            with test_case.subTest(f'{msg} category {category}'):
                 tags = list(
                     filter(
                         lambda tag: filter_func(category, tag),

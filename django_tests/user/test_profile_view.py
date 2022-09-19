@@ -24,15 +24,15 @@ from http import HTTPStatus
 
 from bs4 import BeautifulSoup
 from django.http import HttpResponse
-from django.urls import reverse
 
+from opinions.models import Category
 from soapbox import USER_APP_NAME
+from utils import reverse_q
 from user import USER_ID_ROUTE_NAME
 from user.models import User
-from opinions.models import Category
-from ..soup_mixin import SoupMixin
-from ..category_mixin import CategoryMixin
 from .base_user_test_cls import BaseUserTest
+from ..category_mixin import CategoryMixin
+from ..soup_mixin import SoupMixin
 
 
 class TestProfileView(SoupMixin, CategoryMixin, BaseUserTest):
@@ -70,7 +70,7 @@ class TestProfileView(SoupMixin, CategoryMixin, BaseUserTest):
         """
         self.assertIsNotNone(user)
         return self.client.get(
-            reverse(USER_ID_ROUTE_NAME, args=[user.id]))
+            reverse_q(USER_ID_ROUTE_NAME, args=[user.id]))
 
     def test_not_logged_in_access_profile(self):
         """ Test must be logged in to access profile """
