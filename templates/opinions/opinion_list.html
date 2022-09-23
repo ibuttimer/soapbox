@@ -40,22 +40,32 @@
 {% block head_title %}SoapBox - {{ title }}{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-2 offset-10 mt-2">
-        <!-- sort order selection -->
-        <select id="sort-order-select" class="form-select" aria-label="Sort by">
-            {% for sort_opt in sort_order %}
-                <option value="{{ sort_opt.arg }}"
-                    {% if sort_opt.value == selected_sort %}
-                    selected
-                    {% endif %}
-                >
-                    {{ sort_opt.display }}
-                </option>
-            {% endfor %}
-        </select>
+{% if search_term %}
+<div class="row mt-2">
+    <div class="col-12 text-center">
+        <h3>Results of {{ search_term }}</h3>
     </div>
 </div>
+{% endif %}
+
+{% if paginator.count > 0 %}
+    <div class="row">
+        <div class="col-2 offset-10 mt-2">
+            <!-- sort order selection -->
+            <select id="sort-order-select" class="form-select" aria-label="Sort by">
+                {% for sort_opt in sort_order %}
+                    <option value="{{ sort_opt.arg }}"
+                        {% if sort_opt.value == selected_sort %}
+                        selected
+                        {% endif %}
+                    >
+                        {{ sort_opt.display }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+{% endif %}
 
 <article id="article-content" class="row">
     {% include "opinions/opinion_list_content.html" %}
@@ -79,8 +89,15 @@
             $('#per-page-select').off();
             $('.page-item').off();
 
+            repeat_search = $('#var__repeat_search_term').text().trim()
+
             $.ajax({
-                url: page + "&order=" + order + "&perpage=" + per_page
+                url: page + "&" + [
+                        "order=" + order,
+                        "per-page=" + per_page,
+                        "reorder=1",
+                        repeat_search,
+                    ].join("&")
             }).done(function(data) {
                 $('#article-content').html(data);
 

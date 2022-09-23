@@ -50,7 +50,8 @@ class CategoryMixin:
                 lambda tag: find_func(tag)
             )]
         for category in list(categories):
-            with test_case.subTest(f'{msg} category {category}'):
+            sub_msg = f'{msg} category {category}'
+            with test_case.subTest(sub_msg):
                 tags = list(
                     filter(
                         lambda tag: filter_func(category, tag),

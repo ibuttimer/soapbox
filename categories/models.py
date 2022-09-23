@@ -67,6 +67,12 @@ class Status(models.Model):
     name = models.CharField(_('name'), max_length=STATUS_ATTRIB_NAME_MAX_LEN,
                             blank=False, unique=True)
 
+    @property
+    def short_name(self):
+        words = self.name.upper().split()
+        return words[0][:2] if len(words) == 1 else \
+            ''.join(map(lambda w: w[0], words))
+
     class Meta:
         ordering = [NAME_FIELD]
 

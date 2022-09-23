@@ -23,7 +23,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, Type
 
 from zoneinfo import ZoneInfo
 
@@ -32,25 +32,55 @@ from django.http import HttpRequest
 from django.template.defaultfilters import truncatechars
 from bs4 import BeautifulSoup
 
+from categories.constants import STATUS_ALL
 from soapbox import OPINIONS_APP_NAME
 from utils import permission_name, Crud, app_template_path
 from categories import (
-    STATUS_DRAFT, STATUS_PUBLISHED, STATUS_PREVIEW, CATEGORY_UNASSIGNED
+    STATUS_DRAFT, STATUS_PUBLISHED, STATUS_PREVIEW, STATUS_WITHDRAWN,
+    STATUS_PENDING_REVIEW, STATUS_UNDER_REVIEW, STATUS_APPROVED,
+    STATUS_REJECTED,
+    CATEGORY_UNASSIGNED
 )
 from categories.models import Status, Category
 from user.models import User
-from .constants import ORDER_QUERY, STATUS_QUERY, PER_PAGE_QUERY, PAGE_QUERY
+from .constants import (
+    ORDER_QUERY, SEARCH_QUERY, STATUS_QUERY, PER_PAGE_QUERY,
+    PAGE_QUERY, TITLE_QUERY, CONTENT_QUERY, CATEGORY_QUERY, AUTHOR_QUERY,
+    ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY,
+    EQUAL_QUERY, REORDER_QUERY
+)
 from .models import Opinion
 from .forms import OpinionForm
 
 READ_ONLY = 'read_only'     # read-only mode
 
 
-class QueryStatus(Enum):
+class OpinionArg(Enum):
+    """ Enum representing opinion sort orders """
+    display: str
+    """ Display string """
+    arg: Any
+    """ Argument value """
+
+    def __init__(self, display: str, arg: Any):
+        self.display = display
+        self.arg = arg
+
+
+class QueryStatus(OpinionArg):
     """ Enum representing status query params """
-    DRAFT = 'draft'
-    PUBLISH = 'publish'
-    PREVIEW = 'preview'
+    ALL = (STATUS_ALL, 'all')
+    DRAFT = (STATUS_DRAFT, 'draft')
+    PUBLISH = (STATUS_PUBLISHED, 'publish')
+    PREVIEW = (STATUS_PREVIEW, 'preview')
+    WITHDRAWN = (STATUS_WITHDRAWN, 'withdrawn')
+    PENDING_REVIEW = (STATUS_PENDING_REVIEW, 'pending-review')
+    UNDER_REVIEW = (STATUS_UNDER_REVIEW, 'under-review')
+    APPROVED = (STATUS_APPROVED, 'approved')
+    REJECTED = (STATUS_REJECTED, 'rejected')
+
+    def __init__(self, display: str, arg: str):
+        super().__init__(display, arg)
 
 
 def get_context(title: str,
@@ -113,30 +143,13 @@ def opinion_save_query_args(
     # query params are in request.GET
     # maybe slightly unorthodox, but saves defining 3 routes
     # https://docs.djangoproject.com/en/4.1/ref/request-response/#querydict-objects
-    status = STATUS_DRAFT
-    query = QueryStatus.DRAFT
-    if STATUS_QUERY in request.GET:
-        req_status = request.GET[STATUS_QUERY].lower()
-        for status_name, query_opt in [
-            (STATUS_PUBLISHED, QueryStatus.PUBLISH),
-            (STATUS_PREVIEW, QueryStatus.PREVIEW)
-        ]:
-            if req_status == query_opt.name.lower():
-                status = status_name
-                query = query_opt
-                break
+    params = get_query_args(request, [
+        (STATUS_QUERY, QueryStatus, QueryStatus.DRAFT),
+    ])
+    status_query, _ = params[STATUS_QUERY]
+    status = Status.objects.get(name=status_query.display)
 
-    status = Status.objects.get(name=status)
-
-    return status, query
-
-
-class OpinionArg(Enum):
-    """ Enum representing opinion sort orders """
-
-    def __init__(self, display: str, arg: Any):
-        self.display = display
-        self.arg = arg
+    return status, status_query
 
 
 class OpinionSortOrder(OpinionArg):
@@ -172,21 +185,26 @@ class OpinionPerPage(OpinionArg):
 OpinionPerPage.DEFAULT = OpinionPerPage.SIX
 
 
-def opinion_list_query_args(
-        request: HttpRequest) -> dict[tuple[OpinionSortOrder, bool]]:
+QUERY_TUPLE_VALUE_IDX = 0
+QUERY_TUPLE_WAS_SET_IDX = 1
+
+
+def get_query_args(
+            request: HttpRequest,
+            options: list[tuple[str, Type[OpinionArg], Any]]
+        ) -> dict[str, tuple[OpinionArg | int | str, bool]]:
     """
     Get opinion list query arguments from request query
+    :param options:
     :param request: http request
-    :return: dict of tuples of OpinionSortOrder and QueryStatus
+    :return: dict of tuples of value (OpinionArg | int | str) and
+            'was set' bool flag
     """
     # https://docs.djangoproject.com/en/4.1/ref/request-response/#querydict-objects
     params = {}
 
-    for query, clazz, default in [
-        (ORDER_QUERY, OpinionSortOrder, OpinionSortOrder.DEFAULT),
-        (PAGE_QUERY, None, 1),
-        (PER_PAGE_QUERY, OpinionPerPage, OpinionPerPage.DEFAULT)
-    ]:
+    for query, clazz, default in options:
+        #                value,   was_set
         params[query] = (default, False)
 
         if query in request.GET:
@@ -204,6 +222,59 @@ def opinion_list_query_args(
                 params[query] = (param, True)
 
     return params
+
+
+# request arguments for a list
+LIST_QUERY_ARGS = [
+    # query,      arg class,        default value
+    (ORDER_QUERY, OpinionSortOrder, OpinionSortOrder.DEFAULT),
+    (PAGE_QUERY, None, 1),
+    (PER_PAGE_QUERY, OpinionPerPage, OpinionPerPage.DEFAULT),
+    (REORDER_QUERY, None, 0),
+    # status included as default is to only show published opinions
+    (STATUS_QUERY, QueryStatus, QueryStatus.PUBLISH),
+]
+
+
+def opinion_list_query_args(
+            request: HttpRequest
+        ) -> dict[str, tuple[OpinionArg | int | str, bool]]:
+    """
+    Get opinion list query arguments from request query
+    :param request: http request
+    :return: dict of tuples of value (OpinionArg | int | str) and
+            'was set' bool flag
+    """
+    return get_query_args(request, LIST_QUERY_ARGS)
+
+
+# request arguments for a search
+SEARCH_QUERY_ARGS = LIST_QUERY_ARGS.copy()
+SEARCH_QUERY_ARGS.extend([
+    # query,       arg class, default value
+    (SEARCH_QUERY, None, None),
+    (TITLE_QUERY, None, None),
+    (CONTENT_QUERY, None, None),
+    (AUTHOR_QUERY, None, None),
+    (CATEGORY_QUERY, None, None),
+    (ON_OR_AFTER_QUERY, None, None),
+    (ON_OR_BEFORE_QUERY, None, None),
+    (AFTER_QUERY, None, None),
+    (BEFORE_QUERY, None, None),
+    (EQUAL_QUERY, None, None),
+])
+
+
+def opinion_search_query_args(
+            request: HttpRequest
+        ) -> dict[str, tuple[OpinionArg | int | str, bool]]:
+    """
+    Get opinion list query arguments from request query
+    :param request: http request
+    :return: dict of tuples of value (OpinionArg | int | str) and
+            'was set' bool flag
+    """
+    return get_query_args(request, SEARCH_QUERY_ARGS)
 
 
 def permission_check(request: HttpRequest, op: Crud):
