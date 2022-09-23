@@ -25,6 +25,8 @@
 NAME_FIELD = "name"
 DESCRIPTION_FIELD = "description"
 
+# status display names
+STATUS_ALL = 'All'
 STATUS_DRAFT = 'Draft'
 STATUS_PUBLISHED = 'Published'
 STATUS_PREVIEW = 'Preview'

@@ -89,7 +89,7 @@ class Opinion(SlugMixin, models.Model):
         ordering = [TITLE_FIELD]
 
     def __str__(self):
-        return self.title
+        return f'{self.title} {self.status.short_name}'
 
     def set_slug(self, title: str):
         """

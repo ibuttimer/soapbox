@@ -91,11 +91,15 @@
                                         <a class="dropdown-item" href="{% url 'opinion_new' %}">New</a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item" href="{% url 'opinion_new' %}"><strike>Drafts</strike></a>
+                                        <a class="dropdown-item" href="{% url 'opinion_search' %}?author={{ user.username }}&status=draft">Drafts</a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item" href="{% url 'opinion_new' %}"><strike>Mine</strike></a>
+                                        <a class="dropdown-item" href="{% url 'opinion_search' %}?author={{ user.username }}&status=preview">Previews</a>
                                     </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'opinion_search' %}?author={{ user.username }}&status=all">Mine</a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <a class="dropdown-item" href="{% url 'opinions' %}">All</a>
                                     </li>
@@ -106,10 +110,10 @@
                             </li>
                         {% endif %}
                     </ul>
-<!--                    <form class="d-flex" role="search">-->
-<!--                        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">-->
-<!--                        <button class="btn btn-outline-success" type="submit">Search</button>-->
-<!--                    </form>-->
+                    <form class="d-flex" role="search" method="get" action="{% url 'opinion_search' %}">
+                        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" name="search">
+                        <button class="btn btn-outline-success" type="submit">Search</button>
+                    </form>
                     <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                         {% if user.is_authenticated %}
                             <li class="nav-item dropdown">

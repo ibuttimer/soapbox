@@ -66,8 +66,8 @@ class BaseOpinionTest(BaseUserTest):
         kwargs[Opinion.STATUS_FIELD] = status
         if status.name == STATUS_PUBLISHED:
             kwargs[Opinion.PUBLISHED_FIELD] = \
-                datetime(2022, 1, 1, tzinfo=ZoneInfo("UTC")) + \
-                timedelta(minutes=index + 1)
+                datetime(2022, 1, 1, hour=12, tzinfo=ZoneInfo("UTC")) + \
+                timedelta(days=index)
         kwargs[Opinion.SLUG_FIELD] = Opinion.generate_slug(
             Opinion.OPINION_ATTRIB_SLUG_MAX_LEN,
             kwargs[Opinion.TITLE_FIELD])
@@ -129,3 +129,13 @@ class BaseOpinionTest(BaseUserTest):
                 get_categories(user_idx, index)
             )
             cls.opinions.append(opinion)
+
+    @classmethod
+    def published(cls) -> list[Opinion]:
+        """ All published opinions """
+        return list(
+            filter(
+                lambda op: op.published.year > 1 and
+                op.status.name == STATUS_PUBLISHED,
+                cls.opinions
+            ))

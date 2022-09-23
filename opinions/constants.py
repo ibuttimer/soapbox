@@ -44,6 +44,7 @@ RESOLVED_FIELD = 'resolved'
 # Opinion routes related
 OPINIONS_URL = ""
 OPINION_NEW_URL = append_slash("new")
+OPINION_SEARCH_URL = append_slash("search")
 OPINION_ID_URL = append_slash("<int:pk>")
 OPINION_SLUG_URL = append_slash("<slug:slug>")
 OPINION_PREVIEW_ID_URL = url_path("preview", OPINION_ID_URL)
@@ -51,15 +52,29 @@ OPINION_STATUS_ID_URL = url_path("status", OPINION_ID_URL)
 
 OPINIONS_ROUTE_NAME = "opinions"
 OPINION_NEW_ROUTE_NAME = "opinion_new"
+OPINION_SEARCH_ROUTE_NAME = "opinion_search"
 OPINION_ID_ROUTE_NAME = "opinion_id"
 OPINION_SLUG_ROUTE_NAME = "opinion_slug"
 OPINION_PREVIEW_ID_ROUTE_NAME = "preview_opinion_id"
 OPINION_STATUS_ID_ROUTE_NAME = "status_opinion_id"
 
-ORDER_QUERY = 'order'
-PAGE_QUERY = 'page'
-PER_PAGE_QUERY = 'perpage'
-STATUS_QUERY = 'status'
+ORDER_QUERY: str = 'order'              # opinion order
+PAGE_QUERY: str = 'page'                # page number
+PER_PAGE_QUERY: str = 'per-page'        # pagination per page
+REORDER_QUERY: str = 'reorder'          # reordering of previous query
+SEARCH_QUERY: str = 'search'            # search from search box in header
+# Note: a search can have any of the following queries embedded in its
+# value
+STATUS_QUERY: str = 'status'                # search status
+TITLE_QUERY: str = 'title'                  # search title
+CONTENT_QUERY: str = 'content'              # search content
+CATEGORY_QUERY: str = 'category'            # search category
+AUTHOR_QUERY: str = 'author'                # search author
+ON_OR_AFTER_QUERY: str = 'after-or-on'      # search >= date
+ON_OR_BEFORE_QUERY: str = 'before-or-on'    # search <= date
+AFTER_QUERY: str = 'after'                  # search > date
+BEFORE_QUERY: str = 'before'                # search < date
+EQUAL_QUERY: str = 'date'                   # search == date
 
 OPINION_PAGINATION_ON_EACH_SIDE = 1
 OPINION_PAGINATION_ON_ENDS = 1
