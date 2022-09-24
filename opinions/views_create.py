@@ -39,8 +39,8 @@ from .constants import (
 )
 from .forms import OpinionForm
 from .views_utils import (
-    permission_check, opinion_save_query_args, timestamp_opinion, render_form,
-    generate_excerpt
+    opinion_permission_check, opinion_save_query_args, timestamp_opinion,
+    render_form, generate_excerpt
 )
 
 TITLE_NEW = "Creation"
@@ -60,7 +60,7 @@ class OpinionCreate(LoginRequiredMixin, View):
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        permission_check(request, Crud.CREATE)
+        opinion_permission_check(request, Crud.CREATE)
 
         template_path, context = render_form(
             TITLE_NEW, submit_url=self.url(), form=OpinionForm())
@@ -74,7 +74,7 @@ class OpinionCreate(LoginRequiredMixin, View):
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        permission_check(request, Crud.CREATE)
+        opinion_permission_check(request, Crud.CREATE)
 
         form = OpinionForm(data=request.POST, files=request.FILES)
 

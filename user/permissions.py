@@ -20,17 +20,45 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
+from collections import namedtuple
+
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 from django.db.migrations.state import StateApps
+from django.contrib.auth.management import create_permissions
 
+from categories.models import Category
 from opinions.constants import CLOSE_REVIEW_PERM, WITHDRAW_REVIEW_PERM
 from opinions.models import Opinion, Review
-from soapbox import OPINIONS_APP_NAME
+from soapbox import OPINIONS_APP_NAME, CATEGORIES_APP_NAME
 from utils import permission_name, Crud
 from .constants import AUTHOR_GROUP, MODERATOR_GROUP
 from .models import User
+
+ADD = 'add'
+REMOVE = 'remove'
+PermSetting = namedtuple(
+    'PermSetting',
+    ['model', 'all', 'perms', 'app', 'action'],
+    defaults=[None, False, [], '', ADD]
+)
+
+
+def review_permissions(group: str) -> list[str]:
+    """
+    Get review permissions
+    :param group: AUTHOR_GROUP or MODERATOR_GROUP
+    :return: list of permissions
+    """
+    permissions = [
+        permission_name(Review, op)
+        for op in list(Crud) if op != Crud.DELETE
+    ]
+    permissions.append(WITHDRAW_REVIEW_PERM
+                       if group == AUTHOR_GROUP else CLOSE_REVIEW_PERM)
+
+    return permissions
 
 
 def create_author_group(
@@ -44,8 +72,12 @@ def create_author_group(
     :return: new group
     """
     return create_group_and_permissions(
-        AUTHOR_GROUP, review_custom=WITHDRAW_REVIEW_PERM, apps=apps,
-        schema_editor=schema_editor)
+        AUTHOR_GROUP, [
+            PermSetting(model=Opinion, all=True, app=OPINIONS_APP_NAME),
+            PermSetting(model=Review,
+                        perms=review_permissions(AUTHOR_GROUP),
+                        app=OPINIONS_APP_NAME)
+        ], apps=apps, schema_editor=schema_editor)
 
 
 def remove_author_group(apps: StateApps,
@@ -70,8 +102,12 @@ def create_moderator_group(
     :return: new group
     """
     return create_group_and_permissions(
-        MODERATOR_GROUP, review_custom=CLOSE_REVIEW_PERM, apps=apps,
-        schema_editor=schema_editor)
+        MODERATOR_GROUP, [
+            PermSetting(model=Opinion, all=True, app=OPINIONS_APP_NAME),
+            PermSetting(model=Review,
+                        perms=review_permissions(MODERATOR_GROUP),
+                        app=OPINIONS_APP_NAME)
+        ], apps=apps, schema_editor=schema_editor)
 
 
 def remove_moderator_group(apps: StateApps,
@@ -87,13 +123,13 @@ def remove_moderator_group(apps: StateApps,
 
 def create_group_and_permissions(
         group_name: str,
-        review_custom: list[str] | None = None,
+        perm_settings: list[PermSetting] | None = None,
         apps: StateApps = None,
         schema_editor: BaseDatabaseSchemaEditor = None) -> Group:
     """
     Create a group and assign permissions
     :param group_name: name of group to create
-    :param review_custom: additional custom permissions for Review model
+    :param perm_settings: list of permission settings
     :param apps: apps registry, default None
     :param schema_editor:
         editor generating statements to change database schema, default None
@@ -103,12 +139,12 @@ def create_group_and_permissions(
     if apps:    # called from a migration
         migration_add_group(apps, schema_editor, group_name)
 
-        set_basic_permissions(group_name, review_custom,
+        set_basic_permissions(group_name, perm_settings,
                               apps=apps, schema_editor=schema_editor)
     else:       # called from the app
         group, created = Group.objects.get_or_create(name=group_name)
         if created or group.permissions.count() == 0:
-            set_basic_permissions(group, review_custom)
+            set_basic_permissions(group, perm_settings)
 
     return group
 
@@ -142,7 +178,7 @@ def migration_remove_group(
 
 
 def set_basic_permissions(group: [Group, str],
-                          review_custom: list[str] = None,
+                          perm_settings: list[PermSetting] = None,
                           apps: StateApps = None,
                           schema_editor: BaseDatabaseSchemaEditor = None):
     """
@@ -150,51 +186,123 @@ def set_basic_permissions(group: [Group, str],
     :param group:
         group to update; Group object in app mode or name of group in
         migration mode
-    :param review_custom: additional custom permissions for Review model
+    :param perm_settings: list of permission settings
     :param apps: apps registry, default None
     :param schema_editor:
         editor generating statements to change database schema, default None
     """
-    # review to add; create/read/update and any custom
-    review_permissions = [
-        permission_name(Review, op)
-        for op in list(Crud) if op != Crud.DELETE
-    ]
-    if review_custom:
-        if isinstance(review_custom, str):
-            review_custom = [review_custom]
-        review_permissions.extend(review_custom)
+    def set_permissions(grp: Group, setting: PermSetting, perms):
+        # add/remove specified permissions
+        if setting.action == ADD:
+            grp.permissions.add(*perms)
+        elif setting.action == REMOVE:
+            grp.permissions.remove(*perms)
 
     if apps:    # called from a migration
         db_alias = schema_editor.connection.alias
         group = apps.get_model("auth", "Group")\
             .objects.using(db_alias).filter(name=group).first()
+        assert group is not None
         permission = apps.get_model("auth", "Permission")
 
-        # add all Opinion crud permissions
-        permissions = permission.objects.using(db_alias).filter(
-            codename__endswith="_opinion",
-            content_type__app_label=OPINIONS_APP_NAME)
-        group.permissions.set(permissions)
-
-        # add Review permissions
-        permissions = permission.objects.using(db_alias).filter(
-            codename__in=review_permissions,
-            content_type__app_label=OPINIONS_APP_NAME)
-        group.permissions.add(*permissions)
+        if perm_settings:
+            for perm_setting in perm_settings:
+                if perm_setting.all:
+                    # add all model crud permissions
+                    model = perm_setting.model._meta.model_name.lower()
+                    filter_args = {
+                        'codename__endswith': f"_{model}",
+                        'content_type__app_label': perm_setting.app
+                    }
+                else:
+                    # add specified permissions
+                    filter_args = {
+                        'codename__in': perm_setting.perms,
+                        'content_type__app_label': perm_setting.app
+                    }
+                permissions = permission.objects.using(db_alias).\
+                    filter(**filter_args)
+                assert permissions.exists()
+                set_permissions(group, perm_setting, permissions)
 
     else:   # called from the app
+        if perm_settings:
+            for perm_setting in perm_settings:
+                content_type = ContentType.objects. \
+                    get_for_model(perm_setting.model)
+                if perm_setting.all:
+                    # add all model crud permissions
+                    permissions = Permission.objects.\
+                        filter(content_type=content_type)
+                else:
+                    # add specified permissions
+                    permissions = Permission.objects.filter(
+                        content_type=content_type,
+                        codename__in=perm_setting.perms)
+                assert permissions.exists()
+                set_permissions(group, perm_setting, permissions)
 
-        # add all Opinion crud permissions
-        content_type = ContentType.objects.get_for_model(Opinion)
-        permissions = Permission.objects.filter(content_type=content_type)
-        group.permissions.set(permissions)
 
-        # add Review permissions
-        content_type = ContentType.objects.get_for_model(Review)
-        permissions = Permission.objects.filter(
-            content_type=content_type, codename__in=review_permissions)
-        group.permissions.add(*permissions)
+def category_permissions() -> tuple[list, list]:
+    """ Get author and moderator category permissions """
+    return [
+        permission_name(Category, Crud.READ)    # author
+    ], [
+        permission_name(Category, op)           # moderator
+        for op in list(Crud) if op != Crud.DELETE
+    ]
+
+
+def set_category_permissions(
+        action: str, apps: StateApps = None,
+        schema_editor: BaseDatabaseSchemaEditor = None):
+    """
+    Set category permissions
+    :param action: action to perform; ADD or REMOVE
+    :param apps: apps registry, default None
+    :param schema_editor:
+        editor generating statements to change database schema, default None
+    """
+    author_group = AUTHOR_GROUP
+    moderator_group = MODERATOR_GROUP
+    if not apps:    # called from the app
+        author_group = Group.objects.get_or_create(name=author_group)
+        moderator_group = Group.objects.get_or_create(name=moderator_group)
+    # else called from a migration
+
+    author_permissions, moderator_permissions = category_permissions()
+    set_basic_permissions(author_group, [
+        PermSetting(model=Category, perms=author_permissions,
+                    app=CATEGORIES_APP_NAME, action=action)
+    ], apps=apps, schema_editor=schema_editor)
+
+    set_basic_permissions(moderator_group, [
+        PermSetting(model=Category, perms=moderator_permissions,
+                    app=CATEGORIES_APP_NAME, action=action)
+    ], apps=apps, schema_editor=schema_editor)
+
+
+def add_category_permissions(apps: StateApps = None,
+                             schema_editor: BaseDatabaseSchemaEditor = None):
+    """
+    Add category permissions
+    :param apps: apps registry, default None
+    :param schema_editor:
+        editor generating statements to change database schema, default None
+    """
+    set_category_permissions(ADD, apps=apps, schema_editor=schema_editor)
+
+
+def remove_category_permissions(
+        apps: StateApps = None,
+        schema_editor: BaseDatabaseSchemaEditor = None):
+    """
+    Remove category permissions
+    :param apps: apps registry, default None
+    :param schema_editor:
+        editor generating statements to change database schema, default None
+    """
+    set_category_permissions(REMOVE, apps=apps, schema_editor=schema_editor)
 
 
 def add_to_authors(user: User):
@@ -215,3 +323,30 @@ def add_to_moderators(user: User):
     user.groups.add(
         create_moderator_group()
     )
+
+
+def migrate_permissions(apps: StateApps = None,
+                        schema_editor: BaseDatabaseSchemaEditor = None):
+    """
+    Migrate permissions.
+
+    This is a necessary operation prior to assigning permissions during
+    migration on a *pristine* database. If this operation is not performed
+    the permissions don't exist, so can't be assigned.
+    Thanks to https://stackoverflow.com/a/40092780/4054609
+
+    :param apps: apps registry, default None
+    :param schema_editor:
+        editor generating statements to change database schema, default None
+    """
+    for app_config in apps.get_app_configs():
+        app_config.models_module = True
+        create_permissions(app_config, apps=apps, verbosity=0)
+        app_config.models_module = None
+
+
+def reverse_migrate_permissions(
+        apps: StateApps = None,
+        schema_editor: BaseDatabaseSchemaEditor = None):
+    """ Dummy reverse for migrate_permissions """
+    pass

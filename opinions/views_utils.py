@@ -34,7 +34,7 @@ from bs4 import BeautifulSoup
 
 from categories.constants import STATUS_ALL
 from soapbox import OPINIONS_APP_NAME
-from utils import permission_name, Crud, app_template_path
+from utils import Crud, app_template_path, permission_check
 from categories import (
     STATUS_DRAFT, STATUS_PUBLISHED, STATUS_PREVIEW, STATUS_WITHDRAWN,
     STATUS_PENDING_REVIEW, STATUS_UNDER_REVIEW, STATUS_APPROVED,
@@ -277,15 +277,30 @@ def opinion_search_query_args(
     return get_query_args(request, SEARCH_QUERY_ARGS)
 
 
-def permission_check(request: HttpRequest, op: Crud):
+def opinion_permissions(request: HttpRequest) -> dict:
+    """
+    Get the current user's permissions for Opinions
+    :param request: current request
+    :return: dict of permissions
+    """
+    model = Opinion._meta.model_name.lower()
+    return {
+        f'{model}_{op.name.lower()}':
+            opinion_permission_check(request, op, raise_ex=False)
+        for op in Crud
+    }
+
+
+def opinion_permission_check(request: HttpRequest, op: Crud,
+                             raise_ex: bool = True) -> bool:
     """
     Check request user has specified permission
     :param request: http request
     :param op: Crud operation to check
+    :param raise_ex: raise exception; default True
     """
-    if not request.user.has_perm(
-            permission_name(Opinion, op, app_label=OPINIONS_APP_NAME)):
-        raise PermissionDenied("Insufficient permissions")
+    return permission_check(request, Opinion, op, app_label=OPINIONS_APP_NAME,
+                            raise_ex=raise_ex)
 
 
 def own_opinion_check(request: HttpRequest, opinion_obj: Opinion):

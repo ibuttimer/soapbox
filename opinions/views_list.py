@@ -46,9 +46,11 @@ from .constants import (
     PAGE_QUERY, REORDER_QUERY
 )
 from .models import Opinion
-from .views_utils import opinion_list_query_args, permission_check, \
-    OpinionSortOrder, OpinionPerPage, opinion_search_query_args, OpinionArg, \
-    QueryStatus, QUERY_TUPLE_VALUE_IDX, QUERY_TUPLE_WAS_SET_IDX
+from .views_utils import (
+    opinion_list_query_args, opinion_permission_check, OpinionSortOrder,
+    OpinionPerPage, opinion_search_query_args, OpinionArg, QueryStatus,
+    QUERY_TUPLE_VALUE_IDX, QUERY_TUPLE_WAS_SET_IDX
+)
 
 # chars used to delimit queries
 MARKER_CHARS = ['=', '"', "'"]
@@ -156,7 +158,7 @@ class OpinionList(LoginRequiredMixin, generic.ListView):
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        permission_check(request, Crud.READ)
+        opinion_permission_check(request, Crud.READ)
 
         # TODO currently '/"/= can't be used in title/content
         # as search depends on them
@@ -304,7 +306,7 @@ class OpinionSearch(OpinionList):
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        permission_check(request, Crud.READ)
+        opinion_permission_check(request, Crud.READ)
 
         # Note: values must be in quotes for search query
         query_params = opinion_search_query_args(request)

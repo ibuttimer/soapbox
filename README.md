@@ -188,18 +188,24 @@ The application structure is as follows:
 
 ```
 ├─ README.md            - this file
+├─ agile                - project management
 ├─ doc                  - documentation
 │  ├─ design            - design related documentation
 │  └─ test              - test reports
 ├─ manage.py            - application entry point
 ├─ soapbox              - main Django application
 ├─ base                 - base Django application
+├─ categories           - categories Django application
+├─ django_tests         - Django Test Tools test scripts
+├─ opinions             - opinions Django application
 ├─ user                 - user Django application
-├─ static               - static file
+├─ staticfiles          - static files
 │  ├─ css               - custom CSS
 │  ├─ img               - images
 │  └─ js                - custom JavaScript
-└─ tests                - test scripts
+├─ templates            - application templates
+├─ tests                - test scripts
+└─ utils                - utility function scripts
 ```
 
 ## Cloud-based Deployment

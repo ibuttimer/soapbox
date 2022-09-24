@@ -27,6 +27,8 @@ from django.http import HttpRequest
 
 from user.constants import MODERATOR_GROUP, AUTHOR_GROUP
 from .constants import COPYRIGHT_YEAR, COPYRIGHT
+from opinions.views_utils import opinion_permissions
+from categories.views import category_permissions
 
 Social = namedtuple("Social", ["name", "icon", "url"])
 
@@ -37,7 +39,7 @@ def footer_context(request: HttpRequest) -> dict:
     :param request: http return
     :return: dictionary to add to template context
     """
-    return {
+    context = {
         "copyright_year": COPYRIGHT_YEAR,
         "copyright": COPYRIGHT,
         "socials": [
@@ -54,3 +56,6 @@ def footer_context(request: HttpRequest) -> dict:
         "is_author": request.user.groups.filter(
             name=AUTHOR_GROUP).exists(),
     }
+    context.update(opinion_permissions(request))
+    context.update(category_permissions(request))
+    return context
