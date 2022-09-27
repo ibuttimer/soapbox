@@ -100,13 +100,13 @@
                                     {% endif %}
                                     {% if opinion_read %}
                                     <li>
-                                        <a class="dropdown-item" href="{% url 'opinion_search' %}?author={{ user.username }}&status=draft">Drafts</a>
+                                        <a class="dropdown-item" href="{% url 'opinions' %}?author={{ user.username }}&status=draft">Drafts</a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item" href="{% url 'opinion_search' %}?author={{ user.username }}&status=preview">Previews</a>
+                                        <a class="dropdown-item" href="{% url 'opinions' %}?author={{ user.username }}&status=preview">Previews</a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item" href="{% url 'opinion_search' %}?author={{ user.username }}&status=all">Mine</a>
+                                        <a class="dropdown-item" href="{% url 'opinions' %}?author={{ user.username }}&status=all">Mine</a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
