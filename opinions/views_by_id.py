@@ -47,7 +47,7 @@ from utils import (
     app_template_path, redirect_on_success_or_render, Crud, reverse_q
 )
 from .views_utils import (
-    permission_check, opinion_save_query_args, timestamp_opinion,
+    opinion_permission_check, opinion_save_query_args, timestamp_opinion,
     own_opinion_check, published_check, QueryStatus, get_context, render_form
 )
 from .forms import OpinionForm
@@ -76,7 +76,7 @@ class OpinionDetail(LoginRequiredMixin, View):
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        permission_check(request, Crud.READ)
+        opinion_permission_check(request, Crud.READ)
 
         opinion_obj = self._get_opinion(identifier)
 
@@ -129,7 +129,7 @@ class OpinionDetail(LoginRequiredMixin, View):
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        permission_check(request, Crud.UPDATE)
+        opinion_permission_check(request, Crud.UPDATE)
 
         opinion_obj = self._get_opinion(identifier)
         success = True                      # default to success
@@ -265,7 +265,7 @@ class OpinionDetailPreviewById(OpinionDetail):
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        permission_check(request, Crud.READ)
+        opinion_permission_check(request, Crud.READ)
 
         # preview is readonly and user can only preview their own opinions
         preview_kwargs = kwargs.copy()
@@ -342,7 +342,7 @@ def opinion_status_patch(request: HttpRequest, pk: int) -> HttpResponse:
     :param pk:      id of opinion
     :return:
     """
-    permission_check(request, Crud.UPDATE)
+    opinion_permission_check(request, Crud.UPDATE)
 
     opinion_obj = get_object_or_404(Opinion, pk=pk)
 

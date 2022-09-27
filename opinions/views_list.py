@@ -46,22 +46,25 @@ from .constants import (
     PAGE_QUERY, REORDER_QUERY
 )
 from .models import Opinion
-from .views_utils import opinion_list_query_args, permission_check, \
-    OpinionSortOrder, OpinionPerPage, opinion_search_query_args, OpinionArg, \
-    QueryStatus, QUERY_TUPLE_VALUE_IDX, QUERY_TUPLE_WAS_SET_IDX
+from .views_utils import (
+    opinion_list_query_args, opinion_permission_check, OpinionSortOrder,
+    OpinionPerPage, opinion_search_query_args, QueryStatus,
+    QueryArg, REORDER_ALWAYS_SENT_QUERY_ARGS, NON_REORDER_LIST_QUERY_ARGS
+)
 
 # chars used to delimit queries
 MARKER_CHARS = ['=', '"', "'"]
 
+NON_DATE_QUERIES = [
+    TITLE_QUERY, CONTENT_QUERY, AUTHOR_QUERY, CATEGORY_QUERY, STATUS_QUERY
+]
 REGEX_MATCHERS = {
     # match single/double-quoted text after 'xxx:'
     q: re.compile(
         rf'.*{mark}=(?P<quote>[\'\"])(.*?)(?P=quote)\s*.*', re.IGNORECASE)
     for q, mark in [
-        (TITLE_QUERY, TITLE_QUERY),
-        (CONTENT_QUERY, CONTENT_QUERY),
-        (AUTHOR_QUERY, AUTHOR_QUERY),
-        (CATEGORY_QUERY, CATEGORY_QUERY),
+        # use query term as marker
+        (qm, qm) for qm in NON_DATE_QUERIES
     ]
 }
 TERM_GROUP = 2     # match group of required text of non-date terms
@@ -123,7 +126,7 @@ FILTERS_ORDER.extend(
 SEARCH_REGEX = [
     # regex,            query param, regex match group
     (REGEX_MATCHERS[q], q,           TERM_GROUP)
-    for q in [TITLE_QUERY, CONTENT_QUERY, AUTHOR_QUERY,  CATEGORY_QUERY]
+    for q in NON_DATE_QUERIES
 ]
 SEARCH_REGEX.extend([
     # regex,            query param, regex match group
@@ -147,6 +150,10 @@ class OpinionList(LoginRequiredMixin, generic.ListView):
     model = Opinion
 
     response_template: ListTemplate
+    """ Response template to use """
+
+    sort_order: list[OpinionSortOrder]
+    """ Sort order options to display """
 
     def get(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """
@@ -156,11 +163,22 @@ class OpinionList(LoginRequiredMixin, generic.ListView):
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        permission_check(request, Crud.READ)
+        opinion_permission_check(request, Crud.READ)
 
         # TODO currently '/"/= can't be used in title/content
         # as search depends on them
         query_params = opinion_list_query_args(request)
+
+        # build search term string from values that were set
+        self.extra_context = {
+            "repeat_search_term": '&'.join([
+                f'{q}={v.query_arg_value}'
+                for q, v in query_params.items()
+                if q not in REORDER_ALWAYS_SENT_QUERY_ARGS and v.was_set])
+        }
+
+        # select sort order options to display
+        self.set_sort_order_options(request, query_params)
 
         # set queryset
         self.set_queryset(query_params)
@@ -177,25 +195,51 @@ class OpinionList(LoginRequiredMixin, generic.ListView):
         return super(OpinionList, self). \
             get(request, *args, **kwargs)
 
-    def set_queryset(self, query_params: dict[str, tuple[OpinionArg, bool]]):
+    def set_queryset(self, query_params: dict[str, QueryArg]):
         """
         Set the queryset to get the list of items for this view
         :param query_params: request query
         """
-        status, _ = query_params[STATUS_QUERY]
-        _, and_lookups, _ = get_lookup(STATUS_QUERY, status)
+        and_lookups = {}
+        for query in NON_REORDER_LIST_QUERY_ARGS:
+            _, ands, _ = get_lookup(query, query_params[query].value)
+            and_lookups.update(ands)
 
         self.queryset = Opinion.objects. \
             prefetch_related('categories'). \
             filter(**and_lookups)
 
-    def set_ordering(self, query_params: dict[str, tuple[OpinionArg, bool]]):
+    def set_sort_order_options(self, request: HttpRequest,
+                               query_params: dict[str, QueryArg]):
+        """
+        Set the sort order options for the response
+        :param request: http request
+        :param query_params: request query
+        :return:
+        """
+        # select sort order options to display
+        excludes = []
+        if query_params[AUTHOR_QUERY].was_set_to(request.user.username):
+            # no need for sort by author if only one author
+            excludes.extend([
+                OpinionSortOrder.AUTHOR_AZ, OpinionSortOrder.AUTHOR_ZA
+            ])
+        if not query_params[STATUS_QUERY].value == QueryStatus.ALL:
+            # no need for sort by status if only one status
+            excludes.extend([
+                OpinionSortOrder.STATUS_AZ, OpinionSortOrder.STATUS_ZA
+            ])
+        self.sort_order = [
+            so for so in OpinionSortOrder if so not in excludes
+        ]
+
+    def set_ordering(self, query_params: dict[str, QueryArg]):
         """
         Set the ordering for the response
         :param query_params: request query
         """
         # set ordering
-        order, _ = query_params[ORDER_QUERY]
+        order = query_params[ORDER_QUERY].value
         ordering = order.order
         if order not in [OpinionSortOrder.NEWEST, OpinionSortOrder.OLDEST]:
             # secondary sort by newest
@@ -203,22 +247,21 @@ class OpinionList(LoginRequiredMixin, generic.ListView):
         self.ordering = ordering
 
     def set_pagination(
-            self, query_params: dict[str, tuple[OpinionArg, bool]]):
+            self, query_params: dict[str, QueryArg]):
         """
         Set pagination for the response
         :param query_params: request query
         """
         # set pagination
-        per_page, _ = query_params[PER_PAGE_QUERY]
-        self.paginate_by = per_page.arg
+        self.paginate_by = query_params[PER_PAGE_QUERY].query_arg_value
 
     def select_template(
-            self, query_params: dict[str, tuple[OpinionArg, bool]]):
+            self, query_params: dict[str, QueryArg]):
         """
         Select the template for the response
         :param query_params: request query
         """
-        reorder_query = query_params[REORDER_QUERY][QUERY_TUPLE_VALUE_IDX] \
+        reorder_query = query_params[REORDER_QUERY].value \
             if REORDER_QUERY in query_params else False
         self.response_template = ListTemplate.CONTENT_TEMPLATE \
             if reorder_query else ListTemplate.FULL_TEMPLATE
@@ -251,7 +294,7 @@ class OpinionList(LoginRequiredMixin, generic.ListView):
         main_order = self.ordering \
             if isinstance(self.ordering, str) else self.ordering[0]
         context.update({
-            'sort_order': list(OpinionSortOrder),
+            'sort_order': self.sort_order,
             'selected_sort': list(
                 filter(lambda order: order.order == main_order,
                        OpinionSortOrder)
@@ -304,7 +347,7 @@ class OpinionSearch(OpinionList):
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        permission_check(request, Crud.READ)
+        opinion_permission_check(request, Crud.READ)
 
         # Note: values must be in quotes for search query
         query_params = opinion_search_query_args(request)
@@ -312,13 +355,16 @@ class OpinionSearch(OpinionList):
         # build search term string from values that were set
         self.extra_context = {
             "search_term": ', '.join([
-                f'{q}: {v[QUERY_TUPLE_VALUE_IDX]}'
-                for q, v in query_params.items() if v[QUERY_TUPLE_WAS_SET_IDX]
+                f'{q}: {v.value}'
+                for q, v in query_params.items() if v.was_set
             ]),
             "repeat_search_term":
                 f'{SEARCH_QUERY}='
-                f'{query_params[SEARCH_QUERY][QUERY_TUPLE_VALUE_IDX]}'
+                f'{query_params[SEARCH_QUERY].value}'
         }
+
+        # select sort order options to display
+        self.set_sort_order_options(request, query_params)
 
         # set the query
         self.set_queryset(query_params)
@@ -335,7 +381,7 @@ class OpinionSearch(OpinionList):
         return super(OpinionList, self). \
             get(request, *args, **kwargs)
 
-    def set_queryset(self, query_params: dict[str, tuple[OpinionArg, bool]]):
+    def set_queryset(self, query_params: dict[str, QueryArg]):
         """
         Set the queryset to get the list of items for this view
         :param query_params: request query
@@ -351,7 +397,8 @@ class OpinionSearch(OpinionList):
         applied = {}
 
         for key in FILTERS_ORDER:
-            value, was_set = query_params[key]
+            value = query_params[key].value
+            was_set = query_params[key].was_set
             applied[key] = was_set
 
             if value:
@@ -381,7 +428,7 @@ class OpinionSearch(OpinionList):
                 if applied.get(key, False):
                     continue
 
-                value, _ = query_params[key]
+                value = query_params[key].value
                 if value:
                     terms, ands, ors = get_lookup(key, value)
                     if terms:
@@ -405,7 +452,7 @@ class OpinionSearch(OpinionList):
 
 
 def get_lookup(
-            query: str, value: [str, OpinionArg]
+            query: str, value: Any
         ) -> tuple[bool, dict[Any, Any], list[Any]]:
     """
     Get the query lookup for the specified
@@ -426,11 +473,12 @@ def get_lookup(
             and_lookups[
                 FIELD_LOOKUPS[query]] = value.display
         # else do not include status in query
-    else:
+    elif value:
         and_lookups[
             FIELD_LOOKUPS[query]] = value
 
-    return len(and_lookups) > 0 or len(or_lookups) > 0, and_lookups, or_lookups
+    return \
+        len(and_lookups) > 0 or len(or_lookups) > 0, and_lookups, or_lookups
 
 
 def get_search_term(value: str) -> tuple[bool, dict, list]:
@@ -455,6 +503,15 @@ def get_search_term(value: str) -> tuple[bool, dict, list]:
                 # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#in
                 inner_qs = Category.objects.filter(**{
                     f'{Category.NAME_FIELD}__icontains': match.group(group)
+                })
+                and_lookups[FIELD_LOOKUPS[query]] = inner_qs
+            elif query == STATUS_QUERY:
+                # need inner queryset to get list of statuses with names
+                # like the search term and then look for opinions with those
+                # statuses
+                # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#in
+                inner_qs = Status.objects.filter(**{
+                    f'{Status.NAME_FIELD}__icontains': match.group(group)
                 })
                 and_lookups[FIELD_LOOKUPS[query]] = inner_qs
             elif query in DATE_QUERIES:
@@ -502,4 +559,5 @@ def get_search_term(value: str) -> tuple[bool, dict, list]:
                                           for term in or_q[q]})
                 )
 
-    return len(and_lookups) > 0 or len(or_lookups) > 0, and_lookups, or_lookups
+    return \
+        len(and_lookups) > 0 or len(or_lookups) > 0, and_lookups, or_lookups

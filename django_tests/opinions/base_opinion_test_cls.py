@@ -139,3 +139,32 @@ class BaseOpinionTest(BaseUserTest):
                 op.status.name == STATUS_PUBLISHED,
                 cls.opinions
             ))
+
+    @classmethod
+    def all_of_status(cls, name: str) -> list[Opinion]:
+        """
+        All opinions with the specified status name
+        :param name: status name
+        :return: list of opinions
+        """
+        return list(
+            filter(
+                lambda op: op.published.year > 1 and
+                op.status.name == name,
+                cls.opinions
+            ))
+
+    @classmethod
+    def draft(cls) -> list[Opinion]:
+        """ All draft opinions """
+        return cls.all_of_status(STATUS_DRAFT)
+
+    @classmethod
+    def preview(cls) -> list[Opinion]:
+        """ All preview opinions """
+        return cls.all_of_status(STATUS_PREVIEW)
+
+    @classmethod
+    def published(cls) -> list[Opinion]:
+        """ All published opinions """
+        return cls.all_of_status(STATUS_PUBLISHED)

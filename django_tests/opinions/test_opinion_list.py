@@ -196,7 +196,9 @@ def verify_opinion_list_content(
         lambda tag: tag.name == 'div'
         and SoupMixin.in_tag_attr(tag, 'class', 'card')
     )
-    test_case.assertEqual(len(tags), len(expected))
+    test_case.assertEqual(
+        len(expected), len(tags),
+        f'{msg}: expected {len(expected)} cards, got {len(tags)}')
 
     for index, opinion in enumerate(expected):
         sub_msg = f'{msg} index {index} opinion ' \
@@ -247,33 +249,35 @@ def sort_expected(expected: list[Opinion], order: OpinionSortOrder,
     """
     title_order = 'title' in order.display.lower()
     author_order = 'author' in order.display.lower()
+    status_order = 'status' in order.display.lower()
     expected.sort(
         key=lambda op:
         op.title.lower() if title_order else
-        op.user.username.lower() if author_order else op.published,
-        reverse=order == OpinionSortOrder.NEWEST or
-        order == OpinionSortOrder.TITLE_ZA or
-        order == OpinionSortOrder.AUTHOR_ZA
+        op.user.username.lower() if author_order else
+        op.status.name.lower() if status_order else op.published,
+        reverse=order.order.startswith('-')
     )
     if order not in [OpinionSortOrder.NEWEST, OpinionSortOrder.OLDEST]:
         # secondary sort by newest
         to_sort = expected.copy()
         expected = []
         field = Opinion.USER_FIELD \
-            if author_order else Opinion.TITLE_FIELD
+            if author_order else Opinion.TITLE_FIELD \
+            if title_order else Opinion.STATUS_FIELD
 
         while len(expected) < len(to_sort):
+            # sort in chunks of same attrib value
             look_for = getattr(to_sort[len(expected)], field)
-            author_ops = list(
+            chunk = list(
                 filter(
                     lambda op: look_for == getattr(op, field),
                     to_sort)
             )
-            author_ops.sort(
+            chunk.sort(
                 key=lambda op: op.published,
                 reverse=True
             )
-            expected.extend(author_ops)
+            expected.extend(chunk)
 
     # contents of requested page
     if per_page is not None:

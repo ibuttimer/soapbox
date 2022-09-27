@@ -25,7 +25,9 @@ import string
 import environ
 from enum import Enum
 
+from django.core.exceptions import PermissionDenied
 from django.db import models
+from django.http import HttpRequest
 from django.urls import reverse as django_reverse
 
 
@@ -142,3 +144,26 @@ def permission_name(
     if not isinstance(model, str):
         model = model._meta.model_name
     return f'{perm}{op.value}_{model}'
+
+
+def permission_check(
+        request: HttpRequest, model: [str, models.Model], op: Crud,
+        app_label: str = None, raise_ex: bool = False) -> bool:
+    """
+    Check request user has specified permission
+    :param request: http request
+    :param model: model or model name
+    :param op: Crud operation to check
+    :param app_label:
+        app label for models defined outside of an application in
+        INSTALLED_APPS, default none
+    :param raise_ex: raise exception; default False
+    :return: True is has permission
+    :raises PermissionDenied if does not have permission and `raise_ex` is
+            True
+    """
+    has_perm = request.user.has_perm(
+        permission_name(model, op, app_label=app_label))
+    if not has_perm and raise_ex:
+        raise PermissionDenied("Insufficient permissions")
+    return has_perm

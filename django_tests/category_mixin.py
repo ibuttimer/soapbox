@@ -58,7 +58,7 @@ class CategoryMixin:
                         category_options
                     )
                 )
-                test_case.assertEqual(len(tags), 1)
+                test_case.assertEqual(len(tags), 1, f'{category} not found')
 
     @staticmethod
     def check_category_options(

@@ -34,7 +34,7 @@ from bs4 import BeautifulSoup
 
 from categories.constants import STATUS_ALL
 from soapbox import OPINIONS_APP_NAME
-from utils import permission_name, Crud, app_template_path
+from utils import Crud, app_template_path, permission_check
 from categories import (
     STATUS_DRAFT, STATUS_PUBLISHED, STATUS_PREVIEW, STATUS_WITHDRAWN,
     STATUS_PENDING_REVIEW, STATUS_UNDER_REVIEW, STATUS_APPROVED,
@@ -65,6 +65,49 @@ class OpinionArg(Enum):
     def __init__(self, display: str, arg: Any):
         self.display = display
         self.arg = arg
+
+
+class QueryArg:
+    """ Class representing query args """
+    value: Any
+    """ Value """
+    was_set: bool
+    """ Argument was set in request flag """
+
+    def __init__(self, value: Any, was_set: bool):
+        self.set(value, was_set)
+
+    def set(self, value: Any, was_set: bool):
+        """
+        Set the value and was set flag
+        :param value:
+        :param was_set:
+        :return:
+        """
+        self.value = value
+        self.was_set = was_set
+
+    def was_set_to(self, value: Any, attrib: str = None):
+        """
+        Check if value was to set the specified `value`
+        :param value: value to check
+        :param attrib: attribute of set value to check; default None
+        :return: True if value was to set the specified `value`
+        """
+        chk_value = self.value if not attrib else getattr(self.value, attrib)
+        return self.was_set and chk_value == value
+
+    @property
+    def query_arg_value(self):
+        """
+        Get the arg value of a query argument
+        :return: value
+        """
+        return self.value.arg \
+            if isinstance(self.value, OpinionArg) else self.value
+
+    def __str__(self):
+        return f'{self.value}, was_set {self.was_set}'
 
 
 class QueryStatus(OpinionArg):
@@ -146,7 +189,7 @@ def opinion_save_query_args(
     params = get_query_args(request, [
         (STATUS_QUERY, QueryStatus, QueryStatus.DRAFT),
     ])
-    status_query, _ = params[STATUS_QUERY]
+    status_query = params[STATUS_QUERY].value
     status = Status.objects.get(name=status_query.display)
 
     return status, status_query
@@ -162,6 +205,10 @@ class OpinionSortOrder(OpinionArg):
                  f'-{Opinion.USER_FIELD}__{User.USERNAME_FIELD}')
     TITLE_AZ = ('Title A-Z', 'taz', f'{Opinion.TITLE_FIELD}')
     TITLE_ZA = ('Title Z-A', 'tza', f'-{Opinion.TITLE_FIELD}')
+    STATUS_AZ = ('Status A-Z', 'saz',
+                 f'{Opinion.STATUS_FIELD}__{Status.NAME_FIELD}')
+    STATUS_ZA = ('Status Z-A', 'sza',
+                 f'-{Opinion.STATUS_FIELD}__{Status.NAME_FIELD}')
 
     def __init__(self, display: str, arg: str, order: str):
         super().__init__(display, arg)
@@ -185,14 +232,10 @@ class OpinionPerPage(OpinionArg):
 OpinionPerPage.DEFAULT = OpinionPerPage.SIX
 
 
-QUERY_TUPLE_VALUE_IDX = 0
-QUERY_TUPLE_WAS_SET_IDX = 1
-
-
 def get_query_args(
             request: HttpRequest,
             options: list[tuple[str, Type[OpinionArg], Any]]
-        ) -> dict[str, tuple[OpinionArg | int | str, bool]]:
+        ) -> dict[str, QueryArg]:
     """
     Get opinion list query arguments from request query
     :param options:
@@ -205,57 +248,53 @@ def get_query_args(
 
     for query, clazz, default in options:
         #                value,   was_set
-        params[query] = (default, False)
+        params[query] = QueryArg(default, False)
 
         if query in request.GET:
             param = request.GET[query].lower()
-            default_value = default.arg \
-                if isinstance(default, OpinionArg) else default
+            default_value = params[query].query_arg_value
             if isinstance(default_value, int):
                 param = int(param)
             if clazz:
                 for opt in clazz:
                     if opt.arg == param:
-                        params[query] = (opt, True)
+                        params[query].set(opt, True)
                         break
             else:
-                params[query] = (param, True)
+                params[query].set(param, True)
 
     return params
 
 
-# request arguments for a list
+# request arguments for a list request
 LIST_QUERY_ARGS = [
     # query,      arg class,        default value
     (ORDER_QUERY, OpinionSortOrder, OpinionSortOrder.DEFAULT),
     (PAGE_QUERY, None, 1),
     (PER_PAGE_QUERY, OpinionPerPage, OpinionPerPage.DEFAULT),
     (REORDER_QUERY, None, 0),
+    (AUTHOR_QUERY, None, None),
     # status included as default is to only show published opinions
     (STATUS_QUERY, QueryStatus, QueryStatus.PUBLISH),
 ]
+# query args always sent with a reorder request
+REORDER_ALWAYS_SENT_QUERY_ARGS = [
+    ORDER_QUERY, PAGE_QUERY, PER_PAGE_QUERY, REORDER_QUERY
+]
+# query args sent for list request which are not always sent with a reorder
+# request
+NON_REORDER_LIST_QUERY_ARGS = [
+    a[0] for a in LIST_QUERY_ARGS
+    if a[0] not in REORDER_ALWAYS_SENT_QUERY_ARGS
+]
 
-
-def opinion_list_query_args(
-            request: HttpRequest
-        ) -> dict[str, tuple[OpinionArg | int | str, bool]]:
-    """
-    Get opinion list query arguments from request query
-    :param request: http request
-    :return: dict of tuples of value (OpinionArg | int | str) and
-            'was set' bool flag
-    """
-    return get_query_args(request, LIST_QUERY_ARGS)
-
-
-# request arguments for a search
+# request arguments for a search request
 SEARCH_QUERY_ARGS = LIST_QUERY_ARGS.copy()
 SEARCH_QUERY_ARGS.extend([
     # query,       arg class, default value
     (SEARCH_QUERY, None, None),
     (TITLE_QUERY, None, None),
     (CONTENT_QUERY, None, None),
-    (AUTHOR_QUERY, None, None),
     (CATEGORY_QUERY, None, None),
     (ON_OR_AFTER_QUERY, None, None),
     (ON_OR_BEFORE_QUERY, None, None),
@@ -265,9 +304,21 @@ SEARCH_QUERY_ARGS.extend([
 ])
 
 
+def opinion_list_query_args(
+            request: HttpRequest
+        ) -> dict[str, QueryArg]:
+    """
+    Get opinion list query arguments from request query
+    :param request: http request
+    :return: dict of tuples of value (OpinionArg | int | str) and
+            'was set' bool flag
+    """
+    return get_query_args(request, LIST_QUERY_ARGS)
+
+
 def opinion_search_query_args(
             request: HttpRequest
-        ) -> dict[str, tuple[OpinionArg | int | str, bool]]:
+        ) -> dict[str, QueryArg]:
     """
     Get opinion list query arguments from request query
     :param request: http request
@@ -277,15 +328,30 @@ def opinion_search_query_args(
     return get_query_args(request, SEARCH_QUERY_ARGS)
 
 
-def permission_check(request: HttpRequest, op: Crud):
+def opinion_permissions(request: HttpRequest) -> dict:
+    """
+    Get the current user's permissions for Opinions
+    :param request: current request
+    :return: dict of permissions
+    """
+    model = Opinion._meta.model_name.lower()
+    return {
+        f'{model}_{op.name.lower()}':
+            opinion_permission_check(request, op, raise_ex=False)
+        for op in Crud
+    }
+
+
+def opinion_permission_check(request: HttpRequest, op: Crud,
+                             raise_ex: bool = True) -> bool:
     """
     Check request user has specified permission
     :param request: http request
     :param op: Crud operation to check
+    :param raise_ex: raise exception; default True
     """
-    if not request.user.has_perm(
-            permission_name(Opinion, op, app_label=OPINIONS_APP_NAME)):
-        raise PermissionDenied("Insufficient permissions")
+    return permission_check(request, Opinion, op, app_label=OPINIONS_APP_NAME,
+                            raise_ex=raise_ex)
 
 
 def own_opinion_check(request: HttpRequest, opinion_obj: Opinion):

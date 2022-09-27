@@ -90,14 +90,15 @@
             $('.page-item').off();
 
             repeat_search = $('#var__repeat_search_term').text().trim()
+            query_args = [
+                "order=" + order, "per-page=" + per_page, "reorder=1"
+            ]
+            if (repeat_search.length > 0) {
+                query_args.push(repeat_search)
+            }
 
             $.ajax({
-                url: page + "&" + [
-                        "order=" + order,
-                        "per-page=" + per_page,
-                        "reorder=1",
-                        repeat_search,
-                    ].join("&")
+                url: page + "&" + query_args.join("&")
             }).done(function(data) {
                 $('#article-content').html(data);
 

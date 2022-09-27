@@ -22,21 +22,22 @@
 #
 from datetime import datetime, date
 from http import HTTPStatus
+from typing import Any
 from unittest import skip
 from zoneinfo import ZoneInfo
 
 from django.http import HttpResponse
 
-from categories.models import Category
+from categories.models import Category, Status
 from opinions.constants import (
     OPINION_SEARCH_ROUTE_NAME, ORDER_QUERY, PAGE_QUERY, PER_PAGE_QUERY,
     TITLE_QUERY, CONTENT_QUERY, AUTHOR_QUERY, CATEGORY_QUERY, SEARCH_QUERY,
     ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY,
-    EQUAL_QUERY
+    EQUAL_QUERY, STATUS_QUERY
 )
 from opinions.models import Opinion
 from opinions.views_list import DATE_QUERIES
-from opinions.views_utils import OpinionSortOrder, OpinionPerPage
+from opinions.views_utils import OpinionSortOrder, OpinionPerPage, QueryStatus
 from user.models import User
 from utils import reverse_q
 from .base_opinion_test_cls import BaseOpinionTest
@@ -143,7 +144,7 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
         self.assertTemplateUsed(response, OPINION_LIST_TEMPLATE)
         verify_opinion_list_content(self, [], response, msg='no content')
 
-    def get_query_options(self):
+    def get_query_options(self) -> tuple[Opinion, User, list[str, Any]]:
         """
         Get a list of queries
         """
@@ -163,6 +164,8 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
                            :int(len(opinion.user.username)/2)]),
             (CATEGORY_QUERY, opinion.categories.all()[
                 int(opinion.categories.count()/2)].name),
+            (STATUS_QUERY, QueryStatus.ALL.arg),
+            (STATUS_QUERY, QueryStatus.PUBLISH.arg),
             (ON_OR_AFTER_QUERY, test_date.strftime(DATE_SPACED_FMT)),
             (ON_OR_BEFORE_QUERY, test_date.strftime(DATE_SLASHED_FMT)),
             (AFTER_QUERY, test_date.strftime(DATE_DASHED_FMT)),
@@ -184,7 +187,7 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
                 query = {
                     q: v
                 }
-                expected = TestOpinionSearch.get_expected(
+                expected = self.get_expected(
                     query, order, OpinionPerPage.DEFAULT)
 
                 msg = f'{q}: {v}, order {order}'
@@ -208,7 +211,7 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
             query = {
                 q: v
             }
-            expected = TestOpinionSearch.get_expected(
+            expected = self.get_expected(
                 query, OpinionSortOrder.DEFAULT, None)
 
             total = len(expected)
@@ -217,7 +220,7 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
                 num_pages = int((total + per_page.arg - 1) / per_page.arg)
                 for count in range(1, num_pages + 1):
 
-                    expected = TestOpinionSearch.get_expected(
+                    expected = self.get_expected(
                         query, OpinionSortOrder.DEFAULT, per_page, count - 1)
 
                     msg = f'page {count}/{num_pages}'
@@ -252,7 +255,7 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
                 })
 
                 # check contents of first page
-                expected = TestOpinionSearch.get_expected(
+                expected = self.get_expected(
                     query, OpinionSortOrder.DEFAULT, OpinionPerPage.DEFAULT)
 
                 msg = f'{query}'
@@ -264,8 +267,7 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
                     verify_opinion_list_content(
                         self, expected, response, msg=msg)
 
-    @staticmethod
-    def get_expected(query: dict, order: OpinionSortOrder,
+    def get_expected(self, query: dict, order: OpinionSortOrder,
                      per_page: [OpinionPerPage, None], page_num: int = 0
                      ) -> list[Opinion]:
         """
@@ -291,6 +293,18 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
                     Opinion.USER_FIELD,
                     User.USERNAME_FIELD
                 ], v)
+            elif k == STATUS_QUERY:
+                if v != QueryStatus.ALL.arg:
+                    query_status = \
+                        list(filter(lambda qs: qs.arg == v, QueryStatus))
+                    self.assertEqual(len(query_status), 1,
+                                     f'QueryStatus {v} not found')
+
+                    filter_func = text_in_field([
+                        Opinion.STATUS_FIELD,
+                        Status.NAME_FIELD
+                    ], query_status[0].display)
+                # else all statuses so no need for filtering
             elif k == CATEGORY_QUERY:
                 filter_func = category_in_list(v)
             elif k in DATE_QUERIES:
@@ -300,6 +314,8 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
                 filter(
                     filter_func, expected
                 ))
+            if len(expected) == 0:
+                break   # skip unnecessary additional filtering
 
         return sort_expected(
             expected, order, per_page, page_num=page_num)
