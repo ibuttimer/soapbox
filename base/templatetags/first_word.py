@@ -19,19 +19,17 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
+#
 
-from django.apps import AppConfig
-from django.utils.translation import gettext_lazy as _
+from django import template
 
-from soapbox import USER_APP_NAME
+register = template.Library()
+
+# https://docs.djangoproject.com/en/4.1/howto/custom-template-tags/#simple-tags
 
 
-class UserConfig(AppConfig):
-    """ Config class for user application """
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = USER_APP_NAME
-    verbose_name = _("User Management")
-
-    def ready(self):
-        # Implicitly connect signal handlers decorated with @receiver.
-        from . import signals
+@register.simple_tag
+def first_word(text: str, lower: bool = True, upper: bool = True):
+    words = text.split()
+    return words[0].lower() if lower else \
+        words[0].upper() if upper else words[0]

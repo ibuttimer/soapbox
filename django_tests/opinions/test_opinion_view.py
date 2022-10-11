@@ -25,6 +25,7 @@ import re
 from http import HTTPStatus
 
 from bs4 import BeautifulSoup
+from django.test import TestCase
 from django.http import HttpResponse
 
 from categories import (
@@ -40,7 +41,7 @@ from opinions.models import Opinion
 from opinions.views_utils import QueryStatus
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
-from utils import reverse_q
+from utils import reverse_q, namespaced_url
 from .base_opinion_test_cls import BaseOpinionTest
 from .test_opinion_create import check_submit_button, OPINION_FORM_TEMPLATE
 from ..category_mixin import CategoryMixin
@@ -93,7 +94,9 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseOpinionTest):
         :param pk: id of opinion
         """
         return self.client.get(
-            reverse_q(OPINION_ID_ROUTE_NAME, args=[pk]))
+            reverse_q(
+                namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME),
+                args=[pk]))
 
     def get_opinion_by_slug(self, slug: str) -> HttpResponse:
         """
@@ -101,7 +104,9 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseOpinionTest):
         :param slug: slug of opinion
         """
         return self.client.get(
-            reverse_q(OPINION_SLUG_ROUTE_NAME, args=[slug]))
+            reverse_q(
+                namespaced_url(OPINIONS_APP_NAME, OPINION_SLUG_ROUTE_NAME),
+                args=[slug]))
 
     def get_opinion_by(
             self, identifier: [int, str], opinion_by: str) -> HttpResponse:
@@ -121,7 +126,10 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseOpinionTest):
         :param pk: id of opinion
         """
         return self.client.get(
-            reverse_q(OPINION_PREVIEW_ID_ROUTE_NAME, args=[pk]))
+            reverse_q(
+                namespaced_url(
+                    OPINIONS_APP_NAME, OPINION_PREVIEW_ID_ROUTE_NAME),
+                args=[pk]))
 
     def test_not_logged_in_access_by_id(self):
         """ Test must be logged in to access opinion by id """
@@ -153,7 +161,8 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseOpinionTest):
                     opinion_by)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
                 self.assertTemplateUsed(response, OPINION_FORM_TEMPLATE)
-                self.verify_opinion_content(opinion, response)
+                TestOpinionView.verify_opinion_content(
+                    self, opinion, response)
 
     def test_get_own_opinion_by_id(self):
         """ Test page content for opinion by id of logged-in user """
@@ -213,7 +222,8 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseOpinionTest):
         response = self.get_opinion_by_id(opinion.id)
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertTemplateUsed(response, OPINION_VIEW_TEMPLATE)
-        self.verify_opinion_content(opinion, response, is_readonly=True)
+        TestOpinionView.verify_opinion_content(
+            self, opinion, response, is_readonly=True)
 
     def test_get_other_opinion_by_slug(self):
         """ Test page content for opinion by slug of not logged-in user """
@@ -229,7 +239,8 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseOpinionTest):
         response = self.get_opinion_by_slug(opinion.slug)
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertTemplateUsed(response, OPINION_VIEW_TEMPLATE)
-        self.verify_opinion_content(opinion, response, is_readonly=True)
+        TestOpinionView.verify_opinion_content(
+            self, opinion, response, is_readonly=True)
 
     def check_other_opinion_access(self, opinion_by: str):
         """
@@ -281,8 +292,9 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseOpinionTest):
                 response = self.get_opinion_preview(opinion.id)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
                 self.assertTemplateUsed(response, OPINION_VIEW_TEMPLATE)
-                self.verify_opinion_content(
-                    opinion, response, is_readonly=True, is_preview=True)
+                TestOpinionView.verify_opinion_content(
+                    self, opinion, response, is_readonly=True,
+                    is_preview=True)
 
     def test_get_other_opinion_preview(self):
         """
@@ -324,7 +336,9 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseOpinionTest):
             status = statuses[index]
             with self.subTest(f'status {status}'):
                 url = reverse_q(
-                    OPINION_STATUS_ID_ROUTE_NAME, args=[opinion.id],
+                    namespaced_url(
+                        OPINIONS_APP_NAME, OPINION_STATUS_ID_ROUTE_NAME),
+                    args=[opinion.id],
                     query_kwargs={
                         STATUS_QUERY: query_params[index].arg
                     })
@@ -360,62 +374,69 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseOpinionTest):
             status = statuses[index]
             with self.subTest(f'status {status}'):
                 url = reverse_q(
-                    OPINION_STATUS_ID_ROUTE_NAME, args=[opinion.id],
+                    namespaced_url(
+                        OPINIONS_APP_NAME, OPINION_STATUS_ID_ROUTE_NAME),
+                    args=[opinion.id],
                     query_kwargs={
                         STATUS_QUERY: query_params[index].value
                     })
                 response = self.client.patch(url)
                 self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
+    @staticmethod
     def verify_opinion_content(
-                self, opinion: Opinion, response: HttpResponse,
+                test_case: TestCase, opinion: Opinion, response: HttpResponse,
                 is_readonly: bool = False, is_preview: bool = False
             ):
         """
         Verify opinion page content for user
+        :param test_case: TestCase instance
         :param opinion: expected opinion
         :param response: opinion response
         :param is_readonly: is readonly flag; default False
         :param is_preview: is preview flag; default False
         """
-        self.assertEqual(response.status_code, HTTPStatus.OK)
+        test_case.assertEqual(response.status_code, HTTPStatus.OK)
 
         soup = BeautifulSoup(
-            response.content.decode("utf-8", errors="ignore"), features="lxml"
+            response.content.decode(
+                "utf-8", errors="ignore"), features="lxml"
         )
         # check tag for title
         inputs = soup.find_all(id='id_title')
-        self.assertEqual(len(inputs), 1)
+        test_case.assertEqual(len(inputs), 1)
         title = inputs[0].text if is_readonly else inputs[0].get('value')
-        self.assertTrue(title, opinion.title)
+        test_case.assertTrue(title, opinion.title)
 
         if is_readonly:
             # check for readonly_content div, can't check content as its
             # replaced by javascript
-            SoupMixin.find_tag(self, soup.find_all(id='readonly_content'),
+            SoupMixin.find_tag(test_case,
+                               soup.find_all(id='readonly_content'),
                                lambda tag: True)
         else:
             # check textarea tags for content
-            SoupMixin.find_tag(self, soup.find_all('textarea'),
+            SoupMixin.find_tag(test_case, soup.find_all('textarea'),
                                lambda tag: opinion.content in tag.text)
 
         # check categories
         if is_readonly:
             CategoryMixin.check_categories(
-                self, soup,
+                test_case, soup,
                 lambda tag: tag.name == 'span'
                 and SoupMixin.in_tag_attr(tag, 'class', 'badge'),
                 lambda category, tag: category.name == tag.text,
                 opinion.categories.all())
         else:
             CategoryMixin.check_category_options(
-                self, soup, opinion.categories.all())
+                test_case, soup, opinion.categories.all())
 
         # check fieldset is disabled in read only mode
         if is_readonly:
             pass    # no fieldset in view mode
         else:
-            SoupMixin.check_tag(self, soup.find_all('fieldset'), is_readonly,
+            SoupMixin.check_tag(test_case, soup.find_all('fieldset'),
+                                is_readonly,
                                 lambda tag: tag.has_attr('disabled'))
 
         # check status only displayed if not read only,
@@ -427,21 +448,21 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseOpinionTest):
                 if found:
                     break
         if is_readonly:
-            self.assertFalse(found)
+            test_case.assertFalse(found)
         else:
-            self.assertTrue(found)
+            test_case.assertTrue(found)
 
         # check preview banner only displayed if opinion is preview status
         if is_preview and opinion.status.name == STATUS_PREVIEW:
             alerts = soup.find_all(attrs={'class': re.compile("alert")})
-            self.assertGreaterEqual(len(alerts), 1)
+            test_case.assertGreaterEqual(len(alerts), 1)
             for alert in alerts:
-                SoupMixin.find_tag(self, alert.descendants,
+                SoupMixin.find_tag(test_case, alert.descendants,
                                    lambda tag: STATUS_PREVIEW in tag.text)
 
         # check submit button only displayed in not read only mode
         tags = soup.find_all(check_submit_button)
         if is_readonly:
-            self.assertEqual(len(tags), 0)
+            test_case.assertEqual(len(tags), 0)
         else:
-            self.assertEqual(len(tags), 3)
+            test_case.assertEqual(len(tags), 3)

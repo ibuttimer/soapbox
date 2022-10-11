@@ -29,9 +29,9 @@ from user.models import User
 from categories.models import Category, Status
 from utils import SlugMixin
 from .constants import (
-    TITLE_FIELD, CONTENT_FIELD, EXCERPT_FIELD, CATEGORIES_FIELD,
+    ID_FIELD, TITLE_FIELD, CONTENT_FIELD, EXCERPT_FIELD, CATEGORIES_FIELD,
     STATUS_FIELD, USER_FIELD, SLUG_FIELD, CREATED_FIELD, UPDATED_FIELD,
-    PUBLISHED_FIELD,
+    PUBLISHED_FIELD, PARENT_FIELD, LEVEL_FIELD,
     OPINION_FIELD, REQUESTED_FIELD, REASON_FIELD,
     REVIEWER_FIELD, COMMENT_FIELD, RESOLVED_FIELD,
     CLOSE_REVIEW_PERM, WITHDRAW_REVIEW_PERM
@@ -44,6 +44,7 @@ class Opinion(SlugMixin, models.Model):
     MODEL_NAME = 'Opinion'
 
     # field names
+    ID_FIELD = ID_FIELD
     TITLE_FIELD = TITLE_FIELD
     CONTENT_FIELD = CONTENT_FIELD
     EXCERPT_FIELD = EXCERPT_FIELD
@@ -100,12 +101,76 @@ class Opinion(SlugMixin, models.Model):
             self, Opinion.OPINION_ATTRIB_SLUG_MAX_LEN, title)
 
 
+class Comment(SlugMixin, models.Model):
+    """ Opinions model """
+
+    MODEL_NAME = 'Comment'
+
+    NO_PARENT = 0
+    """ Value representing no parent """
+
+    # field names
+    ID_FIELD = ID_FIELD
+    CONTENT_FIELD = CONTENT_FIELD
+    OPINION_FIELD = OPINION_FIELD
+    PARENT_FIELD = PARENT_FIELD
+    LEVEL_FIELD = LEVEL_FIELD
+    USER_FIELD = USER_FIELD
+    STATUS_FIELD = STATUS_FIELD
+    SLUG_FIELD = SLUG_FIELD
+    CREATED_FIELD = CREATED_FIELD
+    UPDATED_FIELD = UPDATED_FIELD
+    PUBLISHED_FIELD = PUBLISHED_FIELD
+
+    COMMENT_ATTRIB_CONTENT_MAX_LEN: int = 700
+    COMMENT_ATTRIB_SLUG_MAX_LEN: int = Opinion.OPINION_ATTRIB_SLUG_MAX_LEN
+
+    content = models.CharField(
+        _('content'), max_length=COMMENT_ATTRIB_CONTENT_MAX_LEN, blank=False)
+
+    opinion = models.ForeignKey(Opinion, on_delete=models.CASCADE)
+
+    parent = models.BigIntegerField(
+        _('parent'), default=NO_PARENT, blank=True)
+
+    level = models.IntegerField(_('level'), default=0, blank=True)
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    status = models.ForeignKey(Status, on_delete=models.CASCADE)
+
+    slug = models.SlugField(
+        _('slug'), max_length=COMMENT_ATTRIB_SLUG_MAX_LEN, blank=False,
+        unique=True)
+
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    published = models.DateTimeField(
+        default=datetime(MINYEAR, 1, 1, tzinfo=timezone.utc))
+
+    # class Meta:
+    #     ordering = [TITLE_FIELD]
+
+    def __str__(self):
+        return f'{self.content} {self.status.short_name}'
+
+    def set_slug(self, content: str):
+        """
+        Set slug from specified content
+        :param content: content to generate slug from
+        """
+        # TODO remove html tags before generating slug
+        self.slug = Comment.generate_unique_slug(
+            self, Comment.COMMENT_ATTRIB_SLUG_MAX_LEN, content)
+
+
 class Review(models.Model):
     """ Reviews model """
 
     MODEL_NAME = 'Review'
 
     # field names
+    ID_FIELD = ID_FIELD
     OPINION_FIELD = OPINION_FIELD
     REQUESTED_FIELD = REQUESTED_FIELD
     REASON_FIELD = REASON_FIELD

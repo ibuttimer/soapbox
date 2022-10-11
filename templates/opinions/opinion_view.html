@@ -28,6 +28,8 @@
 {% load static %}
 {% load humanize %}
 {% load tz %}
+{% load form_field %}
+{% load dict_value %}
 
 {% block head_title %}SoapBox - {{ title | truncatechars:7 }}{% endblock %}
 
@@ -35,6 +37,10 @@
     <script src="https://code.jquery.com/jquery-3.6.1.min.js" integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous"></script>
     <script>window.jQuery || document.write('<script type="text/javascript" src="{% static 'jquery/jquery-3.6.1.min.js' %}"><\/script>')</script>
 {% endblock extra_js_head %}
+
+{% block extra_css %}
+<link href="{% static 'css/styles-opinion.css' %}" rel="stylesheet">
+{% endblock extra_css %}
 
 {% block content %}
 <article class="row text-center">
@@ -48,7 +54,7 @@
                     <h3>Preview</h3>
                 </div>
                 <div class="col-sm-2">
-                    <a class="btn btn-outline-warning mb-1" href="{% url 'opinion_id' opinion.id %}">
+                    <a class="btn btn-outline-warning mb-1" href="{% url 'opinions:opinion_id' opinion.id %}">
                         {% trans "Edit" %}
                     </a>
                 </div>
@@ -82,7 +88,7 @@
                 <p><strong>Updated</strong> {{ opinion.updated | localtime | naturaltime }}</p>
             </div>
             <div class="col-sm-2">
-                <p><strong>Author</strong> <a href="{% url 'user_id' opinion.user.id %}">{{ opinion.user.username }}</a></p>
+                <p><strong>Author</strong> <a href="{% url 'user:user_id' opinion.user.id %}">{{ opinion.user.username }}</a></p>
             </div>
         </div>
 
@@ -96,7 +102,27 @@
             <div class="col-sm-2 offset-sm-5">
                 <a class="btn btn-secondary mb-1" href="{% url 'home' %}">{% trans "Done" %}</a>
             </div>
+
+            <div class="col-sm-5 justify-content-start">
+                {# --- template variable defines for includes --- #}
+                {# reactions template expects: 'target_id' as id of target opinion/comment #}
+                {#                             'reactions' as list of reactions #}
+                {% with reactions=opinion_reactions %}
+                    {% with target_id=opinion.id %}
+                        {% include "opinions/snippet/reactions.html" %}
+                    {% endwith %}
+                {% endwith %}
+            </div>
         </div>
+    </div>
+
+    <div id="id--comments-container" class="col-12 mt-2">
+        {% include "opinions/snippet/view_comments.html" %}
+    </div>
+
+    <!-- Modal to create comment on opinion -->
+    <div id="id--comment-modal-container">
+        {% include "opinions/snippet/comment_modal.html" %}
     </div>
 </article>
 
@@ -110,7 +136,7 @@
          */
         function updateStatus(new_status) {
             $.ajax({
-                url: "{% url 'status_opinion_id' opinion.id %}?status=" + new_status,
+                url: "{% url 'opinions:status_opinion_id' opinion.id %}?status=" + new_status,
                 method: 'patch',
                 headers: {
                     'X-CSRFTOKEN': '{{ csrf_token }}'
@@ -119,5 +145,139 @@
                 document.location.href = data.redirect;
             });
         }
+
+        const morePlaceholderSelector = "button[id^='id--comment-more-placeholder']";
+
+        /* Click handler for more comments placeholder */
+        function morePlaceholderClickHandler(event) {
+            var url = event.currentTarget.attributes['data-bs-href'].textContent;
+
+            // hide tooltip
+            $("#" + event.currentTarget.id).tooltip("hide");
+
+            $.ajax({
+                method: 'get',
+                url: url,
+            }).done(function (data) {
+                // remove placeholder click handlers
+                $(morePlaceholderSelector).off();
+
+                // comment card more div has id "id--comment-card-more-<id>"
+                const splits = event.currentTarget.id.split('-');
+                // add additional comments to end of list
+                $("#id--comment-card-more-" + splits[splits.length - 1]).parent().append(data.html);
+                // remove more placeholder & collapse
+                $("#id--comment-card-more-" + splits[splits.length - 1]).remove();
+                $("#id--comment-collapse-more-" + splits[splits.length - 1]).remove();
+
+                // set placeholder click handlers
+                $(morePlaceholderSelector).on('click', morePlaceholderClickHandler);
+                // set click handler to set submit url for comments
+                setSubmitUrlHandlers();
+
+                const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+                const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+
+            });
+        }
+
+        /* Set the click handlers to set the submit url for comments */
+        function setSubmitUrlHandlers() {
+            // Reaction buttons on comments are named 'id--react-comment-....'
+
+            // remove old handlers to prevent duplicates
+            $("button[id^='id--react-comment']").off();
+            // add new handlers
+            $("button[id^='id--react-comment']").on('click', (event) => {
+                $("#id--comment-submit-url").text(
+                    event.currentTarget.attributes['data-bs-href'].textContent
+                );
+            });
+
+        }
+
+        $(document).ready(function () {
+
+            /* Due to how HTML5 defines its semantics, the autofocus HTML attribute has no effect in Bootstrap modals.
+               To achieve the same effect, use some custom JavaScript
+               https://getbootstrap.com/docs/5.2/components/modal/#how-it-works
+             */
+            {% form_field form 'content' as content_field %}
+            $("#id--comment-modal").on('shown.bs.modal', (event) => {
+                $("#{{ content_field.auto_id }}").focus();
+            });
+
+            /* Clear form errors and entered data when modal hidden */
+            $("#id--comment-modal").on('hidden.bs.modal', (event) => {
+                $("#id--form-errors-container").html("");
+                /* TODO find method of clearing editor content and remove all stored history
+                    suggested method (https://summernote.org/deep-dive/#reset) doesn't work (maybe because in iframe?)
+                    Can clear input element using $("#{{ content_field.auto_id }}").val("") but editor content is still displayed
+                 */
+            });
+
+            // Set click handler to set submit url for comments
+            setSubmitUrlHandlers();
+
+            /* Click handler to request more comments.
+                More buttons on comments are named 'id--comment-more-placeholder-....'
+             */
+            $(morePlaceholderSelector).on('click', morePlaceholderClickHandler);
+
+            /* Collapse event handlers for comment reply containers */
+            $("div[id^='id--comment-collapse']").on('hidden.bs.collapse', (event) => {
+                const selector = "#" + event.currentTarget.id + "-toggle > i"
+                $(selector).removeClass("fa-chevron-up");
+                $(selector).addClass("fa-chevron-down");
+            });
+            $("div[id^='id--comment-collapse']").on('shown.bs.collapse', (event) => {
+                const selector = "#" + event.currentTarget.id + "-toggle > i"
+                $(selector).removeClass("fa-chevron-down");
+                $(selector).addClass("fa-chevron-up");
+            });
+
+            /* Submit handler for comment modal */
+            $("form[id^='id--comment-modal']").submit(function (event) {
+                var formData = {
+                    content: $("#{{ content_field.auto_id }}").val(),
+                };
+
+                var url = $("#id--comment-submit-url").text();
+
+                $.ajax({
+                    method: 'post',
+                    url: url,
+                    headers: {
+                        'X-CSRFTOKEN': '{{ csrf_token }}'
+                    },
+                    data: formData,
+                }).done(function(data) {
+                    // add new comment to end of container
+                    $("#" + data.parent_container).append(data.html);
+
+                    // make toggle visible and expand collapse if necessary
+                    if (!data.opinion_comment) {
+                        $("#" + data.parent_container + "-toggle").removeAttr('hidden');
+                        $("#" + data.parent_container + "-toggle").removeClass('collapsed');
+
+                        const bsCollapse = new bootstrap.Collapse("#" + data.parent_container, {
+                          toggle: false
+                        });
+                        bsCollapse.show();
+                    }
+                    // close modal
+                    $("#id--comment-modal").modal('hide');
+
+                    // set click handler to set submit url for comments
+                    setSubmitUrlHandlers();
+
+                }).fail(function(data) {
+                    // redisplay modal
+                    $("#id--form-errors-container").html(data.responseJSON.html);
+                });
+
+                event.preventDefault();
+            });
+        });
     </script>
 {% endblock extra_js_body %}

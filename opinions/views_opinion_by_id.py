@@ -20,7 +20,6 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-
 from http import HTTPStatus
 
 from django.contrib.auth.decorators import login_required
@@ -38,20 +37,26 @@ from categories import (
 from categories.models import Status
 from opinions.constants import (
     OPINION_ID_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME,
-    OPINION_PREVIEW_ID_ROUTE_NAME
+    OPINION_PREVIEW_ID_ROUTE_NAME, OPINION_ID_QUERY, PAGE_QUERY,
+    PER_PAGE_QUERY, COMMENT_DEPTH_QUERY, PARENT_ID_QUERY
 )
 from soapbox import (
     OPINIONS_APP_NAME, HOME_ROUTE_NAME, GET, PATCH
 )
 from utils import (
-    app_template_path, redirect_on_success_or_render, Crud, reverse_q
+    app_template_path, redirect_on_success_or_render, Crud, reverse_q,
+    namespaced_url
 )
+from .comment_data import get_comment_bundle
+from .forms import OpinionForm, CommentForm
+from .models import Opinion, Comment
+from .reactions import OPINION_REACTIONS, COMMENT_REACTIONS
 from .views_utils import (
-    opinion_permission_check, opinion_save_query_args, timestamp_opinion,
-    own_opinion_check, published_check, QueryStatus, get_context, render_form
+    opinion_permission_check, opinion_save_query_args, timestamp_content,
+    own_opinion_check, published_check, QueryStatus, get_opinion_context,
+    render_opinion_form, comment_permission_check, PerPage,
+    DEFAULT_COMMENT_DEPTH, QueryArg
 )
-from .forms import OpinionForm
-from .models import Opinion
 
 TITLE_NEW = "Creation"
 TITLE_UPDATE = "Update"
@@ -88,6 +93,17 @@ class OpinionDetail(LoginRequiredMixin, View):
         # unpublished opinions
         published_check(request, opinion_obj)
 
+        comments = get_comment_bundle({
+            q: QueryArg(v, True) for q, v in [
+                (OPINION_ID_QUERY, opinion_obj.id),
+                (PARENT_ID_QUERY, Comment.NO_PARENT),
+                (PAGE_QUERY, 1),
+                (PER_PAGE_QUERY, PerPage.SIX),
+                (COMMENT_DEPTH_QUERY, DEFAULT_COMMENT_DEPTH)
+            ]
+        }) if comment_permission_check(request, Crud.READ, raise_ex=False) \
+            else []
+
         read_only = opinion_obj and opinion_obj.user.id != request.user.id \
             if READ_ONLY not in kwargs else kwargs[READ_ONLY]
         render_args = {
@@ -97,8 +113,12 @@ class OpinionDetail(LoginRequiredMixin, View):
         }
         if read_only:
             renderer = _render_view
+            render_args.update({
+                'form': CommentForm(),
+                'comments': comments
+            })
         else:
-            renderer = render_form
+            renderer = render_opinion_form
             render_args.update({
                 'submit_url': self.url(opinion_obj),
                 'form': OpinionForm(instance=opinion_obj),
@@ -152,7 +172,7 @@ class OpinionDetail(LoginRequiredMixin, View):
             status, query = opinion_save_query_args(request)
             opinion_obj.status = status
 
-            timestamp_opinion(opinion_obj)
+            timestamp_content(opinion_obj)
 
             # save updated object
             opinion_obj.save()
@@ -161,13 +181,14 @@ class OpinionDetail(LoginRequiredMixin, View):
 
             if query == QueryStatus.PREVIEW:
                 # saved show preview
-                success_route = OPINION_PREVIEW_ID_ROUTE_NAME
+                success_route = namespaced_url(
+                    OPINIONS_APP_NAME, OPINION_PREVIEW_ID_ROUTE_NAME)
                 success_args = [opinion_obj.id]
             # else redirect to home
 
             template_path, context = None, None
         else:
-            template_path, context = render_form(
+            template_path, context = render_opinion_form(
                 form,
                 self.url(opinion_obj),
                 TITLE_UPDATE,
@@ -190,23 +211,31 @@ class OpinionDetail(LoginRequiredMixin, View):
 
 
 def _render_view(title: str,
+                 submit_url: str = None,
+                 form: OpinionForm = None,
                  opinion_obj: Opinion = None,
+                 comments: dict = None,
                  read_only: bool = False, status: Status = None) -> tuple[
         str, dict[str, Opinion | list[str] | OpinionForm | bool]]:
     """
     Render the opinion view
     :param title: title
     :param opinion_obj: opinion object, default None
+    :param comments: details of comments
     :param read_only: read only flag, default False
     :param status: status, default None
     :return: tuple of template path and context
     """
-    context = get_context(
-        title, opinion_obj=opinion_obj, read_only=read_only, status=status
+    context = get_opinion_context(
+        title, submit_url=submit_url, form=form, opinion_obj=opinion_obj,
+        comments=comments, read_only=read_only, status=status
     )
+
     context.update({
         'categories': opinion_obj.categories.all(),
-        'is_preview': status.name == STATUS_PREVIEW if status else False
+        'is_preview': status.name == STATUS_PREVIEW if status else False,
+        'opinion_reactions': OPINION_REACTIONS,
+        'comment_reactions': COMMENT_REACTIONS,
     })
 
     return app_template_path(OPINIONS_APP_NAME, "opinion_view.html"), context
@@ -247,7 +276,9 @@ class OpinionDetailById(OpinionDetail):
         :param opinion_obj: opinion
         :return: url
         """
-        return reverse_q(OPINION_ID_ROUTE_NAME, args=[opinion_obj.id])
+        return reverse_q(
+            namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME),
+            args=[opinion_obj.id])
 
 
 class OpinionDetailPreviewById(OpinionDetail):
@@ -292,7 +323,9 @@ class OpinionDetailPreviewById(OpinionDetail):
         :param opinion_obj: opinion
         :return: url
         """
-        return reverse_q(OPINION_PREVIEW_ID_ROUTE_NAME, args=[opinion_obj.id])
+        return reverse_q(
+            namespaced_url(OPINIONS_APP_NAME, OPINION_PREVIEW_ID_ROUTE_NAME),
+            args=[opinion_obj.id])
 
 
 class OpinionDetailBySlug(OpinionDetail):
@@ -330,7 +363,9 @@ class OpinionDetailBySlug(OpinionDetail):
         :param opinion_obj: opinion
         :return: url
         """
-        return reverse_q(OPINION_SLUG_ROUTE_NAME, args=[opinion_obj.slug])
+        return reverse_q(
+            namespaced_url(OPINIONS_APP_NAME, OPINION_SLUG_ROUTE_NAME),
+            args=[opinion_obj.slug])
 
 
 @login_required

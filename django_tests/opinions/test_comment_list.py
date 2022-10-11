@@ -27,32 +27,34 @@ from bs4 import BeautifulSoup
 from django.http import HttpResponse
 
 from opinions.constants import (
-    OPINIONS_ROUTE_NAME, ORDER_QUERY, PAGE_QUERY, PER_PAGE_QUERY
+    COMMENTS_ROUTE_NAME, ORDER_QUERY, PAGE_QUERY, PER_PAGE_QUERY,
 )
-from opinions.models import Opinion
-from opinions.views_utils import OpinionSortOrder, PerPage
+from opinions.models import Opinion, Comment
+from opinions.views_utils import CommentSortOrder, PerPage
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
 from .base_opinion_test_cls import BaseOpinionTest
+from .test_comment_view import TestCommentView
 from ..category_mixin import CategoryMixin
 from ..soup_mixin import SoupMixin
 from ..user.base_user_test_cls import BaseUserTest
 
-OPINION_LIST_TEMPLATE = f'{OPINIONS_APP_NAME}/opinion_list.html'
-OPINION_LIST_SORT_TEMPLATE = f'{OPINIONS_APP_NAME}/opinion_list_content.html'
+COMMENT_LIST_TEMPLATE = f'{OPINIONS_APP_NAME}/comment_list.html'
+COMMENT_LIST_CONTENT_TEMPLATE = \
+    f'{OPINIONS_APP_NAME}/comment_list_content.html'
 
 
-class TestOpinionList(SoupMixin, CategoryMixin, BaseOpinionTest):
+class TestCommentList(SoupMixin, CategoryMixin, BaseOpinionTest):
     """
-    Test opinion page view
+    Test comment page view
     https://docs.djangoproject.com/en/4.1/topics/testing/tools/
     """
 
     @classmethod
     def setUpTestData(cls):
         """ Set up data for the whole TestCase """
-        super(TestOpinionList, TestOpinionList).setUpTestData()
+        super(TestCommentList, TestCommentList).setUpTestData()
 
     def login_user_by_key(self, name: str | None = None) -> User:
         """
@@ -70,11 +72,11 @@ class TestOpinionList(SoupMixin, CategoryMixin, BaseOpinionTest):
         """
         return BaseUserTest.login_user_by_id(self, pk)
 
-    def get_opinion_list_by(
-            self, order: OpinionSortOrder = None, page: int = None,
+    def get_comment_list_by(
+            self, order: CommentSortOrder = None, page: int = None,
             per_page: PerPage = None) -> HttpResponse:
         """
-        Get the opinion page
+        Get the comment page
         :param order:
             order to retrieve opinions in; default None i.e. don't care
         :param page: 1-based page number to get
@@ -90,47 +92,49 @@ class TestOpinionList(SoupMixin, CategoryMixin, BaseOpinionTest):
             query_kwargs[PAGE_QUERY] = page
         return self.client.get(
             reverse_q(
-                namespaced_url(OPINIONS_APP_NAME, OPINIONS_ROUTE_NAME),
+                namespaced_url(OPINIONS_APP_NAME, COMMENTS_ROUTE_NAME),
                 query_kwargs=query_kwargs))
 
     def test_not_logged_in_access(self):
         """ Test must be logged in to access opinion list """
-        response = self.get_opinion_list_by()
+        response = self.get_comment_list_by()
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
-    def test_get_opinion_list(self):
-        """ Test page content for opinion list """
-        opinion = TestOpinionList.opinions[0]
+    def test_get_comment_list(self):
+        """ Test page content for comment list """
+        opinion = TestCommentList.opinions[0]
         user = self.login_user_by_id(opinion.user.id)
 
-        response = self.get_opinion_list_by()
+        response = self.get_comment_list_by()
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertTemplateUsed(response, OPINION_LIST_TEMPLATE)
+        self.assertTemplateUsed(response, COMMENT_LIST_TEMPLATE)
+        self.assertTemplateUsed(response, COMMENT_LIST_CONTENT_TEMPLATE)
 
-    def test_get_opinion_list_sorted(self):
+    def test_get_comment_list_sorted(self):
         """
-        Test page content for sorted opinion list
-        (doesn't get whole page just, opinions)
+        Test page content for sorted comment list
+        (doesn't get whole page just, comments)
         """
-        opinion = TestOpinionList.opinions[0]
-        user = self.login_user_by_id(opinion.user.id)
+        comment = TestCommentList.comments[0]
+        user = self.login_user_by_id(comment.user.id)
 
-        for order in list(OpinionSortOrder):
+        for order in list(CommentSortOrder):
             # check contents of first page
-            expected = TestOpinionList.get_expected(
+            expected = TestCommentList.get_expected(
                 order, PerPage.DEFAULT)
 
             with self.subTest(f'order {order}'):
-                response = self.get_opinion_list_by(order=order)
+                response = self.get_comment_list_by(order=order)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
-                self.assertTemplateUsed(response, OPINION_LIST_SORT_TEMPLATE)
-                verify_opinion_list_content(
+                self.assertTemplateUsed(
+                    response, COMMENT_LIST_CONTENT_TEMPLATE)
+                verify_comment_list_content(
                     self, expected, response, msg=order)
 
     @staticmethod
-    def get_expected(order: OpinionSortOrder,
+    def get_expected(order: CommentSortOrder,
                      per_page: [PerPage, None],
-                     page_num: int = 0) -> list[Opinion]:
+                     page_num: int = 0) -> list[Comment]:
         """
         Generate the expected results list
         :param order: sort order of results
@@ -138,49 +142,49 @@ class TestOpinionList(SoupMixin, CategoryMixin, BaseOpinionTest):
         :param page_num: 0-based number of page to get
         """
         # all published opinions
-        expected = TestOpinionList.published_opinions()
+        expected = TestCommentList.published_comments()
         return sort_expected(
             expected, order, per_page, page_num=page_num)
 
-    def test_get_opinion_list_pagination(self):
+    def test_get_comment_list_pagination(self):
         """
-        Test page content for opinion list pagination
+        Test page content for comment list pagination
         (doesn't get whole page just, opinions)
         """
-        opinion = TestOpinionList.opinions[0]
+        opinion = TestCommentList.opinions[0]
         user = self.login_user_by_id(opinion.user.id)
 
         total = len(
             # all published opinions
-            TestOpinionList.published_opinions()
+            TestCommentList.published_comments()
         )
 
         for per_page in list(PerPage):
             num_pages = int((total + per_page.arg - 1) / per_page.arg)
             for count in range(1, num_pages + 1):
 
-                expected = TestOpinionList.get_expected(
-                    OpinionSortOrder.DEFAULT, per_page, count - 1)
+                expected = TestCommentList.get_expected(
+                    CommentSortOrder.DEFAULT, per_page, count - 1)
 
                 msg = f'page {count}/{num_pages}'
                 with self.subTest(msg):
-                    response = self.get_opinion_list_by(
+                    response = self.get_comment_list_by(
                         per_page=per_page, page=count)
                     self.assertEqual(response.status_code, HTTPStatus.OK)
                     self.assertTemplateUsed(
-                        response, OPINION_LIST_SORT_TEMPLATE)
-                    verify_opinion_list_content(
+                        response, COMMENT_LIST_CONTENT_TEMPLATE)
+                    verify_comment_list_content(
                         self, expected, response,
                         pagination=num_pages > 1, msg=msg)
 
 
-def verify_opinion_list_content(
-            test_case: BaseOpinionTest, expected: list[Opinion],
+def verify_comment_list_content(
+            test_case: BaseOpinionTest, expected: list[Comment],
             response: HttpResponse, pagination: bool = False,
             msg: str = ''
         ):
     """
-    Verify opinion list page content
+    Verify comment list page content
     :param test_case: opinion test object
     :param expected: expected opinions
     :param response: opinion response
@@ -202,30 +206,13 @@ def verify_opinion_list_content(
         len(expected), len(tags),
         f'{msg}: expected {len(expected)} cards, got {len(tags)}')
 
-    for index, opinion in enumerate(expected):
-        sub_msg = f'{msg} index {index} opinion ' \
-                  f'"{opinion.user.username} {opinion.title}"'
+    for index, comment in enumerate(expected):
+        sub_msg = f'{msg} index {index} comment "{comment.content}"'
         with test_case.subTest(sub_msg):
 
-            # check title
-            tags = soup.find_all(id=f'id_title_{index + 1}')
-            test_case.assertEqual(len(tags), 1)
-            test_case.assertTrue(tags[0].text, opinion.title)
-
-            # check excerpt
-            tags = soup.find_all(id=f'excerpt_{index + 1}')
-            test_case.assertEqual(len(tags), 1)
-            test_case.assertTrue(tags[0].text, opinion.excerpt)
-
-            # check categories
-            CategoryMixin.check_categories(
-                test_case, soup,
-                lambda tag: tag.name == 'span'
-                and TestOpinionList.equal_tag_attr(
-                    tag.parent, 'id', f'categories_{index + 1}'),
-                lambda category, tag: category.name == tag.text,
-                opinion.categories.all(),
-                msg=sub_msg)
+            TestCommentView.verify_comment_content(
+                test_case, comment.opinion, comment, response
+            )
 
     if pagination:
         SoupMixin.find_tag(
@@ -239,9 +226,9 @@ def verify_opinion_list_content(
             SoupMixin.equal_tag_attr(tag, 'id', 'current-page'))
 
 
-def sort_expected(expected: list[Opinion], order: OpinionSortOrder,
+def sort_expected(expected: list[Comment], order: CommentSortOrder,
                   per_page: [PerPage, None], page_num: int = 0
-                  ) -> list[Opinion]:
+                  ) -> list[Comment]:
     """
     Sort the expected results list
     :param expected: expected results
@@ -249,23 +236,20 @@ def sort_expected(expected: list[Opinion], order: OpinionSortOrder,
     :param per_page: results per page; None will return all
     :param page_num: 0-based number of page to get
     """
-    title_order = 'title' in order.display.lower()
     author_order = 'author' in order.display.lower()
     status_order = 'status' in order.display.lower()
     expected.sort(
         key=lambda op:
-        op.title.lower() if title_order else
         op.user.username.lower() if author_order else
         op.status.name.lower() if status_order else op.published,
         reverse=order.order.startswith('-')
     )
-    if order not in [OpinionSortOrder.NEWEST, OpinionSortOrder.OLDEST]:
-        # secondary sort by newest
+    if order not in [CommentSortOrder.NEWEST, CommentSortOrder.OLDEST]:
+        # secondary sort by oldest
         to_sort = expected.copy()
         expected = []
         field = Opinion.USER_FIELD \
-            if author_order else Opinion.TITLE_FIELD \
-            if title_order else Opinion.STATUS_FIELD
+            if author_order else Opinion.STATUS_FIELD
 
         while len(expected) < len(to_sort):
             # sort in chunks of same attrib value
@@ -277,7 +261,7 @@ def sort_expected(expected: list[Opinion], order: OpinionSortOrder,
             )
             chunk.sort(
                 key=lambda op: op.published,
-                reverse=True
+                reverse=False
             )
             expected.extend(chunk)
 

@@ -1,0 +1,89 @@
+<!-- comment_bundle.html start -->
+
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+{% load tz %}
+
+{# --- template variable defines for includes --- #}
+{# comment bundle template expects: 'bundle' as CommentBundle #}
+
+<div
+    {% if bundle.is_more_placeholder %}
+        id="id--comment-card-more-{{ bundle.comment.id }}"
+    {% else %}
+        id="id--comment-card-{{ bundle.comment.id }}"
+    {% endif %}
+        class="card level-{{ bundle.comment.level }}">
+    <div class="card-body">
+        <div class="row">
+            {% if bundle.is_more_placeholder %}
+                <!-- more placeholder -->
+                <div class="col-sm-12 mt-0 mb-0 text-center">
+                    <button id="id--comment-more-placeholder-{{ bundle.comment.id }}" type="button" class="btn btn-primary"
+                            aria-label="request more comments"
+                            data-bs-href="{{ bundle.next_page }}"
+                            data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="More comments">
+                        More <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            {% else %}
+                <!-- author avatar and user link -->
+                <div class="col-sm-2 mt-0 mb-0">
+                    <img src="{{ bundle.avatar_url }}" width="40px" height="40px" alt="{{ bundle.comment.user.username }} image">
+                    <p class="mt-0 mb-0"><a href="{% url 'user:user_id' bundle.comment.user.id %}">{{ bundle.comment.user.username }}</a></p>
+                </div>
+                <!-- comment details -->
+                <div class="col-sm-10 mt-0 mb-0">
+                    <div class="row">
+                        <div class="col-sm-10 mt-0 mb-0">
+                            {{ bundle.comment.content | safe }}
+                        </div>
+                        <div class="col-sm-2 mt-0 mb-0">
+                            <a id="{{ bundle.collapse_id }}-toggle" class="btn btn-primary collapsed" data-bs-toggle="collapse"
+                               href="#{{ bundle.collapse_id }}" role="button" aria-expanded="false"
+                               aria-controls="show comments"
+                               {% if not bundle.comments %}
+                                  hidden
+                               {% endif %}
+                            >
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <!-- comment updated info -->
+                        <div class="col-sm-6 mt-0 mb-0">
+                            {{ bundle.comment.updated | localtime | naturaltime }}
+                        </div>
+                        <!-- comment reactions -->
+                        <div class="col-sm-6 mt-0 mb-0 justify-content-start">
+
+                            {# --- template variable defines for includes --- #}
+                            {# reactions template expects: 'target_id' as id of target opinion/comment #}
+                            {#                             'reactions' as list of reactions #}
+                            {% with reactions=comment_reactions %}
+                                {% with target_id=bundle.comment.id %}
+                                    {% include "opinions/snippet/reactions.html" %}
+                                {% endwith %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- collapse container for replies to comment -->
+<div class="collapse" id="{{ bundle.collapse_id }}">
+{% if bundle.comments %}
+    {% for reply in bundle.comments %}
+        {% with bundle=reply %}
+            {% include "opinions/snippet/comment_bundle.html" %}
+        {% endwith %}
+    {% endfor %}
+{% endif %}
+</div>
+
+<!-- comment_bundle.html end -->

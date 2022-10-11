@@ -1,0 +1,44 @@
+<!-- comment.html start -->
+
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+{% load tz %}
+
+{# --- template variable defines for includes --- #}
+{# comment template expects: 'comment_data' as CommentData #}
+
+<div id="id--comment-card-{{ comment_data.comment.id }}" class="card">
+    <div class="card-body">
+        <div class="row">
+            <!-- author avatar and user link -->
+            <div class="col-sm-2 mt-0 mb-0">
+                <img src="{{ comment_data.avatar_url }}" width="40px" height="40px" alt="{{ comment_data.comment.user.username }} image"
+                     id="id--comment-avatar-{{ comment_data.comment.id }}">
+                <p class="mt-0 mb-0">
+                    <a id="id--comment-avatar-link-{{ comment_data.comment.id }}"
+                       href="{% url 'user:user_id' comment_data.comment.user.id %}">{{ comment_data.comment.user.username }}
+                    </a>
+                </p>
+            </div>
+            <!-- comment details -->
+            <div class="col-sm-10 mt-0 mb-0">
+                <div class="row">
+                    <div class="col-sm-10 mt-0 mb-0" id="id--comment-content-{{ comment_data.comment.id }}">
+                        {{ comment_data.comment.content | safe }}
+                    </div>
+                    <div class="col-sm-2 mt-0 mb-0">
+                    </div>
+                </div>
+                <div class="row">
+                    <!-- comment updated info -->
+                    <div class="col-sm-6 mt-0 mb-0">
+                        {{ comment_data.comment.updated | localtime | naturaltime }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- comment.html end -->

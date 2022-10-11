@@ -28,23 +28,24 @@ from zoneinfo import ZoneInfo
 
 from django.http import HttpResponse
 
-from categories.models import Category, Status
+from categories.models import Status
 from opinions.constants import (
-    OPINION_SEARCH_ROUTE_NAME, ORDER_QUERY, PAGE_QUERY, PER_PAGE_QUERY,
-    TITLE_QUERY, CONTENT_QUERY, AUTHOR_QUERY, CATEGORY_QUERY, SEARCH_QUERY,
+    COMMENT_SEARCH_ROUTE_NAME, ORDER_QUERY, PAGE_QUERY, PER_PAGE_QUERY,
+    CONTENT_QUERY, AUTHOR_QUERY, SEARCH_QUERY,
     ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY,
     EQUAL_QUERY, STATUS_QUERY
 )
-from opinions.models import Opinion
+from opinions.models import Comment
 from opinions.views_opinion_list import DATE_QUERIES
-from opinions.views_utils import OpinionSortOrder, PerPage, QueryStatus
+from opinions.views_utils import CommentSortOrder, PerPage, QueryStatus
+
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
 from .base_opinion_test_cls import BaseOpinionTest
-from .test_opinion_list import (
-    OPINION_LIST_TEMPLATE, OPINION_LIST_SORT_TEMPLATE,
-    verify_opinion_list_content, sort_expected
+from .test_comment_list import (
+    COMMENT_LIST_TEMPLATE, COMMENT_LIST_CONTENT_TEMPLATE,
+    verify_comment_list_content, sort_expected
 )
 from ..category_mixin import CategoryMixin
 from ..soup_mixin import SoupMixin
@@ -56,16 +57,16 @@ DATE_DASHED_FMT = "%d-%m-%Y"
 DATE_DOTTED_FMT = "%d.%m.%Y"
 
 
-class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
+class TestCommentSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
     """
-    Test opinion page view
+    Test comment page search view
     https://docs.djangoproject.com/en/4.1/topics/testing/tools/
     """
 
     @classmethod
     def setUpTestData(cls):
         """ Set up data for the whole TestCase """
-        super(TestOpinionSearch, TestOpinionSearch).setUpTestData()
+        super(TestCommentSearch, TestCommentSearch).setUpTestData()
 
     def login_user_by_key(self, name: str | None = None) -> User:
         """
@@ -83,12 +84,12 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
         """
         return BaseUserTest.login_user_by_id(self, pk)
 
-    def get_opinion_list_by(
+    def get_comment_list_by(
             self, query: dict,
-            order: OpinionSortOrder = None, page: int = None,
+            order: CommentSortOrder = None, page: int = None,
             per_page: PerPage = None) -> HttpResponse:
         """
-        Get the opinion page
+        Get the comment page
         :param query: query parameters
         :param order:
             order to retrieve opinions in; default None i.e. don't care
@@ -112,61 +113,60 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
             query_kwargs[PAGE_QUERY] = page
         return self.client.get(
             reverse_q(
-                namespaced_url(OPINIONS_APP_NAME, OPINION_SEARCH_ROUTE_NAME),
+                namespaced_url(OPINIONS_APP_NAME, COMMENT_SEARCH_ROUTE_NAME),
                 query_kwargs=query_kwargs))
 
     def test_not_logged_in_access(self):
-        """ Test must be logged in to access opinion search """
-        response = self.get_opinion_list_by({})
+        """ Test must be logged in to access comment search """
+        response = self.get_comment_list_by({})
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
-    def test_get_opinion_list(self):
-        """ Test page content for opinion list """
-        opinion = TestOpinionSearch.opinions[0]
-        user = self.login_user_by_id(opinion.user.id)
+    def test_get_comment_list(self):
+        """ Test page content for comment list """
+        comment = TestCommentSearch.opinions[0]
+        user = self.login_user_by_id(comment.user.id)
 
-        response = self.get_opinion_list_by({
-            TITLE_QUERY: 'informative'
+        response = self.get_comment_list_by({
+            CONTENT_QUERY: 'Comment from'
         })
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertTemplateUsed(response, OPINION_LIST_TEMPLATE)
+        self.assertTemplateUsed(response, COMMENT_LIST_TEMPLATE)
+        self.assertTemplateUsed(response, COMMENT_LIST_CONTENT_TEMPLATE)
 
-    def test_no_opinions_found(self):
-        """ Test response for no opinions found """
-        opinion = TestOpinionSearch.opinions[0]
-        user = self.login_user_by_id(opinion.user.id)
+    def test_no_comments_found(self):
+        """ Test response for no comments found """
+        comment = TestCommentSearch.opinions[0]
+        user = self.login_user_by_id(comment.user.id)
 
-        title = 'there are no titles like this'
-        for opinion in self.opinions:
-            self.assertNotEqual(title, opinion.title)
+        content = 'there are no comments like this'
+        for comment in self.comments:
+            self.assertNotIn(content, comment.content)
 
-        response = self.get_opinion_list_by({
-            TITLE_QUERY: title
+        response = self.get_comment_list_by({
+            CONTENT_QUERY: content
         })
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertTemplateUsed(response, OPINION_LIST_TEMPLATE)
-        verify_opinion_list_content(self, [], response, msg='no content')
+        self.assertTemplateUsed(response, COMMENT_LIST_TEMPLATE)
+        verify_comment_list_content(self, [], response, msg='no content')
 
-    def get_query_options(self) -> tuple[Opinion, User, list[str, Any]]:
+    def get_query_options(self) -> tuple[
+            Comment, Any, list[tuple[str, str] | tuple[str, Any]]]:
         """
         Get a list of queries
         """
-        opinion = TestOpinionSearch.opinions[0]
+        comment = TestCommentSearch.comments[0]
 
-        # all published opinions
-        published = TestOpinionSearch.published_opinions()
+        # all published comments
+        published = TestCommentSearch.published_comments()
 
-        min_date = min(map(lambda op: op.published, published))
-        max_date = max(map(lambda op: op.published, published))
+        min_date = min(map(lambda op: op.created, published))
+        max_date = max(map(lambda op: op.created, published))
         test_date = min_date + ((max_date - min_date) / 2)
 
-        return opinion, opinion.user, [
-            (TITLE_QUERY, middle_word(opinion.title)),
-            (CONTENT_QUERY, middle_word(opinion.content)),
-            (AUTHOR_QUERY, opinion.user.username[
-                           :int(len(opinion.user.username)/2)]),
-            (CATEGORY_QUERY, opinion.categories.all()[
-                int(opinion.categories.count()/2)].name),
+        return comment, comment.user, [
+            (CONTENT_QUERY, middle_word(comment.content)),
+            (AUTHOR_QUERY, comment.user.username[
+                           :int(len(comment.user.username)/2)]),
             (STATUS_QUERY, QueryStatus.ALL.arg),
             (STATUS_QUERY, QueryStatus.PUBLISH.arg),
             (ON_OR_AFTER_QUERY, test_date.strftime(DATE_SPACED_FMT)),
@@ -176,16 +176,16 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
             (EQUAL_QUERY, test_date.strftime(DATE_DOTTED_FMT)),
         ]
 
-    def test_opinion_search_sorted(self):
+    def test_comment_search_sorted(self):
         """
-        Test page content for sorted opinion search
-        (doesn't get whole page just, opinions)
+        Test page content for sorted comment search
+        (doesn't get whole page just, comments)
         """
-        opinion, user, queries = self.get_query_options()
+        comment, user, queries = self.get_query_options()
         user = self.login_user_by_id(user.id)
 
         for q, v in queries:
-            for order in list(OpinionSortOrder):
+            for order in list(CommentSortOrder):
                 # check contents of first page
                 query = {
                     q: v
@@ -195,17 +195,17 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
 
                 msg = f'{q}: {v}, order {order}'
                 with self.subTest(msg):
-                    response = self.get_opinion_list_by(query, order=order)
+                    response = self.get_comment_list_by(query, order=order)
                     self.assertEqual(response.status_code, HTTPStatus.OK)
                     self.assertTemplateUsed(
-                        response, OPINION_LIST_SORT_TEMPLATE)
-                    verify_opinion_list_content(
+                        response, COMMENT_LIST_CONTENT_TEMPLATE)
+                    verify_comment_list_content(
                         self, expected, response, msg=msg)
 
-    def test_search_opinion_pagination(self):
+    def test_search_comment_pagination(self):
         """
-        Test page content for opinion search pagination
-        (doesn't get whole page just, opinions)
+        Test page content for comment search pagination
+        (doesn't get whole page just, comments)
         """
         opinion, user, queries = self.get_query_options()
         user = self.login_user_by_id(user.id)
@@ -215,7 +215,7 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
                 q: v
             }
             expected = self.get_expected(
-                query, OpinionSortOrder.DEFAULT, None)
+                query, CommentSortOrder.DEFAULT, None)
 
             total = len(expected)
 
@@ -224,22 +224,22 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
                 for count in range(1, num_pages + 1):
 
                     expected = self.get_expected(
-                        query, OpinionSortOrder.DEFAULT, per_page, count - 1)
+                        query, CommentSortOrder.DEFAULT, per_page, count - 1)
 
-                    msg = f'page {count}/{num_pages}'
+                    msg = f'page {count}/{num_pages} {query}'
                     with self.subTest(msg):
-                        response = self.get_opinion_list_by(
+                        response = self.get_comment_list_by(
                             query, per_page=per_page, page=count)
                         self.assertEqual(response.status_code, HTTPStatus.OK)
                         self.assertTemplateUsed(
-                            response, OPINION_LIST_SORT_TEMPLATE)
-                        verify_opinion_list_content(
+                            response, COMMENT_LIST_CONTENT_TEMPLATE)
+                        verify_comment_list_content(
                             self, expected, response,
                             pagination=num_pages > 1, msg=msg)
 
     def test_opinion_search_multi_query(self):
         """
-        Test page content for multi-query opinion search
+        Test page content for multi-query comment search
         (doesn't get whole page just, opinions)
         """
         opinion, user, queries = self.get_query_options()
@@ -259,20 +259,20 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
 
                 # check contents of first page
                 expected = self.get_expected(
-                    query, OpinionSortOrder.DEFAULT, PerPage.DEFAULT)
+                    query, CommentSortOrder.DEFAULT, PerPage.DEFAULT)
 
                 msg = f'{query}'
                 with self.subTest(msg):
-                    response = self.get_opinion_list_by(query)
+                    response = self.get_comment_list_by(query)
                     self.assertEqual(response.status_code, HTTPStatus.OK)
                     self.assertTemplateUsed(
-                        response, OPINION_LIST_SORT_TEMPLATE)
-                    verify_opinion_list_content(
+                        response, COMMENT_LIST_CONTENT_TEMPLATE)
+                    verify_comment_list_content(
                         self, expected, response, msg=msg)
 
-    def get_expected(self, query: dict, order: OpinionSortOrder,
+    def get_expected(self, query: dict, order: CommentSortOrder,
                      per_page: [PerPage, None], page_num: int = 0
-                     ) -> list[Opinion]:
+                     ) -> list[Comment]:
         """
         Generate the expected results list
         :param query: query parameters
@@ -280,20 +280,18 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
         :param per_page: results per page; None will return all
         :param page_num: 0-based number of page to get
         """
-        # all published opinions
-        expected = TestOpinionSearch.published_opinions()
+        # all published comments
+        expected = TestCommentSearch.published_comments()
 
         for k, v in query.items():
             if v is None:
                 continue
             filter_func = None
-            if k in [TITLE_QUERY, CONTENT_QUERY]:
-                filter_func = text_in_field(
-                    Opinion.TITLE_FIELD if k == TITLE_QUERY
-                    else Opinion.CONTENT_FIELD, v)
+            if k in [CONTENT_QUERY]:
+                filter_func = text_in_field(Comment.CONTENT_FIELD, v)
             elif k == AUTHOR_QUERY:
                 filter_func = text_in_field([
-                    Opinion.USER_FIELD,
+                    Comment.USER_FIELD,
                     User.USERNAME_FIELD
                 ], v)
             elif k == STATUS_QUERY:
@@ -304,12 +302,10 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
                                      f'QueryStatus {v} not found')
 
                     filter_func = text_in_field([
-                        Opinion.STATUS_FIELD,
+                        Comment.STATUS_FIELD,
                         Status.NAME_FIELD
                     ], query_status[0].display)
                 # else all statuses so no need for filtering
-            elif k == CATEGORY_QUERY:
-                filter_func = category_in_list(v)
             elif k in DATE_QUERIES:
                 filter_func = date_check(v, k)
 
@@ -342,21 +338,6 @@ def text_in_field(field: [str, list[str]], text: str):
     return func
 
 
-def category_in_list(name: str):
-    """
-    Check for category in opinion categories
-    :param name: name of category
-    :return: filter function
-    """
-    def func(op):
-        return len(list(filter(
-            lambda cat:
-            text_in_field(Category.NAME_FIELD, name)(cat),
-            op.categories.all()
-        ))) > 0
-    return func
-
-
 def date_check(date_str: str, test: str):
     """
     Check opinion date satisfies condition
@@ -372,7 +353,7 @@ def date_check(date_str: str, test: str):
     test_date = date(test_date.year, test_date.month, test_date.day)
 
     def func(op):
-        op_date = date(op.published.year, op.published.month, op.published.day)
+        op_date = date(op.created.year, op.created.month, op.created.day)
         return op_date >= test_date if test == ON_OR_AFTER_QUERY else \
             op_date <= test_date if test == ON_OR_BEFORE_QUERY else \
             op_date > test_date if test == AFTER_QUERY else \

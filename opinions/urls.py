@@ -23,6 +23,8 @@
 
 from django.urls import path
 
+from soapbox import OPINIONS_APP_NAME
+
 from .constants import (
     OPINIONS_URL, OPINIONS_ROUTE_NAME,
     OPINION_NEW_URL, OPINION_NEW_ROUTE_NAME,
@@ -30,28 +32,81 @@ from .constants import (
     OPINION_ID_URL, OPINION_ID_ROUTE_NAME,
     OPINION_SLUG_URL, OPINION_SLUG_ROUTE_NAME,
     OPINION_PREVIEW_ID_URL, OPINION_PREVIEW_ID_ROUTE_NAME,
-    OPINION_STATUS_ID_URL, OPINION_STATUS_ID_ROUTE_NAME
+    OPINION_STATUS_ID_URL, OPINION_STATUS_ID_ROUTE_NAME,
+    OPINION_LIKE_ID_URL, OPINION_LIKE_ID_ROUTE_NAME,
+    OPINION_COMMENT_ID_URL, OPINION_COMMENT_ID_ROUTE_NAME,
+    COMMENTS_URL, COMMENTS_ROUTE_NAME,
+    COMMENT_ID_URL, COMMENT_ID_ROUTE_NAME,
+    COMMENT_LIKE_ID_URL, COMMENT_LIKE_ID_ROUTE_NAME,
+    COMMENT_COMMENT_ID_URL, COMMENT_COMMENT_ID_ROUTE_NAME, COMMENT_SEARCH_URL,
+    COMMENT_SEARCH_ROUTE_NAME, COMMENT_MORE_URL, COMMENT_MORE_ROUTE_NAME,
 )
-from .views_create import OpinionCreate
-from .views_by_id import (
+from .views_comment_create import OpinionCommentCreate, CommentCommentCreate
+from .views_comment_list import CommentList, CommentSearch, opinion_comments
+from .views_opinion_create import OpinionCreate
+from .views_opinion_by_id import (
     OpinionDetailById, OpinionDetailBySlug, OpinionDetailPreviewById,
     opinion_status_patch
 )
-from .views_list import OpinionList, OpinionSearch
+from .views_opinion_list import OpinionList, OpinionSearch
 
+
+# https://docs.djangoproject.com/en/4.1/topics/http/urls/#url-namespaces-and-included-urlconfs
+app_name = OPINIONS_APP_NAME
 
 urlpatterns = [
+    # list opinions
     path(OPINIONS_URL, OpinionList.as_view(), name=OPINIONS_ROUTE_NAME),
+    # search opinions
     path(OPINION_SEARCH_URL, OpinionSearch.as_view(),
          name=OPINION_SEARCH_ROUTE_NAME),
+    # create opinion
     path(OPINION_NEW_URL, OpinionCreate.as_view(),
          name=OPINION_NEW_ROUTE_NAME),
+    # get/update opinion by id
     path(OPINION_ID_URL, OpinionDetailById.as_view(),
          name=OPINION_ID_ROUTE_NAME),
-    path(OPINION_SLUG_URL, OpinionDetailBySlug.as_view(),
-         name=OPINION_SLUG_ROUTE_NAME),
+    # preview opinion by id
     path(OPINION_PREVIEW_ID_URL, OpinionDetailPreviewById.as_view(),
          name=OPINION_PREVIEW_ID_ROUTE_NAME),
+    # patch opinion status by id
     path(OPINION_STATUS_ID_URL, opinion_status_patch,
          name=OPINION_STATUS_ID_ROUTE_NAME),
+
+    # FIXME OPINION_LIKE_ID_URL
+    path(OPINION_LIKE_ID_URL, opinion_status_patch,
+         name=OPINION_LIKE_ID_ROUTE_NAME),
+
+    # create comment for opinion by id
+    path(OPINION_COMMENT_ID_URL, OpinionCommentCreate.as_view(),
+         name=OPINION_COMMENT_ID_ROUTE_NAME),
+
+    # list comments
+    path(COMMENTS_URL, CommentList.as_view(),
+         name=COMMENTS_ROUTE_NAME),
+
+    # FIXME comment id/like urls
+    path(COMMENT_ID_URL, opinion_status_patch,
+         name=COMMENT_ID_ROUTE_NAME),
+    path(COMMENT_LIKE_ID_URL, opinion_status_patch,
+         name=COMMENT_LIKE_ID_ROUTE_NAME),
+
+    # search comments
+    path(COMMENT_SEARCH_URL, CommentSearch.as_view(),
+         name=COMMENT_SEARCH_ROUTE_NAME),
+    # more comments
+    path(COMMENT_MORE_URL, opinion_comments,
+         name=COMMENT_MORE_ROUTE_NAME),
+
+    # create comment for comment by id
+    path(COMMENT_COMMENT_ID_URL, CommentCommentCreate.as_view(),
+         name=COMMENT_COMMENT_ID_ROUTE_NAME),
+
+    # TODO slug has be last as it'll match the 'comment' url. Move comments
+    # to own app?
+
+    # get/update opinion by slug
+    path(OPINION_SLUG_URL, OpinionDetailBySlug.as_view(),
+         name=OPINION_SLUG_ROUTE_NAME),
+
 ]

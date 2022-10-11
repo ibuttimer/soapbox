@@ -34,7 +34,7 @@ from opinions import (
 )
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
-from utils import reverse_q
+from utils import reverse_q, namespaced_url
 from ..soup_mixin import SoupMixin
 from ..user.base_user_test_cls import BaseUserTest
 
@@ -73,7 +73,8 @@ class TestOpinionCreate(SoupMixin, BaseUserTest):
         Get the opinion create page
         """
         return self.client.get(
-            reverse_q(OPINION_NEW_ROUTE_NAME))
+            reverse_q(
+                namespaced_url(OPINIONS_APP_NAME, OPINION_NEW_ROUTE_NAME)))
 
     def test_not_logged_in_access_opinion(self):
         """ Test must be logged in to access opinion """

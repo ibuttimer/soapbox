@@ -23,11 +23,16 @@
 
 from django.urls import path
 
+from soapbox import USER_APP_NAME
+
 from .constants import (
     USER_ID_URL, USER_ID_ROUTE_NAME
 )
 from . import views
 
+
+# https://docs.djangoproject.com/en/4.1/topics/http/urls/#url-namespaces-and-included-urlconfs
+app_name = USER_APP_NAME
 
 urlpatterns = [
     path(USER_ID_URL, views.UserDetail.as_view(), name=USER_ID_ROUTE_NAME),

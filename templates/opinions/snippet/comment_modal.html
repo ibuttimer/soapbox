@@ -1,0 +1,48 @@
+{% load i18n %}
+{% load form_field %}
+{# comment modal template expects: 'form' as CommentForm #}
+
+<div class="modal fade" id="id--comment-modal" tabindex="-1" aria-labelledby="Create comment" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-fullscreen-md-down modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <var id="id--comment-submit-url" hidden>
+                {# content replaced by click event handler for button #}
+            </var>
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="id--comment-modal-heading">Add comment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'opinions:comment_opinion_id' opinion.id %}"
+                  id="id--comment-modal-form">
+                {# form action defaults to comment on opinion, but it is overridden by content of 'id--comment-submit-url' #}
+                {# which is set by the click handlers on reaction buttons #}
+
+                {% csrf_token %}
+
+                <div id="id--form-errors-container">
+                    {% include "snippet/form_errors.html" %}
+                </div>
+
+                <div class="modal-body">
+                    <fieldset>
+                        <div class="row mb-3">
+                            {% form_field form 'content' as content_field %}
+                            <div class="col-sm-2 text-start">
+                                <label for="{{ content_field.auto_id }}" class="form-label">{{ content_field.label }}</label>
+                            </div>
+                            <div class="col-sm-10">
+                                {{ content_field }}
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+                    <button type="submit" class="btn__save-comment btn btn-outline-success">{% trans "Save" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

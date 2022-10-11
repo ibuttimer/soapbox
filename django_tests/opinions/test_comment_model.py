@@ -21,28 +21,35 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 
-import os
+from datetime import datetime, timezone
 
-import django
-
+from categories import STATUS_DRAFT
 from categories.models import Status
-
-# 'allauth' checks for 'django.contrib.sites', so django must be setup before
-# test
-os.environ.setdefault("ENV_FILE", ".test-env")
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "soapbox.settings")
-django.setup()
-
-from django.test import TestCase    # noqa
+from django_tests.opinions.base_opinion_test_cls import BaseOpinionTest
+from opinions.models import Comment
 
 
-class TestStatusModel(TestCase):
+class TestCommentModel(BaseOpinionTest):
     """
     Test status
     https://docs.djangoproject.com/en/4.1/topics/testing/tools/
     """
 
-    def test_status_defaults(self):
-        status = Status.objects.create()
-        self.assertIsNotNone(status)
-        self.assertEqual(status.name, '')
+    @classmethod
+    def setUpTestData(cls):
+        """ Set up data for the whole TestCase """
+        super(TestCommentModel, TestCommentModel).setUpTestData()
+
+    def test_comment_defaults(self):
+        user, _ = TestCommentModel.get_user_by_index(0)
+        opinion = TestCommentModel.opinions[0]
+        kwargs = {
+            Comment.OPINION_FIELD: opinion,
+            Comment.USER_FIELD: user,
+            Comment.STATUS_FIELD: Status.objects.get(name=STATUS_DRAFT),
+        }
+        comment = Comment.objects.create(**kwargs)
+        self.assertIsNotNone(comment)
+        self.assertEqual(comment.content, '')
+        self.assertLessEqual(comment.created, datetime.now(tz=timezone.utc))
+        self.assertLessEqual(comment.updated, datetime.now(tz=timezone.utc))
