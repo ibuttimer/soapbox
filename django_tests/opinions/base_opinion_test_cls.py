@@ -30,8 +30,8 @@ from categories.models import Category, Status
 from opinions.constants import (
     OPINION_PAGINATION_ON_EACH_SIDE, OPINION_PAGINATION_ON_ENDS
 )
-from opinions.models import Opinion
-from opinions.views_utils import generate_excerpt, OpinionPerPage
+from opinions.models import Opinion, Comment
+from opinions.views_utils import generate_excerpt, PerPage
 from user.models import User
 from ..user.base_user_test_cls import BaseUserTest
 
@@ -53,6 +53,7 @@ class BaseOpinionTest(BaseUserTest):
     STATUSES = [STATUS_DRAFT, STATUS_PREVIEW, STATUS_PUBLISHED]
 
     opinions: list[Opinion]
+    comments: list[Comment]
 
     @staticmethod
     def create_opinion(index: int, user: User, status: Status,
@@ -87,6 +88,7 @@ class BaseOpinionTest(BaseUserTest):
         category_list = list(Category.objects.all())
 
         cls.opinions = []
+        cls.comments = []
         num_templates = len(BaseOpinionTest.OPINION_INFO)
 
         def get_categories(u_idx, idx):
@@ -121,7 +123,7 @@ class BaseOpinionTest(BaseUserTest):
         start = num_templates * BaseOpinionTest.num_users()
         for index in range(
                 start,
-                start + (num_pages * OpinionPerPage.FIFTEEN.arg)):
+                start + (num_pages * PerPage.FIFTEEN.arg)):
             opinion = BaseOpinionTest.create_opinion(
                 index,
                 user,
@@ -130,18 +132,32 @@ class BaseOpinionTest(BaseUserTest):
             )
             cls.opinions.append(opinion)
 
-    @classmethod
-    def published(cls) -> list[Opinion]:
-        """ All published opinions """
-        return list(
-            filter(
-                lambda op: op.published.year > 1 and
-                op.status.name == STATUS_PUBLISHED,
-                cls.opinions
-            ))
+        # add a comment on each published opinion
+        for index, opinion in enumerate(cls.opinions):
+            if opinion.status == published:
+                for user_idx in range(len(cls.users)):
+                    user, _ = cls.get_user_by_index(user_idx)
+                    if user != opinion.user:
+                        break
+
+                comment = Comment.objects.create(**{
+                    Comment.CONTENT_FIELD:
+                        f'Comment from {user.username} '
+                        f'on opinion {opinion.id} {opinion}',
+                    Comment.OPINION_FIELD: opinion,
+                    Comment.USER_FIELD: user,
+                    Comment.STATUS_FIELD: published,
+                    Comment.PUBLISHED_FIELD: datetime(
+                        2022, 1, 1, hour=12,
+                        tzinfo=ZoneInfo("UTC")) + timedelta(days=index)
+                })
+                comment.set_slug(comment.content)
+                comment.save()
+
+                cls.comments.append(comment)
 
     @classmethod
-    def all_of_status(cls, name: str) -> list[Opinion]:
+    def all_opinions_of_status(cls, name: str) -> list[Opinion]:
         """
         All opinions with the specified status name
         :param name: status name
@@ -155,16 +171,44 @@ class BaseOpinionTest(BaseUserTest):
             ))
 
     @classmethod
-    def draft(cls) -> list[Opinion]:
+    def draft_opinions(cls) -> list[Opinion]:
         """ All draft opinions """
-        return cls.all_of_status(STATUS_DRAFT)
+        return cls.all_opinions_of_status(STATUS_DRAFT)
 
     @classmethod
-    def preview(cls) -> list[Opinion]:
+    def preview_opinions(cls) -> list[Opinion]:
         """ All preview opinions """
-        return cls.all_of_status(STATUS_PREVIEW)
+        return cls.all_opinions_of_status(STATUS_PREVIEW)
 
     @classmethod
-    def published(cls) -> list[Opinion]:
+    def published_opinions(cls) -> list[Opinion]:
         """ All published opinions """
-        return cls.all_of_status(STATUS_PUBLISHED)
+        return cls.all_opinions_of_status(STATUS_PUBLISHED)
+
+    @classmethod
+    def all_comments_of_status(cls, name: str) -> list[Comment]:
+        """
+        All opinions with the specified status name
+        :param name: status name
+        :return: list of opinions
+        """
+        return list(
+            filter(
+                lambda op: op.status.name == name,
+                cls.comments
+            ))
+
+    @classmethod
+    def draft_comments(cls) -> list[Comment]:
+        """ All draft opinions """
+        return cls.all_comments_of_status(STATUS_DRAFT)
+
+    @classmethod
+    def preview_comments(cls) -> list[Comment]:
+        """ All preview opinions """
+        return cls.all_comments_of_status(STATUS_PREVIEW)
+
+    @classmethod
+    def published_comments(cls) -> list[Comment]:
+        """ All published opinions """
+        return cls.all_comments_of_status(STATUS_PUBLISHED)

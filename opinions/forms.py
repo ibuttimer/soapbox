@@ -32,12 +32,12 @@ from .constants import (
     TITLE_FIELD, CONTENT_FIELD, CATEGORIES_FIELD, STATUS_FIELD, SLUG_FIELD,
     CREATED_FIELD, UPDATED_FIELD, PUBLISHED_FIELD
 )
-from .models import Opinion, Category, Status
+from .models import Opinion, Category, Comment
 
 
 class OpinionForm(forms.ModelForm):
     """
-    Form to update a user.
+    Form to create/update an opinion.
     """
 
     TITLE_FF = TITLE_FIELD
@@ -90,4 +90,62 @@ class OpinionForm(forms.ModelForm):
             # exclude non-bootstrap fields
             [field for field in OpinionForm.Meta.fields
              if field not in OpinionForm.Meta.non_bootstrap_fields],
+            {'class': 'form-control'})
+
+
+class CommentForm(forms.ModelForm):
+    """
+    Form to create/update a comment.
+    """
+
+    CONTENT_FF = CONTENT_FIELD
+    STATUS_FF = STATUS_FIELD
+    SLUG_FF = SLUG_FIELD
+    CREATED_FF = CREATED_FIELD
+    UPDATED_FF = UPDATED_FIELD
+    PUBLISHED_FF = PUBLISHED_FIELD
+
+    content = SummernoteTextField(
+        max_length=Comment.COMMENT_ATTRIB_CONTENT_MAX_LEN,
+        blank=False)
+
+    class Meta:
+        model = Comment
+        fields = [
+            CONTENT_FIELD
+        ]
+        non_bootstrap_fields = [CONTENT_FIELD]
+        help_texts = {
+            CONTENT_FIELD: 'Comment content.',
+        }
+        error_messages = error_messages(
+            model.MODEL_NAME,
+            *[ErrorMsgs(field, max_length=True)
+              for field in (CONTENT_FIELD, )]
+        )
+        widgets = {
+            CONTENT_FIELD: SummernoteWidget(attrs={
+                'summernote': {
+                    'toolbar': [
+                        # [groupName, [list of button]]
+                        ['style', ['bold', 'italic', 'underline', 'clear']],
+                        ['font',
+                            ['strikethrough', 'superscript', 'subscript']],
+                        ['fontsize', ['fontsize']],
+                        ['color', ['color']],
+                        ['para', ['ul', 'ol', 'paragraph']],
+                        ['height', ['height']],
+                    ],
+                }
+            })
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # add the bootstrap class to the widget
+        update_field_widgets(
+            self,
+            # exclude non-bootstrap fields
+            [field for field in CommentForm.Meta.fields
+             if field not in CommentForm.Meta.non_bootstrap_fields],
             {'class': 'form-control'})

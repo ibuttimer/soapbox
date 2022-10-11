@@ -20,7 +20,6 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-
 from datetime import datetime
 from enum import Enum
 from typing import Any, Type
@@ -47,12 +46,14 @@ from .constants import (
     ORDER_QUERY, SEARCH_QUERY, STATUS_QUERY, PER_PAGE_QUERY,
     PAGE_QUERY, TITLE_QUERY, CONTENT_QUERY, CATEGORY_QUERY, AUTHOR_QUERY,
     ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY,
-    EQUAL_QUERY, REORDER_QUERY
+    EQUAL_QUERY, REORDER_QUERY, OPINION_ID_QUERY, PARENT_ID_QUERY,
+    COMMENT_DEPTH_QUERY
 )
-from .models import Opinion
+from .models import Opinion, Comment
 from .forms import OpinionForm
 
 READ_ONLY = 'read_only'     # read-only mode
+DEFAULT_COMMENT_DEPTH = 2
 
 
 class OpinionArg(Enum):
@@ -126,16 +127,17 @@ class QueryStatus(OpinionArg):
         super().__init__(display, arg)
 
 
-def get_context(title: str,
-                submit_url: str = None,
-                form: OpinionForm = None, opinion_obj: Opinion = None,
-                read_only: bool = False, status: Status = None) -> dict:
+def get_opinion_context(
+        title: str, submit_url: str = None, form: OpinionForm = None,
+        opinion_obj: Opinion = None, comments: dict = None,
+        read_only: bool = False, status: Status = None) -> dict:
     """
-    Generate the context for the template
+    Generate the context for the opinion template
     :param title: title
     :param submit_url: form commit url, default None
     :param form: form to display, default None
     :param opinion_obj: opinion object, default None
+    :param comments: details of comments
     :param read_only: read only flag, default False
     :param status: status, default None
     :return: tuple of template path and context
@@ -160,20 +162,23 @@ def get_context(title: str,
     if opinion_obj is not None:
         context['opinion'] = opinion_obj
 
+    if comments is not None:
+        context['comments'] = comments
+
     return context
 
 
-def timestamp_opinion(opinion: Opinion):
+def timestamp_content(content: [Opinion, Comment]):
     """
-    Update opinion timestamps
-    :param opinion: opinion to update
+    Update opinion/comment timestamps
+    :param content: opinion/comment to update
     """
     timestamp = datetime.now(tz=ZoneInfo("UTC"))
-    opinion.updated = timestamp
-    if opinion.status == Status.objects.get(name=STATUS_PUBLISHED):
-        if opinion.published.year == 1:
+    content.updated = timestamp
+    if content.status.name == STATUS_PUBLISHED:
+        if content.published.year == 1:
             # first time published
-            opinion.published = timestamp
+            content.published = timestamp
 
 
 def opinion_save_query_args(
@@ -195,7 +200,15 @@ def opinion_save_query_args(
     return status, status_query
 
 
-class OpinionSortOrder(OpinionArg):
+class SortOrder(OpinionArg):
+    """ Base enum representing sort orders """
+
+    def __init__(self, display: str, arg: str, order: str):
+        super().__init__(display, arg)
+        self.order = order
+
+
+class OpinionSortOrder(SortOrder):
     """ Enum representing opinion sort orders """
     NEWEST = ('Newest first', 'new', f'-{Opinion.PUBLISHED_FIELD}')
     OLDEST = ('Oldest first', 'old', f'{Opinion.PUBLISHED_FIELD}')
@@ -211,14 +224,33 @@ class OpinionSortOrder(OpinionArg):
                  f'-{Opinion.STATUS_FIELD}__{Status.NAME_FIELD}')
 
     def __init__(self, display: str, arg: str, order: str):
-        super().__init__(display, arg)
-        self.order = order
+        super().__init__(display, arg, order)
 
 
 OpinionSortOrder.DEFAULT = OpinionSortOrder.NEWEST
 
 
-class OpinionPerPage(OpinionArg):
+class CommentSortOrder(SortOrder):
+    """ Enum representing opinion sort orders """
+    NEWEST = ('Newest first', 'new', f'-{Comment.PUBLISHED_FIELD}')
+    OLDEST = ('Oldest first', 'old', f'{Comment.PUBLISHED_FIELD}')
+    AUTHOR_AZ = ('Author A-Z', 'aaz',
+                 f'{Comment.USER_FIELD}__{User.USERNAME_FIELD}')
+    AUTHOR_ZA = ('Author Z-A', 'aza',
+                 f'-{Comment.USER_FIELD}__{User.USERNAME_FIELD}')
+    STATUS_AZ = ('Status A-Z', 'saz',
+                 f'{Comment.STATUS_FIELD}__{Status.NAME_FIELD}')
+    STATUS_ZA = ('Status Z-A', 'sza',
+                 f'-{Comment.STATUS_FIELD}__{Status.NAME_FIELD}')
+
+    def __init__(self, display: str, arg: str, order: str):
+        super().__init__(display, arg, order)
+
+
+CommentSortOrder.DEFAULT = CommentSortOrder.OLDEST
+
+
+class PerPage(OpinionArg):
     """ Enum representing opinions per page """
     SIX = 6
     NINE = 9
@@ -229,7 +261,7 @@ class OpinionPerPage(OpinionArg):
         super().__init__(f'{count} per page', count)
 
 
-OpinionPerPage.DEFAULT = OpinionPerPage.SIX
+PerPage.DEFAULT = PerPage.SIX
 
 
 def get_query_args(
@@ -266,42 +298,78 @@ def get_query_args(
     return params
 
 
-# request arguments for a list request
-LIST_QUERY_ARGS = [
+# request arguments for an opinion list request
+OPINION_LIST_QUERY_ARGS = [
     # query,      arg class,        default value
     (ORDER_QUERY, OpinionSortOrder, OpinionSortOrder.DEFAULT),
     (PAGE_QUERY, None, 1),
-    (PER_PAGE_QUERY, OpinionPerPage, OpinionPerPage.DEFAULT),
+    (PER_PAGE_QUERY, PerPage, PerPage.DEFAULT),
     (REORDER_QUERY, None, 0),
+    (COMMENT_DEPTH_QUERY, None, DEFAULT_COMMENT_DEPTH),
     (AUTHOR_QUERY, None, None),
     # status included as default is to only show published opinions
     (STATUS_QUERY, QueryStatus, QueryStatus.PUBLISH),
 ]
-# query args always sent with a reorder request
-REORDER_ALWAYS_SENT_QUERY_ARGS = [
-    ORDER_QUERY, PAGE_QUERY, PER_PAGE_QUERY, REORDER_QUERY
+# request arguments for an comment list request
+COMMENT_LIST_QUERY_ARGS = [
+    # query,      arg class,        default value
+    (ORDER_QUERY, CommentSortOrder, CommentSortOrder.DEFAULT),
+    (PAGE_QUERY, None, 1),
+    (PER_PAGE_QUERY, PerPage, PerPage.DEFAULT),
+    (REORDER_QUERY, None, 0),
+    (COMMENT_DEPTH_QUERY, None, DEFAULT_COMMENT_DEPTH),
+    (AUTHOR_QUERY, None, None),
+    (OPINION_ID_QUERY, None, None),
+    (PARENT_ID_QUERY, None, None),
+    # status included as default is to only show published comments
+    (STATUS_QUERY, QueryStatus, QueryStatus.PUBLISH),
 ]
-# query args sent for list request which are not always sent with a reorder
-# request
-NON_REORDER_LIST_QUERY_ARGS = [
-    a[0] for a in LIST_QUERY_ARGS
-    if a[0] not in REORDER_ALWAYS_SENT_QUERY_ARGS
+# non-filtering query args, e.g. args for a reorder request etc. which aren't
+# included in the query used by the database
+REORDER_REQ_QUERY_ARGS = [
+    ORDER_QUERY, PAGE_QUERY, PER_PAGE_QUERY, REORDER_QUERY,
+    COMMENT_DEPTH_QUERY
+]
+# query args sent for list request which are not always sent with
+# a reorder request
+NON_REORDER_OPINION_LIST_QUERY_ARGS = [
+    a[0] for a in OPINION_LIST_QUERY_ARGS
+    if a[0] not in REORDER_REQ_QUERY_ARGS
+]
+NON_REORDER_COMMENT_LIST_QUERY_ARGS = [
+    a[0] for a in COMMENT_LIST_QUERY_ARGS
+    if a[0] not in REORDER_REQ_QUERY_ARGS
 ]
 
-# request arguments for a search request
-SEARCH_QUERY_ARGS = LIST_QUERY_ARGS.copy()
-SEARCH_QUERY_ARGS.extend([
+# date query request arguments for a search request
+DATE_QUERY_ARGS = [
     # query,       arg class, default value
-    (SEARCH_QUERY, None, None),
-    (TITLE_QUERY, None, None),
-    (CONTENT_QUERY, None, None),
-    (CATEGORY_QUERY, None, None),
     (ON_OR_AFTER_QUERY, None, None),
     (ON_OR_BEFORE_QUERY, None, None),
     (AFTER_QUERY, None, None),
     (BEFORE_QUERY, None, None),
     (EQUAL_QUERY, None, None),
+]
+
+# request arguments for an opinion search request
+OPTION_SEARCH_QUERY_ARGS = OPINION_LIST_QUERY_ARGS.copy()
+OPTION_SEARCH_QUERY_ARGS.extend([
+    # query,       arg class, default value
+    (SEARCH_QUERY, None, None),
+    (TITLE_QUERY, None, None),
+    (CONTENT_QUERY, None, None),
+    (CATEGORY_QUERY, None, None),
 ])
+OPTION_SEARCH_QUERY_ARGS.extend(DATE_QUERY_ARGS)
+
+# request arguments for a comment search request
+COMMENT_SEARCH_QUERY_ARGS = COMMENT_LIST_QUERY_ARGS.copy()
+COMMENT_SEARCH_QUERY_ARGS.extend([
+    # query,       arg class, default value
+    (SEARCH_QUERY, None, None),
+    (CONTENT_QUERY, None, None),
+])
+COMMENT_SEARCH_QUERY_ARGS.extend(DATE_QUERY_ARGS)
 
 
 def opinion_list_query_args(
@@ -313,7 +381,7 @@ def opinion_list_query_args(
     :return: dict of tuples of value (OpinionArg | int | str) and
             'was set' bool flag
     """
-    return get_query_args(request, LIST_QUERY_ARGS)
+    return get_query_args(request, OPINION_LIST_QUERY_ARGS)
 
 
 def opinion_search_query_args(
@@ -325,7 +393,31 @@ def opinion_search_query_args(
     :return: dict of tuples of value (OpinionArg | int | str) and
             'was set' bool flag
     """
-    return get_query_args(request, SEARCH_QUERY_ARGS)
+    return get_query_args(request, OPTION_SEARCH_QUERY_ARGS)
+
+
+def comment_list_query_args(
+        request: HttpRequest
+) -> dict[str, QueryArg]:
+    """
+    Get comment list query arguments from request query
+    :param request: http request
+    :return: dict of tuples of value (OpinionArg | int | str) and
+            'was set' bool flag
+    """
+    return get_query_args(request, COMMENT_LIST_QUERY_ARGS)
+
+
+def comment_search_query_args(
+            request: HttpRequest
+        ) -> dict[str, QueryArg]:
+    """
+    Get comment list query arguments from request query
+    :param request: http request
+    :return: dict of tuples of value (OpinionArg | int | str) and
+            'was set' bool flag
+    """
+    return get_query_args(request, COMMENT_SEARCH_QUERY_ARGS)
 
 
 def opinion_permissions(request: HttpRequest) -> dict:
@@ -334,23 +426,40 @@ def opinion_permissions(request: HttpRequest) -> dict:
     :param request: current request
     :return: dict of permissions
     """
-    model = Opinion._meta.model_name.lower()
-    return {
-        f'{model}_{op.name.lower()}':
-            opinion_permission_check(request, op, raise_ex=False)
-        for op in Crud
-    }
+    permissions = {}
+    for model, check_func in [
+        (Opinion._meta.model_name.lower(), opinion_permission_check),
+        (Comment._meta.model_name.lower(), comment_permission_check)
+    ]:
+        permissions.update({
+            f'{model}_{op.name.lower()}':
+                check_func(request, op, raise_ex=False)
+            for op in Crud
+        })
+    return permissions
 
 
 def opinion_permission_check(request: HttpRequest, op: Crud,
                              raise_ex: bool = True) -> bool:
     """
-    Check request user has specified permission
+    Check request user has specified opinion permission
     :param request: http request
     :param op: Crud operation to check
     :param raise_ex: raise exception; default True
     """
     return permission_check(request, Opinion, op, app_label=OPINIONS_APP_NAME,
+                            raise_ex=raise_ex)
+
+
+def comment_permission_check(request: HttpRequest, op: Crud,
+                             raise_ex: bool = True) -> bool:
+    """
+    Check request user has specified comment permission
+    :param request: http request
+    :param op: Crud operation to check
+    :param raise_ex: raise exception; default True
+    """
+    return permission_check(request, Comment, op, app_label=OPINIONS_APP_NAME,
                             raise_ex=raise_ex)
 
 
@@ -377,24 +486,25 @@ def published_check(request: HttpRequest, opinion_obj: Opinion):
             "Opinion unavailable")
 
 
-def render_form(title: str,
-                submit_url: str = None,
-                form: OpinionForm = None, opinion_obj: Opinion = None,
-                read_only: bool = False, status: Status = None) -> tuple[
-        str, dict[str, Opinion | list[str] | OpinionForm | bool]]:
+def render_opinion_form(
+        title: str, submit_url: str = None, form: OpinionForm = None,
+        opinion_obj: Opinion = None, comments: dict = None,
+        read_only: bool = False, status: Status = None) -> tuple[
+            str, dict[str, Opinion | list[str] | OpinionForm | bool]]:
     """
     Render the opinion template
     :param title: title
     :param submit_url: form commit url
     :param form: form to display, default None
     :param opinion_obj: opinion object, default None
+    :param comments: details of comments
     :param read_only: read only flag, default False
     :param status: status, default None
     :return: tuple of template path and context
     """
-    context = get_context(
+    context = get_opinion_context(
         title, submit_url=submit_url, form=form, opinion_obj=opinion_obj,
-        read_only=read_only, status=status
+        comments=comments, read_only=read_only, status=status
     )
     context.update({
         'summernote_fields': [OpinionForm.CONTENT_FF],

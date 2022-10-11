@@ -23,6 +23,7 @@
 from utils import append_slash, url_path
 
 # common field names
+ID_FIELD = "id"
 TITLE_FIELD = "title"
 CONTENT_FIELD = "content"
 EXCERPT_FIELD = "excerpt"
@@ -33,6 +34,8 @@ SLUG_FIELD = 'slug'
 CREATED_FIELD = 'created'
 UPDATED_FIELD = 'updated'
 PUBLISHED_FIELD = 'published'
+PARENT_FIELD = 'parent'
+LEVEL_FIELD = 'level'
 
 OPINION_FIELD = 'opinion'
 REQUESTED_FIELD = 'requested'
@@ -47,16 +50,34 @@ OPINION_NEW_URL = append_slash("new")
 OPINION_SEARCH_URL = append_slash("search")
 OPINION_ID_URL = append_slash("<int:pk>")
 OPINION_SLUG_URL = append_slash("<slug:slug>")
-OPINION_PREVIEW_ID_URL = url_path("preview", OPINION_ID_URL)
-OPINION_STATUS_ID_URL = url_path("status", OPINION_ID_URL)
+OPINION_PREVIEW_ID_URL = url_path(OPINION_ID_URL, "preview")
+OPINION_STATUS_ID_URL = url_path(OPINION_ID_URL, "status")
+OPINION_LIKE_ID_URL = url_path(OPINION_ID_URL, "like")
+OPINION_COMMENT_ID_URL = url_path(OPINION_ID_URL, "comment")
+
+COMMENTS_URL = append_slash("comments")
+COMMENT_SEARCH_URL = url_path(COMMENTS_URL, "search")
+COMMENT_MORE_URL = url_path(COMMENTS_URL, "more")
+COMMENT_ID_URL = url_path(COMMENTS_URL, "<int:pk>")
+COMMENT_LIKE_ID_URL = url_path(COMMENT_ID_URL, "like")
+COMMENT_COMMENT_ID_URL = url_path(COMMENT_ID_URL, "comment")
 
 OPINIONS_ROUTE_NAME = "opinions"
 OPINION_NEW_ROUTE_NAME = "opinion_new"
 OPINION_SEARCH_ROUTE_NAME = "opinion_search"
 OPINION_ID_ROUTE_NAME = "opinion_id"
 OPINION_SLUG_ROUTE_NAME = "opinion_slug"
-OPINION_PREVIEW_ID_ROUTE_NAME = "preview_opinion_id"
-OPINION_STATUS_ID_ROUTE_NAME = "status_opinion_id"
+OPINION_PREVIEW_ID_ROUTE_NAME = f"preview_{OPINION_ID_ROUTE_NAME}"
+OPINION_STATUS_ID_ROUTE_NAME = f"status_{OPINION_ID_ROUTE_NAME}"
+OPINION_LIKE_ID_ROUTE_NAME = f"like_{OPINION_ID_ROUTE_NAME}"
+OPINION_COMMENT_ID_ROUTE_NAME = f"comment_{OPINION_ID_ROUTE_NAME}"
+
+COMMENTS_ROUTE_NAME = "comments"
+COMMENT_ID_ROUTE_NAME = "comment_id"
+COMMENT_SEARCH_ROUTE_NAME = "comment_search"
+COMMENT_MORE_ROUTE_NAME = "comment_more"
+COMMENT_LIKE_ID_ROUTE_NAME = f"like_{COMMENT_ID_ROUTE_NAME}"
+COMMENT_COMMENT_ID_ROUTE_NAME = f"comment_{COMMENT_ID_ROUTE_NAME}"
 
 ORDER_QUERY: str = 'order'              # opinion order
 PAGE_QUERY: str = 'page'                # page number
@@ -66,15 +87,20 @@ SEARCH_QUERY: str = 'search'            # search from search box in header
 # Note: a search can have any of the following queries embedded in its
 # value
 STATUS_QUERY: str = 'status'                # search status
-TITLE_QUERY: str = 'title'                  # search title
 CONTENT_QUERY: str = 'content'              # search content
-CATEGORY_QUERY: str = 'category'            # search category
 AUTHOR_QUERY: str = 'author'                # search author
 ON_OR_AFTER_QUERY: str = 'after-or-on'      # search >= date
 ON_OR_BEFORE_QUERY: str = 'before-or-on'    # search <= date
 AFTER_QUERY: str = 'after'                  # search > date
 BEFORE_QUERY: str = 'before'                # search < date
 EQUAL_QUERY: str = 'date'                   # search == date
+# Opinion specific search queries
+TITLE_QUERY: str = 'title'                  # search title
+CATEGORY_QUERY: str = 'category'            # search category
+# Comment specific search queries
+OPINION_ID_QUERY: str = 'opinion_id'        # search opinion id
+PARENT_ID_QUERY: str = 'parent_id'          # search comment parent id
+COMMENT_DEPTH_QUERY: str = 'depth'          # comment level depth
 
 OPINION_PAGINATION_ON_EACH_SIDE = 1
 OPINION_PAGINATION_ON_ENDS = 1

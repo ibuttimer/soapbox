@@ -1,0 +1,17 @@
+<!-- view_comments.html start -->
+
+{# --- template variable defines for includes --- #}
+{# view comments template expects: 'comments' as list[CommentBundle] #}
+
+{% block view_comments %}
+    {% for bundle in comments %}
+
+      {# --- template variable defines for includes --- #}
+      {# comment template expects: 'bundle' as CommentBundle #}
+
+      {% include "opinions/snippet/comment_bundle.html" %}
+
+    {% endfor %}
+{% endblock view_comments %}
+
+<!-- view_comments.html end -->

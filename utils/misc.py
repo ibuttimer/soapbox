@@ -48,7 +48,7 @@ def append_slash(url: str) -> str:
 def namespaced_url(*args: str) -> str:
     """
     Concatenate supplied arguments into a namespaced URL.
-    (See https://docs.djangoproject.com/en/4.1/topics/http/urls/)
+    See https://docs.djangoproject.com/en/4.1/topics/http/urls/#url-namespaces
     :param args: elements of url
     :return: url string
     """

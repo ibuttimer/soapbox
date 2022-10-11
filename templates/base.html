@@ -95,22 +95,50 @@
                                 <ul class="dropdown-menu">
                                     {% if opinion_create %}
                                     <li>
-                                        <a class="dropdown-item" href="{% url 'opinion_new' %}">New</a>
+                                        <a class="dropdown-item" href="{% url 'opinions:opinion_new' %}">New</a>
                                     </li>
                                     {% endif %}
                                     {% if opinion_read %}
                                     <li>
-                                        <a class="dropdown-item" href="{% url 'opinions' %}?author={{ user.username }}&status=draft">Drafts</a>
+                                        <a class="dropdown-item" href="{% url 'opinions:opinions' %}?author={{ user.username }}&status=draft">Drafts</a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item" href="{% url 'opinions' %}?author={{ user.username }}&status=preview">Previews</a>
+                                        <a class="dropdown-item" href="{% url 'opinions:opinions' %}?author={{ user.username }}&status=preview">Previews</a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item" href="{% url 'opinions' %}?author={{ user.username }}&status=all">Mine</a>
+                                        <a class="dropdown-item" href="{% url 'opinions:opinions' %}?author={{ user.username }}&status=all">Mine</a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
-                                        <a class="dropdown-item" href="{% url 'opinions' %}">All</a>
+                                        <a class="dropdown-item" href="{% url 'opinions:opinions' %}">All</a>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
+                                   {% if comment_read %}
+                                        class="nav-link dropdown-toggle"
+                                    {% else %}
+                                        class="nav-link dropdown-toggle disabled"
+                                   {% endif %}
+                                >
+                                    Comment
+                                </a>
+                                <ul class="dropdown-menu">
+                                    {% if comment_read %}
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'opinions:comments' %}?author={{ user.username }}&status=draft">Drafts</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'opinions:comments' %}?author={{ user.username }}&status=preview">Previews</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'opinions:comments' %}?author={{ user.username }}&status=all">Mine</a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'opinions:comments' %}">All</a>
                                     </li>
                                     {% endif %}
                                 </ul>
@@ -128,7 +156,7 @@
                             </li>
                         {% endif %}
                     </ul>
-                    <form class="d-flex" role="search" method="get" action="{% url 'opinion_search' %}">
+                    <form class="d-flex" role="search" method="get" action="{% url 'opinions:opinion_search' %}">
                         <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" name="search">
                         <button class="btn btn-outline-success" type="submit">Search</button>
                     </form>
@@ -152,7 +180,7 @@
                                 </a>
                                 <ul class="dropdown-menu">
                                     <li>
-                                        <a class="dropdown-item" href="{% url 'user_id' user.id %}">Profile</a>
+                                        <a class="dropdown-item" href="{% url 'user:user_id' user.id %}">Profile</a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>

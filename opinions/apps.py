@@ -24,8 +24,10 @@
 from django.apps import AppConfig
 from django.utils.translation import gettext_lazy as _
 
+from soapbox import OPINIONS_APP_NAME
+
 
 class OpinionsConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'opinions'
+    name = OPINIONS_APP_NAME
     verbose_name = _("Opinion Management")

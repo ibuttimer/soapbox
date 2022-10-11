@@ -29,18 +29,18 @@ from django.shortcuts import render
 from django.views import View
 
 from soapbox import (
-    HOME_ROUTE_NAME
+    HOME_ROUTE_NAME, OPINIONS_APP_NAME
 )
 from utils import (
-    redirect_on_success_or_render, Crud, reverse_q
+    redirect_on_success_or_render, Crud, reverse_q, namespaced_url
 )
 from .constants import (
     OPINION_NEW_ROUTE_NAME
 )
 from .forms import OpinionForm
 from .views_utils import (
-    opinion_permission_check, opinion_save_query_args, timestamp_opinion,
-    render_form, generate_excerpt
+    opinion_permission_check, opinion_save_query_args, timestamp_content,
+    render_opinion_form, generate_excerpt
 )
 
 TITLE_NEW = "Creation"
@@ -62,7 +62,7 @@ class OpinionCreate(LoginRequiredMixin, View):
         """
         opinion_permission_check(request, Crud.CREATE)
 
-        template_path, context = render_form(
+        template_path, context = render_opinion_form(
             TITLE_NEW, submit_url=self.url(), form=OpinionForm())
         return render(request, template_path, context=context)
 
@@ -90,7 +90,7 @@ class OpinionCreate(LoginRequiredMixin, View):
 
             form.instance.excerpt = generate_excerpt(form.instance.content)
 
-            timestamp_opinion(form.instance)
+            timestamp_content(form.instance)
 
             form.save()
             # django autocommits changes
@@ -99,7 +99,7 @@ class OpinionCreate(LoginRequiredMixin, View):
 
             template_path, context = None, None
         else:
-            template_path, context = render_form(
+            template_path, context = render_opinion_form(
                 TITLE_NEW, submit_url=self.url(), form=form)
             success = False
 
@@ -112,4 +112,6 @@ class OpinionCreate(LoginRequiredMixin, View):
         Get url for opinion creation
         :return: url
         """
-        return reverse_q(OPINION_NEW_ROUTE_NAME)
+        return reverse_q(
+            namespaced_url(OPINIONS_APP_NAME, OPINION_NEW_ROUTE_NAME)
+        )

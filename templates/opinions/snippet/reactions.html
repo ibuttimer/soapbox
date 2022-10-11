@@ -1,0 +1,31 @@
+<!-- reactions.html start -->
+
+{# --- template variable defines for includes --- #}
+{# reactions template expects: 'target_id' as id of target opinion/comment #}
+{#                             'reactions' as list of reactions #}
+
+{% load first_word %}
+
+<ul class="nav list-unstyled d-flex">
+  {% for reaction in reactions %}
+  <li>
+      {# id is "id--react-{{ comment-opinion/comment }}-{{ id of target opinion/comment }}", used to assign click handlers #}
+      {# tooltip needs to be on the button as the outer element, modal is in the inner span, otherwise tooltip reappears after closing modal #}
+      <button id="id--react-{{ reaction.id }}-{{ target_id }}" type="button" class="reactions" aria-label="{{ reaction.aria }}"
+              data-bs-href="{% url reaction.url target_id %}"
+              data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="{{ reaction.name }}">
+          <span
+              {% if reaction.type == "modal" %}
+                  data-bs-toggle="modal" data-bs-target="{{ reaction.option }}"
+              {% else %}
+                  data-bs-option="{{ reaction.option }}"
+              {% endif %}
+            >
+            <i class="{{ reaction.icon }}"></i>
+          </span>
+      </button>
+  </li>
+  {% endfor %}
+</ul>
+
+<!-- reactions.html end -->

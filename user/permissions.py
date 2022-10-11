@@ -30,7 +30,7 @@ from django.contrib.auth.management import create_permissions
 
 from categories.models import Category
 from opinions.constants import CLOSE_REVIEW_PERM, WITHDRAW_REVIEW_PERM
-from opinions.models import Opinion, Review
+from opinions.models import Opinion, Review, Comment
 from soapbox import OPINIONS_APP_NAME, CATEGORIES_APP_NAME
 from utils import permission_name, Crud
 from .constants import AUTHOR_GROUP, MODERATOR_GROUP
@@ -303,6 +303,56 @@ def remove_category_permissions(
         editor generating statements to change database schema, default None
     """
     set_category_permissions(REMOVE, apps=apps, schema_editor=schema_editor)
+
+
+def set_comment_permissions(
+        action: str, apps: StateApps = None,
+        schema_editor: BaseDatabaseSchemaEditor = None):
+    """
+    Set comment permissions
+    :param action: action to perform; ADD or REMOVE
+    :param apps: apps registry, default None
+    :param schema_editor:
+        editor generating statements to change database schema, default None
+    """
+    author_group = AUTHOR_GROUP
+    moderator_group = MODERATOR_GROUP
+    if not apps:    # called from the app
+        author_group = Group.objects.get_or_create(name=author_group)
+        moderator_group = Group.objects.get_or_create(name=moderator_group)
+    # else called from a migration
+
+    permissions = [
+        permission_name(Comment, cmt) for cmt in list(Crud)
+    ]
+    for group in [author_group, moderator_group]:
+        set_basic_permissions(group, [
+            PermSetting(model=Comment, perms=permissions,
+                        app=OPINIONS_APP_NAME, action=action)
+        ], apps=apps, schema_editor=schema_editor)
+
+
+def add_comment_permissions(apps: StateApps = None,
+                            schema_editor: BaseDatabaseSchemaEditor = None):
+    """
+    Add comment permissions
+    :param apps: apps registry, default None
+    :param schema_editor:
+        editor generating statements to change database schema, default None
+    """
+    set_comment_permissions(ADD, apps=apps, schema_editor=schema_editor)
+
+
+def remove_comment_permissions(
+        apps: StateApps = None,
+        schema_editor: BaseDatabaseSchemaEditor = None):
+    """
+    Remove comment permissions
+    :param apps: apps registry, default None
+    :param schema_editor:
+        editor generating statements to change database schema, default None
+    """
+    set_comment_permissions(REMOVE, apps=apps, schema_editor=schema_editor)
 
 
 def add_to_authors(user: User):
