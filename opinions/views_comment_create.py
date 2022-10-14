@@ -41,7 +41,7 @@ from utils import (
 from .comment_data import CommentBundle
 from .forms import CommentForm
 from .models import Opinion, Comment
-from .reactions import COMMENT_REACTIONS
+from .reactions import COMMENT_REACTIONS, get_reaction_status
 from .views_utils import (
     comment_permission_check, timestamp_content
 )
@@ -88,6 +88,9 @@ class CommentCreate(LoginRequiredMixin, View):
                 if comment.parent != Comment.NO_PARENT else \
                 "id--comments-container"
 
+            # get reaction controls for opinion & comments
+            reaction_ctrls = get_reaction_status(request.user, comment)
+
             response = JsonResponse({
                 'html': render_to_string(
                     app_template_path(
@@ -96,6 +99,7 @@ class CommentCreate(LoginRequiredMixin, View):
                         'bundle': CommentBundle(comment),
                         'target_id': comment.id,
                         'comment_reactions': COMMENT_REACTIONS,
+                        'reaction_ctrls': reaction_ctrls,
                     },
                     request=request),
                 'parent_container': parent_container,

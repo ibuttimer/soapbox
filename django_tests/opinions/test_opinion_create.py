@@ -155,16 +155,16 @@ class TestOpinionCreate(SoupMixin, BaseUserTest):
             self.assertTrue(found)
 
         # check submit button only displayed in not read only mode
-        tags = soup.find_all(check_submit_button)
+        tags = soup.find_all(is_submit_button)
         if is_readonly:
             self.assertEqual(len(tags), 0)
         else:
             self.assertEqual(len(tags), 3)
 
 
-def check_submit_button(tag: Tag):
+def is_submit_button(tag: Tag):
     """
-    Check `tag` is a opinion submit button
+    Check `tag` is an opinion submit button
     :param tag: tag to check
     :return: True is opinion submit button, otherwise False
     """

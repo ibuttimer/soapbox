@@ -158,15 +158,18 @@ class TestCommentView(SoupMixin, CategoryMixin, BaseOpinionTest):
             if isinstance(child, Tag):
                 if child.name == 'img':
                     # author avatar
-                    SoupMixin.in_tag_attr(child, 'alt', opinion.user.username)
+                    test_case.assertTrue(
+                        SoupMixin.in_tag_attr(
+                            child, 'alt', comment.user.username))
                 elif child.name == 'a' and \
                         child.id == f'id--comment-avatar-link-{comment.id}':
                     # user link
-                    SoupMixin.in_tag_attr(
-                        child, 'href', reverse_q(
-                            namespaced_url(
-                                USER_APP_NAME, USER_ID_ROUTE_NAME),
-                            args=[opinion.user.id]))
+                    test_case.assertTrue(
+                        SoupMixin.in_tag_attr(
+                            child, 'href', reverse_q(
+                                namespaced_url(
+                                    USER_APP_NAME, USER_ID_ROUTE_NAME),
+                                args=[opinion.user.id])))
                     test_case.assertIn(comment.user.username, child.text)
                 elif child.id == f'id--comment-content-{comment.id}':
                     # comment content

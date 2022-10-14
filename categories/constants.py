@@ -37,3 +37,11 @@ STATUS_APPROVED = 'Approved'
 STATUS_REJECTED = 'Rejected'
 
 CATEGORY_UNASSIGNED = 'Unassigned'
+
+# reaction statuses display names
+REACTION_AGREE = 'Agree'
+REACTION_DISAGREE = 'Disagree'
+REACTION_HIDE = 'Hide'
+REACTION_SHOW = 'Show'
+REACTION_FOLLOW = 'Follow'
+REACTION_UNFOLLOW = 'Unfollow'

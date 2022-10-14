@@ -154,7 +154,7 @@ def get_comments(
     end = start + per_page
 
     count = query_set.count()
-    add_placeholder = end < count + 1
+    add_placeholder = end < count
     if add_placeholder:
         end += 1    # add extra for more placeholder
 

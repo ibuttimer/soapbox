@@ -20,30 +20,22 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from .constants import (
-    STATUS_DRAFT, STATUS_PUBLISHED, STATUS_PREVIEW, STATUS_WITHDRAWN,
-    STATUS_PENDING_REVIEW, STATUS_UNDER_REVIEW, STATUS_APPROVED,
-    STATUS_REJECTED, CATEGORY_UNASSIGNED,
-    REACTION_AGREE, REACTION_DISAGREE, REACTION_HIDE, REACTION_SHOW,
-    REACTION_FOLLOW, REACTION_UNFOLLOW
-)
 
-__all__ = [
-    'STATUS_DRAFT',
-    'STATUS_PUBLISHED',
-    'STATUS_PREVIEW',
-    'STATUS_WITHDRAWN',
-    'STATUS_PENDING_REVIEW',
-    'STATUS_UNDER_REVIEW',
-    'STATUS_APPROVED',
-    'STATUS_REJECTED',
+from django import template
 
-    'CATEGORY_UNASSIGNED',
+from ..data_structures import Reaction
 
-    'REACTION_AGREE',
-    'REACTION_DISAGREE',
-    'REACTION_HIDE',
-    'REACTION_SHOW',
-    'REACTION_FOLLOW',
-    'REACTION_UNFOLLOW'
-]
+register = template.Library()
+
+# https://docs.djangoproject.com/en/4.1/howto/custom-template-tags/#simple-tags
+
+
+@register.simple_tag
+def reaction_li_id(reaction: Reaction, target_id: int):
+    """
+    Generate a reaction list item id as used in reactions snippet
+    :param reaction: reaction li is for
+    :param target_id: id of target
+    :return: id
+    """
+    return f"id--react-li-{reaction.id}-{target_id}"

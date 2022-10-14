@@ -38,7 +38,9 @@ from categories import (
     STATUS_DRAFT, STATUS_PUBLISHED, STATUS_PREVIEW, STATUS_WITHDRAWN,
     STATUS_PENDING_REVIEW, STATUS_UNDER_REVIEW, STATUS_APPROVED,
     STATUS_REJECTED,
-    CATEGORY_UNASSIGNED
+    CATEGORY_UNASSIGNED,
+    REACTION_AGREE, REACTION_DISAGREE, REACTION_HIDE, REACTION_SHOW,
+    REACTION_FOLLOW, REACTION_UNFOLLOW
 )
 from categories.models import Status, Category
 from user.models import User
@@ -56,8 +58,8 @@ READ_ONLY = 'read_only'     # read-only mode
 DEFAULT_COMMENT_DEPTH = 2
 
 
-class OpinionArg(Enum):
-    """ Enum representing opinion sort orders """
+class ChoiceArg(Enum):
+    """ Enum representing options with limited choices """
     display: str
     """ Display string """
     arg: Any
@@ -105,13 +107,13 @@ class QueryArg:
         :return: value
         """
         return self.value.arg \
-            if isinstance(self.value, OpinionArg) else self.value
+            if isinstance(self.value, ChoiceArg) else self.value
 
     def __str__(self):
         return f'{self.value}, was_set {self.was_set}'
 
 
-class QueryStatus(OpinionArg):
+class QueryStatus(ChoiceArg):
     """ Enum representing status query params """
     ALL = (STATUS_ALL, 'all')
     DRAFT = (STATUS_DRAFT, 'draft')
@@ -122,6 +124,19 @@ class QueryStatus(OpinionArg):
     UNDER_REVIEW = (STATUS_UNDER_REVIEW, 'under-review')
     APPROVED = (STATUS_APPROVED, 'approved')
     REJECTED = (STATUS_REJECTED, 'rejected')
+
+    def __init__(self, display: str, arg: str):
+        super().__init__(display, arg)
+
+
+class ReactionStatus(ChoiceArg):
+    """ Enum representing reactions query params """
+    AGREE = (REACTION_AGREE, 'agree')
+    DISAGREE = (REACTION_DISAGREE, 'disagree')
+    HIDE = (REACTION_HIDE, 'hide')
+    SHOW = (REACTION_SHOW, 'show')
+    FOLLOW = (REACTION_FOLLOW, 'follow')
+    UNFOLLOW = (REACTION_UNFOLLOW, 'unfollow')
 
     def __init__(self, display: str, arg: str):
         super().__init__(display, arg)
@@ -181,6 +196,29 @@ def timestamp_content(content: [Opinion, Comment]):
             content.published = timestamp
 
 
+def opinion_query_args(
+        request: HttpRequest, query: str, clazz: Type[ChoiceArg],
+        default: ChoiceArg) -> tuple[Status, Type[ChoiceArg]]:
+    """
+    Get opinion save query arguments from request query
+    :param request: http request
+    :param query: query parameter in request
+    :param clazz: class of argument
+    :param default: default value
+    :return: tuple of Status and argument class instance
+    """
+    # query params are in request.GET
+    # maybe slightly unorthodox, but saves defining 3 routes
+    # https://docs.djangoproject.com/en/4.1/ref/request-response/#querydict-objects
+    params = get_query_args(request, [
+        (query, clazz, default),
+    ])
+    status_query = params[query].value
+    status = Status.objects.get(name=status_query.display)
+
+    return status, status_query
+
+
 def opinion_save_query_args(
         request: HttpRequest) -> tuple[Status, QueryStatus]:
     """
@@ -188,19 +226,22 @@ def opinion_save_query_args(
     :param request: http request
     :return: tuple of Status and QueryStatus
     """
-    # query params are in request.GET
-    # maybe slightly unorthodox, but saves defining 3 routes
-    # https://docs.djangoproject.com/en/4.1/ref/request-response/#querydict-objects
-    params = get_query_args(request, [
-        (STATUS_QUERY, QueryStatus, QueryStatus.DRAFT),
-    ])
-    status_query = params[STATUS_QUERY].value
-    status = Status.objects.get(name=status_query.display)
-
-    return status, status_query
+    return opinion_query_args(
+        request, STATUS_QUERY, QueryStatus, QueryStatus.DRAFT)
 
 
-class SortOrder(OpinionArg):
+def opinion_like_query_args(
+        request: HttpRequest) -> tuple[Status, ReactionStatus]:
+    """
+    Get opinion react query arguments from request query
+    :param request: http request
+    :return: tuple of Status and ReactionStatus
+    """
+    return opinion_query_args(
+        request, STATUS_QUERY, ReactionStatus, ReactionStatus.AGREE)
+
+
+class SortOrder(ChoiceArg):
     """ Base enum representing sort orders """
 
     def __init__(self, display: str, arg: str, order: str):
@@ -250,7 +291,7 @@ class CommentSortOrder(SortOrder):
 CommentSortOrder.DEFAULT = CommentSortOrder.OLDEST
 
 
-class PerPage(OpinionArg):
+class PerPage(ChoiceArg):
     """ Enum representing opinions per page """
     SIX = 6
     NINE = 9
@@ -266,13 +307,13 @@ PerPage.DEFAULT = PerPage.SIX
 
 def get_query_args(
             request: HttpRequest,
-            options: list[tuple[str, Type[OpinionArg], Any]]
+            options: list[tuple[str, Type[ChoiceArg], Any]]
         ) -> dict[str, QueryArg]:
     """
     Get opinion list query arguments from request query
     :param options:
     :param request: http request
-    :return: dict of tuples of value (OpinionArg | int | str) and
+    :return: dict of tuples of value (ChoiceArg | int | str) and
             'was set' bool flag
     """
     # https://docs.djangoproject.com/en/4.1/ref/request-response/#querydict-objects
@@ -378,7 +419,7 @@ def opinion_list_query_args(
     """
     Get opinion list query arguments from request query
     :param request: http request
-    :return: dict of tuples of value (OpinionArg | int | str) and
+    :return: dict of tuples of value (ChoiceArg | int | str) and
             'was set' bool flag
     """
     return get_query_args(request, OPINION_LIST_QUERY_ARGS)
@@ -390,7 +431,7 @@ def opinion_search_query_args(
     """
     Get opinion list query arguments from request query
     :param request: http request
-    :return: dict of tuples of value (OpinionArg | int | str) and
+    :return: dict of tuples of value (ChoiceArg | int | str) and
             'was set' bool flag
     """
     return get_query_args(request, OPTION_SEARCH_QUERY_ARGS)
@@ -402,7 +443,7 @@ def comment_list_query_args(
     """
     Get comment list query arguments from request query
     :param request: http request
-    :return: dict of tuples of value (OpinionArg | int | str) and
+    :return: dict of tuples of value (ChoiceArg | int | str) and
             'was set' bool flag
     """
     return get_query_args(request, COMMENT_LIST_QUERY_ARGS)
@@ -414,7 +455,7 @@ def comment_search_query_args(
     """
     Get comment list query arguments from request query
     :param request: http request
-    :return: dict of tuples of value (OpinionArg | int | str) and
+    :return: dict of tuples of value (ChoiceArg | int | str) and
             'was set' bool flag
     """
     return get_query_args(request, COMMENT_SEARCH_QUERY_ARGS)

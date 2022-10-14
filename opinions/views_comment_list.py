@@ -45,7 +45,7 @@ from .constants import (
     REORDER_QUERY
 )
 from .models import Comment
-from .reactions import COMMENT_REACTIONS
+from .reactions import COMMENT_REACTIONS, get_reaction_status
 from .views_utils import (
     comment_list_query_args, comment_permission_check, CommentSortOrder,
     PerPage, comment_search_query_args, QueryStatus,
@@ -375,7 +375,7 @@ class CommentSearch(CommentList):
 @require_http_methods([GET])
 def opinion_comments(request: HttpRequest) -> HttpResponse:
     """
-    Class-based view for opinion.
+    Function view for opinion comments.
     :param request: http request
     :return:
     """
@@ -385,6 +385,9 @@ def opinion_comments(request: HttpRequest) -> HttpResponse:
 
     comments = get_comment_bundle(query_params)
 
+    # get reaction controls for comments
+    reaction_ctrls = get_reaction_status(request.user, comments)
+
     return JsonResponse({
         'html': render_to_string(
             app_template_path(
@@ -393,6 +396,7 @@ def opinion_comments(request: HttpRequest) -> HttpResponse:
                 # same context as OpinionDetail::get
                 'comments': comments,
                 'comment_reactions': COMMENT_REACTIONS,
+                'reaction_ctrls': reaction_ctrls,
             },
             request=request)
     }, status=HTTPStatus.OK)

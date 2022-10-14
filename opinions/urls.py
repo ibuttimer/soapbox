@@ -46,7 +46,7 @@ from .views_comment_list import CommentList, CommentSearch, opinion_comments
 from .views_opinion_create import OpinionCreate
 from .views_opinion_by_id import (
     OpinionDetailById, OpinionDetailBySlug, OpinionDetailPreviewById,
-    opinion_status_patch
+    opinion_status_patch, opinion_like_patch
 )
 from .views_opinion_list import OpinionList, OpinionSearch
 
@@ -74,7 +74,7 @@ urlpatterns = [
          name=OPINION_STATUS_ID_ROUTE_NAME),
 
     # FIXME OPINION_LIKE_ID_URL
-    path(OPINION_LIKE_ID_URL, opinion_status_patch,
+    path(OPINION_LIKE_ID_URL, opinion_like_patch,
          name=OPINION_LIKE_ID_ROUTE_NAME),
 
     # create comment for opinion by id
@@ -88,7 +88,8 @@ urlpatterns = [
     # FIXME comment id/like urls
     path(COMMENT_ID_URL, opinion_status_patch,
          name=COMMENT_ID_ROUTE_NAME),
-    path(COMMENT_LIKE_ID_URL, opinion_status_patch,
+
+    path(COMMENT_LIKE_ID_URL, opinion_like_patch,
          name=COMMENT_LIKE_ID_ROUTE_NAME),
 
     # search comments

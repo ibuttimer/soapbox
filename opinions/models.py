@@ -215,3 +215,32 @@ class Review(models.Model):
 
     def __str__(self):
         return f'Review: {self.opinion.title}'
+
+
+class AgreementStatus(models.Model):
+    """ AgreementStatus model """
+
+    MODEL_NAME = 'AgreementStatus'
+
+    # field names
+    ID_FIELD = ID_FIELD
+    OPINION_FIELD = OPINION_FIELD
+    COMMENT_FIELD = COMMENT_FIELD
+    USER_FIELD = USER_FIELD
+    STATUS_FIELD = STATUS_FIELD
+    UPDATED_FIELD = UPDATED_FIELD
+
+    opinion = models.ForeignKey(
+        Opinion, null=True, blank=True, on_delete=models.CASCADE)
+
+    comment = models.ForeignKey(
+        Comment, null=True, blank=True, on_delete=models.CASCADE)
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    status = models.ForeignKey(Status, on_delete=models.CASCADE)
+
+    updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'AgreementStatus: {self.opinion.title} {self.status}'

@@ -28,6 +28,7 @@ from django.http import (
     HttpRequest, HttpResponse, HttpResponseNotAllowed, JsonResponse
 )
 from django.shortcuts import render, get_object_or_404
+from django.template.loader import render_to_string
 from django.views import View
 from django.views.decorators.http import require_http_methods
 
@@ -43,19 +44,23 @@ from opinions.constants import (
 from soapbox import (
     OPINIONS_APP_NAME, HOME_ROUTE_NAME, GET, PATCH
 )
+from user.models import User
 from utils import (
     app_template_path, redirect_on_success_or_render, Crud, reverse_q,
     namespaced_url
 )
 from .comment_data import get_comment_bundle
 from .forms import OpinionForm, CommentForm
-from .models import Opinion, Comment
-from .reactions import OPINION_REACTIONS, COMMENT_REACTIONS
+from .models import Opinion, Comment, AgreementStatus
+from .reactions import (
+    OPINION_REACTIONS, COMMENT_REACTIONS, get_reaction_status
+)
+from .templatetags.reaction_ul_id import reaction_ul_id
 from .views_utils import (
     opinion_permission_check, opinion_save_query_args, timestamp_content,
     own_opinion_check, published_check, QueryStatus, get_opinion_context,
     render_opinion_form, comment_permission_check, PerPage,
-    DEFAULT_COMMENT_DEPTH, QueryArg
+    DEFAULT_COMMENT_DEPTH, QueryArg, opinion_like_query_args, ReactionStatus
 )
 
 TITLE_NEW = "Creation"
@@ -115,7 +120,8 @@ class OpinionDetail(LoginRequiredMixin, View):
             renderer = _render_view
             render_args.update({
                 'form': CommentForm(),
-                'comments': comments
+                'comments': comments,
+                'user': request.user,
             })
         else:
             renderer = render_opinion_form
@@ -215,6 +221,7 @@ def _render_view(title: str,
                  form: OpinionForm = None,
                  opinion_obj: Opinion = None,
                  comments: dict = None,
+                 user: User = None,
                  read_only: bool = False, status: Status = None) -> tuple[
         str, dict[str, Opinion | list[str] | OpinionForm | bool]]:
     """
@@ -222,6 +229,7 @@ def _render_view(title: str,
     :param title: title
     :param opinion_obj: opinion object, default None
     :param comments: details of comments
+    :param user: current user
     :param read_only: read only flag, default False
     :param status: status, default None
     :return: tuple of template path and context
@@ -231,11 +239,17 @@ def _render_view(title: str,
         comments=comments, read_only=read_only, status=status
     )
 
+    # get reaction controls for opinion & comments
+    reaction_ctrls = get_reaction_status(user, opinion_obj)
+    reaction_ctrls.update(
+        get_reaction_status(user, comments))
+
     context.update({
         'categories': opinion_obj.categories.all(),
         'is_preview': status.name == STATUS_PREVIEW if status else False,
         'opinion_reactions': OPINION_REACTIONS,
         'comment_reactions': COMMENT_REACTIONS,
+        'reaction_ctrls': reaction_ctrls,
     })
 
     return app_template_path(OPINIONS_APP_NAME, "opinion_view.html"), context
@@ -372,7 +386,7 @@ class OpinionDetailBySlug(OpinionDetail):
 @require_http_methods([PATCH])
 def opinion_status_patch(request: HttpRequest, pk: int) -> HttpResponse:
     """
-    Class-based view for opinion.
+    View function to update opinion status.
     :param request: http request
     :param pk:      id of opinion
     :return:
@@ -392,3 +406,60 @@ def opinion_status_patch(request: HttpRequest, pk: int) -> HttpResponse:
         'redirect': '/',
         'status': opinion_obj.status.name
     }, status=HTTPStatus.OK)
+
+
+@login_required
+@require_http_methods([PATCH])
+def opinion_like_patch(request: HttpRequest, pk: int) -> HttpResponse:
+    """
+    View function to update opinion like status.
+    :param request: http request
+    :param pk:      id of opinion
+    :return:
+    """
+    opinion_permission_check(request, Crud.READ)
+
+    opinion_obj = get_object_or_404(Opinion, pk=pk)
+
+    status, reaction = opinion_like_query_args(request)
+
+    if reaction in [ReactionStatus.AGREE, ReactionStatus.DISAGREE]:
+        query_args = {
+            AgreementStatus.OPINION_FIELD: opinion_obj,
+            AgreementStatus.USER_FIELD: request.user
+        }
+        query = AgreementStatus.objects.filter(**query_args)
+        if query.exists():
+            agreement = query.first()
+            if agreement.status != status:
+                # change status
+                agreement.status = status
+                agreement.save()
+            else:
+                # toggle status
+                query.delete()
+        else:
+            query_args.update({
+                AgreementStatus.STATUS_FIELD: status
+            })
+            agreement = AgreementStatus.objects.create(**query_args)
+
+    reaction_ctrls = get_reaction_status(request.user, opinion_obj)
+
+    return JsonResponse({
+        'reactions_id': reaction_ul_id('opinion', opinion_obj.id),
+        'html': render_to_string(
+            app_template_path(
+                OPINIONS_APP_NAME, "snippet", "reactions.html"),
+            context={
+                # reactions template
+                'target_id': opinion_obj.id,
+                'target_type': 'opinion',
+                'reactions': OPINION_REACTIONS,
+                'reaction_ctrls': reaction_ctrls,
+            },
+            request=request)
+
+
+    }, status=HTTPStatus.OK
+        if agreement is not None else HTTPStatus.BAD_REQUEST)

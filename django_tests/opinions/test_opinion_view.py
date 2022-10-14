@@ -25,8 +25,8 @@ import re
 from http import HTTPStatus
 
 from bs4 import BeautifulSoup
-from django.test import TestCase
 from django.http import HttpResponse
+from django.test import TestCase
 
 from categories import (
     STATUS_DRAFT, STATUS_PREVIEW, STATUS_PUBLISHED
@@ -43,9 +43,9 @@ from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
 from .base_opinion_test_cls import BaseOpinionTest
-from .test_opinion_create import check_submit_button, OPINION_FORM_TEMPLATE
+from .test_opinion_create import is_submit_button, OPINION_FORM_TEMPLATE
 from ..category_mixin import CategoryMixin
-from ..soup_mixin import SoupMixin
+from ..soup_mixin import SoupMixin, MatchTest
 from ..user.base_user_test_cls import BaseUserTest
 
 OPINION_VIEW_TEMPLATE = f'{OPINIONS_APP_NAME}/opinion_view.html'
@@ -61,16 +61,11 @@ BY_ID = 'id'
 BY_SLUG = 'slug'
 
 
-class TestOpinionView(SoupMixin, CategoryMixin, BaseOpinionTest):
+class OpinionMixin(BaseUserTest):
     """
     Test opinion page view
     https://docs.djangoproject.com/en/4.1/topics/testing/tools/
     """
-
-    @classmethod
-    def setUpTestData(cls):
-        """ Set up data for the whole TestCase """
-        super(TestOpinionView, TestOpinionView).setUpTestData()
 
     def login_user_by_key(self, name: str | None = None) -> User:
         """
@@ -130,6 +125,19 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseOpinionTest):
                 namespaced_url(
                     OPINIONS_APP_NAME, OPINION_PREVIEW_ID_ROUTE_NAME),
                 args=[pk]))
+
+
+class TestOpinionView(
+        SoupMixin, CategoryMixin, OpinionMixin, BaseOpinionTest):
+    """
+    Test opinion page view
+    https://docs.djangoproject.com/en/4.1/topics/testing/tools/
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        """ Set up data for the whole TestCase """
+        super(TestOpinionView, TestOpinionView).setUpTestData()
 
     def test_not_logged_in_access_by_id(self):
         """ Test must be logged in to access opinion by id """
@@ -457,11 +465,13 @@ class TestOpinionView(SoupMixin, CategoryMixin, BaseOpinionTest):
             alerts = soup.find_all(attrs={'class': re.compile("alert")})
             test_case.assertGreaterEqual(len(alerts), 1)
             for alert in alerts:
+                # text will be found repeatably, as using 'descendants'
                 SoupMixin.find_tag(test_case, alert.descendants,
-                                   lambda tag: STATUS_PREVIEW in tag.text)
+                                   lambda tag: STATUS_PREVIEW in tag.text,
+                                   match=MatchTest.GT_EQ)
 
         # check submit button only displayed in not read only mode
-        tags = soup.find_all(check_submit_button)
+        tags = soup.find_all(is_submit_button)
         if is_readonly:
             test_case.assertEqual(len(tags), 0)
         else:

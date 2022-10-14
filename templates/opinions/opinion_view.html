@@ -106,10 +106,14 @@
             <div class="col-sm-5 justify-content-start">
                 {# --- template variable defines for includes --- #}
                 {# reactions template expects: 'target_id' as id of target opinion/comment #}
-                {#                             'reactions' as list of reactions #}
+                {#                             'target_type' as opinion/comment #}
+                {#                             'reactions' as list of Reaction #}
+                {#                             'reaction_ctrls' as dict of ReactionCtrl #}
                 {% with reactions=opinion_reactions %}
-                    {% with target_id=opinion.id %}
-                        {% include "opinions/snippet/reactions.html" %}
+                    {% with target_type="opinion" %}
+                        {% with target_id=opinion.id %}
+                            {% include "opinions/snippet/reactions.html" %}
+                        {% endwith %}
                     {% endwith %}
                 {% endwith %}
             </div>
@@ -146,6 +150,66 @@
             });
         }
 
+        /**
+         * Update like/unlike status of current opinion
+         * :param event: click event
+         */
+        function updateLikeUnlike(event) {
+            // hide tooltip
+            $("#" + event.currentTarget.id).tooltip("hide");
+
+            // href is on the button
+            url = event.currentTarget.attributes['data-bs-href'].textContent;
+            // status option is on the span in the button (see reactions.html)
+            statusOption = event.currentTarget.firstElementChild.attributes['data-bs-option'].textContent;
+
+            $.ajax({
+                url: url + "?status=" + statusOption,
+                method: 'patch',
+                headers: {
+                    'X-CSRFTOKEN': '{{ csrf_token }}'
+                }
+            }).done(function(data) {
+                $("#" + data.reactions_id).replaceWith(data.html);
+
+                // set click handlers for reactions
+                setReactionHandlers();
+            });
+        }
+
+        // Reaction buttons for comments are named 'id--react-comment-....'
+        const commentReactionsSelector = "button[id^='id--react-comment']";
+        // Reaction buttons for like are named 'id--react-agree-....'
+        const likeReactionsSelector = "button[id^='id--react-agree']";
+        // Reaction buttons for unlike are named 'id--react-disagree-....'
+        const unlikeReactionsSelector = "button[id^='id--react-disagree']";
+
+        /* Set the click handlers to set the submit url for comments */
+        function setReactionHandlers() {
+            /* TODO removing and adding all the handlers is unnecessary */
+
+            // remove old handlers to prevent duplicates
+            $(commentReactionsSelector).off();
+            $(likeReactionsSelector).off();
+            $(unlikeReactionsSelector).off();
+
+            // add new handlers
+            $(commentReactionsSelector).on('click', (event) => {
+                // set the submit url for comments
+                $("#id--comment-submit-url").text(
+                    event.currentTarget.attributes['data-bs-href'].textContent
+                );
+            });
+            $(likeReactionsSelector).on('click', (event) => {
+                // update like status
+                updateLikeUnlike(event);
+            });
+            $(unlikeReactionsSelector).on('click', (event) => {
+                // update unlike status
+                updateLikeUnlike(event);
+            });
+        }
+
         const morePlaceholderSelector = "button[id^='id--comment-more-placeholder']";
 
         /* Click handler for more comments placeholder */
@@ -164,36 +228,22 @@
 
                 // comment card more div has id "id--comment-card-more-<id>"
                 const splits = event.currentTarget.id.split('-');
+                const moreDivIdSelector = "#id--comment-card-more-" + splits[splits.length - 1];
                 // add additional comments to end of list
-                $("#id--comment-card-more-" + splits[splits.length - 1]).parent().append(data.html);
+                $(moreDivIdSelector).parent().append(data.html);
                 // remove more placeholder & collapse
-                $("#id--comment-card-more-" + splits[splits.length - 1]).remove();
+                $(moreDivIdSelector).remove();
                 $("#id--comment-collapse-more-" + splits[splits.length - 1]).remove();
 
                 // set placeholder click handlers
                 $(morePlaceholderSelector).on('click', morePlaceholderClickHandler);
-                // set click handler to set submit url for comments
-                setSubmitUrlHandlers();
+                // set click handlers for reactions
+                setReactionHandlers();
 
+                // enable tooltips
                 const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
                 const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
-
             });
-        }
-
-        /* Set the click handlers to set the submit url for comments */
-        function setSubmitUrlHandlers() {
-            // Reaction buttons on comments are named 'id--react-comment-....'
-
-            // remove old handlers to prevent duplicates
-            $("button[id^='id--react-comment']").off();
-            // add new handlers
-            $("button[id^='id--react-comment']").on('click', (event) => {
-                $("#id--comment-submit-url").text(
-                    event.currentTarget.attributes['data-bs-href'].textContent
-                );
-            });
-
         }
 
         $(document).ready(function () {
@@ -216,8 +266,8 @@
                  */
             });
 
-            // Set click handler to set submit url for comments
-            setSubmitUrlHandlers();
+            // set click handlers for reactions
+            setReactionHandlers();
 
             /* Click handler to request more comments.
                 More buttons on comments are named 'id--comment-more-placeholder-....'
@@ -268,8 +318,8 @@
                     // close modal
                     $("#id--comment-modal").modal('hide');
 
-                    // set click handler to set submit url for comments
-                    setSubmitUrlHandlers();
+                    // set click handlers for reactions
+                    setReactionHandlers();
 
                 }).fail(function(data) {
                     // redisplay modal

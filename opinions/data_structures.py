@@ -20,30 +20,19 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from .constants import (
-    STATUS_DRAFT, STATUS_PUBLISHED, STATUS_PREVIEW, STATUS_WITHDRAWN,
-    STATUS_PENDING_REVIEW, STATUS_UNDER_REVIEW, STATUS_APPROVED,
-    STATUS_REJECTED, CATEGORY_UNASSIGNED,
-    REACTION_AGREE, REACTION_DISAGREE, REACTION_HIDE, REACTION_SHOW,
-    REACTION_FOLLOW, REACTION_UNFOLLOW
-)
+from collections import namedtuple
 
-__all__ = [
-    'STATUS_DRAFT',
-    'STATUS_PUBLISHED',
-    'STATUS_PREVIEW',
-    'STATUS_WITHDRAWN',
-    'STATUS_PENDING_REVIEW',
-    'STATUS_UNDER_REVIEW',
-    'STATUS_APPROVED',
-    'STATUS_REJECTED',
-
-    'CATEGORY_UNASSIGNED',
-
-    'REACTION_AGREE',
-    'REACTION_DISAGREE',
-    'REACTION_HIDE',
-    'REACTION_SHOW',
-    'REACTION_FOLLOW',
-    'REACTION_UNFOLLOW'
-]
+Reaction = namedtuple("Reaction", [
+    "name",         # reaction name
+    "id",           # identifier, used to generate ids for reaction buttons
+    "icon",         # icon to use
+    "aria",         # aria label
+    "type",         # type; 'modal' or 'ajax'
+    "url",          # url for ajax
+    "option",       # selected option/target modal
+    "disabled",     # reaction disabled
+], defaults=['', '', '', '', '', '', '', False])
+ReactionCtrl = namedtuple("ReactionCtrl", [
+    "selected",     # is selected flag
+    "disabled",     # reaction disabled
+], defaults=[False, False])
