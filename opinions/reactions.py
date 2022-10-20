@@ -28,13 +28,15 @@ from utils import namespaced_url
 from .comment_data import CommentBundle
 from .constants import (
     OPINION_ID_ROUTE_NAME, OPINION_LIKE_ID_ROUTE_NAME,
-    OPINION_COMMENT_ID_ROUTE_NAME, COMMENT_LIKE_ID_ROUTE_NAME,
-    COMMENT_COMMENT_ID_ROUTE_NAME
+    OPINION_HIDE_ID_ROUTE_NAME,
+    OPINION_COMMENT_ID_ROUTE_NAME,
+    COMMENT_COMMENT_ID_ROUTE_NAME, COMMENT_LIKE_ID_ROUTE_NAME,
+    COMMENT_HIDE_ID_ROUTE_NAME
 )
 from .data_structures import Reaction, ReactionCtrl
 from .models import Opinion, Comment, AgreementStatus
 from .templatetags.reaction_button_id import reaction_button_id
-from .views_utils import ReactionStatus
+from .enums import ReactionStatus
 
 MODAL = "modal"
 AJAX = "ajax"
@@ -50,32 +52,32 @@ ReactionsList = namedtuple("ReactionsList", [
 COMMENT_MODAL_ID = 'id--comment-modal'
 COMMENT_REACTION_ID = 'comment'     # used to id comment modal button in js
 
-# TODO share/hide/report
+# TODO share/report
 
 OPINION_REACTION_AGREE = Reaction(
     name="Agree", id="agree-opinion", icon="fa-solid fa-hands-clapping",
     aria="Agree with opinion", type=AJAX,
     url=namespaced_url(OPINIONS_APP_NAME, OPINION_LIKE_ID_ROUTE_NAME),
-    option="agree"
+    option=ReactionStatus.AGREE.arg
 )
 OPINION_REACTION_DISAGREE = Reaction(
     name="Disagree", id="disagree-opinion", icon="fa-solid fa-thumbs-down",
     aria="Disagree with opinion", type=AJAX,
     url=namespaced_url(
         OPINIONS_APP_NAME, OPINION_LIKE_ID_ROUTE_NAME),
-    option="disagree"
+    option=ReactionStatus.DISAGREE.arg
 )
 OPINION_REACTION_FOLLOW = Reaction(
     name="Follow author", id="follow-opinion", icon="fa-solid fa-user-tag",
     aria="Follow opinion author", type=AJAX,
     url=namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME),
-    option=""
+    option=ReactionStatus.FOLLOW.arg
 )
 OPINION_REACTION_HIDE = Reaction(
     name="Hide opinion", id="hide-opinion", icon="fa-solid fa-eye-slash",
     aria="Hide opinion", type=AJAX,
-    url=namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME),
-    option=""
+    url=namespaced_url(OPINIONS_APP_NAME, OPINION_HIDE_ID_ROUTE_NAME),
+    option=ReactionStatus.HIDE.arg
 )
 OPINION_REACTION_REPORT = Reaction(
     name="Report opinion", id="report-opinion",
@@ -114,26 +116,26 @@ COMMENT_REACTION_AGREE = Reaction(
     aria="Agree with comment", type=AJAX,
     url=namespaced_url(
         OPINIONS_APP_NAME, COMMENT_LIKE_ID_ROUTE_NAME),
-    option=""
+    option=ReactionStatus.AGREE.arg
 )
 COMMENT_REACTION_DISAGREE = Reaction(
     name="Disagree", id="disagree-comment", icon="fa-solid fa-thumbs-down",
     aria="Disagree with comment", type=AJAX,
     url=namespaced_url(
         OPINIONS_APP_NAME, COMMENT_LIKE_ID_ROUTE_NAME),
-    option=""
+    option=ReactionStatus.DISAGREE.arg
 )
 COMMENT_REACTION_FOLLOW = Reaction(
     name="Follow author", id="follow-comment", icon="fa-solid fa-user-tag",
     aria="Follow comment author", type=AJAX,
     url=namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME),
-    option=""
+    option=ReactionStatus.FOLLOW.arg
 )
 COMMENT_REACTION_HIDE = Reaction(
     name="Hide comment", id="hide-comment", icon="fa-solid fa-eye-slash",
     aria="Hide comment", type=AJAX,
-    url=namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME),
-    option=""
+    url=namespaced_url(OPINIONS_APP_NAME, COMMENT_HIDE_ID_ROUTE_NAME),
+    option=ReactionStatus.HIDE.arg
 )
 COMMENT_REACTION_REPORT = Reaction(
     name="Report comment", id="report-comment",

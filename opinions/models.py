@@ -34,7 +34,7 @@ from .constants import (
     PUBLISHED_FIELD, PARENT_FIELD, LEVEL_FIELD,
     OPINION_FIELD, REQUESTED_FIELD, REASON_FIELD,
     REVIEWER_FIELD, COMMENT_FIELD, RESOLVED_FIELD,
-    CLOSE_REVIEW_PERM, WITHDRAW_REVIEW_PERM
+    CLOSE_REVIEW_PERM, WITHDRAW_REVIEW_PERM, DESC_LOOKUP
 )
 
 
@@ -55,6 +55,9 @@ class Opinion(SlugMixin, models.Model):
     CREATED_FIELD = CREATED_FIELD
     UPDATED_FIELD = UPDATED_FIELD
     PUBLISHED_FIELD = PUBLISHED_FIELD
+
+    SEARCH_DATE_FIELD = PUBLISHED_FIELD
+    DATE_FIELDS = [CREATED_FIELD, UPDATED_FIELD, PUBLISHED_FIELD]
 
     OPINION_ATTRIB_TITLE_MAX_LEN: int = 100
     OPINION_ATTRIB_CONTENT_MAX_LEN: int = 2500
@@ -100,6 +103,21 @@ class Opinion(SlugMixin, models.Model):
         self.slug = Opinion.generate_unique_slug(
             self, Opinion.OPINION_ATTRIB_SLUG_MAX_LEN, title)
 
+    @staticmethod
+    def is_date_field(field: str):
+        return field in Opinion.DATE_FIELDS
+
+    @staticmethod
+    def is_date_lookup(lookup: str):
+        """
+        Check if the specified `lookup` represents a date Lookup
+        :param lookup: lookup string
+        :return: True if lookup contains a date field
+        """
+        return any(
+            map(lambda fld: fld in lookup, Opinion.DATE_FIELDS)
+        )
+
 
 class Comment(SlugMixin, models.Model):
     """ Opinions model """
@@ -121,6 +139,9 @@ class Comment(SlugMixin, models.Model):
     CREATED_FIELD = CREATED_FIELD
     UPDATED_FIELD = UPDATED_FIELD
     PUBLISHED_FIELD = PUBLISHED_FIELD
+
+    SEARCH_DATE_FIELD = PUBLISHED_FIELD
+    DATE_FIELDS = [CREATED_FIELD, UPDATED_FIELD, PUBLISHED_FIELD]
 
     COMMENT_ATTRIB_CONTENT_MAX_LEN: int = 700
     COMMENT_ATTRIB_SLUG_MAX_LEN: int = Opinion.OPINION_ATTRIB_SLUG_MAX_LEN
@@ -148,8 +169,8 @@ class Comment(SlugMixin, models.Model):
     published = models.DateTimeField(
         default=datetime(MINYEAR, 1, 1, tzinfo=timezone.utc))
 
-    # class Meta:
-    #     ordering = [TITLE_FIELD]
+    class Meta:
+        ordering = [ID_FIELD]
 
     def __str__(self):
         return f'{self.content} {self.status.short_name}'
@@ -162,6 +183,21 @@ class Comment(SlugMixin, models.Model):
         # TODO remove html tags before generating slug
         self.slug = Comment.generate_unique_slug(
             self, Comment.COMMENT_ATTRIB_SLUG_MAX_LEN, content)
+
+    @staticmethod
+    def is_date_field(field: str):
+        return field in Comment.DATE_FIELDS
+
+    @staticmethod
+    def is_date_lookup(lookup: str):
+        """
+        Check if the specified `lookup` represents a date Lookup
+        :param lookup: lookup string
+        :return: True if lookup contains a date field
+        """
+        return any(
+            map(lambda fld: fld in lookup, Comment.DATE_FIELDS)
+        )
 
 
 class Review(models.Model):
@@ -243,4 +279,44 @@ class AgreementStatus(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f'AgreementStatus: {self.opinion.title} {self.status}'
+        return f'AgreementStatus: ' \
+               f'{self.opinion if self.opinion else self.comment} ' \
+               f'{self.status}'
+
+
+class HideStatus(models.Model):
+    """ HideStatus model """
+
+    MODEL_NAME = 'HideStatus'
+
+    # field names
+    ID_FIELD = ID_FIELD
+    OPINION_FIELD = OPINION_FIELD
+    COMMENT_FIELD = COMMENT_FIELD
+    USER_FIELD = USER_FIELD
+    UPDATED_FIELD = UPDATED_FIELD
+
+    opinion = models.ForeignKey(
+        Opinion, null=True, blank=True, on_delete=models.CASCADE)
+
+    comment = models.ForeignKey(
+        Comment, null=True, blank=True, on_delete=models.CASCADE)
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'HideStatus: ' \
+               f'{self.opinion if self.opinion else self.comment} ' \
+               f'{self.status}'
+
+
+def is_id_lookup(lookup: str):
+    """
+    Check if the specified `lookup` represents an id Lookup
+    :param lookup: lookup string
+    :return: True if lookup contains the field
+    """
+    lookup = lookup.lower()
+    return lookup == ID_FIELD or lookup == f'{DESC_LOOKUP}{ID_FIELD}'

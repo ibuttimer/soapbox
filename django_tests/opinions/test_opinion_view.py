@@ -38,15 +38,15 @@ from opinions import (
 )
 from opinions.constants import STATUS_QUERY
 from opinions.models import Opinion
-from opinions.views_utils import QueryStatus
+from opinions.enums import QueryStatus
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
-from .base_opinion_test_cls import BaseOpinionTest
+from .base_opinion_test import BaseOpinionTest
 from .test_opinion_create import is_submit_button, OPINION_FORM_TEMPLATE
 from ..category_mixin import CategoryMixin
 from ..soup_mixin import SoupMixin, MatchTest
-from ..user.base_user_test_cls import BaseUserTest
+from ..user.base_user_test import BaseUserTest
 
 OPINION_VIEW_TEMPLATE = f'{OPINIONS_APP_NAME}/opinion_view.html'
 

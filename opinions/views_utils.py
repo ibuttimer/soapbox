@@ -21,7 +21,6 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 from datetime import datetime
-from enum import Enum
 from typing import Any, Type
 
 from zoneinfo import ZoneInfo
@@ -31,25 +30,22 @@ from django.http import HttpRequest
 from django.template.defaultfilters import truncatechars
 from bs4 import BeautifulSoup
 
-from categories.constants import STATUS_ALL
 from soapbox import OPINIONS_APP_NAME
 from utils import Crud, app_template_path, permission_check
 from categories import (
-    STATUS_DRAFT, STATUS_PUBLISHED, STATUS_PREVIEW, STATUS_WITHDRAWN,
-    STATUS_PENDING_REVIEW, STATUS_UNDER_REVIEW, STATUS_APPROVED,
-    STATUS_REJECTED,
-    CATEGORY_UNASSIGNED,
-    REACTION_AGREE, REACTION_DISAGREE, REACTION_HIDE, REACTION_SHOW,
-    REACTION_FOLLOW, REACTION_UNFOLLOW
+    STATUS_DRAFT, STATUS_PUBLISHED, CATEGORY_UNASSIGNED
 )
 from categories.models import Status, Category
-from user.models import User
 from .constants import (
     ORDER_QUERY, SEARCH_QUERY, STATUS_QUERY, PER_PAGE_QUERY,
     PAGE_QUERY, TITLE_QUERY, CONTENT_QUERY, CATEGORY_QUERY, AUTHOR_QUERY,
     ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY,
     EQUAL_QUERY, REORDER_QUERY, OPINION_ID_QUERY, PARENT_ID_QUERY,
-    COMMENT_DEPTH_QUERY
+    COMMENT_DEPTH_QUERY, HIDDEN_QUERY
+)
+from .enums import (
+    ChoiceArg, QueryArg, QueryStatus, ReactionStatus, OpinionSortOrder,
+    CommentSortOrder, PerPage, Hidden
 )
 from .models import Opinion, Comment
 from .forms import OpinionForm
@@ -57,89 +53,85 @@ from .forms import OpinionForm
 READ_ONLY = 'read_only'     # read-only mode
 DEFAULT_COMMENT_DEPTH = 2
 
+# request arguments with always applied defaults
+APPLIED_DEFAULTS_QUERY_ARGS = [
+    # query,      arg class,        default value
+    # status included as default is to only show published opinions
+    (STATUS_QUERY, QueryStatus, QueryStatus.PUBLISH),
+    # hidden included as default is to only show visible opinions
+    (HIDDEN_QUERY, Hidden, Hidden.DEFAULT),
+]
+# request arguments for an opinion list request
+OPINION_LIST_QUERY_ARGS = [
+    # query,      arg class,        default value
+    (ORDER_QUERY, OpinionSortOrder, OpinionSortOrder.DEFAULT),
+    (PAGE_QUERY, None, 1),
+    (PER_PAGE_QUERY, PerPage, PerPage.DEFAULT),
+    (REORDER_QUERY, None, 0),
+    (COMMENT_DEPTH_QUERY, None, DEFAULT_COMMENT_DEPTH),
+    # non-reorder query args
+    (AUTHOR_QUERY, None, None),
+]
+OPINION_LIST_QUERY_ARGS.extend(APPLIED_DEFAULTS_QUERY_ARGS)
+# request arguments for an comment list request
+COMMENT_LIST_QUERY_ARGS = [
+    # query,      arg class,        default value
+    (ORDER_QUERY, CommentSortOrder, CommentSortOrder.DEFAULT),
+    (PAGE_QUERY, None, 1),
+    (PER_PAGE_QUERY, PerPage, PerPage.DEFAULT),
+    (REORDER_QUERY, None, 0),
+    (COMMENT_DEPTH_QUERY, None, DEFAULT_COMMENT_DEPTH),
+    # non-reorder query args
+    (AUTHOR_QUERY, None, None),
+    (OPINION_ID_QUERY, None, None),
+    (PARENT_ID_QUERY, None, None),
+]
+COMMENT_LIST_QUERY_ARGS.extend(APPLIED_DEFAULTS_QUERY_ARGS)
+# args for a reorder/next page/etc. request
+REORDER_REQ_QUERY_ARGS = [
+    ORDER_QUERY, PAGE_QUERY, PER_PAGE_QUERY, REORDER_QUERY,
+    COMMENT_DEPTH_QUERY
+]
+# query args sent for list request which are not always sent with
+# a reorder request
+NON_REORDER_OPINION_LIST_QUERY_ARGS = [
+    a[0] for a in OPINION_LIST_QUERY_ARGS
+    if a[0] not in REORDER_REQ_QUERY_ARGS
+]
+NON_REORDER_COMMENT_LIST_QUERY_ARGS = [
+    a[0] for a in COMMENT_LIST_QUERY_ARGS
+    if a[0] not in REORDER_REQ_QUERY_ARGS
+]
 
-class ChoiceArg(Enum):
-    """ Enum representing options with limited choices """
-    display: str
-    """ Display string """
-    arg: Any
-    """ Argument value """
+# date query request arguments for a search request
+DATE_QUERY_ARGS = [
+    # query,       arg class, default value
+    (ON_OR_AFTER_QUERY, None, None),
+    (ON_OR_BEFORE_QUERY, None, None),
+    (AFTER_QUERY, None, None),
+    (BEFORE_QUERY, None, None),
+    (EQUAL_QUERY, None, None),
+]
 
-    def __init__(self, display: str, arg: Any):
-        self.display = display
-        self.arg = arg
+# request arguments for an opinion search request
+OPTION_SEARCH_QUERY_ARGS = OPINION_LIST_QUERY_ARGS.copy()
+OPTION_SEARCH_QUERY_ARGS.extend([
+    # query,       arg class, default value
+    (SEARCH_QUERY, None, None),
+    (TITLE_QUERY, None, None),
+    (CONTENT_QUERY, None, None),
+    (CATEGORY_QUERY, None, None),
+])
+OPTION_SEARCH_QUERY_ARGS.extend(DATE_QUERY_ARGS)
 
-
-class QueryArg:
-    """ Class representing query args """
-    value: Any
-    """ Value """
-    was_set: bool
-    """ Argument was set in request flag """
-
-    def __init__(self, value: Any, was_set: bool):
-        self.set(value, was_set)
-
-    def set(self, value: Any, was_set: bool):
-        """
-        Set the value and was set flag
-        :param value:
-        :param was_set:
-        :return:
-        """
-        self.value = value
-        self.was_set = was_set
-
-    def was_set_to(self, value: Any, attrib: str = None):
-        """
-        Check if value was to set the specified `value`
-        :param value: value to check
-        :param attrib: attribute of set value to check; default None
-        :return: True if value was to set the specified `value`
-        """
-        chk_value = self.value if not attrib else getattr(self.value, attrib)
-        return self.was_set and chk_value == value
-
-    @property
-    def query_arg_value(self):
-        """
-        Get the arg value of a query argument
-        :return: value
-        """
-        return self.value.arg \
-            if isinstance(self.value, ChoiceArg) else self.value
-
-    def __str__(self):
-        return f'{self.value}, was_set {self.was_set}'
-
-
-class QueryStatus(ChoiceArg):
-    """ Enum representing status query params """
-    ALL = (STATUS_ALL, 'all')
-    DRAFT = (STATUS_DRAFT, 'draft')
-    PUBLISH = (STATUS_PUBLISHED, 'publish')
-    PREVIEW = (STATUS_PREVIEW, 'preview')
-    WITHDRAWN = (STATUS_WITHDRAWN, 'withdrawn')
-    PENDING_REVIEW = (STATUS_PENDING_REVIEW, 'pending-review')
-    UNDER_REVIEW = (STATUS_UNDER_REVIEW, 'under-review')
-    APPROVED = (STATUS_APPROVED, 'approved')
-    REJECTED = (STATUS_REJECTED, 'rejected')
-
-    def __init__(self, display: str, arg: str):
-        super().__init__(display, arg)
-
-
-class ReactionStatus(ChoiceArg):
-    """ Enum representing reactions query params """
-    AGREE = (REACTION_AGREE, 'agree')
-    DISAGREE = (REACTION_DISAGREE, 'disagree')
-    HIDE = (REACTION_HIDE, 'hide')
-    SHOW = (REACTION_SHOW, 'show')
-    FOLLOW = (REACTION_FOLLOW, 'follow')
-    UNFOLLOW = (REACTION_UNFOLLOW, 'unfollow')
-
-    def __init__(self, display: str, arg: str):
-        super().__init__(display, arg)
+# request arguments for a comment search request
+COMMENT_SEARCH_QUERY_ARGS = COMMENT_LIST_QUERY_ARGS.copy()
+COMMENT_SEARCH_QUERY_ARGS.extend([
+    # query,       arg class, default value
+    (SEARCH_QUERY, None, None),
+    (CONTENT_QUERY, None, None),
+])
+COMMENT_SEARCH_QUERY_ARGS.extend(DATE_QUERY_ARGS)
 
 
 def get_opinion_context(
@@ -233,7 +225,7 @@ def opinion_save_query_args(
 def opinion_like_query_args(
         request: HttpRequest) -> tuple[Status, ReactionStatus]:
     """
-    Get opinion react query arguments from request query
+    Get opinion like query arguments from request query
     :param request: http request
     :return: tuple of Status and ReactionStatus
     """
@@ -241,68 +233,15 @@ def opinion_like_query_args(
         request, STATUS_QUERY, ReactionStatus, ReactionStatus.AGREE)
 
 
-class SortOrder(ChoiceArg):
-    """ Base enum representing sort orders """
-
-    def __init__(self, display: str, arg: str, order: str):
-        super().__init__(display, arg)
-        self.order = order
-
-
-class OpinionSortOrder(SortOrder):
-    """ Enum representing opinion sort orders """
-    NEWEST = ('Newest first', 'new', f'-{Opinion.PUBLISHED_FIELD}')
-    OLDEST = ('Oldest first', 'old', f'{Opinion.PUBLISHED_FIELD}')
-    AUTHOR_AZ = ('Author A-Z', 'aaz',
-                 f'{Opinion.USER_FIELD}__{User.USERNAME_FIELD}')
-    AUTHOR_ZA = ('Author Z-A', 'aza',
-                 f'-{Opinion.USER_FIELD}__{User.USERNAME_FIELD}')
-    TITLE_AZ = ('Title A-Z', 'taz', f'{Opinion.TITLE_FIELD}')
-    TITLE_ZA = ('Title Z-A', 'tza', f'-{Opinion.TITLE_FIELD}')
-    STATUS_AZ = ('Status A-Z', 'saz',
-                 f'{Opinion.STATUS_FIELD}__{Status.NAME_FIELD}')
-    STATUS_ZA = ('Status Z-A', 'sza',
-                 f'-{Opinion.STATUS_FIELD}__{Status.NAME_FIELD}')
-
-    def __init__(self, display: str, arg: str, order: str):
-        super().__init__(display, arg, order)
-
-
-OpinionSortOrder.DEFAULT = OpinionSortOrder.NEWEST
-
-
-class CommentSortOrder(SortOrder):
-    """ Enum representing opinion sort orders """
-    NEWEST = ('Newest first', 'new', f'-{Comment.PUBLISHED_FIELD}')
-    OLDEST = ('Oldest first', 'old', f'{Comment.PUBLISHED_FIELD}')
-    AUTHOR_AZ = ('Author A-Z', 'aaz',
-                 f'{Comment.USER_FIELD}__{User.USERNAME_FIELD}')
-    AUTHOR_ZA = ('Author Z-A', 'aza',
-                 f'-{Comment.USER_FIELD}__{User.USERNAME_FIELD}')
-    STATUS_AZ = ('Status A-Z', 'saz',
-                 f'{Comment.STATUS_FIELD}__{Status.NAME_FIELD}')
-    STATUS_ZA = ('Status Z-A', 'sza',
-                 f'-{Comment.STATUS_FIELD}__{Status.NAME_FIELD}')
-
-    def __init__(self, display: str, arg: str, order: str):
-        super().__init__(display, arg, order)
-
-
-CommentSortOrder.DEFAULT = CommentSortOrder.OLDEST
-
-
-class PerPage(ChoiceArg):
-    """ Enum representing opinions per page """
-    SIX = 6
-    NINE = 9
-    TWELVE = 12
-    FIFTEEN = 15
-
-    def __init__(self, count: int):
-        super().__init__(f'{count} per page', count)
-
-
-PerPage.DEFAULT = PerPage.SIX
+def opinion_hide_query_args(
+        request: HttpRequest) -> tuple[Status, ReactionStatus]:
+    """
+    Get opinion hide query arguments from request query
+    :param request: http request
+    :return: tuple of Status and ReactionStatus
+    """
+    return opinion_query_args(
+        request, STATUS_QUERY, ReactionStatus, ReactionStatus.HIDE)
 
 
 def get_query_args(
@@ -339,80 +278,6 @@ def get_query_args(
     return params
 
 
-# request arguments for an opinion list request
-OPINION_LIST_QUERY_ARGS = [
-    # query,      arg class,        default value
-    (ORDER_QUERY, OpinionSortOrder, OpinionSortOrder.DEFAULT),
-    (PAGE_QUERY, None, 1),
-    (PER_PAGE_QUERY, PerPage, PerPage.DEFAULT),
-    (REORDER_QUERY, None, 0),
-    (COMMENT_DEPTH_QUERY, None, DEFAULT_COMMENT_DEPTH),
-    (AUTHOR_QUERY, None, None),
-    # status included as default is to only show published opinions
-    (STATUS_QUERY, QueryStatus, QueryStatus.PUBLISH),
-]
-# request arguments for an comment list request
-COMMENT_LIST_QUERY_ARGS = [
-    # query,      arg class,        default value
-    (ORDER_QUERY, CommentSortOrder, CommentSortOrder.DEFAULT),
-    (PAGE_QUERY, None, 1),
-    (PER_PAGE_QUERY, PerPage, PerPage.DEFAULT),
-    (REORDER_QUERY, None, 0),
-    (COMMENT_DEPTH_QUERY, None, DEFAULT_COMMENT_DEPTH),
-    (AUTHOR_QUERY, None, None),
-    (OPINION_ID_QUERY, None, None),
-    (PARENT_ID_QUERY, None, None),
-    # status included as default is to only show published comments
-    (STATUS_QUERY, QueryStatus, QueryStatus.PUBLISH),
-]
-# non-filtering query args, e.g. args for a reorder request etc. which aren't
-# included in the query used by the database
-REORDER_REQ_QUERY_ARGS = [
-    ORDER_QUERY, PAGE_QUERY, PER_PAGE_QUERY, REORDER_QUERY,
-    COMMENT_DEPTH_QUERY
-]
-# query args sent for list request which are not always sent with
-# a reorder request
-NON_REORDER_OPINION_LIST_QUERY_ARGS = [
-    a[0] for a in OPINION_LIST_QUERY_ARGS
-    if a[0] not in REORDER_REQ_QUERY_ARGS
-]
-NON_REORDER_COMMENT_LIST_QUERY_ARGS = [
-    a[0] for a in COMMENT_LIST_QUERY_ARGS
-    if a[0] not in REORDER_REQ_QUERY_ARGS
-]
-
-# date query request arguments for a search request
-DATE_QUERY_ARGS = [
-    # query,       arg class, default value
-    (ON_OR_AFTER_QUERY, None, None),
-    (ON_OR_BEFORE_QUERY, None, None),
-    (AFTER_QUERY, None, None),
-    (BEFORE_QUERY, None, None),
-    (EQUAL_QUERY, None, None),
-]
-
-# request arguments for an opinion search request
-OPTION_SEARCH_QUERY_ARGS = OPINION_LIST_QUERY_ARGS.copy()
-OPTION_SEARCH_QUERY_ARGS.extend([
-    # query,       arg class, default value
-    (SEARCH_QUERY, None, None),
-    (TITLE_QUERY, None, None),
-    (CONTENT_QUERY, None, None),
-    (CATEGORY_QUERY, None, None),
-])
-OPTION_SEARCH_QUERY_ARGS.extend(DATE_QUERY_ARGS)
-
-# request arguments for a comment search request
-COMMENT_SEARCH_QUERY_ARGS = COMMENT_LIST_QUERY_ARGS.copy()
-COMMENT_SEARCH_QUERY_ARGS.extend([
-    # query,       arg class, default value
-    (SEARCH_QUERY, None, None),
-    (CONTENT_QUERY, None, None),
-])
-COMMENT_SEARCH_QUERY_ARGS.extend(DATE_QUERY_ARGS)
-
-
 def opinion_list_query_args(
             request: HttpRequest
         ) -> dict[str, QueryArg]:
@@ -438,8 +303,8 @@ def opinion_search_query_args(
 
 
 def comment_list_query_args(
-        request: HttpRequest
-) -> dict[str, QueryArg]:
+            request: HttpRequest
+        ) -> dict[str, QueryArg]:
     """
     Get comment list query arguments from request query
     :param request: http request

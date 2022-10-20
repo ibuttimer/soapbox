@@ -53,6 +53,7 @@ OPINION_SLUG_URL = append_slash("<slug:slug>")
 OPINION_PREVIEW_ID_URL = url_path(OPINION_ID_URL, "preview")
 OPINION_STATUS_ID_URL = url_path(OPINION_ID_URL, "status")
 OPINION_LIKE_ID_URL = url_path(OPINION_ID_URL, "like")
+OPINION_HIDE_ID_URL = url_path(OPINION_ID_URL, "hide")
 OPINION_COMMENT_ID_URL = url_path(OPINION_ID_URL, "comment")
 
 COMMENTS_URL = append_slash("comments")
@@ -60,6 +61,7 @@ COMMENT_SEARCH_URL = url_path(COMMENTS_URL, "search")
 COMMENT_MORE_URL = url_path(COMMENTS_URL, "more")
 COMMENT_ID_URL = url_path(COMMENTS_URL, "<int:pk>")
 COMMENT_LIKE_ID_URL = url_path(COMMENT_ID_URL, "like")
+COMMENT_HIDE_ID_URL = url_path(COMMENT_ID_URL, "hide")
 COMMENT_COMMENT_ID_URL = url_path(COMMENT_ID_URL, "comment")
 
 OPINIONS_ROUTE_NAME = "opinions"
@@ -70,6 +72,7 @@ OPINION_SLUG_ROUTE_NAME = "opinion_slug"
 OPINION_PREVIEW_ID_ROUTE_NAME = f"preview_{OPINION_ID_ROUTE_NAME}"
 OPINION_STATUS_ID_ROUTE_NAME = f"status_{OPINION_ID_ROUTE_NAME}"
 OPINION_LIKE_ID_ROUTE_NAME = f"like_{OPINION_ID_ROUTE_NAME}"
+OPINION_HIDE_ID_ROUTE_NAME = f"hide_{OPINION_ID_ROUTE_NAME}"
 OPINION_COMMENT_ID_ROUTE_NAME = f"comment_{OPINION_ID_ROUTE_NAME}"
 
 COMMENTS_ROUTE_NAME = "comments"
@@ -77,6 +80,7 @@ COMMENT_ID_ROUTE_NAME = "comment_id"
 COMMENT_SEARCH_ROUTE_NAME = "comment_search"
 COMMENT_MORE_ROUTE_NAME = "comment_more"
 COMMENT_LIKE_ID_ROUTE_NAME = f"like_{COMMENT_ID_ROUTE_NAME}"
+COMMENT_HIDE_ID_ROUTE_NAME = f"hide_{COMMENT_ID_ROUTE_NAME}"
 COMMENT_COMMENT_ID_ROUTE_NAME = f"comment_{COMMENT_ID_ROUTE_NAME}"
 
 ORDER_QUERY: str = 'order'              # opinion order
@@ -94,6 +98,7 @@ ON_OR_BEFORE_QUERY: str = 'before-or-on'    # search <= date
 AFTER_QUERY: str = 'after'                  # search > date
 BEFORE_QUERY: str = 'before'                # search < date
 EQUAL_QUERY: str = 'date'                   # search == date
+HIDDEN_QUERY: str = 'hidden'                # search hidden
 # Opinion specific search queries
 TITLE_QUERY: str = 'title'                  # search title
 CATEGORY_QUERY: str = 'category'            # search category
@@ -108,3 +113,11 @@ OPINION_PAGINATION_ON_ENDS = 1
 # permissions related
 CLOSE_REVIEW_PERM = "close_review"
 WITHDRAW_REVIEW_PERM = "withdraw_review"
+
+# sorting related
+DESC_LOOKUP = '-'
+""" Lookup order for descending sort """
+DATE_OLDEST_LOOKUP = ''
+""" Lookup order for ascending date, i.e. oldest first """
+DATE_NEWEST_LOOKUP = DESC_LOOKUP
+""" Lookup order for descending date, i.e. newest first """

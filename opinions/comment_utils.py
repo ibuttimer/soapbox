@@ -32,55 +32,26 @@ from user.models import User
 from .constants import (
     STATUS_QUERY, CONTENT_QUERY, CATEGORY_QUERY, AUTHOR_QUERY,
     ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY,
-    EQUAL_QUERY, SEARCH_QUERY, OPINION_ID_QUERY, PARENT_ID_QUERY
+    EQUAL_QUERY, SEARCH_QUERY, OPINION_ID_QUERY, PARENT_ID_QUERY, HIDDEN_QUERY
 )
 from .models import Opinion, Comment
-from .views_utils import (
-    QueryStatus,
-    QueryArg, NON_REORDER_COMMENT_LIST_QUERY_ARGS
+from .query_params import QuerySetParams, choice_arg_query
+from .search import (
+    regex_matchers, TERM_GROUP, regex_date_matchers, DATE_QUERY_GROUP,
+    DATE_QUERIES, DATE_QUERY_YR_GROUP, DATE_QUERY_MTH_GROUP,
+    DATE_QUERY_DAY_GROUP, MARKER_CHARS
 )
+from .views_utils import (
+    NON_REORDER_COMMENT_LIST_QUERY_ARGS
+)
+from .enums import QueryArg, QueryStatus
 
-# chars used to delimit queries
-MARKER_CHARS = ['=', '"', "'"]
 
 NON_DATE_QUERIES = [
     CONTENT_QUERY, AUTHOR_QUERY, STATUS_QUERY
 ]
-REGEX_MATCHERS = {
-    # match single/double-quoted text after 'xxx:'
-    q: re.compile(
-        rf'.*{mark}=(?P<quote>[\'\"])(.*?)(?P=quote)\s*.*', re.IGNORECASE)
-    for q, mark in [
-        # use query term as marker
-        (qm, qm) for qm in NON_DATE_QUERIES
-    ]
-}
-TERM_GROUP = 2     # match group of required text of non-date terms
-
-DATE_QUERIES = [
-    ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY,
-    EQUAL_QUERY
-]
-DATE_SEP = '-'
-SLASH_SEP = '/'
-DOT_SEP = '.'
-SPACE_SEP = ' '
-SEP_REGEX = rf'[{DATE_SEP}{SLASH_SEP}{DOT_SEP}{SPACE_SEP}]'
-DMY_REGEX = rf'(\d+)(?P<sep>[-/. ])(\d+)(?P=sep)(\d*)'
-REGEX_MATCHERS.update({
-    # match single/double-quoted date after 'xxx:'
-    q: re.compile(
-        rf'.*{mark}=(?P<quote>[\'\"])({DMY_REGEX})(?P=quote)\s*.*',
-        re.IGNORECASE)
-    for q, mark in [
-        # use query term as marker
-        (qm, qm) for qm in DATE_QUERIES
-    ]
-})
-DATE_QUERY_GROUP = 2         # match group of required text
-DATE_QUERY_DAY_GROUP = 3     # match group of day text
-DATE_QUERY_MTH_GROUP = 5     # match group of month text
-DATE_QUERY_YR_GROUP = 6      # match group of year text
+REGEX_MATCHERS = regex_matchers(NON_DATE_QUERIES)
+REGEX_MATCHERS.update(regex_date_matchers())
 
 FIELD_LOOKUPS = {
     # query param: filter lookup
@@ -92,12 +63,11 @@ FIELD_LOOKUPS = {
     AUTHOR_QUERY: f'{Comment.USER_FIELD}__{User.USERNAME_FIELD}__icontains',
     OPINION_ID_QUERY: f'{Comment.OPINION_FIELD}__{Opinion.ID_FIELD}',
     PARENT_ID_QUERY: f'{Comment.PARENT_FIELD}',
-    # TODO search created date or updated date?
-    ON_OR_AFTER_QUERY: f'{Comment.UPDATED_FIELD}__date__gte',
-    ON_OR_BEFORE_QUERY: f'{Comment.UPDATED_FIELD}__date__lte',
-    AFTER_QUERY: f'{Comment.UPDATED_FIELD}__date__gt',
-    BEFORE_QUERY: f'{Comment.UPDATED_FIELD}__date__lt',
-    EQUAL_QUERY: f'{Comment.UPDATED_FIELD}__date',
+    ON_OR_AFTER_QUERY: f'{Comment.SEARCH_DATE_FIELD}__date__gte',
+    ON_OR_BEFORE_QUERY: f'{Comment.SEARCH_DATE_FIELD}__date__lte',
+    AFTER_QUERY: f'{Comment.SEARCH_DATE_FIELD}__date__gt',
+    BEFORE_QUERY: f'{Comment.SEARCH_DATE_FIELD}__date__lt',
+    EQUAL_QUERY: f'{Comment.SEARCH_DATE_FIELD}__date',
 }
 # priority order list of query terms
 COMMENT_FILTERS_ORDER = [
@@ -107,7 +77,7 @@ COMMENT_FILTERS_ORDER = [
 ]
 COMMENT_ALWAYS_FILTERS = [
     # always applied items
-    STATUS_QUERY,
+    STATUS_QUERY, HIDDEN_QUERY
 ]
 COMMENT_FILTERS_ORDER.extend(
     [q for q in FIELD_LOOKUPS.keys() if q not in COMMENT_FILTERS_ORDER]
@@ -126,47 +96,52 @@ SEARCH_REGEX.extend([
 
 
 def get_comment_lookup(
-            query: str, value: Any, was_set: bool = False
-        ) -> tuple[bool, dict[Any, Any], list[Any]]:
+            query: str, value: Any, user: User, was_set: bool = False,
+            query_set_params: QuerySetParams = None
+        ) -> QuerySetParams:
     """
     Get the query lookup for the specified
     :param query: query argument
     :param value: argument value
+    :param user: current user
     :param was_set: value was set (so should be included) flag
-    :return: tuple of AND lookups and OR lookups
+    :param query_set_params: query set params
+    :return: query set params
     """
-    and_lookups = {}
-    or_lookups = []
+    if query_set_params is None:
+        query_set_params = QuerySetParams()
 
     if query in [SEARCH_QUERY, CATEGORY_QUERY] or query in DATE_QUERIES:
-        terms, ands, ors = get_comment_search_term(value)
-        if terms:
-            and_lookups.update(ands)
-            or_lookups.extend(ors)
+        query_set_params = get_comment_search_term(
+            value, user, query_set_params=query_set_params)
     elif query == STATUS_QUERY:
-        if value != QueryStatus.ALL:
-            and_lookups[
-                FIELD_LOOKUPS[query]] = value.display
+        if value == QueryStatus.ALL:
+            query_set_params.add_all_inclusive(query)
+        else:
+            query_set_params.add_and_lookup(
+                query, FIELD_LOOKUPS[query], value.display)
         # else do not include status in query
+    elif query == HIDDEN_QUERY:
+        # get_hidden_query(query_set_params, value, user)
+        pass
     elif value or was_set:
-        and_lookups[
-            FIELD_LOOKUPS[query]] = value
+        query_set_params.add_and_lookup(query, FIELD_LOOKUPS[query], value)
 
-    return \
-        len(and_lookups) > 0 or len(or_lookups) > 0, and_lookups, or_lookups
+    return query_set_params
 
 
-def get_comment_search_term(value: str) -> tuple[bool, dict, list]:
+def get_comment_search_term(
+            value: str, user: User, query_set_params: QuerySetParams = None
+        ) -> QuerySetParams:
     """
     Generate search terms for specified input value
-    :param value:
-    :return: tuple of
-                have terms flag: True when have a search term
-                AND search terms: dict of terms to be ANDed together
-                OR search terms: list of terms to be ORed together
+    :param value: search value
+    :param user: current user
+    :param query_set_params: query set params
+    :return: query set params
     """
-    and_lookups = {}
-    or_lookups = []
+    if query_set_params is None:
+        query_set_params = QuerySetParams()
 
     for regex, query, group in SEARCH_REGEX:
         match = regex.match(value)
@@ -175,11 +150,17 @@ def get_comment_search_term(value: str) -> tuple[bool, dict, list]:
                 # need inner queryset to get list of statuses with names
                 # like the search term and then look for opinions with those
                 # statuses
-                # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#in
-                inner_qs = Status.objects.filter(**{
-                    f'{Status.NAME_FIELD}__icontains': match.group(group)
-                })
-                and_lookups[FIELD_LOOKUPS[query]] = inner_qs
+                choice_arg_query(
+                    query_set_params, match.group(group).lower(),
+                    QueryStatus, QueryStatus.ALL,
+                    Status, Status.NAME_FIELD, query, FIELD_LOOKUPS[query]
+                )
+            elif query == HIDDEN_QUERY:
+                # need to filter/exclude by list of comments that the user has
+                # hidden
+                pass
+                # hidden = Hidden.from_arg(match.group(group).lower())
+                # get_hidden_query(query_set_params, hidden, user)
             elif query in DATE_QUERIES:
                 try:
                     date = datetime(
@@ -188,14 +169,16 @@ def get_comment_search_term(value: str) -> tuple[bool, dict, list]:
                         int(match.group(DATE_QUERY_DAY_GROUP)),
                         tzinfo=ZoneInfo("UTC")
                     )
-                    and_lookups[FIELD_LOOKUPS[query]] = date
+                    query_set_params.add_and_lookup(
+                        query, FIELD_LOOKUPS[query], date)
                 except ValueError:
                     # ignore invalid date
                     pass
             else:
-                and_lookups[FIELD_LOOKUPS[query]] = match.group(group)
+                query_set_params.add_and_lookup(
+                    query, FIELD_LOOKUPS[query], match.group(group))
 
-    if len(and_lookups) == 0:
+    if query_set_params.is_empty:
         if not any(
                 list(
                     map(lambda x: x in value, MARKER_CHARS)
@@ -219,22 +202,25 @@ def get_comment_search_term(value: str) -> tuple[bool, dict, list]:
             #   "WHERE ("content") LIKE '<term>'"
             # ]
             for q in to_query:
-                or_lookups.append(
-                    Q(_connector=Q.OR, **{FIELD_LOOKUPS[q]: term
-                                          for term in or_q[q]})
+                query_set_params.add_or_lookup(
+                    '-'.join(to_query),
+                    Q(_connector=Q.OR, **{
+                        FIELD_LOOKUPS[q]: term for term in or_q[q]
+                    })
                 )
 
-    return \
-        len(and_lookups) > 0 or len(or_lookups) > 0, and_lookups, or_lookups
+    return query_set_params
 
 
-def get_comment_queryset(query_params: dict[str, QueryArg]) -> QuerySet:
+def get_comment_queryset(
+        query_params: dict[str, QueryArg], user: User) -> QuerySet:
     """
     Get the queryset to get the list of comments
     :param query_params: request query
+    :param user: current user
     :return: query set
     """
-    and_lookups = {}
+    query_set_params = QuerySetParams()
     for query in NON_REORDER_COMMENT_LIST_QUERY_ARGS:
         if query in query_params:
             param = query_params[query]
@@ -242,7 +228,7 @@ def get_comment_queryset(query_params: dict[str, QueryArg]) -> QuerySet:
             if isinstance(param, QueryArg):
                 was_set = param.was_set
                 param = param.value
-            _, ands, _ = get_comment_lookup(query, param, was_set=was_set)
-            and_lookups.update(ands)
+            get_comment_lookup(query, param, user, was_set=was_set,
+                               query_set_params=query_set_params)
 
-    return Comment.objects.filter(**and_lookups)
+    return query_set_params.apply(Comment.objects)

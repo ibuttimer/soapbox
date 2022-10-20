@@ -24,7 +24,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from .constants import (
-    NAME_FIELD, DESCRIPTION_FIELD
+    ID_FIELD, NAME_FIELD, DESCRIPTION_FIELD
 )
 
 
@@ -34,6 +34,7 @@ class Category(models.Model):
     MODEL_NAME = 'Category'
 
     # field names
+    ID_FIELD = ID_FIELD
     NAME_FIELD = NAME_FIELD
     DESCRIPTION_FIELD = DESCRIPTION_FIELD
 
@@ -60,6 +61,7 @@ class Status(models.Model):
     MODEL_NAME = 'Status'
 
     # field names
+    ID_FIELD = ID_FIELD
     NAME_FIELD = NAME_FIELD
 
     STATUS_ATTRIB_NAME_MAX_LEN: int = 40

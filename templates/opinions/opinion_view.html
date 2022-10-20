@@ -151,17 +151,18 @@
         }
 
         /**
-         * Update like/unlike status of current opinion
+         * Update react status of current opinion
          * :param event: click event
+         * :param done_func: reaction specific done handler function
          */
-        function updateLikeUnlike(event) {
+        function updateReactStatus(event, done_func) {
             // hide tooltip
             $("#" + event.currentTarget.id).tooltip("hide");
 
             // href is on the button
-            url = event.currentTarget.attributes['data-bs-href'].textContent;
+            const url = event.currentTarget.attributes['data-bs-href'].textContent;
             // status option is on the span in the button (see reactions.html)
-            statusOption = event.currentTarget.firstElementChild.attributes['data-bs-option'].textContent;
+            const statusOption = event.currentTarget.firstElementChild.attributes['data-bs-option'].textContent;
 
             $.ajax({
                 url: url + "?status=" + statusOption,
@@ -170,10 +171,30 @@
                     'X-CSRFTOKEN': '{{ csrf_token }}'
                 }
             }).done(function(data) {
-                $("#" + data.reactions_id).replaceWith(data.html);
+                done_func(data);
 
                 // set click handlers for reactions
                 setReactionHandlers();
+            });
+        }
+
+        /**
+         * Update like/unlike status of current opinion
+         * :param event: click event
+         */
+        function updateLikeUnlike(event) {
+            updateReactStatus(event, function(data) {
+                $("#" + data.element_id).replaceWith(data.html);
+            });
+        }
+
+        /**
+         * Update hide status of current opinion
+         * :param event: click event
+         */
+        function updateHide(event) {
+            updateReactStatus(event, function(data) {
+                document.location.href = data.redirect;
             });
         }
 
@@ -183,6 +204,8 @@
         const likeReactionsSelector = "button[id^='id--react-agree']";
         // Reaction buttons for unlike are named 'id--react-disagree-....'
         const unlikeReactionsSelector = "button[id^='id--react-disagree']";
+        // Reaction buttons for hide are named 'id--react-hide-....'
+        const hideReactionsSelector = "button[id^='id--react-hide']";
 
         /* Set the click handlers to set the submit url for comments */
         function setReactionHandlers() {
@@ -192,6 +215,7 @@
             $(commentReactionsSelector).off();
             $(likeReactionsSelector).off();
             $(unlikeReactionsSelector).off();
+            $(hideReactionsSelector).off();
 
             // add new handlers
             $(commentReactionsSelector).on('click', (event) => {
@@ -207,6 +231,10 @@
             $(unlikeReactionsSelector).on('click', (event) => {
                 // update unlike status
                 updateLikeUnlike(event);
+            });
+            $(hideReactionsSelector).on('click', (event) => {
+                // update hide status
+                updateHide(event);
             });
         }
 
@@ -288,11 +316,11 @@
 
             /* Submit handler for comment modal */
             $("form[id^='id--comment-modal']").submit(function (event) {
-                var formData = {
+                const formData = {
                     content: $("#{{ content_field.auto_id }}").val(),
                 };
 
-                var url = $("#id--comment-submit-url").text();
+                const url = $("#id--comment-submit-url").text();
 
                 $.ajax({
                     method: 'post',

@@ -46,11 +46,9 @@ class CategoryMixin:
         :param msg: message
         """
         category_options = [
-            opt for opt in soup.find_all(
-                lambda tag: find_func(tag)
-            )]
+            opt for opt in soup.find_all(find_func)]
         for category in list(categories):
-            sub_msg = f'{msg} category {category}'
+            sub_msg = f'{msg} | category {category}'
             with test_case.subTest(sub_msg):
                 tags = list(
                     filter(
@@ -58,7 +56,8 @@ class CategoryMixin:
                         category_options
                     )
                 )
-                test_case.assertEqual(len(tags), 1, f'{category} not found')
+                test_case.assertEqual(
+                    len(tags), 1, f"'{category}': {len(tags)} tags found")
 
     @staticmethod
     def check_category_options(

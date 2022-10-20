@@ -22,6 +22,7 @@
 #
 import json
 from http import HTTPStatus
+from unittest import skip
 
 from bs4 import BeautifulSoup
 from django.http import HttpResponse
@@ -38,10 +39,10 @@ from opinions.reactions import (
 )
 from opinions.templatetags.reaction_button_id import reaction_button_id
 from opinions.templatetags.reaction_ul_id import reaction_ul_id
-from opinions.views_utils import ReactionStatus
+from opinions.enums import ReactionStatus
 from soapbox import OPINIONS_APP_NAME
 from utils import reverse_q, namespaced_url
-from .base_opinion_test_cls import BaseOpinionTest
+from .base_opinion_test import BaseOpinionTest
 from .test_opinion_view import OpinionMixin
 from ..soup_mixin import SoupMixin
 
@@ -145,7 +146,7 @@ class TestOpinionReaction(SoupMixin, OpinionMixin, BaseOpinionTest):
         """
         self.assertEqual(response.status_code, HTTPStatus.OK)
         result = json.loads(response.content)
-        self.assertEqual(result['reactions_id'],
+        self.assertEqual(result['element_id'],
                          reaction_ul_id('opinion', opinion.id))
 
         soup = BeautifulSoup(result['html'], features="lxml")

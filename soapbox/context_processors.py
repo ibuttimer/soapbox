@@ -26,9 +26,9 @@ from collections import namedtuple
 from django.http import HttpRequest
 
 from user.constants import MODERATOR_GROUP, AUTHOR_GROUP
-from .constants import COPYRIGHT_YEAR, COPYRIGHT
 from opinions.views_utils import opinion_permissions
 from categories.views import category_permissions
+from .constants import COPYRIGHT_YEAR, COPYRIGHT
 
 Social = namedtuple("Social", ["name", "icon", "url"])
 

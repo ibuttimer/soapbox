@@ -34,19 +34,21 @@ from .constants import (
     OPINION_PREVIEW_ID_URL, OPINION_PREVIEW_ID_ROUTE_NAME,
     OPINION_STATUS_ID_URL, OPINION_STATUS_ID_ROUTE_NAME,
     OPINION_LIKE_ID_URL, OPINION_LIKE_ID_ROUTE_NAME,
+    OPINION_HIDE_ID_URL, OPINION_HIDE_ID_ROUTE_NAME,
     OPINION_COMMENT_ID_URL, OPINION_COMMENT_ID_ROUTE_NAME,
     COMMENTS_URL, COMMENTS_ROUTE_NAME,
     COMMENT_ID_URL, COMMENT_ID_ROUTE_NAME,
     COMMENT_LIKE_ID_URL, COMMENT_LIKE_ID_ROUTE_NAME,
     COMMENT_COMMENT_ID_URL, COMMENT_COMMENT_ID_ROUTE_NAME, COMMENT_SEARCH_URL,
     COMMENT_SEARCH_ROUTE_NAME, COMMENT_MORE_URL, COMMENT_MORE_ROUTE_NAME,
+    COMMENT_HIDE_ID_URL, COMMENT_HIDE_ID_ROUTE_NAME,
 )
 from .views_comment_create import OpinionCommentCreate, CommentCommentCreate
 from .views_comment_list import CommentList, CommentSearch, opinion_comments
 from .views_opinion_create import OpinionCreate
 from .views_opinion_by_id import (
     OpinionDetailById, OpinionDetailBySlug, OpinionDetailPreviewById,
-    opinion_status_patch, opinion_like_patch
+    opinion_status_patch, opinion_like_patch, opinion_hide_patch
 )
 from .views_opinion_list import OpinionList, OpinionSearch
 
@@ -72,10 +74,12 @@ urlpatterns = [
     # patch opinion status by id
     path(OPINION_STATUS_ID_URL, opinion_status_patch,
          name=OPINION_STATUS_ID_ROUTE_NAME),
-
-    # FIXME OPINION_LIKE_ID_URL
+    # patch opinion like/unlike status by id
     path(OPINION_LIKE_ID_URL, opinion_like_patch,
          name=OPINION_LIKE_ID_ROUTE_NAME),
+    # patch opinion hide status by id
+    path(OPINION_HIDE_ID_URL, opinion_hide_patch,
+         name=OPINION_HIDE_ID_ROUTE_NAME),
 
     # create comment for opinion by id
     path(OPINION_COMMENT_ID_URL, OpinionCommentCreate.as_view(),
@@ -85,12 +89,14 @@ urlpatterns = [
     path(COMMENTS_URL, CommentList.as_view(),
          name=COMMENTS_ROUTE_NAME),
 
-    # FIXME comment id/like urls
+    # FIXME comment id/like/hide urls
     path(COMMENT_ID_URL, opinion_status_patch,
          name=COMMENT_ID_ROUTE_NAME),
 
     path(COMMENT_LIKE_ID_URL, opinion_like_patch,
          name=COMMENT_LIKE_ID_ROUTE_NAME),
+    path(COMMENT_HIDE_ID_URL, opinion_hide_patch,
+         name=COMMENT_HIDE_ID_ROUTE_NAME),
 
     # search comments
     path(COMMENT_SEARCH_URL, CommentSearch.as_view(),

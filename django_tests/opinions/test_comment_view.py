@@ -37,10 +37,10 @@ from soapbox import OPINIONS_APP_NAME, USER_APP_NAME
 from user import USER_ID_ROUTE_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
-from .base_opinion_test_cls import BaseOpinionTest
+from .base_opinion_test import BaseOpinionTest
 from ..category_mixin import CategoryMixin
 from ..soup_mixin import SoupMixin
-from ..user.base_user_test_cls import BaseUserTest
+from ..user.base_user_test import BaseUserTest
 
 OPINION_VIEW_TEMPLATE = f'{OPINIONS_APP_NAME}/opinion_view.html'
 OPINION_VIEW_COMMENTS_TEMPLATE = \

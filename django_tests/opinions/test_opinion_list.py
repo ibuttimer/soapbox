@@ -30,14 +30,14 @@ from opinions.constants import (
     OPINIONS_ROUTE_NAME, ORDER_QUERY, PAGE_QUERY, PER_PAGE_QUERY
 )
 from opinions.models import Opinion
-from opinions.views_utils import OpinionSortOrder, PerPage
+from opinions.enums import OpinionSortOrder, PerPage
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
-from .base_opinion_test_cls import BaseOpinionTest
+from .base_opinion_test import BaseOpinionTest
 from ..category_mixin import CategoryMixin
 from ..soup_mixin import SoupMixin
-from ..user.base_user_test_cls import BaseUserTest
+from ..user.base_user_test import BaseUserTest
 
 OPINION_LIST_TEMPLATE = f'{OPINIONS_APP_NAME}/opinion_list.html'
 OPINION_LIST_SORT_TEMPLATE = f'{OPINIONS_APP_NAME}/opinion_list_content.html'
@@ -117,8 +117,8 @@ class TestOpinionList(SoupMixin, CategoryMixin, BaseOpinionTest):
 
         for order in list(OpinionSortOrder):
             # check contents of first page
-            expected = TestOpinionList.get_expected(
-                order, PerPage.DEFAULT)
+            expected = self.get_expected_list(
+                order, user, per_page=PerPage.DEFAULT)
 
             with self.subTest(f'order {order}'):
                 response = self.get_opinion_list_by(order=order)
@@ -127,20 +127,20 @@ class TestOpinionList(SoupMixin, CategoryMixin, BaseOpinionTest):
                 verify_opinion_list_content(
                     self, expected, response, msg=order)
 
-    @staticmethod
-    def get_expected(order: OpinionSortOrder,
-                     per_page: [PerPage, None],
-                     page_num: int = 0) -> list[Opinion]:
+    def get_expected_list(self, order: OpinionSortOrder, user: User,
+                          per_page: [PerPage, None] = None,
+                          page_num: int = 0) -> list[Opinion]:
         """
         Generate the expected results list
         :param order: sort order of results
+        :param user: current user
         :param per_page: results per page; None will return all
         :param page_num: 0-based number of page to get
         """
-        # all published opinions
-        expected = TestOpinionList.published_opinions()
-        return sort_expected(
-            expected, order, per_page, page_num=page_num)
+        return BaseOpinionTest.get_expected(
+            self, {
+                # no query required as default is all published opinions
+            }, order, user, per_page=per_page, page_num=page_num)
 
     def test_get_opinion_list_pagination(self):
         """
@@ -158,11 +158,12 @@ class TestOpinionList(SoupMixin, CategoryMixin, BaseOpinionTest):
         for per_page in list(PerPage):
             num_pages = int((total + per_page.arg - 1) / per_page.arg)
             for count in range(1, num_pages + 1):
-
-                expected = TestOpinionList.get_expected(
-                    OpinionSortOrder.DEFAULT, per_page, count - 1)
-
                 msg = f'page {count}/{num_pages}'
+
+                expected = self.get_expected_list(
+                    OpinionSortOrder.DEFAULT, user, per_page=per_page,
+                    page_num=count - 1)
+
                 with self.subTest(msg):
                     response = self.get_opinion_list_by(
                         per_page=per_page, page=count)
@@ -200,22 +201,22 @@ def verify_opinion_list_content(
     )
     test_case.assertEqual(
         len(expected), len(tags),
-        f'{msg}: expected {len(expected)} cards, got {len(tags)}')
+        f'{msg}: expected {len(expected)} card(s), got {len(tags)}')
 
     for index, opinion in enumerate(expected):
-        sub_msg = f'{msg} index {index} opinion ' \
+        sub_msg = f'{msg} | index {index} opinion ' \
                   f'"{opinion.user.username} {opinion.title}"'
         with test_case.subTest(sub_msg):
 
             # check title
-            tags = soup.find_all(id=f'id_title_{index + 1}')
-            test_case.assertEqual(len(tags), 1)
-            test_case.assertTrue(tags[0].text, opinion.title)
+            titles = soup.find_all(id=f'id_title_{index + 1}')
+            test_case.assertEqual(len(titles), 1)
+            test_case.assertTrue(titles[0].text, opinion.title)
 
             # check excerpt
-            tags = soup.find_all(id=f'excerpt_{index + 1}')
-            test_case.assertEqual(len(tags), 1)
-            test_case.assertTrue(tags[0].text, opinion.excerpt)
+            excerpts = soup.find_all(id=f'excerpt_{index + 1}')
+            test_case.assertEqual(len(excerpts), 1)
+            test_case.assertTrue(excerpts[0].text, opinion.excerpt)
 
             # check categories
             CategoryMixin.check_categories(
@@ -237,52 +238,3 @@ def verify_opinion_list_content(
             test_case, soup.find_all('li'),
             lambda tag:
             SoupMixin.equal_tag_attr(tag, 'id', 'current-page'))
-
-
-def sort_expected(expected: list[Opinion], order: OpinionSortOrder,
-                  per_page: [PerPage, None], page_num: int = 0
-                  ) -> list[Opinion]:
-    """
-    Sort the expected results list
-    :param expected: expected results
-    :param order: sort order of results
-    :param per_page: results per page; None will return all
-    :param page_num: 0-based number of page to get
-    """
-    title_order = 'title' in order.display.lower()
-    author_order = 'author' in order.display.lower()
-    status_order = 'status' in order.display.lower()
-    expected.sort(
-        key=lambda op:
-        op.title.lower() if title_order else
-        op.user.username.lower() if author_order else
-        op.status.name.lower() if status_order else op.published,
-        reverse=order.order.startswith('-')
-    )
-    if order not in [OpinionSortOrder.NEWEST, OpinionSortOrder.OLDEST]:
-        # secondary sort by newest
-        to_sort = expected.copy()
-        expected = []
-        field = Opinion.USER_FIELD \
-            if author_order else Opinion.TITLE_FIELD \
-            if title_order else Opinion.STATUS_FIELD
-
-        while len(expected) < len(to_sort):
-            # sort in chunks of same attrib value
-            look_for = getattr(to_sort[len(expected)], field)
-            chunk = list(
-                filter(
-                    lambda op: look_for == getattr(op, field),
-                    to_sort)
-            )
-            chunk.sort(
-                key=lambda op: op.published,
-                reverse=True
-            )
-            expected.extend(chunk)
-
-    # contents of requested page
-    if per_page is not None:
-        start = per_page.arg * page_num
-        expected = expected[start:start + per_page.arg]
-    return expected

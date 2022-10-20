@@ -54,8 +54,8 @@ class BaseUserTest(TestCase):
             ("Joe", "Know_it_all", "joe.knowledge.all",
              "more-than-8-not-like-user", "ask.joe@knowledge.all",
              "flattering-pic.jpg", "The man in the know"),
-            ("Jill", "Know_a_bit", "jill.knowledge.some",
-             "more-than-8-on-a-plate", "ask.jill@knowledge.some",
+            ("Ana", "Know_a_bit", "ana.knowledge.some",
+             "more-than-8-on-a-plate", "ask.ana@knowledge.some",
              "nice-pic.jpg", "The woman to ask")
         ]
     }
@@ -98,6 +98,21 @@ class BaseUserTest(TestCase):
         return list(
             BaseUserTest.USER_INFO.keys()
         )[index % len(BaseUserTest.USER_INFO)]
+
+    @classmethod
+    def get_other_user(cls, not_this_user: User):
+        """
+        Get a user other than the specified user
+        :param not_this_user: user to not get
+        :return: another user
+        """
+        for user_idx in range(len(cls.users)):
+            user, _ = cls.get_user_by_index(user_idx)
+            if user != not_this_user:
+                break
+        else:
+            raise ValueError(f'User other than {not_this_user} not found')
+        return user
 
     @staticmethod
     def num_users():

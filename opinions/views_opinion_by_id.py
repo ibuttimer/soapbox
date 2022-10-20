@@ -42,7 +42,7 @@ from opinions.constants import (
     PER_PAGE_QUERY, COMMENT_DEPTH_QUERY, PARENT_ID_QUERY
 )
 from soapbox import (
-    OPINIONS_APP_NAME, HOME_ROUTE_NAME, GET, PATCH
+    OPINIONS_APP_NAME, HOME_ROUTE_NAME, GET, PATCH, HOME_URL
 )
 from user.models import User
 from utils import (
@@ -51,17 +51,18 @@ from utils import (
 )
 from .comment_data import get_comment_bundle
 from .forms import OpinionForm, CommentForm
-from .models import Opinion, Comment, AgreementStatus
+from .models import Opinion, Comment, AgreementStatus, HideStatus
 from .reactions import (
     OPINION_REACTIONS, COMMENT_REACTIONS, get_reaction_status
 )
 from .templatetags.reaction_ul_id import reaction_ul_id
 from .views_utils import (
     opinion_permission_check, opinion_save_query_args, timestamp_content,
-    own_opinion_check, published_check, QueryStatus, get_opinion_context,
-    render_opinion_form, comment_permission_check, PerPage,
-    DEFAULT_COMMENT_DEPTH, QueryArg, opinion_like_query_args, ReactionStatus
+    own_opinion_check, published_check, get_opinion_context,
+    render_opinion_form, comment_permission_check, DEFAULT_COMMENT_DEPTH,
+    opinion_like_query_args, opinion_hide_query_args
 )
+from .enums import QueryArg, QueryStatus, ReactionStatus, PerPage
 
 TITLE_NEW = "Creation"
 TITLE_UPDATE = "Update"
@@ -106,7 +107,8 @@ class OpinionDetail(LoginRequiredMixin, View):
                 (PER_PAGE_QUERY, PerPage.SIX),
                 (COMMENT_DEPTH_QUERY, DEFAULT_COMMENT_DEPTH)
             ]
-        }) if comment_permission_check(request, Crud.READ, raise_ex=False) \
+        }, request.user) if \
+            comment_permission_check(request, Crud.READ, raise_ex=False) \
             else []
 
         read_only = opinion_obj and opinion_obj.user.id != request.user.id \
@@ -389,7 +391,7 @@ def opinion_status_patch(request: HttpRequest, pk: int) -> HttpResponse:
     View function to update opinion status.
     :param request: http request
     :param pk:      id of opinion
-    :return:
+    :return: response
     """
     opinion_permission_check(request, Crud.UPDATE)
 
@@ -402,10 +404,25 @@ def opinion_status_patch(request: HttpRequest, pk: int) -> HttpResponse:
     opinion_obj.status = status
     opinion_obj.save()
 
-    return JsonResponse({
-        'redirect': '/',
+    return redirect_response(HOME_URL, extra={
         'status': opinion_obj.status.name
-    }, status=HTTPStatus.OK)
+    })
+
+
+def redirect_response(url: str, extra: dict = None) -> HttpResponse:
+    """
+    Generate redirect response.
+    :param url: url to redirect to
+    :param extra: extra payload content; default None
+    :return: response
+    """
+    payload = {
+        'redirect': url
+    }
+    if isinstance(payload, dict):
+        payload.update(extra)
+
+    return JsonResponse(payload, status=HTTPStatus.OK)
 
 
 @login_required
@@ -423,6 +440,7 @@ def opinion_like_patch(request: HttpRequest, pk: int) -> HttpResponse:
 
     status, reaction = opinion_like_query_args(request)
 
+    agreement = None
     if reaction in [ReactionStatus.AGREE, ReactionStatus.DISAGREE]:
         query_args = {
             AgreementStatus.OPINION_FIELD: opinion_obj,
@@ -444,10 +462,23 @@ def opinion_like_patch(request: HttpRequest, pk: int) -> HttpResponse:
             })
             agreement = AgreementStatus.objects.create(**query_args)
 
+    return opinion_react_response(request, opinion_obj, agreement is not None)
+
+
+def opinion_react_response(
+            request: HttpRequest, opinion_obj: Opinion, success: bool
+        ) -> HttpResponse:
+    """
+    View function to update opinion like status.
+    :param request: http request
+    :param opinion_obj: opinion
+    :param success: success flag
+    :return: response
+    """
     reaction_ctrls = get_reaction_status(request.user, opinion_obj)
 
     return JsonResponse({
-        'reactions_id': reaction_ul_id('opinion', opinion_obj.id),
+        'element_id': reaction_ul_id('opinion', opinion_obj.id),
         'html': render_to_string(
             app_template_path(
                 OPINIONS_APP_NAME, "snippet", "reactions.html"),
@@ -459,7 +490,38 @@ def opinion_like_patch(request: HttpRequest, pk: int) -> HttpResponse:
                 'reaction_ctrls': reaction_ctrls,
             },
             request=request)
+    }, status=HTTPStatus.OK if success else HTTPStatus.BAD_REQUEST)
 
 
-    }, status=HTTPStatus.OK
-        if agreement is not None else HTTPStatus.BAD_REQUEST)
+@login_required
+@require_http_methods([PATCH])
+def opinion_hide_patch(request: HttpRequest, pk: int) -> HttpResponse:
+    """
+    View function to update opinion hide status.
+    :param request: http request
+    :param pk:      id of opinion
+    :return:
+    """
+    opinion_permission_check(request, Crud.READ)
+
+    opinion_obj = get_object_or_404(Opinion, pk=pk)
+
+    status, reaction = opinion_hide_query_args(request)
+
+    success = False
+    if reaction in [ReactionStatus.HIDE, ReactionStatus.SHOW]:
+        query_args = {
+            HideStatus.OPINION_FIELD: opinion_obj,
+            HideStatus.USER_FIELD: request.user
+        }
+        query = HideStatus.objects.filter(**query_args)
+        if reaction == ReactionStatus.SHOW:
+            # remove hide record if exists, otherwise no change
+            if query.exists():
+                query.delete()
+            success = True
+        else:
+            obj, created = HideStatus.objects.get_or_create(**query_args)
+            success = obj is not None
+
+    return redirect_response(HOME_URL)

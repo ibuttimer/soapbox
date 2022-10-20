@@ -30,7 +30,7 @@ from soapbox import USER_APP_NAME
 from utils import reverse_q, namespaced_url
 from user import USER_ID_ROUTE_NAME
 from user.models import User
-from .base_user_test_cls import BaseUserTest
+from .base_user_test import BaseUserTest
 from ..category_mixin import CategoryMixin
 from ..soup_mixin import SoupMixin
 

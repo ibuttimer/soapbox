@@ -55,7 +55,7 @@ class SlugMixin:
 
         # Base64 alphabet contains 'a-z', 'A-Z', '0-9', '+', '/', '='
         # urlsafe_b64encode output contains 'a-z', 'A-Z', '0-9', '-', '_', '='
-        # so only problem used base64 for slug is padding '=' so replace
+        # so only problem using base64 for slug is padding '=' so replace
         # with '_'
         random_str = '-' + str(
             urlsafe_b64encode(
