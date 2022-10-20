@@ -36,7 +36,7 @@ from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
 from ..soup_mixin import SoupMixin
-from ..user.base_user_test_cls import BaseUserTest
+from ..user.base_user_test import BaseUserTest
 
 OPINION_FORM_TEMPLATE = f'{OPINIONS_APP_NAME}/opinion_form.html'
 
@@ -155,16 +155,16 @@ class TestOpinionCreate(SoupMixin, BaseUserTest):
             self.assertTrue(found)
 
         # check submit button only displayed in not read only mode
-        tags = soup.find_all(check_submit_button)
+        tags = soup.find_all(is_submit_button)
         if is_readonly:
             self.assertEqual(len(tags), 0)
         else:
             self.assertEqual(len(tags), 3)
 
 
-def check_submit_button(tag: Tag):
+def is_submit_button(tag: Tag):
     """
-    Check `tag` is a opinion submit button
+    Check `tag` is an opinion submit button
     :param tag: tag to check
     :return: True is opinion submit button, otherwise False
     """

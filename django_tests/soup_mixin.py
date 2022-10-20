@@ -20,10 +20,19 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
+from enum import Enum, auto
 from typing import Callable
 
 from django.test import TestCase
 from bs4 import ResultSet, Tag
+
+
+class MatchTest(Enum):
+    LT = auto()
+    LT_EQ = auto()
+    EQ = auto()
+    GT_EQ = auto()
+    GT = auto()
 
 
 class SoupMixin:
@@ -33,8 +42,10 @@ class SoupMixin:
 
     @staticmethod
     def check_tag(
-            test_case: TestCase, tags: ResultSet,
-            is_readonly: bool, check_func: Callable):
+                test_case: TestCase, tags: ResultSet,
+                is_readonly: bool, check_func: Callable,
+                msg: str = None
+            ):
         """
         Check that a tag matches a condition in read only mode and doesn't
         in not read only mode
@@ -42,6 +53,7 @@ class SoupMixin:
         :param tags: tags to check
         :param is_readonly: read only mode flag
         :param check_func: function to check condition
+        :param msg: msg to display if assert fails; default None
         """
         bingo = False
         for tag in tags:
@@ -52,27 +64,38 @@ class SoupMixin:
                 bingo = True
             if bingo:
                 break
-        test_case.assertTrue(bingo)
+        test_case.assertTrue(bingo, msg=msg)
 
     @staticmethod
     def find_tag(test_case: TestCase, tags: ResultSet,
-                 check_func: Callable) -> Tag:
+                 check_func: Callable, count: int = 1,
+                 match: MatchTest = MatchTest.EQ,
+                 msg: str = None) -> [Tag, list[Tag]]:
         """
         Check that a tag matches a condition
         :param test_case: TestCase instance
         :param tags: tags to check
         :param check_func: function to check condition
+        :param count: required number of tags to find
+        :param match: match check for count; default MatchTest.EQ
+        :param msg: msg to display if assert fails; default None
+        :return: tag or list of tags
         """
-        found_tag = None
-        found = False
+        found_tags = []
         for tag in tags:
             found = check_func(tag)
             if found:
-                found_tag = tag
-                break
-        test_case.assertTrue(found)
+                found_tags.append(tag)
 
-        return found_tag
+        assertion = test_case.assertLess if match == MatchTest.LT else \
+            test_case.assertLessEqual if match == MatchTest.LT_EQ else \
+            test_case.assertGreaterEqual if match == MatchTest.GT_EQ else \
+            test_case.assertGreater if match == MatchTest.GT else \
+            test_case.assertEqual
+
+        assertion(len(found_tags), count, msg=msg)
+
+        return found_tags[0] if count == 1 else found_tags
 
     @staticmethod
     def in_tag_attr(tag: Tag, attr: str, content: str):
@@ -84,6 +107,17 @@ class SoupMixin:
         :returns True if content in tag attribute
         """
         return tag.has_attr(attr) and content in tag[attr]
+
+    @staticmethod
+    def not_in_tag_attr(tag: Tag, attr: str, content: str):
+        """
+        Check that a tag attribute does not contain specified content
+        :param tag: tag
+        :param attr: attribute
+        :param content: content to check
+        :returns True if content not in tag attribute
+        """
+        return tag.has_attr(attr) and content not in tag[attr]
 
     @staticmethod
     def equal_tag_attr(tag: Tag, attr: str, content: str):

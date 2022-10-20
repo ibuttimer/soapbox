@@ -20,38 +20,46 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from datetime import datetime, timezone, MINYEAR
+from datetime import datetime, timezone
 
-from categories import STATUS_DRAFT
-from categories.models import Status
-from opinions.constants import STATUS_FIELD, USER_FIELD
-from opinions.models import Opinion
-from ..user.base_user_test import BaseUserTest
+from opinions.models import HideStatus
+from .base_opinion_test import BaseOpinionTest
 
 
-class TestOpinionModel(BaseUserTest):
+class TestHideModel(BaseOpinionTest):
     """
-    Test opinion
+    Test review
     https://docs.djangoproject.com/en/4.1/topics/testing/tools/
     """
 
     @classmethod
     def setUpTestData(cls):
         """ Set up data for the whole TestCase """
-        super(TestOpinionModel, TestOpinionModel).setUpTestData()
+        super(TestHideModel, TestHideModel).setUpTestData()
 
-    def test_opinion_defaults(self):
-        user, _ = TestOpinionModel.get_user_by_index(0)
+    def test_review_defaults(self):
+        opinion = TestHideModel.opinions[0]
+        user = TestHideModel.get_other_user(opinion.user)
+
         kwargs = {
-            STATUS_FIELD: Status.objects.get(name=STATUS_DRAFT),
-            USER_FIELD: user
+            HideStatus.OPINION_FIELD: opinion,
+            HideStatus.USER_FIELD: user,
         }
-        opinion = Opinion.objects.create(**kwargs)
-        self.assertIsNotNone(opinion)
-        self.assertEqual(opinion.title, '')
-        self.assertEqual(opinion.content, '')
-        self.assertEqual(opinion.slug, '')
-        self.assertLessEqual(opinion.created, datetime.now(tz=timezone.utc))
-        self.assertLessEqual(opinion.updated, datetime.now(tz=timezone.utc))
-        self.assertEqual(opinion.published,
-                         datetime(MINYEAR, 1, 1, 0, 0, tzinfo=timezone.utc))
+        hidden = HideStatus.objects.create(**kwargs)
+        self.assertIsNotNone(hidden)
+        self.assertEqual(hidden.opinion, opinion)
+        self.assertIsNone(hidden.comment)
+        self.assertLessEqual(hidden.updated, datetime.now(tz=timezone.utc))
+
+        comment = TestHideModel.comments[0]
+        user = TestHideModel.get_other_user(comment.user)
+
+        kwargs = {
+            HideStatus.COMMENT_FIELD: comment,
+            HideStatus.USER_FIELD: user,
+        }
+        hidden = HideStatus.objects.create(**kwargs)
+        self.assertIsNotNone(hidden)
+        self.assertEqual(hidden.comment, comment)
+        self.assertIsNone(hidden.opinion)
+        self.assertLessEqual(hidden.updated, datetime.now(tz=timezone.utc))

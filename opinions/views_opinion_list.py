@@ -43,57 +43,31 @@ from .constants import (
     CONTENT_QUERY, CATEGORY_QUERY, AUTHOR_QUERY, ON_OR_AFTER_QUERY,
     ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY, EQUAL_QUERY,
     OPINION_PAGINATION_ON_EACH_SIDE, OPINION_PAGINATION_ON_ENDS, SEARCH_QUERY,
-    PAGE_QUERY, REORDER_QUERY
+    PAGE_QUERY, REORDER_QUERY, ID_FIELD, HIDDEN_QUERY, DATE_NEWEST_LOOKUP,
+    DESC_LOOKUP
 )
-from .models import Opinion
+from .models import Opinion, HideStatus, is_id_lookup
+from .search import (
+    regex_matchers, TERM_GROUP, regex_date_matchers, DATE_QUERY_GROUP,
+    DATE_QUERIES, DATE_QUERY_YR_GROUP, DATE_QUERY_MTH_GROUP,
+    DATE_QUERY_DAY_GROUP, MARKER_CHARS
+)
 from .views_utils import (
-    opinion_list_query_args, opinion_permission_check, OpinionSortOrder,
-    PerPage, opinion_search_query_args, QueryStatus,
-    QueryArg, REORDER_REQ_QUERY_ARGS,
+    opinion_list_query_args, opinion_permission_check,
+    opinion_search_query_args,
+    REORDER_REQ_QUERY_ARGS,
     NON_REORDER_OPINION_LIST_QUERY_ARGS
 )
+from .query_params import QuerySetParams, choice_arg_query
+from .enums import QueryArg, QueryStatus, OpinionSortOrder, PerPage, Hidden
 
-# chars used to delimit queries
-MARKER_CHARS = ['=', '"', "'"]
 
 NON_DATE_QUERIES = [
-    TITLE_QUERY, CONTENT_QUERY, AUTHOR_QUERY, CATEGORY_QUERY, STATUS_QUERY
+    TITLE_QUERY, CONTENT_QUERY, AUTHOR_QUERY, CATEGORY_QUERY, STATUS_QUERY,
+    HIDDEN_QUERY
 ]
-REGEX_MATCHERS = {
-    # match single/double-quoted text after 'xxx:'
-    q: re.compile(
-        rf'.*{mark}=(?P<quote>[\'\"])(.*?)(?P=quote)\s*.*', re.IGNORECASE)
-    for q, mark in [
-        # use query term as marker
-        (qm, qm) for qm in NON_DATE_QUERIES
-    ]
-}
-TERM_GROUP = 2     # match group of required text of non-date terms
-
-DATE_QUERIES = [
-    ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY,
-    EQUAL_QUERY
-]
-DATE_SEP = '-'
-SLASH_SEP = '/'
-DOT_SEP = '.'
-SPACE_SEP = ' '
-SEP_REGEX = rf'[{DATE_SEP}{SLASH_SEP}{DOT_SEP}{SPACE_SEP}]'
-DMY_REGEX = rf'(\d+)(?P<sep>[-/. ])(\d+)(?P=sep)(\d*)'
-REGEX_MATCHERS.update({
-    # match single/double-quoted date after 'xxx:'
-    q: re.compile(
-        rf'.*{mark}=(?P<quote>[\'\"])({DMY_REGEX})(?P=quote)\s*.*',
-        re.IGNORECASE)
-    for q, mark in [
-        # use query term as marker
-        (qm, qm) for qm in DATE_QUERIES
-    ]
-})
-DATE_QUERY_GROUP = 2         # match group of required text
-DATE_QUERY_DAY_GROUP = 3     # match group of day text
-DATE_QUERY_MTH_GROUP = 5     # match group of month text
-DATE_QUERY_YR_GROUP = 6      # match group of year text
+REGEX_MATCHERS = regex_matchers(NON_DATE_QUERIES)
+REGEX_MATCHERS.update(regex_date_matchers())
 
 FIELD_LOOKUPS = {
     # query param: filter lookup
@@ -103,12 +77,11 @@ FIELD_LOOKUPS = {
     CONTENT_QUERY: f'{Opinion.CONTENT_FIELD}__icontains',
     AUTHOR_QUERY: f'{Opinion.USER_FIELD}__{User.USERNAME_FIELD}__icontains',
     CATEGORY_QUERY: f'{Opinion.CATEGORIES_FIELD}__in',
-    # TODO search published date or updated date?
-    ON_OR_AFTER_QUERY: f'{Opinion.PUBLISHED_FIELD}__date__gte',
-    ON_OR_BEFORE_QUERY: f'{Opinion.PUBLISHED_FIELD}__date__lte',
-    AFTER_QUERY: f'{Opinion.PUBLISHED_FIELD}__date__gt',
-    BEFORE_QUERY: f'{Opinion.PUBLISHED_FIELD}__date__lt',
-    EQUAL_QUERY: f'{Opinion.PUBLISHED_FIELD}__date',
+    ON_OR_AFTER_QUERY: f'{Opinion.SEARCH_DATE_FIELD}__date__gte',
+    ON_OR_BEFORE_QUERY: f'{Opinion.SEARCH_DATE_FIELD}__date__lte',
+    AFTER_QUERY: f'{Opinion.SEARCH_DATE_FIELD}__date__gt',
+    BEFORE_QUERY: f'{Opinion.SEARCH_DATE_FIELD}__date__lt',
+    EQUAL_QUERY: f'{Opinion.SEARCH_DATE_FIELD}__date',
 }
 # priority order list of query terms
 FILTERS_ORDER = [
@@ -118,7 +91,7 @@ FILTERS_ORDER = [
 ]
 ALWAYS_FILTERS = [
     # always applied items
-    STATUS_QUERY,
+    STATUS_QUERY, HIDDEN_QUERY
 ]
 FILTERS_ORDER.extend(
     [q for q in FIELD_LOOKUPS.keys() if q not in FILTERS_ORDER]
@@ -135,10 +108,9 @@ SEARCH_REGEX.extend([
     for q in DATE_QUERIES
 ])
 
-REORDER_QUERIES = [ORDER_QUERY, PAGE_QUERY, PER_PAGE_QUERY]
-
 
 class ListTemplate(Enum):
+    """ Enum representing possible response template """
     FULL_TEMPLATE = app_template_path(OPINIONS_APP_NAME, 'opinion_list.html')
     CONTENT_TEMPLATE = app_template_path(OPINIONS_APP_NAME,
                                          'opinion_list_content.html')
@@ -182,7 +154,7 @@ class OpinionList(LoginRequiredMixin, generic.ListView):
         self.set_sort_order_options(request, query_params)
 
         # set queryset
-        self.set_queryset(query_params)
+        self.set_queryset(query_params, request.user)
 
         # set ordering
         self.set_ordering(query_params)
@@ -196,19 +168,20 @@ class OpinionList(LoginRequiredMixin, generic.ListView):
         return super(OpinionList, self). \
             get(request, *args, **kwargs)
 
-    def set_queryset(self, query_params: dict[str, QueryArg]):
+    def set_queryset(self, query_params: dict[str, QueryArg], user: User):
         """
         Set the queryset to get the list of items for this view
         :param query_params: request query
+        :param user: current user
         """
-        and_lookups = {}
-        for query in NON_REORDER_OPINION_LIST_QUERY_ARGS:
-            _, ands, _ = get_lookup(query, query_params[query].value)
-            and_lookups.update(ands)
+        query_set_params = QuerySetParams()
 
-        self.queryset = Opinion.objects. \
-            prefetch_related('categories'). \
-            filter(**and_lookups)
+        for query in NON_REORDER_OPINION_LIST_QUERY_ARGS:
+            get_lookup(query, query_params[query].value, user,
+                       query_set_params=query_set_params)
+
+        self.queryset = query_set_params.apply(
+            Opinion.objects.prefetch_related('categories'))
 
     def set_sort_order_options(self, request: HttpRequest,
                                query_params: dict[str, QueryArg]):
@@ -240,12 +213,16 @@ class OpinionList(LoginRequiredMixin, generic.ListView):
         :param query_params: request query
         """
         # set ordering
-        order = query_params[ORDER_QUERY].value
-        ordering = order.order
-        if order not in [OpinionSortOrder.NEWEST, OpinionSortOrder.OLDEST]:
-            # secondary sort by newest
-            ordering = (ordering, OpinionSortOrder.NEWEST.order)
-        self.ordering = ordering
+        order: OpinionSortOrder = query_params[ORDER_QUERY].value
+        ordering = [order.order]    # list of lookups
+        if order.to_field() != OpinionSortOrder.DEFAULT.to_field():
+            # add secondary sort by default sort option
+            ordering.append(OpinionSortOrder.DEFAULT.order)
+        # published date is only set once opinion is published so apply an
+        # additional orderings: by updated and id
+        ordering.append(f'{DATE_NEWEST_LOOKUP}{Opinion.UPDATED_FIELD}')
+        ordering.append(f'{Opinion.ID_FIELD}')
+        self.ordering = tuple(ordering)
 
     def set_pagination(
             self, query_params: dict[str, QueryArg]):
@@ -275,10 +252,15 @@ class OpinionList(LoginRequiredMixin, generic.ListView):
         if isinstance(ordering, tuple):
             # make primary sort case-insensitive
             # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#django.db.models.query.QuerySet.order_by
-            order_list = list(ordering)
-            order_list[0] = Lower(order_list[0][1:]).desc() \
-                if order_list[0].startswith('-') else Lower(order_list[0])
-            ordering = tuple(order_list)
+            def insensitive_order(order: str):
+                """ Make text orderings case-insensitive """
+                non_text = Opinion.is_date_lookup(order) or is_id_lookup(order)
+                return \
+                    order if non_text else \
+                    Lower(order[1:]).desc() \
+                    if order.startswith(DESC_LOOKUP) else Lower(order)
+            ordering = tuple(
+                map(insensitive_order, ordering))
         return ordering
 
     def get_context_data(self, *, object_list=None, **kwargs) -> dict:
@@ -316,7 +298,6 @@ class OpinionList(LoginRequiredMixin, generic.ListView):
                 on_ends=OPINION_PAGINATION_ON_ENDS)
             ]
         })
-
         return context
 
     def render_to_response(self, context, **response_kwargs):
@@ -368,7 +349,7 @@ class OpinionSearch(OpinionList):
         self.set_sort_order_options(request, query_params)
 
         # set the query
-        self.set_queryset(query_params)
+        self.set_queryset(query_params, request.user)
 
         # set ordering
         self.set_ordering(query_params)
@@ -382,25 +363,22 @@ class OpinionSearch(OpinionList):
         return super(OpinionList, self). \
             get(request, *args, **kwargs)
 
-    def set_queryset(self, query_params: dict[str, QueryArg]):
+    def set_queryset(self, query_params: dict[str, QueryArg], user: User):
         """
         Set the queryset to get the list of items for this view
         :param query_params: request query
+        :param user: current user
         """
         # https://docs.djangoproject.com/en/4.1/ref/models/querysets/
         # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#id4
         # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#field-lookups
 
-        and_lookups = {}
-        or_lookups = []
+        query_set_params = QuerySetParams()
         query_entered = False  # query term entered flag
-
-        applied = {}
 
         for key in FILTERS_ORDER:
             value = query_params[key].value
             was_set = query_params[key].was_set
-            applied[key] = was_set
 
             if value:
                 if key in ALWAYS_FILTERS and not was_set:
@@ -411,88 +389,80 @@ class OpinionSearch(OpinionList):
                 if not query_entered:
                     query_entered = was_set
 
-                terms, ands, ors = get_lookup(key, value)
-                if terms:
-                    and_lookups.update(ands)
-                    or_lookups.extend(ors)
+                get_lookup(key, value, user, query_set_params=query_set_params)
 
-                if key == SEARCH_QUERY and terms:
+                if key == SEARCH_QUERY and not query_set_params.is_empty:
                     # search is a shortcut filter, if search is specified
                     # nothing else is checked after
                     break
 
-        if not query_entered or len(and_lookups) > 0 or len(or_lookups) > 0:
+        if not query_entered or not query_set_params.is_empty:
             # no query term entered => all opinions,
             # or query term => search
 
             for key in ALWAYS_FILTERS:
-                if applied.get(key, False):
-                    continue
+                if key in query_set_params.params:
+                    continue    # always filter was already applied
 
                 value = query_params[key].value
                 if value:
-                    terms, ands, ors = get_lookup(key, value)
-                    if terms:
-                        and_lookups.update(ands)
-                        or_lookups.extend(ors)
+                    get_lookup(key, value, user,
+                               query_set_params=query_set_params)
 
-            # OR queries of title and content contains terms
-            # (if no specific search terms specified)
-            # e.g. "term" =>
-            #  "WHERE ( ("title") LIKE '<term>' OR ("content") LIKE '<term>')"
-            # AND queries of specific search terms
-            # e.g. 'title="term"' =>
-            #  "WHERE ("title") LIKE '<term>'"
-            self.queryset = Opinion.objects. \
-                prefetch_related('categories'). \
-                filter(
-                    Q(_connector=Q.OR, *or_lookups), **and_lookups)
+            self.queryset = query_set_params.apply(
+                Opinion.objects.prefetch_related('categories'))
+
         else:
             # invalid query term entered
             self.queryset = Opinion.objects.none()
 
 
 def get_lookup(
-            query: str, value: Any
-        ) -> tuple[bool, dict[Any, Any], list[Any]]:
+            query: str, value: Any, user: User,
+            query_set_params: QuerySetParams = None
+        ) -> QuerySetParams:
     """
-    Get the query lookup for the specified
+    Get the query lookup for the specified value
     :param query: query argument
     :param value: argument value
-    :return: tuple of AND lookups and OR lookups
+    :param user: current user
+    :param query_set_params: query set params
+    :return: query set params
     """
-    and_lookups = {}
-    or_lookups = []
+    if query_set_params is None:
+        query_set_params = QuerySetParams()
 
     if query in [SEARCH_QUERY, CATEGORY_QUERY] or query in DATE_QUERIES:
-        terms, ands, ors = get_search_term(value)
-        if terms:
-            and_lookups.update(ands)
-            or_lookups.extend(ors)
+        query_set_params = get_search_term(
+            value, user, query_set_params=query_set_params)
     elif query == STATUS_QUERY:
-        if value != QueryStatus.ALL:
-            and_lookups[
-                FIELD_LOOKUPS[query]] = value.display
+        if value == QueryStatus.ALL:
+            query_set_params.add_all_inclusive(query)
+        else:
+            query_set_params.add_and_lookup(
+                query, FIELD_LOOKUPS[query], value.display)
         # else do not include status in query
+    elif query == HIDDEN_QUERY:
+        get_hidden_query(query_set_params, value, user)
     elif value:
-        and_lookups[
-            FIELD_LOOKUPS[query]] = value
+        query_set_params.add_and_lookup(query, FIELD_LOOKUPS[query], value)
 
-    return \
-        len(and_lookups) > 0 or len(or_lookups) > 0, and_lookups, or_lookups
+    return query_set_params
 
 
-def get_search_term(value: str) -> tuple[bool, dict, list]:
+def get_search_term(
+            value: str, user: User,
+            query_set_params: QuerySetParams = None
+        ) -> QuerySetParams:
     """
     Generate search terms for specified input value
-    :param value:
-    :return: tuple of
-                have terms flag: True when have a search term
-                AND search terms: dict of terms to be ANDed together
-                OR search terms: list of terms to be ORed together
+    :param value: search value
+    :param user: current user
+    :param query_set_params: query set params
+    :return: query set params
     """
-    and_lookups = {}
-    or_lookups = []
+    if query_set_params is None:
+        query_set_params = QuerySetParams()
 
     for regex, query, group in SEARCH_REGEX:
         match = regex.match(value)
@@ -501,20 +471,26 @@ def get_search_term(value: str) -> tuple[bool, dict, list]:
                 # need inner queryset to get list of categories with names
                 # like the search term and then look for opinions with those
                 # categories
-                # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#in
+                # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#icontains
                 inner_qs = Category.objects.filter(**{
                     f'{Category.NAME_FIELD}__icontains': match.group(group)
                 })
-                and_lookups[FIELD_LOOKUPS[query]] = inner_qs
+                query_set_params.add_and_lookup(
+                    query, FIELD_LOOKUPS[query], inner_qs)
             elif query == STATUS_QUERY:
                 # need inner queryset to get list of statuses with names
                 # like the search term and then look for opinions with those
                 # statuses
-                # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#in
-                inner_qs = Status.objects.filter(**{
-                    f'{Status.NAME_FIELD}__icontains': match.group(group)
-                })
-                and_lookups[FIELD_LOOKUPS[query]] = inner_qs
+                choice_arg_query(
+                    query_set_params, match.group(group).lower(),
+                    QueryStatus, QueryStatus.ALL,
+                    Status, Status.NAME_FIELD, query, FIELD_LOOKUPS[query]
+                )
+            elif query == HIDDEN_QUERY:
+                # need to filter/exclude by list of opinions that the user has
+                # hidden
+                hidden = Hidden.from_arg(match.group(group).lower())
+                get_hidden_query(query_set_params, hidden, user)
             elif query in DATE_QUERIES:
                 try:
                     date = datetime(
@@ -523,14 +499,18 @@ def get_search_term(value: str) -> tuple[bool, dict, list]:
                         int(match.group(DATE_QUERY_DAY_GROUP)),
                         tzinfo=ZoneInfo("UTC")
                     )
-                    and_lookups[FIELD_LOOKUPS[query]] = date
+                    query_set_params.add_and_lookup(
+                        query, FIELD_LOOKUPS[query], date)
                 except ValueError:
                     # ignore invalid date
+                    # TODO add errors to QuerySetParams
+                    # so they can be returned to user
                     pass
             else:
-                and_lookups[FIELD_LOOKUPS[query]] = match.group(group)
+                query_set_params.add_and_lookup(
+                    query, FIELD_LOOKUPS[query], match.group(group))
 
-    if len(and_lookups) == 0:
+    if query_set_params.is_empty:
         if not any(
                 list(
                     map(lambda x: x in value, MARKER_CHARS)
@@ -555,10 +535,48 @@ def get_search_term(value: str) -> tuple[bool, dict, list]:
             #   "WHERE ("content") LIKE '<term>'"
             # ]
             for q in to_query:
-                or_lookups.append(
-                    Q(_connector=Q.OR, **{FIELD_LOOKUPS[q]: term
-                                          for term in or_q[q]})
+                query_set_params.add_or_lookup(
+                    '-'.join(to_query),
+                    Q(_connector=Q.OR, **{
+                        FIELD_LOOKUPS[q]: term for term in or_q[q]
+                    })
                 )
 
-    return \
-        len(and_lookups) > 0 or len(or_lookups) > 0, and_lookups, or_lookups
+    return query_set_params
+
+
+def get_hidden_query(
+        query_set_params: QuerySetParams,
+        hidden: Hidden, user: User):
+    """
+    Get the hidden status query
+    :param query_set_params: query params to update
+    :param hidden: hidden status
+    :param user: current user
+    :return: function to apply query
+    """
+    if hidden == Hidden.IGNORE:
+        query_set_params.add_all_inclusive(HIDDEN_QUERY)
+    elif isinstance(hidden, Hidden):
+        # get ids of opinions hidden by the user
+        hidden_qs = HideStatus.objects.filter(**{
+            HideStatus.USER_FIELD: user,
+            f'{HideStatus.OPINION_FIELD}__isnull': False
+        }).values(HideStatus.OPINION_FIELD)
+
+        query_params = {
+            f'{ID_FIELD}__in': hidden_qs
+        }
+
+        if hidden == Hidden.NO:
+            # exclude hidden opinions
+            def qs_exclude(qs):
+                return qs.exclude(**query_params)
+            query_set = qs_exclude
+        else:
+            # only hidden opinions
+            def qs_filter(qs):
+                return qs.filter(**query_params)
+            query_set = qs_filter
+
+        query_set_params.add_qs_func(HIDDEN_QUERY, query_set)

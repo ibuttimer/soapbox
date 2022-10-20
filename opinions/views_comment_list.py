@@ -34,6 +34,7 @@ from django.views import generic
 from django.views.decorators.http import require_http_methods
 
 from soapbox import OPINIONS_APP_NAME, GET
+from user.models import User
 from utils import Crud, app_template_path
 from .comment_data import CommentData, get_comment_bundle
 from .comment_utils import get_comment_lookup, COMMENT_ALWAYS_FILTERS, \
@@ -42,16 +43,17 @@ from .constants import (
     ORDER_QUERY, STATUS_QUERY, PER_PAGE_QUERY,
     AUTHOR_QUERY, OPINION_PAGINATION_ON_EACH_SIDE, OPINION_PAGINATION_ON_ENDS,
     SEARCH_QUERY,
-    REORDER_QUERY
+    REORDER_QUERY, DESC_LOOKUP, DATE_NEWEST_LOOKUP
 )
-from .models import Comment
-from .reactions import COMMENT_REACTIONS
+from .models import Comment, is_id_lookup
+from .query_params import QuerySetParams
+from .reactions import COMMENT_REACTIONS, get_reaction_status
 from .views_utils import (
-    comment_list_query_args, comment_permission_check, CommentSortOrder,
-    PerPage, comment_search_query_args, QueryStatus,
-    QueryArg, REORDER_REQ_QUERY_ARGS,
+    comment_list_query_args, comment_permission_check,
+    comment_search_query_args, REORDER_REQ_QUERY_ARGS,
     NON_REORDER_COMMENT_LIST_QUERY_ARGS
 )
+from .enums import QueryArg, QueryStatus, CommentSortOrder, PerPage
 
 
 class ListTemplate(Enum):
@@ -101,7 +103,7 @@ class CommentList(LoginRequiredMixin, generic.ListView):
         self.set_sort_order_options(request, query_params)
 
         # set queryset
-        self.set_queryset(query_params)
+        self.set_queryset(query_params, request.user)
 
         # set ordering
         self.set_ordering(query_params)
@@ -115,18 +117,19 @@ class CommentList(LoginRequiredMixin, generic.ListView):
         return super(CommentList, self). \
             get(request, *args, **kwargs)
 
-    def set_queryset(self, query_params: dict[str, QueryArg]):
+    def set_queryset(self, query_params: dict[str, QueryArg], user: User):
         """
         Set the queryset to get the list of items for this view
         :param query_params: request query
+        :param user: current user
         """
-        and_lookups = {}
-        for query in NON_REORDER_COMMENT_LIST_QUERY_ARGS:
-            _, ands, _ = get_comment_lookup(query, query_params[query].value)
-            and_lookups.update(ands)
+        query_set_params = QuerySetParams()
 
-        self.queryset = Comment.objects. \
-            filter(**and_lookups)
+        for query in NON_REORDER_COMMENT_LIST_QUERY_ARGS:
+            get_comment_lookup(query, query_params[query].value, user,
+                               query_set_params=query_set_params)
+
+        self.queryset = query_set_params.apply(Comment.objects)
 
     def set_sort_order_options(self, request: HttpRequest,
                                query_params: dict[str, QueryArg]):
@@ -159,11 +162,15 @@ class CommentList(LoginRequiredMixin, generic.ListView):
         """
         # set ordering
         order = query_params[ORDER_QUERY].value
-        ordering = order.order
-        if order not in [CommentSortOrder.NEWEST, CommentSortOrder.OLDEST]:
-            # secondary sort by oldest
-            ordering = (ordering, CommentSortOrder.OLDEST.order)
-        self.ordering = ordering
+        ordering = [order.order]    # list of lookups
+        if order.to_field() != CommentSortOrder.DEFAULT.to_field():
+            # add secondary sort by default sort option
+            ordering.append(CommentSortOrder.DEFAULT.order)
+        # published date is only set once comment is published so apply an
+        # additional orderings: by updated and id
+        ordering.append(f'{DATE_NEWEST_LOOKUP}{Comment.UPDATED_FIELD}')
+        ordering.append(f'{Comment.ID_FIELD}')
+        self.ordering = tuple(ordering)
 
     def set_pagination(
             self, query_params: dict[str, QueryArg]):
@@ -193,10 +200,15 @@ class CommentList(LoginRequiredMixin, generic.ListView):
         if isinstance(ordering, tuple):
             # make primary sort case-insensitive
             # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#django.db.models.query.QuerySet.order_by
-            order_list = list(ordering)
-            order_list[0] = Lower(order_list[0][1:]).desc() \
-                if order_list[0].startswith('-') else Lower(order_list[0])
-            ordering = tuple(order_list)
+            def insensitive_order(order: str):
+                """ Make text orderings case-insensitive """
+                non_text = Comment.is_date_lookup(order) or is_id_lookup(order)
+                return \
+                    order if non_text else \
+                    Lower(order[1:]).desc() \
+                    if order.startswith(DESC_LOOKUP) else Lower(order)
+            ordering = tuple(
+                map(insensitive_order, ordering))
         return ordering
 
     def get_context_data(self, *, object_list=None, **kwargs) -> dict:
@@ -288,7 +300,7 @@ class CommentSearch(CommentList):
         self.set_sort_order_options(request, query_params)
 
         # set the query
-        self.set_queryset(query_params)
+        self.set_queryset(query_params, request.user)
 
         # set ordering
         self.set_ordering(query_params)
@@ -302,25 +314,22 @@ class CommentSearch(CommentList):
         return super(CommentList, self). \
             get(request, *args, **kwargs)
 
-    def set_queryset(self, query_params: dict[str, QueryArg]):
+    def set_queryset(self, query_params: dict[str, QueryArg], user: User):
         """
         Set the queryset to get the list of items for this view
         :param query_params: request query
+        :param user: current user
         """
         # https://docs.djangoproject.com/en/4.1/ref/models/querysets/
         # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#id4
         # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#field-lookups
 
-        and_lookups = {}
-        or_lookups = []
+        query_set_params = QuerySetParams()
         query_entered = False  # query term entered flag
-
-        applied = {}
 
         for key in COMMENT_FILTERS_ORDER:
             value = query_params[key].value
             was_set = query_params[key].was_set
-            applied[key] = was_set
 
             if value:
                 if key in COMMENT_ALWAYS_FILTERS and not was_set:
@@ -331,41 +340,28 @@ class CommentSearch(CommentList):
                 if not query_entered:
                     query_entered = was_set
 
-                terms, ands, ors = get_comment_lookup(key, value)
-                if terms:
-                    and_lookups.update(ands)
-                    or_lookups.extend(ors)
+                get_comment_lookup(
+                    key, value, user, query_set_params=query_set_params)
 
-                if key == SEARCH_QUERY and terms:
+                if key == SEARCH_QUERY and not query_set_params.is_empty:
                     # search is a shortcut filter, if search is specified
                     # nothing else is checked after
                     break
 
-        if not query_entered or len(and_lookups) > 0 or len(or_lookups) > 0:
-            # no query term entered => all opinions,
+        if not query_entered or not query_set_params.is_empty:
+            # no query term entered => all comments,
             # or query term => search
 
             for key in COMMENT_ALWAYS_FILTERS:
-                if applied.get(key, False):
-                    continue
+                if key in query_set_params.params:
+                    continue    # always filter was already applied
 
                 value = query_params[key].value
                 if value:
-                    terms, ands, ors = get_comment_lookup(key, value)
-                    if terms:
-                        and_lookups.update(ands)
-                        or_lookups.extend(ors)
+                    get_comment_lookup(key, value, user,
+                                       query_set_params=query_set_params)
 
-            # OR queries of title and content contains terms
-            # (if no specific search terms specified)
-            # e.g. "term" =>
-            #  "WHERE ( ("title") LIKE '<term>' OR ("content") LIKE '<term>')"
-            # AND queries of specific search terms
-            # e.g. 'title="term"' =>
-            #  "WHERE ("title") LIKE '<term>'"
-            self.queryset = Comment.objects. \
-                filter(
-                    Q(_connector=Q.OR, *or_lookups), **and_lookups)
+            self.queryset = query_set_params.apply(Comment.objects)
         else:
             # invalid query term entered
             self.queryset = Comment.objects.none()
@@ -375,7 +371,7 @@ class CommentSearch(CommentList):
 @require_http_methods([GET])
 def opinion_comments(request: HttpRequest) -> HttpResponse:
     """
-    Class-based view for opinion.
+    Function view for opinion comments.
     :param request: http request
     :return:
     """
@@ -383,7 +379,10 @@ def opinion_comments(request: HttpRequest) -> HttpResponse:
 
     query_params = comment_list_query_args(request)
 
-    comments = get_comment_bundle(query_params)
+    comments = get_comment_bundle(query_params, request.user)
+
+    # get reaction controls for comments
+    reaction_ctrls = get_reaction_status(request.user, comments)
 
     return JsonResponse({
         'html': render_to_string(
@@ -393,6 +392,7 @@ def opinion_comments(request: HttpRequest) -> HttpResponse:
                 # same context as OpinionDetail::get
                 'comments': comments,
                 'comment_reactions': COMMENT_REACTIONS,
+                'reaction_ctrls': reaction_ctrls,
             },
             request=request)
     }, status=HTTPStatus.OK)

@@ -20,40 +20,34 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from datetime import datetime, date
 from http import HTTPStatus
 from typing import Any
 from unittest import skip
-from zoneinfo import ZoneInfo
 
 from django.http import HttpResponse
 
-from categories.models import Category, Status
 from opinions.constants import (
     OPINION_SEARCH_ROUTE_NAME, ORDER_QUERY, PAGE_QUERY, PER_PAGE_QUERY,
     TITLE_QUERY, CONTENT_QUERY, AUTHOR_QUERY, CATEGORY_QUERY, SEARCH_QUERY,
     ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY,
-    EQUAL_QUERY, STATUS_QUERY
+    EQUAL_QUERY, STATUS_QUERY, HIDDEN_QUERY
 )
 from opinions.models import Opinion
-from opinions.views_opinion_list import DATE_QUERIES
-from opinions.views_utils import OpinionSortOrder, PerPage, QueryStatus
+from opinions.enums import QueryStatus, OpinionSortOrder, PerPage, Hidden
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
-from .base_opinion_test_cls import BaseOpinionTest
+from .base_opinion_test import (
+    BaseOpinionTest, middle_word,
+    DATE_SPACED_FMT, DATE_SLASHED_FMT, DATE_DASHED_FMT, DATE_DOTTED_FMT
+)
 from .test_opinion_list import (
     OPINION_LIST_TEMPLATE, OPINION_LIST_SORT_TEMPLATE,
-    verify_opinion_list_content, sort_expected
+    verify_opinion_list_content
 )
 from ..category_mixin import CategoryMixin
 from ..soup_mixin import SoupMixin
-from ..user.base_user_test_cls import BaseUserTest
-
-DATE_SPACED_FMT = "%d %m %Y"
-DATE_SLASHED_FMT = "%d/%m/%Y"
-DATE_DASHED_FMT = "%d-%m-%Y"
-DATE_DOTTED_FMT = "%d.%m.%Y"
+from ..user.base_user_test import BaseUserTest
 
 
 class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
@@ -150,10 +144,11 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
     def get_query_options(self) -> tuple[Opinion, User, list[str, Any]]:
         """
         Get a list of queries
+        :return: tuple of opinion, opinion author and query options
         """
         opinion = TestOpinionSearch.opinions[0]
 
-        # all published opinions
+        # all published opinions (both hidden and unhidden)
         published = TestOpinionSearch.published_opinions()
 
         min_date = min(map(lambda op: op.published, published))
@@ -167,8 +162,16 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
                            :int(len(opinion.user.username)/2)]),
             (CATEGORY_QUERY, opinion.categories.all()[
                 int(opinion.categories.count()/2)].name),
+            # TODO partial category name test
+            # (CATEGORY_QUERY, opinion.categories.all()[
+            #     int(opinion.categories.count()/2)].name[:2]),
             (STATUS_QUERY, QueryStatus.ALL.arg),
             (STATUS_QUERY, QueryStatus.PUBLISH.arg),
+            (STATUS_QUERY, QueryStatus.PUBLISH.arg[
+                           :int(len(QueryStatus.PUBLISH.arg) / 2)]),
+            (HIDDEN_QUERY, Hidden.YES.arg),
+            (HIDDEN_QUERY, Hidden.NO.arg),
+            (HIDDEN_QUERY, Hidden.IGNORE.arg),
             (ON_OR_AFTER_QUERY, test_date.strftime(DATE_SPACED_FMT)),
             (ON_OR_BEFORE_QUERY, test_date.strftime(DATE_SLASHED_FMT)),
             (AFTER_QUERY, test_date.strftime(DATE_DASHED_FMT)),
@@ -190,10 +193,12 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
                 query = {
                     q: v
                 }
-                expected = self.get_expected(
-                    query, order, PerPage.DEFAULT)
 
                 msg = f'{q}: {v}, order {order}'
+                expected = BaseOpinionTest.get_expected(
+                    self, query, order, user, per_page=PerPage.DEFAULT)
+                msg = f'{msg}\n{expected}\n'
+
                 with self.subTest(msg):
                     response = self.get_opinion_list_by(query, order=order)
                     self.assertEqual(response.status_code, HTTPStatus.OK)
@@ -214,19 +219,20 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
             query = {
                 q: v
             }
-            expected = self.get_expected(
-                query, OpinionSortOrder.DEFAULT, None)
+            expected = BaseOpinionTest.get_expected(
+                self, query, OpinionSortOrder.DEFAULT, user)
 
             total = len(expected)
 
             for per_page in list(PerPage):
                 num_pages = int((total + per_page.arg - 1) / per_page.arg)
                 for count in range(1, num_pages + 1):
+                    msg = f'{query}  page {count}/{num_pages}'
 
-                    expected = self.get_expected(
-                        query, OpinionSortOrder.DEFAULT, per_page, count - 1)
+                    expected = BaseOpinionTest.get_expected(
+                        self, query, OpinionSortOrder.DEFAULT, user,
+                        per_page=per_page, page_num=count - 1)
 
-                    msg = f'page {count}/{num_pages}'
                     with self.subTest(msg):
                         response = self.get_opinion_list_by(
                             query, per_page=per_page, page=count)
@@ -257,11 +263,12 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
                     q2: v2
                 })
 
-                # check contents of first page
-                expected = self.get_expected(
-                    query, OpinionSortOrder.DEFAULT, PerPage.DEFAULT)
-
                 msg = f'{query}'
+                # check contents of first page
+                expected = BaseOpinionTest.get_expected(
+                    self, query, OpinionSortOrder.DEFAULT,
+                    user, per_page=PerPage.DEFAULT)
+
                 with self.subTest(msg):
                     response = self.get_opinion_list_by(query)
                     self.assertEqual(response.status_code, HTTPStatus.OK)
@@ -269,124 +276,3 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
                         response, OPINION_LIST_SORT_TEMPLATE)
                     verify_opinion_list_content(
                         self, expected, response, msg=msg)
-
-    def get_expected(self, query: dict, order: OpinionSortOrder,
-                     per_page: [PerPage, None], page_num: int = 0
-                     ) -> list[Opinion]:
-        """
-        Generate the expected results list
-        :param query: query parameters
-        :param order: sort order of results
-        :param per_page: results per page; None will return all
-        :param page_num: 0-based number of page to get
-        """
-        # all published opinions
-        expected = TestOpinionSearch.published_opinions()
-
-        for k, v in query.items():
-            if v is None:
-                continue
-            filter_func = None
-            if k in [TITLE_QUERY, CONTENT_QUERY]:
-                filter_func = text_in_field(
-                    Opinion.TITLE_FIELD if k == TITLE_QUERY
-                    else Opinion.CONTENT_FIELD, v)
-            elif k == AUTHOR_QUERY:
-                filter_func = text_in_field([
-                    Opinion.USER_FIELD,
-                    User.USERNAME_FIELD
-                ], v)
-            elif k == STATUS_QUERY:
-                if v != QueryStatus.ALL.arg:
-                    query_status = \
-                        list(filter(lambda qs: qs.arg == v, QueryStatus))
-                    self.assertEqual(len(query_status), 1,
-                                     f'QueryStatus {v} not found')
-
-                    filter_func = text_in_field([
-                        Opinion.STATUS_FIELD,
-                        Status.NAME_FIELD
-                    ], query_status[0].display)
-                # else all statuses so no need for filtering
-            elif k == CATEGORY_QUERY:
-                filter_func = category_in_list(v)
-            elif k in DATE_QUERIES:
-                filter_func = date_check(v, k)
-
-            expected = list(
-                filter(
-                    filter_func, expected
-                ))
-            if len(expected) == 0:
-                break   # skip unnecessary additional filtering
-
-        return sort_expected(
-            expected, order, per_page, page_num=page_num)
-
-
-def text_in_field(field: [str, list[str]], text: str):
-    """
-    Check for `text` in the specified field
-    :param field: field(s) to check
-    :param text: text to look for
-    :return: filter function
-    """
-    fields = [field] if isinstance(field, str) else field
-
-    def func(instance):
-        obj = instance
-        for fld in fields[:-1]:
-            obj = getattr(obj, fld)
-        return text in getattr(obj, fields[-1])
-
-    return func
-
-
-def category_in_list(name: str):
-    """
-    Check for category in opinion categories
-    :param name: name of category
-    :return: filter function
-    """
-    def func(op):
-        return len(list(filter(
-            lambda cat:
-            text_in_field(Category.NAME_FIELD, name)(cat),
-            op.categories.all()
-        ))) > 0
-    return func
-
-
-def date_check(date_str: str, test: str):
-    """
-    Check opinion date satisfies condition
-    :param date_str: date
-    :param test: test for date
-    :return: filter function
-    """
-    fmt = DATE_SPACED_FMT if ' ' in date_str else \
-        DATE_SLASHED_FMT if '/' in date_str else \
-        DATE_DASHED_FMT if '-' in date_str else DATE_DOTTED_FMT
-    test_date = datetime.strptime(date_str, fmt)
-    test_date = test_date.replace(tzinfo=ZoneInfo("UTC"))
-    test_date = date(test_date.year, test_date.month, test_date.day)
-
-    def func(op):
-        op_date = date(op.published.year, op.published.month, op.published.day)
-        return op_date >= test_date if test == ON_OR_AFTER_QUERY else \
-            op_date <= test_date if test == ON_OR_BEFORE_QUERY else \
-            op_date > test_date if test == AFTER_QUERY else \
-            op_date < test_date if test == BEFORE_QUERY else \
-            op_date == test_date    # EQUAL_QUERY
-
-    return func
-
-
-def middle_word(text: str):
-    """
-    Get middle word in text
-    :param text:
-    :return:
-    """
-    split = text.split()
-    return split[int(len(split) / 2)]

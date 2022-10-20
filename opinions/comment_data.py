@@ -29,7 +29,8 @@ from .constants import (
 )
 from .models import Comment
 from .comment_utils import get_comment_queryset
-from .views_utils import PerPage, QueryArg, DEFAULT_COMMENT_DEPTH
+from .views_utils import DEFAULT_COMMENT_DEPTH
+from .enums import QueryArg, PerPage
 
 REPLY_CONTAINER_ID = 'id--comment-collapse'
 REPLY_MORE_CONTAINER_ID = f'{REPLY_CONTAINER_ID}-more'
@@ -107,15 +108,16 @@ class CommentBundle(CommentData):
 
 
 def get_comment_bundle(
-        query_params: dict[str, QueryArg]) -> list[CommentBundle]:
+        query_params: dict[str, QueryArg], user: User) -> list[CommentBundle]:
     """
     Get comment bundle, i.e. comments on opinion and comments on those
     comments
     :param query_params: query parameters
+    :param user: current user
     :return: list of comments
     """
     # get first level comments
-    comment_bundles = get_comments(query_params)
+    comment_bundles = get_comments(query_params, user)
 
     depth = query_params.get(COMMENT_DEPTH_QUERY, DEFAULT_COMMENT_DEPTH)
     if isinstance(depth, QueryArg):
@@ -131,19 +133,21 @@ def get_comment_bundle(
         for comment_bundle in comment_bundles:
             sub_query_params[PARENT_ID_QUERY] = comment_bundle.comment.id
             # recursive call to get next level comments
-            comment_bundle.comments = get_comment_bundle(sub_query_params)
+            comment_bundle.comments = \
+                get_comment_bundle(sub_query_params, user)
 
     return comment_bundles
 
 
 def get_comments(
-        query_params: dict[str, QueryArg]) -> list[CommentBundle]:
+        query_params: dict[str, QueryArg], user: User) -> list[CommentBundle]:
     """
     Get comment bundle, i.e. comments on opinion/comment
     :param query_params: query parameters
+    :param user: current user
     :return: list of comments
     """
-    query_set = get_comment_queryset(query_params)
+    query_set = get_comment_queryset(query_params, user)
 
     per_page = query_params.get(
         PER_PAGE_QUERY, PerPage.DEFAULT).query_arg_value
@@ -154,7 +158,7 @@ def get_comments(
     end = start + per_page
 
     count = query_set.count()
-    add_placeholder = end < count + 1
+    add_placeholder = end < count
     if add_placeholder:
         end += 1    # add extra for more placeholder
 

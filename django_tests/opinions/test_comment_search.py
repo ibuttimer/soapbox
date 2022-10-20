@@ -36,20 +36,20 @@ from opinions.constants import (
     EQUAL_QUERY, STATUS_QUERY
 )
 from opinions.models import Comment
-from opinions.views_opinion_list import DATE_QUERIES
-from opinions.views_utils import CommentSortOrder, PerPage, QueryStatus
+from opinions.enums import QueryStatus, CommentSortOrder, PerPage
 
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
-from .base_opinion_test_cls import BaseOpinionTest
+from .base_comment_test import BaseCommentTest, sort_expected
+from .base_opinion_test import middle_word
 from .test_comment_list import (
     COMMENT_LIST_TEMPLATE, COMMENT_LIST_CONTENT_TEMPLATE,
-    verify_comment_list_content, sort_expected
+    verify_comment_list_content
 )
 from ..category_mixin import CategoryMixin
 from ..soup_mixin import SoupMixin
-from ..user.base_user_test_cls import BaseUserTest
+from ..user.base_user_test import BaseUserTest
 
 DATE_SPACED_FMT = "%d %m %Y"
 DATE_SLASHED_FMT = "%d/%m/%Y"
@@ -57,7 +57,7 @@ DATE_DASHED_FMT = "%d-%m-%Y"
 DATE_DOTTED_FMT = "%d.%m.%Y"
 
 
-class TestCommentSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
+class TestCommentSearch(SoupMixin, CategoryMixin, BaseCommentTest):
     """
     Test comment page search view
     https://docs.djangoproject.com/en/4.1/topics/testing/tools/
@@ -190,10 +190,11 @@ class TestCommentSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
                 query = {
                     q: v
                 }
-                expected = self.get_expected(
-                    query, order, PerPage.DEFAULT)
-
                 msg = f'{q}: {v}, order {order}'
+
+                expected = BaseCommentTest.get_expected(
+                    self, query, order, user, per_page=PerPage.DEFAULT)
+
                 with self.subTest(msg):
                     response = self.get_comment_list_by(query, order=order)
                     self.assertEqual(response.status_code, HTTPStatus.OK)
@@ -214,19 +215,20 @@ class TestCommentSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
             query = {
                 q: v
             }
-            expected = self.get_expected(
-                query, CommentSortOrder.DEFAULT, None)
+            expected = BaseCommentTest.get_expected(
+                self, query, CommentSortOrder.DEFAULT, user)
 
             total = len(expected)
 
             for per_page in list(PerPage):
                 num_pages = int((total + per_page.arg - 1) / per_page.arg)
                 for count in range(1, num_pages + 1):
-
-                    expected = self.get_expected(
-                        query, CommentSortOrder.DEFAULT, per_page, count - 1)
-
                     msg = f'page {count}/{num_pages} {query}'
+
+                    expected = BaseCommentTest.get_expected(
+                        self, query, CommentSortOrder.DEFAULT, user,
+                        per_page=per_page, page_num=count - 1)
+
                     with self.subTest(msg):
                         response = self.get_comment_list_by(
                             query, per_page=per_page, page=count)
@@ -256,12 +258,13 @@ class TestCommentSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
                 query.update({
                     q2: v2
                 })
+                msg = f'{query}'
 
                 # check contents of first page
-                expected = self.get_expected(
-                    query, CommentSortOrder.DEFAULT, PerPage.DEFAULT)
+                expected = BaseCommentTest.get_expected(
+                    self, query, CommentSortOrder.DEFAULT, user,
+                    per_page=PerPage.DEFAULT)
 
-                msg = f'{query}'
                 with self.subTest(msg):
                     response = self.get_comment_list_by(query)
                     self.assertEqual(response.status_code, HTTPStatus.OK)
@@ -269,105 +272,3 @@ class TestCommentSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
                         response, COMMENT_LIST_CONTENT_TEMPLATE)
                     verify_comment_list_content(
                         self, expected, response, msg=msg)
-
-    def get_expected(self, query: dict, order: CommentSortOrder,
-                     per_page: [PerPage, None], page_num: int = 0
-                     ) -> list[Comment]:
-        """
-        Generate the expected results list
-        :param query: query parameters
-        :param order: sort order of results
-        :param per_page: results per page; None will return all
-        :param page_num: 0-based number of page to get
-        """
-        # all published comments
-        expected = TestCommentSearch.published_comments()
-
-        for k, v in query.items():
-            if v is None:
-                continue
-            filter_func = None
-            if k in [CONTENT_QUERY]:
-                filter_func = text_in_field(Comment.CONTENT_FIELD, v)
-            elif k == AUTHOR_QUERY:
-                filter_func = text_in_field([
-                    Comment.USER_FIELD,
-                    User.USERNAME_FIELD
-                ], v)
-            elif k == STATUS_QUERY:
-                if v != QueryStatus.ALL.arg:
-                    query_status = \
-                        list(filter(lambda qs: qs.arg == v, QueryStatus))
-                    self.assertEqual(len(query_status), 1,
-                                     f'QueryStatus {v} not found')
-
-                    filter_func = text_in_field([
-                        Comment.STATUS_FIELD,
-                        Status.NAME_FIELD
-                    ], query_status[0].display)
-                # else all statuses so no need for filtering
-            elif k in DATE_QUERIES:
-                filter_func = date_check(v, k)
-
-            expected = list(
-                filter(
-                    filter_func, expected
-                ))
-            if len(expected) == 0:
-                break   # skip unnecessary additional filtering
-
-        return sort_expected(
-            expected, order, per_page, page_num=page_num)
-
-
-def text_in_field(field: [str, list[str]], text: str):
-    """
-    Check for `text` in the specified field
-    :param field: field(s) to check
-    :param text: text to look for
-    :return: filter function
-    """
-    fields = [field] if isinstance(field, str) else field
-
-    def func(instance):
-        obj = instance
-        for fld in fields[:-1]:
-            obj = getattr(obj, fld)
-        return text in getattr(obj, fields[-1])
-
-    return func
-
-
-def date_check(date_str: str, test: str):
-    """
-    Check opinion date satisfies condition
-    :param date_str: date
-    :param test: test for date
-    :return: filter function
-    """
-    fmt = DATE_SPACED_FMT if ' ' in date_str else \
-        DATE_SLASHED_FMT if '/' in date_str else \
-        DATE_DASHED_FMT if '-' in date_str else DATE_DOTTED_FMT
-    test_date = datetime.strptime(date_str, fmt)
-    test_date = test_date.replace(tzinfo=ZoneInfo("UTC"))
-    test_date = date(test_date.year, test_date.month, test_date.day)
-
-    def func(op):
-        op_date = date(op.created.year, op.created.month, op.created.day)
-        return op_date >= test_date if test == ON_OR_AFTER_QUERY else \
-            op_date <= test_date if test == ON_OR_BEFORE_QUERY else \
-            op_date > test_date if test == AFTER_QUERY else \
-            op_date < test_date if test == BEFORE_QUERY else \
-            op_date == test_date    # EQUAL_QUERY
-
-    return func
-
-
-def middle_word(text: str):
-    """
-    Get middle word in text
-    :param text:
-    :return:
-    """
-    split = text.split()
-    return split[int(len(split) / 2)]

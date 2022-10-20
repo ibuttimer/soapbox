@@ -20,20 +20,19 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from .constants import (
-    OPINION_ID_ROUTE_NAME, OPINION_NEW_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME,
-    OPINION_PREVIEW_ID_ROUTE_NAME, OPINION_STATUS_ID_ROUTE_NAME,
-    DESC_LOOKUP, DATE_OLDEST_LOOKUP, DATE_NEWEST_LOOKUP
-)
+from collections import namedtuple
 
-__all__ = [
-    'OPINION_ID_ROUTE_NAME',
-    'OPINION_NEW_ROUTE_NAME',
-    'OPINION_SLUG_ROUTE_NAME',
-    'OPINION_PREVIEW_ID_ROUTE_NAME',
-    'OPINION_STATUS_ID_ROUTE_NAME',
-
-    'DESC_LOOKUP',
-    'DATE_OLDEST_LOOKUP',
-    'DATE_NEWEST_LOOKUP',
-]
+Reaction = namedtuple("Reaction", [
+    "name",         # reaction name
+    "id",           # identifier, used to generate ids for reaction buttons
+    "icon",         # icon to use
+    "aria",         # aria label
+    "type",         # type; 'modal' or 'ajax'
+    "url",          # url for ajax
+    "option",       # selected option/target modal
+    "disabled",     # reaction disabled
+], defaults=['', '', '', '', '', '', '', False])
+ReactionCtrl = namedtuple("ReactionCtrl", [
+    "selected",     # is selected flag
+    "disabled",     # reaction disabled
+], defaults=[False, False])

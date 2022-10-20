@@ -25,7 +25,7 @@ from datetime import datetime, timezone, MINYEAR
 from categories import STATUS_DRAFT
 from categories.models import Status
 from opinions.models import Review
-from .base_opinion_test_cls import BaseOpinionTest
+from .base_opinion_test import BaseOpinionTest
 
 
 class TestReviewModel(BaseOpinionTest):

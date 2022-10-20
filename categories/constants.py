@@ -22,6 +22,7 @@
 #
 
 # common field names
+ID_FIELD = "id"
 NAME_FIELD = "name"
 DESCRIPTION_FIELD = "description"
 
@@ -37,3 +38,11 @@ STATUS_APPROVED = 'Approved'
 STATUS_REJECTED = 'Rejected'
 
 CATEGORY_UNASSIGNED = 'Unassigned'
+
+# reaction statuses display names
+REACTION_AGREE = 'Agree'
+REACTION_DISAGREE = 'Disagree'
+REACTION_HIDE = 'Hide'
+REACTION_SHOW = 'Show'
+REACTION_FOLLOW = 'Follow'
+REACTION_UNFOLLOW = 'Unfollow'

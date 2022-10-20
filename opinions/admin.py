@@ -22,7 +22,7 @@
 #
 from django.contrib import admin
 
-from .models import Opinion, Comment, Review
+from .models import Opinion, Comment, Review, AgreementStatus, HideStatus
 
 
 @admin.register(Opinion)
@@ -38,6 +38,20 @@ class CommentAdmin(admin.ModelAdmin):
 
 
 @admin.register(Review)
-class OpinionAdmin(admin.ModelAdmin):
+class ReviewAdmin(admin.ModelAdmin):
     """ Class representing the Review model in the admin interface """
+    pass
+
+
+@admin.register(AgreementStatus)
+class AgreementStatusAdmin(admin.ModelAdmin):
+    """
+    Class representing the AgreementStatus model in the admin interface
+    """
+    pass
+
+
+@admin.register(HideStatus)
+class HideStatusAdmin(admin.ModelAdmin):
+    """ Class representing the HideStatus model in the admin interface """
     pass

@@ -20,20 +20,22 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from .constants import (
-    OPINION_ID_ROUTE_NAME, OPINION_NEW_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME,
-    OPINION_PREVIEW_ID_ROUTE_NAME, OPINION_STATUS_ID_ROUTE_NAME,
-    DESC_LOOKUP, DATE_OLDEST_LOOKUP, DATE_NEWEST_LOOKUP
-)
 
-__all__ = [
-    'OPINION_ID_ROUTE_NAME',
-    'OPINION_NEW_ROUTE_NAME',
-    'OPINION_SLUG_ROUTE_NAME',
-    'OPINION_PREVIEW_ID_ROUTE_NAME',
-    'OPINION_STATUS_ID_ROUTE_NAME',
+from django import template
 
-    'DESC_LOOKUP',
-    'DATE_OLDEST_LOOKUP',
-    'DATE_NEWEST_LOOKUP',
-]
+from ..data_structures import Reaction
+
+register = template.Library()
+
+# https://docs.djangoproject.com/en/4.1/howto/custom-template-tags/#simple-tags
+
+
+@register.simple_tag
+def reaction_li_id(reaction: Reaction, target_id: int):
+    """
+    Generate a reaction list item id as used in reactions snippet
+    :param reaction: reaction li is for
+    :param target_id: id of target
+    :return: id
+    """
+    return f"id--react-li-{reaction.id}-{target_id}"
