@@ -110,6 +110,9 @@
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
+                                        <a class="dropdown-item" href="{% url 'opinions:opinions' %}?pinned=yes">Pinned</a>
+                                    </li>
+                                    <li>
                                         <a class="dropdown-item" href="{% url 'opinions:opinions' %}">All</a>
                                     </li>
                                     {% endif %}
@@ -272,8 +275,12 @@
 
     <script>
         /* Enable Bootstrap tooltips */
-        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
-        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+        function enableTooltips() {
+            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+            const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+        }
+
+        enableTooltips();
     </script>
 </body>
 </html>

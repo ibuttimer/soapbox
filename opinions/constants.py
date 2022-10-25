@@ -54,6 +54,7 @@ OPINION_PREVIEW_ID_URL = url_path(OPINION_ID_URL, "preview")
 OPINION_STATUS_ID_URL = url_path(OPINION_ID_URL, "status")
 OPINION_LIKE_ID_URL = url_path(OPINION_ID_URL, "like")
 OPINION_HIDE_ID_URL = url_path(OPINION_ID_URL, "hide")
+OPINION_PIN_ID_URL = url_path(OPINION_ID_URL, "pin")
 OPINION_COMMENT_ID_URL = url_path(OPINION_ID_URL, "comment")
 
 COMMENTS_URL = append_slash("comments")
@@ -73,6 +74,7 @@ OPINION_PREVIEW_ID_ROUTE_NAME = f"preview_{OPINION_ID_ROUTE_NAME}"
 OPINION_STATUS_ID_ROUTE_NAME = f"status_{OPINION_ID_ROUTE_NAME}"
 OPINION_LIKE_ID_ROUTE_NAME = f"like_{OPINION_ID_ROUTE_NAME}"
 OPINION_HIDE_ID_ROUTE_NAME = f"hide_{OPINION_ID_ROUTE_NAME}"
+OPINION_PIN_ID_ROUTE_NAME = f"pin_{OPINION_ID_ROUTE_NAME}"
 OPINION_COMMENT_ID_ROUTE_NAME = f"comment_{OPINION_ID_ROUTE_NAME}"
 
 COMMENTS_ROUTE_NAME = "comments"
@@ -99,6 +101,7 @@ AFTER_QUERY: str = 'after'                  # search > date
 BEFORE_QUERY: str = 'before'                # search < date
 EQUAL_QUERY: str = 'date'                   # search == date
 HIDDEN_QUERY: str = 'hidden'                # search hidden
+PINNED_QUERY: str = 'pinned'                # search pinned
 # Opinion specific search queries
 TITLE_QUERY: str = 'title'                  # search title
 CATEGORY_QUERY: str = 'category'            # search category
@@ -121,3 +124,18 @@ DATE_OLDEST_LOOKUP = ''
 """ Lookup order for ascending date, i.e. oldest first """
 DATE_NEWEST_LOOKUP = DESC_LOOKUP
 """ Lookup order for descending date, i.e. newest first """
+
+# templates related
+# templates/opinions/snippet/reactions.html
+TEMPLATE_TARGET_ID = 'target_id'            # id of target opinion/comment
+TEMPLATE_TARGET_TYPE = 'target_type'        # type of target; opinion/comment
+# list of Reaction (can be for opinion or comment)
+TEMPLATE_REACTIONS = 'reactions'
+TEMPLATE_REACTION_CTRLS = 'reaction_ctrls'  # dict of ReactionCtrl
+
+# templates/opinions/opinion_view.html
+# list of Reaction for opinion
+TEMPLATE_OPINION_REACTIONS = 'opinion_reactions'
+# templates/opinions/snippet/comment_bundle.html
+# list of Reaction for comment
+TEMPLATE_COMMENT_REACTIONS = 'comment_reactions'

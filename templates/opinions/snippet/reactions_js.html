@@ -1,0 +1,144 @@
+<!--
+  ~ MIT License
+  ~
+  ~ Copyright (c) 2022 Ian Buttimer
+  ~
+  ~ Permission is hereby granted, free of charge, to any person obtaining a copy
+  ~ of this software and associated documentation files (the "Software"), to deal
+  ~ in the Software without restriction, including without limitation the rights
+  ~ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  ~ copies of the Software, and to permit persons to whom the Software is
+  ~ furnished to do so, subject to the following conditions:
+  ~
+  ~ The above copyright notice and this permission notice shall be included in
+  ~ all copies or substantial portions of the Software.
+  ~
+  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  ~ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  ~ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  ~ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  ~ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  ~ SOFTWARE.
+  -->
+
+<script>
+    /**
+     * Update react status of current opinion
+     * :param event: click event
+     * :param done_func: reaction specific done handler function
+     */
+    function updateReactStatus(event, done_func) {
+        // hide tooltip
+        $("#" + event.currentTarget.id).tooltip("hide");
+
+        // href is on the button
+        const url = event.currentTarget.attributes['data-bs-href'].textContent;
+        // status option is on the span in the button (see reactions.html)
+        const statusOption = event.currentTarget.firstElementChild.attributes['data-bs-option'].textContent;
+
+        $.ajax({
+            url: url + "?status=" + statusOption,
+            method: 'patch',
+            headers: {
+                'X-CSRFTOKEN': '{{ csrf_token }}'
+            }
+        }).done(function(data) {
+            done_func(data);
+
+            // set click handlers for reactions
+            setReactionHandlers();
+            enableTooltips();
+        });
+    }
+
+    /**
+     * Update like/unlike status of current opinion
+     * :param event: click event
+     */
+    function updateLikeUnlike(event) {
+        updateReactStatus(event, function(data) {
+            $("#" + data.element_id).replaceWith(data.html);
+        });
+    }
+
+    /**
+     * Update pin/unpin status of current opinion
+     * :param event: click event
+     */
+    function updatePinUnpin(event) {
+        updateReactStatus(event, function(data) {
+            $("#" + data.element_id).replaceWith(data.html);
+        });
+    }
+
+    /**
+     * Update hide status of current opinion
+     * :param event: click event
+     */
+    function updateHide(event) {
+        updateReactStatus(event, function(data) {
+            document.location.href = data.redirect;
+        });
+    }
+
+    // Reaction buttons for comments are named 'id--react-comment-....'
+    const commentReactionsSelector = "button[id^='id--react-comment']";
+    // Reaction buttons for like are named 'id--react-agree-....'
+    const likeReactionsSelector = "button[id^='id--react-agree']";
+    // Reaction buttons for unlike are named 'id--react-disagree-....'
+    const unlikeReactionsSelector = "button[id^='id--react-disagree']";
+    // Reaction buttons for hide are named 'id--react-hide-....'
+    const hideReactionsSelector = "button[id^='id--react-hide']";
+    // Reaction buttons for hide are named 'id--react-show-....'
+    const showReactionsSelector = "button[id^='id--react-show']";
+    // Reaction buttons for pin are named 'id--react-pin-....'
+    const pinReactionsSelector = "button[id^='id--react-pin']";
+    // Reaction buttons for unpin are named 'id--react-unpin-....'
+    const unpinReactionsSelector = "button[id^='id--react-unpin']";
+
+    /* Set the click handlers to set the submit url for comments */
+    function setReactionHandlers() {
+        /* TODO removing and adding all the handlers is unnecessary */
+
+        // remove old handlers to prevent duplicates
+        for (let selector of [
+                commentReactionsSelector, likeReactionsSelector, unlikeReactionsSelector,
+                hideReactionsSelector, showReactionsSelector,
+                pinReactionsSelector, unpinReactionsSelector
+        ]) {
+            $(selector).off();
+        }
+
+        // add new handlers
+        $(commentReactionsSelector).on('click', (event) => {
+            // set the submit url for comments
+            $("#id--comment-submit-url").text(
+                event.currentTarget.attributes['data-bs-href'].textContent
+            );
+        });
+        for (let selector of [likeReactionsSelector, unlikeReactionsSelector]) {
+            $(selector).on('click', (event) => {
+                // update like/unlike status
+                updateLikeUnlike(event);
+            });
+        }
+        for (let selector of [hideReactionsSelector, showReactionsSelector]) {
+            $(selector).on('click', (event) => {
+                // update hide status
+                updateHide(event);
+            });
+        }
+        for (let selector of [pinReactionsSelector, unpinReactionsSelector]) {
+            $(selector).on('click', (event) => {
+                // update pin/unpin status
+                updatePinUnpin(event);
+            });
+        }
+    }
+
+    $(document).ready(function () {
+        // set click handlers for reactions
+        setReactionHandlers();
+    });
+</script>

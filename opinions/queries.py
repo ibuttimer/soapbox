@@ -20,46 +20,19 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from django.contrib import admin
-
-from .models import (
-    Opinion, Comment, Review, AgreementStatus, HideStatus, PinStatus
-)
+from user.models import User
+from .models import Opinion, PinStatus
 
 
-@admin.register(Opinion)
-class OpinionAdmin(admin.ModelAdmin):
-    """ Class representing the Opinion model in the admin interface """
-    pass
-
-
-@admin.register(Comment)
-class CommentAdmin(admin.ModelAdmin):
-    """ Class representing the Comment model in the admin interface """
-    pass
-
-
-@admin.register(Review)
-class ReviewAdmin(admin.ModelAdmin):
-    """ Class representing the Review model in the admin interface """
-    pass
-
-
-@admin.register(AgreementStatus)
-class AgreementStatusAdmin(admin.ModelAdmin):
+def opinion_is_pinned(opinion: Opinion, user: User):
     """
-    Class representing the AgreementStatus model in the admin interface
+    Check if an opinion is pinned
+    :param opinion: opinion to check
+    :param user: current user
+    :return: True if user has pinned opinion
     """
-    pass
-
-
-@admin.register(HideStatus)
-class HideStatusAdmin(admin.ModelAdmin):
-    """ Class representing the HideStatus model in the admin interface """
-    pass
-
-
-@admin.register(PinStatus)
-class PinStatusAdmin(admin.ModelAdmin):
-    """ Class representing the PinStatus model in the admin interface """
-    pass
+    query = PinStatus.objects.filter(**{
+        PinStatus.USER_FIELD: user,
+        PinStatus.OPINION_FIELD: opinion
+    })
+    return query.exists()

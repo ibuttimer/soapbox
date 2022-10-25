@@ -38,4 +38,4 @@ def reaction_li_id(reaction: Reaction, target_id: int):
     :param target_id: id of target
     :return: id
     """
-    return f"id--react-li-{reaction.id}-{target_id}"
+    return f"id--react-li-{reaction.identifier}-{target_id}"

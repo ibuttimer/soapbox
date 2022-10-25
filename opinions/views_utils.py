@@ -41,11 +41,11 @@ from .constants import (
     PAGE_QUERY, TITLE_QUERY, CONTENT_QUERY, CATEGORY_QUERY, AUTHOR_QUERY,
     ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY,
     EQUAL_QUERY, REORDER_QUERY, OPINION_ID_QUERY, PARENT_ID_QUERY,
-    COMMENT_DEPTH_QUERY, HIDDEN_QUERY
+    COMMENT_DEPTH_QUERY, HIDDEN_QUERY, PINNED_QUERY
 )
 from .enums import (
     ChoiceArg, QueryArg, QueryStatus, ReactionStatus, OpinionSortOrder,
-    CommentSortOrder, PerPage, Hidden
+    CommentSortOrder, PerPage, Hidden, Pinned
 )
 from .models import Opinion, Comment
 from .forms import OpinionForm
@@ -71,6 +71,7 @@ OPINION_LIST_QUERY_ARGS = [
     (COMMENT_DEPTH_QUERY, None, DEFAULT_COMMENT_DEPTH),
     # non-reorder query args
     (AUTHOR_QUERY, None, None),
+    (PINNED_QUERY, Pinned, Pinned.IGNORE),
 ]
 OPINION_LIST_QUERY_ARGS.extend(APPLIED_DEFAULTS_QUERY_ARGS)
 # request arguments for an comment list request
@@ -231,6 +232,17 @@ def opinion_like_query_args(
     """
     return opinion_query_args(
         request, STATUS_QUERY, ReactionStatus, ReactionStatus.AGREE)
+
+
+def opinion_pin_query_args(
+        request: HttpRequest) -> tuple[Status, ReactionStatus]:
+    """
+    Get opinion pin query arguments from request query
+    :param request: http request
+    :return: tuple of Status and ReactionStatus
+    """
+    return opinion_query_args(
+        request, STATUS_QUERY, ReactionStatus, ReactionStatus.PIN)
 
 
 def opinion_hide_query_args(

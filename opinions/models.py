@@ -24,6 +24,7 @@ from datetime import datetime, MINYEAR, timezone
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.template.defaultfilters import truncatechars
 
 from user.models import User
 from categories.models import Category, Status
@@ -55,6 +56,11 @@ class Opinion(SlugMixin, models.Model):
     CREATED_FIELD = CREATED_FIELD
     UPDATED_FIELD = UPDATED_FIELD
     PUBLISHED_FIELD = PUBLISHED_FIELD
+    ALL_FIELDS = [
+        ID_FIELD, TITLE_FIELD, CONTENT_FIELD, EXCERPT_FIELD,
+        CATEGORIES_FIELD, STATUS_FIELD, USER_FIELD, SLUG_FIELD,
+        CREATED_FIELD, UPDATED_FIELD, PUBLISHED_FIELD
+    ]
 
     SEARCH_DATE_FIELD = PUBLISHED_FIELD
     DATE_FIELDS = [CREATED_FIELD, UPDATED_FIELD, PUBLISHED_FIELD]
@@ -93,7 +99,8 @@ class Opinion(SlugMixin, models.Model):
         ordering = [TITLE_FIELD]
 
     def __str__(self):
-        return f'{self.title} {self.status.short_name}'
+        return f'{Opinion.MODEL_NAME}[{self.id}]:' \
+               f'{truncatechars(self.title, 20)} {self.status.short_name}'
 
     def set_slug(self, title: str):
         """
@@ -173,7 +180,8 @@ class Comment(SlugMixin, models.Model):
         ordering = [ID_FIELD]
 
     def __str__(self):
-        return f'{self.content} {self.status.short_name}'
+        return f'{Comment.MODEL_NAME}[{self.id}]:' \
+               f'{truncatechars(self.content, 20)} {self.status.short_name}'
 
     def set_slug(self, content: str):
         """
@@ -250,7 +258,8 @@ class Review(models.Model):
         ]
 
     def __str__(self):
-        return f'Review: {self.opinion.title}'
+        return f'{Review.MODEL_NAME}[{self.id}]: {self.opinion} - ' \
+               f'{self.status.short_name}'
 
 
 class AgreementStatus(models.Model):
@@ -279,9 +288,9 @@ class AgreementStatus(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f'AgreementStatus: ' \
-               f'{self.opinion if self.opinion else self.comment} ' \
-               f'{self.status}'
+        return f'{AgreementStatus.MODEL_NAME}[{self.id}]: ' \
+               f'{self.opinion if self.opinion else self.comment} - ' \
+               f'{self.status.short_name}'
 
 
 class HideStatus(models.Model):
@@ -307,9 +316,30 @@ class HideStatus(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f'HideStatus: ' \
-               f'{self.opinion if self.opinion else self.comment} ' \
-               f'{self.status}'
+        return f'{HideStatus.MODEL_NAME}[{self.id}]: ' \
+               f'{self.opinion if self.opinion else self.comment}'
+
+
+class PinStatus(models.Model):
+    """ PinStatus model """
+
+    MODEL_NAME = 'PinStatus'
+
+    # field names
+    ID_FIELD = ID_FIELD
+    OPINION_FIELD = OPINION_FIELD
+    USER_FIELD = USER_FIELD
+    UPDATED_FIELD = UPDATED_FIELD
+
+    opinion = models.ForeignKey(
+        Opinion, null=True, blank=True, on_delete=models.CASCADE)
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{PinStatus.MODEL_NAME}[{self.id}]: {self.opinion}'
 
 
 def is_id_lookup(lookup: str):

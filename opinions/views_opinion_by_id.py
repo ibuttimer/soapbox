@@ -21,6 +21,7 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 from http import HTTPStatus
+from typing import Optional
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -39,7 +40,9 @@ from categories.models import Status
 from opinions.constants import (
     OPINION_ID_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME,
     OPINION_PREVIEW_ID_ROUTE_NAME, OPINION_ID_QUERY, PAGE_QUERY,
-    PER_PAGE_QUERY, COMMENT_DEPTH_QUERY, PARENT_ID_QUERY
+    PER_PAGE_QUERY, COMMENT_DEPTH_QUERY, PARENT_ID_QUERY, TEMPLATE_TARGET_ID,
+    TEMPLATE_TARGET_TYPE, TEMPLATE_REACTIONS, TEMPLATE_REACTION_CTRLS,
+    TEMPLATE_COMMENT_REACTIONS, TEMPLATE_OPINION_REACTIONS
 )
 from soapbox import (
     OPINIONS_APP_NAME, HOME_ROUTE_NAME, GET, PATCH, HOME_URL
@@ -51,7 +54,7 @@ from utils import (
 )
 from .comment_data import get_comment_bundle
 from .forms import OpinionForm, CommentForm
-from .models import Opinion, Comment, AgreementStatus, HideStatus
+from .models import Opinion, Comment, AgreementStatus, HideStatus, PinStatus
 from .reactions import (
     OPINION_REACTIONS, COMMENT_REACTIONS, get_reaction_status
 )
@@ -60,7 +63,7 @@ from .views_utils import (
     opinion_permission_check, opinion_save_query_args, timestamp_content,
     own_opinion_check, published_check, get_opinion_context,
     render_opinion_form, comment_permission_check, DEFAULT_COMMENT_DEPTH,
-    opinion_like_query_args, opinion_hide_query_args
+    opinion_like_query_args, opinion_hide_query_args, opinion_pin_query_args
 )
 from .enums import QueryArg, QueryStatus, ReactionStatus, PerPage
 
@@ -249,9 +252,9 @@ def _render_view(title: str,
     context.update({
         'categories': opinion_obj.categories.all(),
         'is_preview': status.name == STATUS_PREVIEW if status else False,
-        'opinion_reactions': OPINION_REACTIONS,
-        'comment_reactions': COMMENT_REACTIONS,
-        'reaction_ctrls': reaction_ctrls,
+        TEMPLATE_OPINION_REACTIONS: OPINION_REACTIONS,
+        TEMPLATE_COMMENT_REACTIONS: COMMENT_REACTIONS,
+        TEMPLATE_REACTION_CTRLS: reaction_ctrls,
     })
 
     return app_template_path(OPINIONS_APP_NAME, "opinion_view.html"), context
@@ -409,7 +412,7 @@ def opinion_status_patch(request: HttpRequest, pk: int) -> HttpResponse:
     })
 
 
-def redirect_response(url: str, extra: dict = None) -> HttpResponse:
+def redirect_response(url: str, extra: Optional[dict] = None) -> HttpResponse:
     """
     Generate redirect response.
     :param url: url to redirect to
@@ -419,7 +422,7 @@ def redirect_response(url: str, extra: dict = None) -> HttpResponse:
     payload = {
         'redirect': url
     }
-    if isinstance(payload, dict):
+    if isinstance(extra, dict):
         payload.update(extra)
 
     return JsonResponse(payload, status=HTTPStatus.OK)
@@ -432,7 +435,7 @@ def opinion_like_patch(request: HttpRequest, pk: int) -> HttpResponse:
     View function to update opinion like status.
     :param request: http request
     :param pk:      id of opinion
-    :return:
+    :return: http response
     """
     opinion_permission_check(request, Crud.READ)
 
@@ -440,41 +443,85 @@ def opinion_like_patch(request: HttpRequest, pk: int) -> HttpResponse:
 
     status, reaction = opinion_like_query_args(request)
 
-    agreement = None
+    code = HTTPStatus.BAD_REQUEST
     if reaction in [ReactionStatus.AGREE, ReactionStatus.DISAGREE]:
         query_args = {
             AgreementStatus.OPINION_FIELD: opinion_obj,
             AgreementStatus.USER_FIELD: request.user
         }
         query = AgreementStatus.objects.filter(**query_args)
+
+        code = HTTPStatus.NO_CONTENT
         if query.exists():
             agreement = query.first()
             if agreement.status != status:
                 # change status
                 agreement.status = status
                 agreement.save()
+                code = HTTPStatus.OK
             else:
                 # toggle status
-                query.delete()
+                deleted, _ = query.delete()
+                if deleted:
+                    code = HTTPStatus.OK
         else:
             query_args.update({
                 AgreementStatus.STATUS_FIELD: status
             })
             agreement = AgreementStatus.objects.create(**query_args)
+            if agreement is not None:
+                code = HTTPStatus.OK
 
-    return opinion_react_response(request, opinion_obj, agreement is not None)
+    return opinion_react_response(request, opinion_obj, code)
+
+
+@login_required
+@require_http_methods([PATCH])
+def opinion_pin_patch(request: HttpRequest, pk: int) -> HttpResponse:
+    """
+    View function to update opinion pin status.
+    :param request: http request
+    :param pk:      id of opinion
+    :return: http response
+    """
+    opinion_permission_check(request, Crud.READ)
+
+    opinion_obj = get_object_or_404(Opinion, pk=pk)
+
+    status, reaction = opinion_pin_query_args(request)
+
+    code = HTTPStatus.BAD_REQUEST
+    if reaction in [ReactionStatus.PIN, ReactionStatus.UNPIN]:
+        query_args = {
+            PinStatus.OPINION_FIELD: opinion_obj,
+            PinStatus.USER_FIELD: request.user
+        }
+        query = PinStatus.objects.filter(**query_args)
+
+        code = HTTPStatus.NO_CONTENT
+        if query.exists() and reaction == ReactionStatus.UNPIN:
+            deleted, _ = query.delete()
+            if deleted:
+                code = HTTPStatus.OK
+        elif reaction == ReactionStatus.PIN:
+            _, created = PinStatus.objects.get_or_create(**query_args)
+            if created:
+                code = HTTPStatus.OK
+
+    return opinion_react_response(request, opinion_obj, code)
 
 
 def opinion_react_response(
-            request: HttpRequest, opinion_obj: Opinion, success: bool
+            request: HttpRequest, opinion_obj: Opinion, code: HTTPStatus
         ) -> HttpResponse:
     """
     View function to update opinion like status.
     :param request: http request
     :param opinion_obj: opinion
-    :param success: success flag
+    :param code: status code for response
     :return: response
     """
+    # Note: if code is HTTPStatus.NO_CONTENT nothing is returned in response
     reaction_ctrls = get_reaction_status(request.user, opinion_obj)
 
     return JsonResponse({
@@ -484,13 +531,13 @@ def opinion_react_response(
                 OPINIONS_APP_NAME, "snippet", "reactions.html"),
             context={
                 # reactions template
-                'target_id': opinion_obj.id,
-                'target_type': 'opinion',
-                'reactions': OPINION_REACTIONS,
-                'reaction_ctrls': reaction_ctrls,
+                TEMPLATE_TARGET_ID: opinion_obj.id,
+                TEMPLATE_TARGET_TYPE: 'opinion',
+                TEMPLATE_REACTIONS: OPINION_REACTIONS,
+                TEMPLATE_REACTION_CTRLS: reaction_ctrls,
             },
             request=request)
-    }, status=HTTPStatus.OK if success else HTTPStatus.BAD_REQUEST)
+    }, status=code)
 
 
 @login_required
@@ -508,20 +555,23 @@ def opinion_hide_patch(request: HttpRequest, pk: int) -> HttpResponse:
 
     status, reaction = opinion_hide_query_args(request)
 
-    success = False
+    code = HTTPStatus.BAD_REQUEST
     if reaction in [ReactionStatus.HIDE, ReactionStatus.SHOW]:
         query_args = {
             HideStatus.OPINION_FIELD: opinion_obj,
             HideStatus.USER_FIELD: request.user
         }
         query = HideStatus.objects.filter(**query_args)
-        if reaction == ReactionStatus.SHOW:
+
+        code = HTTPStatus.NO_CONTENT
+        if query.exists() and reaction == ReactionStatus.SHOW:
             # remove hide record if exists, otherwise no change
-            if query.exists():
-                query.delete()
-            success = True
-        else:
+            deleted, _ = query.delete()
+            if deleted:
+                code = HTTPStatus.OK
+        elif reaction == ReactionStatus.HIDE:
             obj, created = HideStatus.objects.get_or_create(**query_args)
-            success = obj is not None
+            if created:
+                code = HTTPStatus.OK
 
     return redirect_response(HOME_URL)

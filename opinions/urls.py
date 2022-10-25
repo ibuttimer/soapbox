@@ -35,6 +35,7 @@ from .constants import (
     OPINION_STATUS_ID_URL, OPINION_STATUS_ID_ROUTE_NAME,
     OPINION_LIKE_ID_URL, OPINION_LIKE_ID_ROUTE_NAME,
     OPINION_HIDE_ID_URL, OPINION_HIDE_ID_ROUTE_NAME,
+    OPINION_PIN_ID_URL, OPINION_PIN_ID_ROUTE_NAME,
     OPINION_COMMENT_ID_URL, OPINION_COMMENT_ID_ROUTE_NAME,
     COMMENTS_URL, COMMENTS_ROUTE_NAME,
     COMMENT_ID_URL, COMMENT_ID_ROUTE_NAME,
@@ -48,7 +49,8 @@ from .views_comment_list import CommentList, CommentSearch, opinion_comments
 from .views_opinion_create import OpinionCreate
 from .views_opinion_by_id import (
     OpinionDetailById, OpinionDetailBySlug, OpinionDetailPreviewById,
-    opinion_status_patch, opinion_like_patch, opinion_hide_patch
+    opinion_status_patch, opinion_like_patch, opinion_hide_patch,
+    opinion_pin_patch
 )
 from .views_opinion_list import OpinionList, OpinionSearch
 
@@ -80,6 +82,9 @@ urlpatterns = [
     # patch opinion hide status by id
     path(OPINION_HIDE_ID_URL, opinion_hide_patch,
          name=OPINION_HIDE_ID_ROUTE_NAME),
+    # patch opinion pin status by id
+    path(OPINION_PIN_ID_URL, opinion_pin_patch,
+         name=OPINION_PIN_ID_ROUTE_NAME),
 
     # create comment for opinion by id
     path(OPINION_COMMENT_ID_URL, OpinionCommentCreate.as_view(),

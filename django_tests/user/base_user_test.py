@@ -21,6 +21,7 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 import os
+from typing import Optional
 
 import django
 
@@ -59,6 +60,8 @@ class BaseUserTest(TestCase):
              "nice-pic.jpg", "The woman to ask")
         ]
     }
+
+    users: dict[str, User]
 
     @staticmethod
     def create_users() -> dict:
@@ -116,10 +119,24 @@ class BaseUserTest(TestCase):
 
     @staticmethod
     def num_users():
+        """ Get number of users """
         return len(BaseUserTest.USER_INFO)
 
     @staticmethod
-    def login_user_by_key(test_instance, name: str | None = None) -> User:
+    def login_user(test_instance: TestCase, user: User) -> User:
+        """
+        Login user
+        :param test_instance: instance of user test case
+        :param user: user to login
+        :returns logged-in user
+        """
+        test_instance.assertIsNotNone(user)
+        test_instance.client.force_login(user)
+        return user
+
+    @staticmethod
+    def login_user_by_key(
+            test_instance: TestCase, name: Optional[str] = None) -> User:
         """
         Login user
         :param test_instance: instance of user test case
@@ -129,9 +146,7 @@ class BaseUserTest(TestCase):
         if name is None:
             name = BaseUserTest.get_user_key(0)
         user = test_instance.users[name.lower()]
-        test_instance.assertIsNotNone(user)
-        test_instance.client.force_login(user)
-        return user
+        return test_instance.login_user(test_instance, user)
 
     @staticmethod
     def login_user_by_id(test_instance, pk: int) -> User:
@@ -146,6 +161,4 @@ class BaseUserTest(TestCase):
         )
         test_instance.assertEqual(len(users), 1)
         user = users[0]
-        test_instance.assertIsNotNone(user)
-        test_instance.client.force_login(user)
-        return user
+        return BaseUserTest.login_user(test_instance, user)

@@ -20,6 +20,11 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
+from collections import namedtuple
+from typing import Union
+
+from categories import REACTION_AGREE, REACTION_DISAGREE
+from categories.models import Status
 from soapbox import AVATAR_BLANK_URL, OPINIONS_APP_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
@@ -27,7 +32,7 @@ from .constants import (
     PAGE_QUERY, PER_PAGE_QUERY, PARENT_ID_QUERY, COMMENT_DEPTH_QUERY,
     COMMENT_MORE_ROUTE_NAME
 )
-from .models import Comment
+from .models import Comment, Opinion, AgreementStatus, HideStatus, PinStatus
 from .comment_utils import get_comment_queryset
 from .views_utils import DEFAULT_COMMENT_DEPTH
 from .enums import QueryArg, PerPage
@@ -182,3 +187,48 @@ def get_comments(
             ))
 
     return comments
+
+
+PopularityLevel = namedtuple("PopularityLevel", [
+    "comments",     # comments count
+    "agree",        # agrees count
+    "disagree",     # disagrees count
+    "hide",         # hide count
+    "pin",          # pin count
+], defaults=[0, 0, 0, 0, 0])
+
+
+def get_popularity_levels(opinions: Union[Opinion, list[Opinion]]) -> dict:
+    """
+    Get popularity levels for specified opinion(s)
+    :param opinions: opinion ot list of opinions
+    :return: dict with 'opinion_<id>' as the key and PopularityLevel value
+    """
+    if isinstance(opinions, Opinion):
+        opinions = [opinions]
+    levels = {}
+
+    for opinion in opinions:
+        levels[f'opinion_{opinion.id}'] = PopularityLevel(
+            comments=Comment.objects.filter(**{
+                f'{Comment.OPINION_FIELD}': opinion
+            }).count(),
+            agree=AgreementStatus.objects.filter(**{
+                f'{AgreementStatus.OPINION_FIELD}': opinion,
+                f'{AgreementStatus.STATUS_FIELD}__{Status.NAME_FIELD}':
+                    REACTION_AGREE
+            }).count(),
+            disagree=AgreementStatus.objects.filter(**{
+                f'{AgreementStatus.OPINION_FIELD}': opinion,
+                f'{AgreementStatus.STATUS_FIELD}__{Status.NAME_FIELD}':
+                    REACTION_DISAGREE
+            }).count(),
+            hide=HideStatus.objects.filter(**{
+                f'{HideStatus.OPINION_FIELD}': opinion
+            }).count(),
+            pin=PinStatus.objects.filter(**{
+                f'{PinStatus.OPINION_FIELD}': opinion
+            }).count(),
+        )
+
+    return levels

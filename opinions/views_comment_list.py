@@ -43,7 +43,8 @@ from .constants import (
     ORDER_QUERY, STATUS_QUERY, PER_PAGE_QUERY,
     AUTHOR_QUERY, OPINION_PAGINATION_ON_EACH_SIDE, OPINION_PAGINATION_ON_ENDS,
     SEARCH_QUERY,
-    REORDER_QUERY, DESC_LOOKUP, DATE_NEWEST_LOOKUP
+    REORDER_QUERY, DESC_LOOKUP, DATE_NEWEST_LOOKUP, TEMPLATE_REACTION_CTRLS,
+    TEMPLATE_COMMENT_REACTIONS
 )
 from .models import Comment, is_id_lookup
 from .query_params import QuerySetParams
@@ -391,8 +392,8 @@ def opinion_comments(request: HttpRequest) -> HttpResponse:
             context={
                 # same context as OpinionDetail::get
                 'comments': comments,
-                'comment_reactions': COMMENT_REACTIONS,
-                'reaction_ctrls': reaction_ctrls,
+                TEMPLATE_COMMENT_REACTIONS: COMMENT_REACTIONS,
+                TEMPLATE_REACTION_CTRLS: reaction_ctrls,
             },
             request=request)
     }, status=HTTPStatus.OK)

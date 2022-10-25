@@ -39,6 +39,8 @@ from utils import (
     Crud, app_template_path
 )
 from .comment_data import CommentBundle
+from .constants import TEMPLATE_TARGET_ID, TEMPLATE_REACTION_CTRLS, \
+    TEMPLATE_COMMENT_REACTIONS
 from .forms import CommentForm
 from .models import Opinion, Comment
 from .reactions import COMMENT_REACTIONS, get_reaction_status
@@ -97,9 +99,9 @@ class CommentCreate(LoginRequiredMixin, View):
                         OPINIONS_APP_NAME, "snippet", "comment_bundle.html"),
                     context={
                         'bundle': CommentBundle(comment),
-                        'target_id': comment.id,
-                        'comment_reactions': COMMENT_REACTIONS,
-                        'reaction_ctrls': reaction_ctrls,
+                        TEMPLATE_TARGET_ID: comment.id,
+                        TEMPLATE_COMMENT_REACTIONS: COMMENT_REACTIONS,
+                        TEMPLATE_REACTION_CTRLS: reaction_ctrls,
                     },
                     request=request),
                 'parent_container': parent_container,
