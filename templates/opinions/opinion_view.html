@@ -47,7 +47,7 @@
     <div class="col-12 mt-2">
 
         <!-- preview banner -->
-        {% if is_preview %}
+        {% if is_preview and view_ok %}
         <div class="alert alert-warning" role="alert">
             <div class="row">
                 <div class="col-sm-8">
@@ -68,7 +68,9 @@
         {% endif %}
 
         <div class="row mb-3">
-            <h1 id="id_title">{{ opinion.title }}</h1>
+            <h1 id="id_title">
+                {% if view_ok %}{{ opinion.title }}{% else %}{{ under_review_title }}{% endif %}
+            </h1>
         </div>
 
         <!-- top row: category, updated/published/author, preview/draft/publish -->
@@ -94,7 +96,11 @@
 
         <div class="row mb-3">
             <div id="readonly_content" class="text-start">
-                {{ opinion.content | safe }}
+                {% if view_ok %}
+                    {{ opinion.content | safe }}
+                {% else %}
+                    {{ under_review_content }}
+                {% endif %}
             </div>
         </div>
 
@@ -103,6 +109,7 @@
                 <a class="btn btn-secondary mb-1" href="{% url 'home' %}">{% trans "Done" %}</a>
             </div>
 
+            {% if view_ok %}
             <div class="col-sm-5 justify-content-start">
                 {# --- template variable defines for includes --- #}
                 {# reactions template expects: 'target_id' as id of target opinion/comment #}
@@ -117,6 +124,7 @@
                     {% endwith %}
                 {% endwith %}
             </div>
+            {% endif %}
         </div>
     </div>
 
@@ -124,10 +132,16 @@
         {% include "opinions/snippet/view_comments.html" %}
     </div>
 
-    <!-- Modal to create comment on opinion -->
-    <div id="id--comment-modal-container">
-        {% include "opinions/snippet/comment_modal.html" %}
-    </div>
+    {% if view_ok %}
+        <!-- Modal to create comments -->
+        <div id="id--comment-modal-container">
+            {% include "opinions/snippet/comment_modal.html" %}
+        </div>
+        <!-- Modal to create review reports -->
+        <div id="id--report-modal-container">
+            {% include "opinions/snippet/report_modal.html" %}
+        </div>
+    {% endif %}
 </article>
 
 {% endblock content %}

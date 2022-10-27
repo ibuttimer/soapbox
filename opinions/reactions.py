@@ -29,13 +29,14 @@ from .constants import (
     OPINION_HIDE_ID_ROUTE_NAME,
     OPINION_COMMENT_ID_ROUTE_NAME,
     COMMENT_COMMENT_ID_ROUTE_NAME, COMMENT_LIKE_ID_ROUTE_NAME,
-    COMMENT_HIDE_ID_ROUTE_NAME, OPINION_PIN_ID_ROUTE_NAME
+    COMMENT_HIDE_ID_ROUTE_NAME, OPINION_PIN_ID_ROUTE_NAME, ALL_FIELDS
 )
 from .data_structures import Reaction, ReactionCtrl, HtmlTag
 from .models import Opinion, Comment, AgreementStatus, PinStatus
-from .queries import opinion_is_pinned
+from .queries import opinion_is_pinned, content_is_reported
 from .templatetags.reaction_button_id import reaction_button_id
 from .enums import ReactionStatus
+from .views_utils import ensure_list
 
 MODAL = "modal"
 AJAX = "ajax"
@@ -83,81 +84,82 @@ class ReactionsList:
 
 
 COMMENT_MODAL_ID = 'id--comment-modal'
+REPORT_MODAL_ID = 'id--report-modal'
 COMMENT_REACTION_ID = 'comment'     # used to id comment modal button in js
 
 # TODO share/report
 
-REACTION_AGREE = Reaction.ajax_of(
+AGREE_TEMPLATE = Reaction.ajax_of(
     name="Agree", identifier="to-set", icon="", aria="to-set", url="to-set",
     option=ReactionStatus.AGREE.arg, field=ReactionsList.AGREE_FIELD
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-hands-clapping"))
-REACTION_DISAGREE = Reaction.ajax_of(
+DISAGREE_TEMPLATE = Reaction.ajax_of(
     name="Disagree", identifier="to-set", icon="", aria="to-set",
     url="to-set", option=ReactionStatus.DISAGREE.arg,
     field=ReactionsList.DISAGREE_FIELD
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-thumbs-down"))
-REACTION_COMMENT = Reaction.modal_of(
+COMMENT_TEMPLATE = Reaction.modal_of(
     name="Comment", identifier="to-set", icon="", aria="to-set", url="to-set",
     option=f"#{COMMENT_MODAL_ID}", field=ReactionsList.COMMENT_FIELD
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-comment"))
-REACTION_FOLLOW = Reaction.ajax_of(
+FOLLOW_TEMPLATE = Reaction.ajax_of(
     name="Follow opinion author", identifier="to-set", icon="", aria="to-set",
     url="to-set", option=ReactionStatus.FOLLOW.arg,
     field=ReactionsList.FOLLOW_FIELD
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-user-tag"))
-REACTION_UNFOLLOW = Reaction.ajax_of(
+UNFOLLOW_TEMPLATE = Reaction.ajax_of(
     name="to-set", identifier="to-set", icon="", aria="to-set",
     url="to-set", option=ReactionStatus.UNFOLLOW.arg,
     field=ReactionsList.UNFOLLOW_FIELD
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-user-xmark"))
-REACTION_SHARE = Reaction.modal_of(
+SHARE_TEMPLATE = Reaction.modal_of(
     name="to-set", identifier="to-set", icon="", aria="to-set",
     url="to-set", option=f"#{COMMENT_MODAL_ID}",
     field=ReactionsList.SHARE_FIELD
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-share-nodes"))
-REACTION_HIDE = Reaction.ajax_of(
+HIDE_TEMPLATE = Reaction.ajax_of(
     name="to-set", identifier="to-set", icon="", aria="to-set",
     url="to-set", option=ReactionStatus.HIDE.arg,
     field=ReactionsList.HIDE_FIELD
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-eye-slash"))
-REACTION_SHOW = Reaction.ajax_of(
+SHOW_TEMPLATE = Reaction.ajax_of(
     name="to-set", identifier="to-set", icon="", aria="to-set",
     url="to-set", option=ReactionStatus.SHOW.arg,
     field=ReactionsList.SHOW_FIELD
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-eye"))
-REACTION_REPORT = Reaction.modal_of(
+REPORT_TEMPLATE = Reaction.modal_of(
     name="to-set", identifier="to-set", icon="", aria="to-set",
-    url="to-set", option=f"#{COMMENT_MODAL_ID}",
+    url="to-set", option=f"#{REPORT_MODAL_ID}",
     field=ReactionsList.REPORT_FIELD
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-person-military-pointing"))
 
 
 OPINION_REACTIONS_LIST = ReactionsList(
-    agree=REACTION_AGREE.copy(
+    agree=AGREE_TEMPLATE.copy(
         identifier="agree-opinion", aria="Agree with opinion",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_LIKE_ID_ROUTE_NAME)),
-    disagree=REACTION_DISAGREE.copy(
+    disagree=DISAGREE_TEMPLATE.copy(
         identifier="disagree-opinion", aria="Disagree with opinion",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_LIKE_ID_ROUTE_NAME)),
-    comment=REACTION_COMMENT.copy(
+    comment=COMMENT_TEMPLATE.copy(
         identifier=f"{COMMENT_REACTION_ID}-opinion", aria="Comment on opinion",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_COMMENT_ID_ROUTE_NAME)),
-    follow=REACTION_FOLLOW.copy(
+    follow=FOLLOW_TEMPLATE.copy(
         name="Follow opinion author", identifier="follow-opinion",
         aria="Follow opinion author",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME)),
-    unfollow=REACTION_UNFOLLOW.copy(
+    unfollow=UNFOLLOW_TEMPLATE.copy(
         name="Unfollow opinion author", identifier="unfollow-opinion",
         aria="Unfollow opinion author",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME)),
-    share=REACTION_SHARE.copy(
+    share=SHARE_TEMPLATE.copy(
         name="Share opinion", identifier="share-opinion",
         aria="Share opinion",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME)),
-    hide=REACTION_HIDE.copy(
+    hide=HIDE_TEMPLATE.copy(
         name="Hide opinion", identifier="hide-opinion", aria="Hide opinion",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_HIDE_ID_ROUTE_NAME)),
-    show=REACTION_SHOW.copy(
+    show=SHOW_TEMPLATE.copy(
         name="Show opinion", identifier="show-opinion", aria="Show opinion",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_HIDE_ID_ROUTE_NAME)),
     pin=Reaction.ajax_of(
@@ -172,7 +174,7 @@ OPINION_REACTIONS_LIST = ReactionsList(
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_PIN_ID_ROUTE_NAME),
         option=ReactionStatus.UNPIN.arg, field=ReactionsList.UNPIN_FIELD
     ).set_icon(HtmlTag.i(clazz="fa-solid fa-unlock")),
-    report=REACTION_REPORT.copy(
+    report=REPORT_TEMPLATE.copy(
         name="Report opinion", identifier="report-opinion",
         aria="Report opinion",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME))
@@ -194,35 +196,35 @@ OPINION_REACTIONS = [
 ]
 
 COMMENT_REACTIONS_LIST = ReactionsList(
-    agree=REACTION_AGREE.copy(
+    agree=AGREE_TEMPLATE.copy(
         identifier="agree-comment", aria="Agree with comment",
         url=namespaced_url(OPINIONS_APP_NAME, COMMENT_LIKE_ID_ROUTE_NAME)),
-    disagree=REACTION_DISAGREE.copy(
+    disagree=DISAGREE_TEMPLATE.copy(
         identifier="disagree-comment", aria="Disagree with comment",
         url=namespaced_url(OPINIONS_APP_NAME, COMMENT_LIKE_ID_ROUTE_NAME)),
-    comment=REACTION_COMMENT.copy(
+    comment=COMMENT_TEMPLATE.copy(
         identifier=f"{COMMENT_REACTION_ID}-comment",
         aria="Comment on comment",
         url=namespaced_url(OPINIONS_APP_NAME, COMMENT_COMMENT_ID_ROUTE_NAME)),
-    follow=REACTION_FOLLOW.copy(
+    follow=FOLLOW_TEMPLATE.copy(
         name="Follow comment author", identifier="follow-comment",
         aria="Follow comment author",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME)),
-    unfollow=REACTION_UNFOLLOW.copy(
+    unfollow=UNFOLLOW_TEMPLATE.copy(
         name="Unfollow comment author", identifier="unfollow-comment",
         aria="Unfollow comment author",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME)),
-    share=REACTION_SHARE.copy(
+    share=SHARE_TEMPLATE.copy(
         name="Share comment", identifier="share-comment",
         aria="Share comment",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME)),
-    hide=REACTION_HIDE.copy(
+    hide=HIDE_TEMPLATE.copy(
         name="Hide comment", identifier="hide-comment", aria="Hide comment",
         url=namespaced_url(OPINIONS_APP_NAME, COMMENT_HIDE_ID_ROUTE_NAME)),
-    show=REACTION_SHOW.copy(
+    show=SHOW_TEMPLATE.copy(
         name="Show comment", identifier="show-comment", aria="Show comment",
         url=namespaced_url(OPINIONS_APP_NAME, COMMENT_HIDE_ID_ROUTE_NAME)),
-    report=REACTION_REPORT.copy(
+    report=REPORT_TEMPLATE.copy(
         name="Report comment", identifier="report-comment",
         aria="Report comment",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME))
@@ -268,173 +270,169 @@ def get_reaction_status(
     if statuses is None:
         statuses = {}
 
-    if not isinstance(content, list):
-        content = [content]
+    if content:
+        content = ensure_list(content)
 
-    for entry in content:
-        if isinstance(entry, CommentBundle):
-            reaction_kwargs = {
-                'statuses': statuses,
-                'reactions': reactions,
-                'enablers': enablers,
-                'visibility': visibility
-            }
-            # get status for bundle comment
-            statuses = get_reaction_status(
-                user, entry.comment, **reaction_kwargs)
-            # get statuses for replies to bundle comment
-            for reply in entry.comments:
-                statuses = get_reaction_status(user, reply, **reaction_kwargs)
-        else:
-            if isinstance(entry, Opinion):
-                # get status for opinion
-                content_field = AgreementStatus.OPINION_FIELD
-                reaction_fields = OPINION_REACTION_FIELDS
-                pin_field = PinStatus.OPINION_FIELD
-                reactions_list = OPINION_REACTIONS_LIST
+        for entry in content:
+            if isinstance(entry, CommentBundle):
+                reaction_kwargs = {
+                    'statuses': statuses,
+                    'reactions': reactions,
+                    'enablers': enablers,
+                    'visibility': visibility
+                }
+                # get status for bundle comment
+                statuses = get_reaction_status(
+                    user, entry.comment, **reaction_kwargs)
+                # get statuses for replies to bundle comment
+                for reply in entry.comments:
+                    statuses = get_reaction_status(
+                        user, reply, **reaction_kwargs)
             else:
-                # get status for comment
-                content_field = AgreementStatus.COMMENT_FIELD
-                reaction_fields = COMMENT_REACTION_FIELDS
-                pin_field = None    # no pin field in COMMENT_REACTIONS_LIST
-                reactions_list = COMMENT_REACTIONS_LIST
+                if isinstance(entry, Opinion):
+                    # get status for opinion
+                    content_field = AgreementStatus.OPINION_FIELD
+                    reaction_fields = OPINION_REACTION_FIELDS
+                    pin_field = PinStatus.OPINION_FIELD
+                    reactions_list = OPINION_REACTIONS_LIST
+                else:
+                    # get status for comment
+                    content_field = AgreementStatus.COMMENT_FIELD
+                    reaction_fields = COMMENT_REACTION_FIELDS
+                    pin_field = None    # no pin in COMMENT_REACTIONS_LIST
+                    reactions_list = COMMENT_REACTIONS_LIST
 
-            if reactions is None:
-                reactions = reaction_fields
-            elif isinstance(reactions, str):
-                reactions = [reactions]
+                if reactions is None:
+                    reactions = reaction_fields
+                elif isinstance(reactions, str):
+                    reactions = [reactions]
 
-            def visibility_check(fld: str):
-                show = False
-                if visibility and field in visibility:
-                    show = visibility[fld](entry) \
-                        if callable(visibility[fld]) else visibility[fld]
-                return show
+                def enablers_check(fld: str):
+                    return field_check(enablers, entry, fld)
 
-            # set enabled and visibility conditions for reactions
-            enabled = {}
-            displayer = {}
-            for field in ReactionsList.ALL_FIELDS:
-                # enabler if specified, True for ALWAYS_AVAILABLE
-                # or disabled for users' own stuff
-                enabled[field] = enablers[field] \
-                    if enablers and field in enablers else True \
-                    if field in ALWAYS_AVAILABLE else \
-                    entry.user != user
+                def visibility_check(fld: str):
+                    return field_check(visibility, entry, fld)
 
-                # False if pin field not in reactions_list else
-                # visibility if specified, or True for fields in reactions
-                displayer[field] = False \
-                    if pin_field is None and \
-                    field in ReactionsList.PIN_FIELDS \
-                    else visibility_check(field) if visibility else \
-                    field in reactions
+                # set enabled and visibility conditions for reactions
+                enabled = {}
+                displayer = {}
+                for field in ReactionsList.ALL_FIELDS:
+                    # enabler if specified, True for ALWAYS_AVAILABLE
+                    # or disabled for users' own stuff
+                    enabled[field] = enablers_check(field) if enablers else \
+                        True if field in ALWAYS_AVAILABLE else \
+                        entry.user != user
 
-            control_param = [
-                # reaction, selected, visible
-                (getattr(reactions_list, field), False, True)
-                for field in ALWAYS_AVAILABLE if field in reactions
-            ]
+                    # False if pin field not in reactions_list else
+                    # visibility if specified, or True for fields in reactions
+                    displayer[field] = False \
+                        if pin_field is None and \
+                        field in ReactionsList.PIN_FIELDS \
+                        else visibility_check(field) if visibility else \
+                        field in reactions
 
-            # get agree & disagree statuses for comment/opinion
-            # (2 separate icons)
-            agree = False
-            disagree = False
-            if any_true(displayer, ReactionsList.AGREE_FIELDS):
-                # need to display agree/disagree
-                query = AgreementStatus.objects.filter(**{
-                    AgreementStatus.USER_FIELD: user,
-                    content_field: entry
-                })
-                if query.exists():
-                    agreement = query.first()
-                    agree = \
-                        agreement.status.name == ReactionStatus.AGREE.display
-                    disagree = \
-                        agreement.status.name == \
-                        ReactionStatus.DISAGREE.display
+                control_param = [
+                    # reaction, selected, visible
+                    (getattr(reactions_list, field), False, True)
+                    for field in ALWAYS_AVAILABLE if field in reactions
+                ]
 
-            control_param.extend([
-                # reaction, selected, visible
-                (reactions_list.agree, agree,
-                 displayer[ReactionsList.AGREE_FIELD]),
-                (reactions_list.disagree, disagree,
-                 displayer[ReactionsList.DISAGREE_FIELD]),
-            ])
-
-            # get pin status for opinion
-            # (2 separate icons but only 1 ever displayed)
-            if pin_field is not None:
-                pinned = False
-                if any_true(displayer, ReactionsList.PIN_FIELDS):
-                    # need to display pin/unpin
-                    pinned = opinion_is_pinned(entry, user)
+                # get agree & disagree statuses for comment/opinion
+                # (2 separate icons)
+                agree = False
+                disagree = False
+                if any_true(displayer, ReactionsList.AGREE_FIELDS):
+                    # need to display agree/disagree
+                    query = AgreementStatus.objects.filter(**{
+                        AgreementStatus.USER_FIELD: user,
+                        content_field: entry
+                    })
+                    if query.exists():
+                        agreement = query.first()
+                        agree = \
+                            agreement.status.name == \
+                            ReactionStatus.AGREE.display
+                        disagree = \
+                            agreement.status.name == \
+                            ReactionStatus.DISAGREE.display
 
                 control_param.extend([
                     # reaction, selected, visible
-                    (reactions_list.pin, pinned,
-                     displayer[ReactionsList.PIN_FIELD] and not pinned),
-                    (reactions_list.unpin, pinned,
-                     displayer[ReactionsList.UNPIN_FIELD] and pinned),
+                    (reactions_list.agree, agree,
+                     displayer[ReactionsList.AGREE_FIELD]),
+                    (reactions_list.disagree, disagree,
+                     displayer[ReactionsList.DISAGREE_FIELD]),
                 ])
 
-            # get following status
-            # (2 separate icons but only 1 ever displayed)
-            following = False
-            if any_true(displayer, ReactionsList.FOLLOW_FIELDS):
-                pass
+                # get pin status for opinion
+                # (2 separate icons but only 1 ever displayed)
+                if pin_field is not None:
+                    pinned = False
+                    if any_true(displayer, ReactionsList.PIN_FIELDS):
+                        # need to display pin/unpin
+                        pinned = opinion_is_pinned(entry, user=user)
 
-            control_param.extend([
-                # reaction, selected, visible
-                (reactions_list.follow, following,
-                 displayer[ReactionsList.FOLLOW_FIELD] and not following),
-                (reactions_list.unfollow, not following,
-                 displayer[ReactionsList.UNFOLLOW_FIELD] and following),
-            ])
+                    control_param.extend([
+                        # reaction, selected, visible
+                        (reactions_list.pin, pinned,
+                         displayer[ReactionsList.PIN_FIELD] and not pinned),
+                        (reactions_list.unpin, pinned,
+                         displayer[ReactionsList.UNPIN_FIELD] and pinned),
+                    ])
 
-            # get hidden status
-            # (2 separate icons but only 1 ever displayed)
-            hidden = False
-            if any_true(displayer, ReactionsList.HIDE_FIELDS):
-                pass
+                # get following status
+                # (2 separate icons but only 1 ever displayed)
+                following = False
+                if any_true(displayer, ReactionsList.FOLLOW_FIELDS):
+                    pass
 
-            control_param.extend([
-                # reaction, selected, visible
-                (reactions_list.hide, hidden,
-                 displayer[ReactionsList.HIDE_FIELD] and not hidden),
-                (reactions_list.show, not hidden,
-                 displayer[ReactionsList.SHOW_FIELD] and hidden),
-            ])
+                control_param.extend([
+                    # reaction, selected, visible
+                    (reactions_list.follow, following,
+                     displayer[ReactionsList.FOLLOW_FIELD] and not following),
+                    (reactions_list.unfollow, not following,
+                     displayer[ReactionsList.UNFOLLOW_FIELD] and following),
+                ])
 
-            # get reported status
-            reported = False
-            if any_true(displayer, ReactionsList.HIDE_FIELDS):
-                pass
+                # get hidden status
+                # (2 separate icons but only 1 ever displayed)
+                hidden = False
+                if any_true(displayer, ReactionsList.HIDE_FIELDS):
+                    pass
 
-            control_param.extend([
-                # reaction, selected, visible
-                (reactions_list.report, reported,
-                 displayer[ReactionsList.REPORT_FIELD]),
-            ])
+                control_param.extend([
+                    # reaction, selected, visible
+                    (reactions_list.hide, hidden,
+                     displayer[ReactionsList.HIDE_FIELD] and not hidden),
+                    (reactions_list.show, not hidden,
+                     displayer[ReactionsList.SHOW_FIELD] and hidden),
+                ])
 
-            for reaction, selected, visible in control_param:
-                if not reaction.field:
-                    print(reaction.name)
+                # get reported status
+                reported = False
+                if any_true(displayer, ReactionsList.REPORT_FIELD):
+                    reported = content_is_reported(entry, user=user).reported
 
-            statuses.update({
-                # key is button id, value is Reaction
-                reaction_button_id(reaction, entry.id):
-                    ReactionCtrl(
-                        selected=selected,
-                        disabled=not enabled[reaction.field],
-                        visible=visible)
-                    for reaction, selected, visible in control_param
-            })
+                control_param.extend([
+                    # reaction, selected, visible
+                    (reactions_list.report, reported,
+                     displayer[ReactionsList.REPORT_FIELD]),
+                ])
+
+                statuses.update({
+                    # key is button id, value is Reaction
+                    reaction_button_id(reaction, entry.id):
+                        ReactionCtrl(
+                            selected=selected,
+                            disabled=not enabled[reaction.field],
+                            visible=visible)
+                        for reaction, selected, visible in control_param
+                })
 
     return statuses
 
 
-def any_true(dictionary: dict, keys: list[str]):
+def any_true(dictionary: dict, keys: [str, list[str]]):
     """
     Check if any of the values for the specified keys are true
     :param dictionary: dictionary to check
@@ -447,3 +445,14 @@ def any_true(dictionary: dict, keys: list[str]):
         lambda fld: dictionary.get(fld, False), keys
     ))
     return any(truths)
+
+
+def field_check(dictionary: dict, content: [Opinion, Comment],
+                field: str, default: bool = False) -> bool:
+    result = default
+    if dictionary:
+        fld = ALL_FIELDS if ALL_FIELDS in dictionary else field
+        if fld in dictionary:
+            result = dictionary[fld](content) \
+                if callable(dictionary[fld]) else dictionary[fld]
+    return result

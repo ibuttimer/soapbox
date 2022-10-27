@@ -21,31 +21,13 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 
-# common field names
-ID_FIELD = "id"
-NAME_FIELD = "name"
-DESCRIPTION_FIELD = "description"
+from django import template
 
-# status display names
-STATUS_ALL = 'All'
-STATUS_DRAFT = 'Draft'
-STATUS_PUBLISHED = 'Published'
-STATUS_PREVIEW = 'Preview'
-STATUS_WITHDRAWN = 'Withdrawn'              # review request withdrawn
-STATUS_PENDING_REVIEW = 'Pending Review'    # pending review following request
-STATUS_UNDER_REVIEW = 'Under Review'        # under review
-STATUS_APPROVED = 'Approved'            # review approved, content needs work
-STATUS_REJECTED = 'Rejected'            # review rejected, content ok
+register = template.Library()
 
-CATEGORY_UNASSIGNED = 'Unassigned'
+# https://docs.djangoproject.com/en/4.1/howto/custom-template-tags/#simple-tags
 
-# reaction statuses display names
-REACTION_AGREE = 'Agree'
-REACTION_DISAGREE = 'Disagree'
-REACTION_HIDE = 'Hide'
-REACTION_SHOW = 'Show'
-REACTION_PIN = 'Pin'
-REACTION_UNPIN = 'Unpin'
-REACTION_FOLLOW = 'Follow'
-REACTION_UNFOLLOW = 'Unfollow'
-REACTION_REPORT = 'Report'
+
+@register.simple_tag
+def array_value(array: list, index: int):
+    return array[index]

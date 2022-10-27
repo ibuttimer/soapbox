@@ -216,19 +216,22 @@ class Review(models.Model):
     # field names
     ID_FIELD = ID_FIELD
     OPINION_FIELD = OPINION_FIELD
+    COMMENT_FIELD = COMMENT_FIELD
     REQUESTED_FIELD = REQUESTED_FIELD
     REASON_FIELD = REASON_FIELD
     REVIEWER_FIELD = REVIEWER_FIELD
-    COMMENT_FIELD = COMMENT_FIELD
     STATUS_FIELD = STATUS_FIELD
     CREATED_FIELD = CREATED_FIELD
     UPDATED_FIELD = UPDATED_FIELD
     RESOLVED_FIELD = RESOLVED_FIELD
 
     REVIEW_ATTRIB_REASON_MAX_LEN: int = 500
-    REVIEW_ATTRIB_COMMENT_MAX_LEN: int = 500
 
-    opinion = models.ForeignKey(Opinion, on_delete=models.CASCADE)
+    opinion = models.ForeignKey(
+        Opinion, null=True, blank=True, on_delete=models.CASCADE)
+
+    comment = models.ForeignKey(
+        Comment, null=True, blank=True, on_delete=models.CASCADE)
 
     requested = models.ForeignKey(User, on_delete=models.CASCADE,
                                   related_name='requested_by')
@@ -236,11 +239,9 @@ class Review(models.Model):
     reason = models.CharField(
         _('reason'), max_length=REVIEW_ATTRIB_REASON_MAX_LEN, blank=False)
 
-    reviewer = models.ForeignKey(User, on_delete=models.CASCADE,
-                                 related_name='reviewed_by')
-
-    comment = models.CharField(
-        _('comment'), max_length=REVIEW_ATTRIB_COMMENT_MAX_LEN, blank=False)
+    reviewer = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.CASCADE,
+        related_name='reviewed_by')
 
     status = models.ForeignKey(Status, on_delete=models.CASCADE)
 

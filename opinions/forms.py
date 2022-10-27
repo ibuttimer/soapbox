@@ -20,7 +20,7 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-
+from django.forms import CharField, Textarea
 from django.utils.translation import gettext_lazy as _
 
 from django import forms
@@ -30,9 +30,10 @@ from django_summernote.widgets import SummernoteWidget
 from utils import update_field_widgets, error_messages, ErrorMsgs
 from .constants import (
     TITLE_FIELD, CONTENT_FIELD, CATEGORIES_FIELD, STATUS_FIELD, SLUG_FIELD,
-    CREATED_FIELD, UPDATED_FIELD, PUBLISHED_FIELD
+    CREATED_FIELD, UPDATED_FIELD, PUBLISHED_FIELD, REASON_FIELD, OPINION_FIELD,
+    REQUESTED_FIELD, REVIEWER_FIELD, COMMENT_FIELD, RESOLVED_FIELD
 )
-from .models import Opinion, Category, Comment
+from .models import Opinion, Category, Comment, Review
 
 
 class OpinionForm(forms.ModelForm):
@@ -139,6 +140,56 @@ class CommentForm(forms.ModelForm):
                 }
             })
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # add the bootstrap class to the widget
+        update_field_widgets(
+            self,
+            # exclude non-bootstrap fields
+            [field for field in CommentForm.Meta.fields
+             if field not in CommentForm.Meta.non_bootstrap_fields],
+            {'class': 'form-control'})
+
+
+class ReviewForm(forms.ModelForm):
+    """
+    Form to create a review.
+    """
+
+    OPINION_FF = OPINION_FIELD
+    COMMENT_FF = COMMENT_FIELD
+    REQUESTED_FF = REQUESTED_FIELD
+    REASON_FF = REASON_FIELD
+    REVIEWER_FF = REVIEWER_FIELD
+    STATUS_FF = STATUS_FIELD
+    CREATED_FF = CREATED_FIELD
+    UPDATED_FF = UPDATED_FIELD
+    RESOLVED_FF = RESOLVED_FIELD
+
+    reason = CharField(
+        max_length=Review.REVIEW_ATTRIB_REASON_MAX_LEN,
+        widget=Textarea(attrs={
+            "max_length": Review.REVIEW_ATTRIB_REASON_MAX_LEN,
+            "cols": "40",
+            "rows": "5",
+            "placeholder": _("Reason details")
+        }))
+
+    class Meta:
+        model = Review
+        fields = [
+            REASON_FIELD
+        ]
+        non_bootstrap_fields = []
+        help_texts = {
+            REASON_FIELD: 'Reason content.',
+        }
+        error_messages = error_messages(
+            model.MODEL_NAME,
+            *[ErrorMsgs(field, max_length=True)
+              for field in (REASON_FIELD, )]
+        )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

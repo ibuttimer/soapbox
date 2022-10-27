@@ -45,10 +45,12 @@ from .constants import (
     OPINION_PAGINATION_ON_EACH_SIDE, OPINION_PAGINATION_ON_ENDS, SEARCH_QUERY,
     PAGE_QUERY, REORDER_QUERY, ID_FIELD, HIDDEN_QUERY, DATE_NEWEST_LOOKUP,
     DESC_LOOKUP, PINNED_QUERY, TEMPLATE_OPINION_REACTIONS,
-    TEMPLATE_REACTION_CTRLS
+    TEMPLATE_REACTION_CTRLS, UNDER_REVIEW_TITLE, UNDER_REVIEW_EXCERPT,
+    UNDER_REVIEW_CONTENT, UNDER_REVIEW_TITLE_CTX, UNDER_REVIEW_EXCERPT_CTX,
+    UNDER_REVIEW_CONTENT_CTX
 )
 from .models import Opinion, HideStatus, is_id_lookup, PinStatus
-from .queries import opinion_is_pinned
+from .queries import opinion_is_pinned, review_status_check
 from .reactions import OPINION_REACTIONS, get_reaction_status, ReactionsList
 from .search import (
     regex_matchers, TERM_GROUP, regex_date_matchers, DATE_QUERY_GROUP,
@@ -59,11 +61,13 @@ from .views_utils import (
     opinion_list_query_args, opinion_permission_check,
     opinion_search_query_args,
     REORDER_REQ_QUERY_ARGS,
-    NON_REORDER_OPINION_LIST_QUERY_ARGS
+    NON_REORDER_OPINION_LIST_QUERY_ARGS, ensure_list
 )
 from .query_params import QuerySetParams, choice_arg_query
-from .enums import QueryArg, QueryStatus, OpinionSortOrder, PerPage, Hidden, \
-    Pinned, ChoiceArg
+from .enums import (
+    QueryArg, QueryStatus, OpinionSortOrder, PerPage, Hidden, Pinned,
+    ChoiceArg
+)
 
 NON_DATE_QUERIES = [
     TITLE_QUERY, CONTENT_QUERY, AUTHOR_QUERY, CATEGORY_QUERY, STATUS_QUERY,
@@ -320,6 +324,13 @@ class OpinionList(LoginRequiredMixin, generic.ListView):
                     ReactionsList.UNPIN_FIELD: is_pinned
                 }
             ),
+            "review_status": [
+                review_status_check(opinion)
+                for opinion in context['opinion_list']
+            ],
+            UNDER_REVIEW_TITLE_CTX: UNDER_REVIEW_TITLE,
+            UNDER_REVIEW_EXCERPT_CTX: UNDER_REVIEW_EXCERPT,
+            UNDER_REVIEW_CONTENT_CTX: UNDER_REVIEW_CONTENT,
         })
         return context
 
@@ -579,12 +590,14 @@ def get_search_term(
 
 def get_yes_no_ignore_query(
             query_set_params: QuerySetParams, query: str,
-            yes: ChoiceArg, no: ChoiceArg, ignore: ChoiceArg,
+            yes: [ChoiceArg, list[ChoiceArg]],
+            no: [ChoiceArg, list[ChoiceArg]],
+            ignore: [ChoiceArg, list[ChoiceArg]],
             choice: ChoiceArg, clazz: Type[ChoiceArg],
             chosen_qs: QuerySet
         ):
     """
-    Get the choice status query
+    Get a choice status query
     :param query_set_params: query params to update
     :param query: query term from request
     :param yes: yes choice in ChoiceArg
@@ -595,7 +608,7 @@ def get_yes_no_ignore_query(
     :param chosen_qs: query to get chosen item from db
     :return: function to apply query
     """
-    if choice == ignore:
+    if choice in ensure_list(ignore):
         query_set_params.add_all_inclusive(query)
     elif isinstance(choice, clazz):
         # get ids of opinions chosen by the user
@@ -603,12 +616,12 @@ def get_yes_no_ignore_query(
             f'{ID_FIELD}__in': chosen_qs
         }
 
-        if choice == no:
+        if choice in ensure_list(no):
             # exclude chosen opinions
             def qs_exclude(qs: QuerySet):
                 return qs.exclude(**query_params)
             query_set = qs_exclude
-        elif choice == yes:
+        elif choice in ensure_list(yes):
             # only chosen opinions
             def qs_filter(qs: QuerySet):
                 return qs.filter(**query_params)
@@ -643,7 +656,7 @@ def get_pinned_query(
         query_set_params: QuerySetParams,
         pinned: Pinned, user: User):
     """
-    Get the hidden status query
+    Get the pinned status query
     :param query_set_params: query params to update
     :param pinned: pinned status
     :param user: current user

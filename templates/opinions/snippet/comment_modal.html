@@ -1,6 +1,7 @@
+<!-- comment_modal.html start -->
 {% load i18n %}
 {% load form_field %}
-{# comment modal template expects: 'form' as CommentForm #}
+{# comment modal template expects: 'comment_form' as CommentForm #}
 
 <div class="modal fade" id="id--comment-modal" tabindex="-1" aria-labelledby="Create comment" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-fullscreen-md-down modal-dialog-centered modal-dialog-scrollable">
@@ -21,14 +22,16 @@
 
                 {% csrf_token %}
 
-                <div id="id--form-errors-container">
-                    {% include "snippet/form_errors.html" %}
+                <div id="id--comment-form-errors-container">
+                    {% with form=opinion_form %}
+                        {% include "snippet/form_errors.html" %}
+                    {% endwith %}
                 </div>
 
                 <div class="modal-body">
                     <fieldset>
                         <div class="row mb-3">
-                            {% form_field form 'content' as content_field %}
+                            {% form_field comment_form 'content' as content_field %}
                             <div class="col-sm-2 text-start">
                                 <label for="{{ content_field.auto_id }}" class="form-label">{{ content_field.label }}</label>
                             </div>
@@ -54,14 +57,14 @@
            To achieve the same effect, use some custom JavaScript
            https://getbootstrap.com/docs/5.2/components/modal/#how-it-works
          */
-        {% form_field form 'content' as content_field %}
+        {% form_field comment_form 'content' as content_field %}
         $("#id--comment-modal").on('shown.bs.modal', (event) => {
             $("#{{ content_field.auto_id }}").focus();
         });
 
         /* Clear form errors and entered data when modal hidden */
         $("#id--comment-modal").on('hidden.bs.modal', (event) => {
-            $("#id--form-errors-container").html("");
+            $("#id--comment-form-errors-container").html("");
             /* TODO find method of clearing editor content and remove all stored history
                 suggested method (https://summernote.org/deep-dive/#reset) doesn't work (maybe because in iframe?)
                 Can clear input element using $("#{{ content_field.auto_id }}").val("") but editor content is still displayed
@@ -105,10 +108,11 @@
 
             }).fail(function(data) {
                 // redisplay modal
-                $("#id--form-errors-container").html(data.responseJSON.html);
+                $("#id--comment-form-errors-container").html(data.responseJSON.html);
             });
 
             event.preventDefault();
         });
     });
 </script>
+<!-- comment_modal.html end -->

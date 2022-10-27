@@ -27,6 +27,7 @@
 {% load humanize %}
 {% load tz %}
 {% load dict_value %}
+{% load array_value %}
 {% load reaction_popularity %}
 
 {% block opinion_list_content %}
@@ -43,13 +44,18 @@
             <div class="col-12 mt-2">
                 <div class="row d-flex align-items-center">
                     {% for opinion in opinion_list %}
+                        {% array_value review_status forloop.counter0 as review_stat %}
                         <div class="col-md-4">
                             <div class="card mb-4">
                                 <div class="card-body">
                                     <div class="row">
                                         <div class="col-sm-8 mt-0 mb-0">
-                                            <a href="{% url 'opinions:opinion_slug' opinion.slug  %}" class="post-link">
-                                                <h4 id="id_title_{{ forloop.counter }}" class="card-title">{{ opinion.title }}</h4>
+                                            <!-- title -->
+                                            <a {% if review_stat.view_ok %} href="{% url 'opinions:opinion_slug' opinion.slug  %}" {% endif %}
+                                               class="post-link">
+                                                <h4 id="id_title_{{ forloop.counter }}" class="card-title">
+                                                    {% if review_stat.view_ok %}{{ opinion.title }}{% else %}{{ under_review_title }}{% endif %}
+                                                </h4>
                                                 <span class="badge rounded-pill text-bg-warning">{{ opinion.id }}</span>
                                             </a>
                                         </div>
@@ -58,8 +64,6 @@
                                             <span class="badge rounded-pill text-bg-info">{{ category.name }}</span>
                                             {% endfor %}
                                         </div>
-
-
                                         <div id="pinned_{{ forloop.counter }}" class="col-sm-1 mt-0 mb-0">
                                             {# --- template variable defines for includes --- #}
                                             {# reactions template expects: 'target_id' as id of target opinion/comment #}
@@ -73,27 +77,37 @@
                                                     {% endwith %}
                                                 {% endwith %}
                                             {% endwith %}
-
-
-
                                         </div>
                                     </div>
                                     <div class="row">
-                                        <p id="excerpt_{{ forloop.counter }}" class="card-text text-muted">{{ opinion.excerpt }}</p>
+                                        <!-- excerpt -->
+                                        <p id="excerpt_{{ forloop.counter }}" class="card-text text-muted">
+                                            {% if review_stat.view_ok %}{{ opinion.excerpt }}{% else %}{{ under_review_excerpt }}{% endif %}
+                                        </p>
                                     </div>
                                     <hr />
                                     <div class="row">
                                         <div class="col-sm-3 mt-0 mb-0">
-                                            <a class="btn btn-primary" href="{% url 'opinions:opinion_slug' opinion.slug  %}" alt="read {{ opinion.title }}">
+                                            <a
+                                                {% if review_stat.view_ok %}
+                                                class="btn btn-primary" href="{% url 'opinions:opinion_slug' opinion.slug  %}" alt="read {{ opinion.title }}"
+                                                {% else %}}
+                                                class="btn btn-primary disabled" alt="Not available for reading" aria-disabled="true"
+                                                {% endif %}
+                                            >
                                                 Read
                                             </a>
                                         </div>
                                         <div class="col-sm-6 mt-0 mb-0">
+                                            <div class="row mt-0 mb-0">
+                                                <div class="col-md-6 mt-0 mb-0">
+                                                    <a href="{% url 'user:user_id' opinion.user.id %}">{{ opinion.user.username }}</a>
+                                                </div>
+                                                <div class="col-md-6 mt-0 mb-0">
+                                                    <span id="status_{{ forloop.counter }}" class="badge rounded-pill text-bg-light">{{ opinion.status.name }}</span>
+                                                </div>
+                                            </div>
                                             <p class="mt-0 mb-0">
-                                                <a href="{% url 'user:user_id' opinion.user.id %}">{{ opinion.user.username }}</a>
-                                            </p>
-                                            <p class="mt-0 mb-0">
-                                                <span id="status_{{ forloop.counter }}" class="badge rounded-pill text-bg-light">{{ opinion.status.name }}</span>
                                                 {{ opinion.updated | localtime | naturaltime }}
                                             </p>
                                         </div>

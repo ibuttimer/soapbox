@@ -28,7 +28,8 @@ from categories import (
     STATUS_PENDING_REVIEW, STATUS_UNDER_REVIEW, STATUS_APPROVED,
     STATUS_REJECTED,
     REACTION_AGREE, REACTION_DISAGREE, REACTION_HIDE, REACTION_SHOW,
-    REACTION_PIN, REACTION_UNPIN, REACTION_FOLLOW, REACTION_UNFOLLOW
+    REACTION_PIN, REACTION_UNPIN, REACTION_FOLLOW, REACTION_UNFOLLOW,
+    REACTION_REPORT
 )
 from categories.constants import STATUS_ALL
 from categories.models import Status
@@ -181,6 +182,7 @@ class ReactionStatus(ChoiceArg):
     UNPIN = (REACTION_UNPIN, 'unpin')
     FOLLOW = (REACTION_FOLLOW, 'follow')
     UNFOLLOW = (REACTION_UNFOLLOW, 'unfollow')
+    REPORT = (REACTION_REPORT, 'report')
 
     def __init__(self, display: str, arg: str):
         super().__init__(display, arg)
@@ -316,3 +318,16 @@ class Pinned(ChoiceArg):
 
 
 Pinned.DEFAULT = Pinned.IGNORE
+
+
+class Report(ChoiceArg):
+    """ Enum representing report opinion/comment opinions """
+    REPORT = ('Report', 'report')
+    PENDING = ('Pending', 'pending')
+    UNDER = ('Under', 'under')
+    WITHDRAW = ('Withdraw', 'withdraw')
+    APPROVE = ('Approve', 'approve')
+    REJECT = ('Reject', 'reject')
+
+
+Report.DEFAULT = Report.REPORT

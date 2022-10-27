@@ -22,7 +22,12 @@
 #
 from copy import copy
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum, auto
+
+from categories.models import Category, Status
+from opinions.models import Opinion
+from user.models import User
 
 
 class HandleType(Enum):
@@ -219,3 +224,12 @@ class ReactionCtrl:
     selected: bool  # is selected flag
     disabled: bool  # reaction disabled
     visible: bool   # reaction visible
+
+
+@dataclass
+class ReviewStatus:
+    """ Review status for Opinion/Comment """
+
+    reported: bool      # was reported
+    view_ok: bool       # ok to view
+    review_wip: bool    # review in progress

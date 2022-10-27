@@ -52,7 +52,7 @@ class TestReviewModel(BaseOpinionTest):
         review = Review.objects.create(**kwargs)
         self.assertIsNotNone(review)
         self.assertEqual(review.reason, '')
-        self.assertEqual(review.comment, '')
+        self.assertIsNone(review.comment)
         self.assertLessEqual(review.created, datetime.now(tz=timezone.utc))
         self.assertLessEqual(review.updated, datetime.now(tz=timezone.utc))
         self.assertEqual(review.resolved,

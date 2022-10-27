@@ -41,16 +41,18 @@ from .constants import (
     PAGE_QUERY, TITLE_QUERY, CONTENT_QUERY, CATEGORY_QUERY, AUTHOR_QUERY,
     ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY,
     EQUAL_QUERY, REORDER_QUERY, OPINION_ID_QUERY, PARENT_ID_QUERY,
-    COMMENT_DEPTH_QUERY, HIDDEN_QUERY, PINNED_QUERY
+    COMMENT_DEPTH_QUERY, HIDDEN_QUERY, PINNED_QUERY, COMMENT_FORM_CTX,
+    SUBMIT_URL_CTX, READ_ONLY_CTX, STATUS_CTX, OPINION_CTX, COMMENTS_CTX,
+    OPINION_FORM_CTX, REPORT_FORM_CTX, UNDER_REVIEW_TITLE_CTX,
+    UNDER_REVIEW_EXCERPT_CTX, UNDER_REVIEW_CONTENT_CTX
 )
 from .enums import (
     ChoiceArg, QueryArg, QueryStatus, ReactionStatus, OpinionSortOrder,
-    CommentSortOrder, PerPage, Hidden, Pinned
+    CommentSortOrder, PerPage, Hidden, Pinned, Report
 )
 from .models import Opinion, Comment
 from .forms import OpinionForm
 
-READ_ONLY = 'read_only'     # read-only mode
 DEFAULT_COMMENT_DEPTH = 2
 
 # request arguments with always applied defaults
@@ -135,21 +137,20 @@ COMMENT_SEARCH_QUERY_ARGS.extend([
 COMMENT_SEARCH_QUERY_ARGS.extend(DATE_QUERY_ARGS)
 
 
-def get_opinion_context(
-        title: str, submit_url: str = None, form: OpinionForm = None,
-        opinion_obj: Opinion = None, comments: dict = None,
-        read_only: bool = False, status: Status = None) -> dict:
+def get_opinion_context(title: str, **kwargs) -> dict:
     """
     Generate the context for the opinion template
     :param title: title
-    :param submit_url: form commit url, default None
-    :param form: form to display, default None
-    :param opinion_obj: opinion object, default None
-    :param comments: details of comments
-    :param read_only: read only flag, default False
-    :param status: status, default None
+    :param kwargs: context keyword values
+        comment_submit_url: form commit url, default None
+        comment_form: form to display, default None
+        opinion: opinion object, default None
+        comments: details of comments
+        read_only: read only flag, default False
+        status: status, default None
     :return: tuple of template path and context
     """
+    status = kwargs.get(STATUS_CTX, None)
     if status is None:
         status = STATUS_DRAFT
 
@@ -157,21 +158,25 @@ def get_opinion_context(
 
     context = {
         'title': title,
-        READ_ONLY: read_only,
-        'status': status_text,
+        READ_ONLY_CTX: kwargs.get(READ_ONLY_CTX, False),
+        STATUS_CTX: status_text,
         'status_bg':
             'bg-primary' if status_text == STATUS_DRAFT else 'bg-success',
     }
 
-    if form is not None:
-        context['form'] = form
-        context['submit_url'] = submit_url
+    opinion_form = kwargs.get(OPINION_FORM_CTX, None)
+    if opinion_form is not None:
+        context[OPINION_FORM_CTX] = opinion_form
+        context[SUBMIT_URL_CTX] = kwargs.get(SUBMIT_URL_CTX, None)
 
-    if opinion_obj is not None:
-        context['opinion'] = opinion_obj
-
-    if comments is not None:
-        context['comments'] = comments
+    for param in [
+        OPINION_CTX, COMMENTS_CTX, COMMENT_FORM_CTX, REPORT_FORM_CTX,
+        UNDER_REVIEW_TITLE_CTX, UNDER_REVIEW_EXCERPT_CTX,
+        UNDER_REVIEW_CONTENT_CTX
+    ]:
+        value = kwargs.get(param, None)
+        if value is not None:
+            context[param] = value
 
     return context
 
@@ -191,6 +196,28 @@ def timestamp_content(content: [Opinion, Comment]):
 
 def opinion_query_args(
         request: HttpRequest, query: str, clazz: Type[ChoiceArg],
+        default: ChoiceArg) -> Type[ChoiceArg]:
+    """
+    Get opinion query arguments from request query
+    :param request: http request
+    :param query: query parameter in request
+    :param clazz: class of argument
+    :param default: default value
+    :return: argument class instance
+    """
+    # query params are in request.GET
+    # maybe slightly unorthodox, but saves defining 3 routes
+    # https://docs.djangoproject.com/en/4.1/ref/request-response/#querydict-objects
+    params = get_query_args(request, [
+        (query, clazz, default),
+    ])
+    status_query = params[query].value
+
+    return status_query
+
+
+def opinion_query_args_status(
+        request: HttpRequest, query: str, clazz: Type[ChoiceArg],
         default: ChoiceArg) -> tuple[Status, Type[ChoiceArg]]:
     """
     Get opinion save query arguments from request query
@@ -200,13 +227,7 @@ def opinion_query_args(
     :param default: default value
     :return: tuple of Status and argument class instance
     """
-    # query params are in request.GET
-    # maybe slightly unorthodox, but saves defining 3 routes
-    # https://docs.djangoproject.com/en/4.1/ref/request-response/#querydict-objects
-    params = get_query_args(request, [
-        (query, clazz, default),
-    ])
-    status_query = params[query].value
+    status_query = opinion_query_args(request, query, clazz, default)
     status = Status.objects.get(name=status_query.display)
 
     return status, status_query
@@ -219,7 +240,7 @@ def opinion_save_query_args(
     :param request: http request
     :return: tuple of Status and QueryStatus
     """
-    return opinion_query_args(
+    return opinion_query_args_status(
         request, STATUS_QUERY, QueryStatus, QueryStatus.DRAFT)
 
 
@@ -230,12 +251,11 @@ def opinion_like_query_args(
     :param request: http request
     :return: tuple of Status and ReactionStatus
     """
-    return opinion_query_args(
+    return opinion_query_args_status(
         request, STATUS_QUERY, ReactionStatus, ReactionStatus.AGREE)
 
 
-def opinion_pin_query_args(
-        request: HttpRequest) -> tuple[Status, ReactionStatus]:
+def opinion_pin_query_args(request: HttpRequest) -> ReactionStatus:
     """
     Get opinion pin query arguments from request query
     :param request: http request
@@ -245,8 +265,7 @@ def opinion_pin_query_args(
         request, STATUS_QUERY, ReactionStatus, ReactionStatus.PIN)
 
 
-def opinion_hide_query_args(
-        request: HttpRequest) -> tuple[Status, ReactionStatus]:
+def opinion_hide_query_args(request: HttpRequest) -> ReactionStatus:
     """
     Get opinion hide query arguments from request query
     :param request: http request
@@ -254,6 +273,16 @@ def opinion_hide_query_args(
     """
     return opinion_query_args(
         request, STATUS_QUERY, ReactionStatus, ReactionStatus.HIDE)
+
+
+def opinion_report_query_args(request: HttpRequest) -> Report:
+    """
+    Get opinion report query arguments from request query
+    :param request: http request
+    :return: tuple of Status and Report
+    """
+    return opinion_query_args(
+        request, STATUS_QUERY, Report, Report.DEFAULT)
 
 
 def get_query_args(
@@ -381,15 +410,19 @@ def comment_permission_check(request: HttpRequest, op: Crud,
                             raise_ex=raise_ex)
 
 
-def own_opinion_check(request: HttpRequest, opinion_obj: Opinion):
+def own_opinion_check(request: HttpRequest, opinion_obj: Opinion,
+                      raise_ex: bool = True) -> bool:
     """
     Check request user is opinion author
     :param request: http request
     :param opinion_obj: opinion
+    :param raise_ex: raise exception if not own; default True
     """
-    if request.user.id != opinion_obj.user.id:
+    is_own = request.user.id == opinion_obj.user.id
+    if not is_own and raise_ex:
         raise PermissionDenied(
             "Opinions may only be updated by their authors")
+    return is_own
 
 
 def published_check(request: HttpRequest, opinion_obj: Opinion):
@@ -404,26 +437,16 @@ def published_check(request: HttpRequest, opinion_obj: Opinion):
             "Opinion unavailable")
 
 
-def render_opinion_form(
-        title: str, submit_url: str = None, form: OpinionForm = None,
-        opinion_obj: Opinion = None, comments: dict = None,
-        read_only: bool = False, status: Status = None) -> tuple[
+def render_opinion_form(title: str, **kwargs) -> tuple[
             str, dict[str, Opinion | list[str] | OpinionForm | bool]]:
     """
     Render the opinion template
     :param title: title
-    :param submit_url: form commit url
-    :param form: form to display, default None
-    :param opinion_obj: opinion object, default None
-    :param comments: details of comments
-    :param read_only: read only flag, default False
-    :param status: status, default None
+    :param kwargs: context keyword values, see get_opinion_context()
     :return: tuple of template path and context
     """
-    context = get_opinion_context(
-        title, submit_url=submit_url, form=form, opinion_obj=opinion_obj,
-        comments=comments, read_only=read_only, status=status
-    )
+    context = get_opinion_context(title, **kwargs)
+
     context.update({
         'summernote_fields': [OpinionForm.CONTENT_FF],
         'other_fields': [OpinionForm.TITLE_FF],
@@ -431,9 +454,12 @@ def render_opinion_form(
     })
 
     # set initial data
-    form[OpinionForm.CATEGORIES_FF].initial = [
-        Category.objects.get(name=CATEGORY_UNASSIGNED)
-    ] if opinion_obj is None else opinion_obj.categories.all()
+    opinion_form = context.get(OPINION_FORM_CTX, None)
+    if opinion_form:
+        opinion_obj = context.get(OPINION_CTX, None)
+        opinion_form[OpinionForm.CATEGORIES_FF].initial = [
+            Category.objects.get(name=CATEGORY_UNASSIGNED)
+        ] if opinion_obj is None else opinion_obj.categories.all()
 
     return app_template_path(OPINIONS_APP_NAME, "opinion_form.html"), context
 
@@ -447,3 +473,12 @@ def generate_excerpt(content: str):
     soup = BeautifulSoup(content, features="lxml")
     return truncatechars(
         soup.get_text(), Opinion.OPINION_ATTRIB_EXCERPT_MAX_LEN)
+
+
+def ensure_list(item: Any) -> list[Any]:
+    """
+    Ensure argument is returned as a list
+    :param item: item(s) to return as list
+    :return: list
+    """
+    return item if isinstance(item, list) else [item]

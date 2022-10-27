@@ -24,13 +24,13 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from categories import (
-    STATUS_DRAFT, STATUS_PREVIEW, STATUS_PUBLISHED
+    STATUS_DRAFT, STATUS_PREVIEW, STATUS_PUBLISHED, STATUS_PENDING_REVIEW
 )
 from categories.models import Category, Status
 from opinions.constants import (
     OPINION_PAGINATION_ON_EACH_SIDE, OPINION_PAGINATION_ON_ENDS
 )
-from opinions.models import Opinion, Comment, HideStatus
+from opinions.models import Opinion, Comment, HideStatus, Review
 from opinions.views_utils import generate_excerpt
 from opinions.enums import PerPage
 from user.models import User
@@ -54,23 +54,29 @@ class ContentTestBase(BaseUserTest):
     STATUSES = [STATUS_DRAFT, STATUS_PREVIEW, STATUS_PUBLISHED]
 
     opinions: list[Opinion]
+    hidden_opinions: list[Opinion]
+    reported_opinions: list[Opinion]
     comments: list[Comment]
 
     @staticmethod
-    def create_opinion(index: int, user: User, status: Status,
-                       categories: list[Category], days: int,
-                       hidden: bool = False) -> Opinion:
-        if hidden:
+    def create_opinion(
+            index: int, user: User, status: Status,
+            categories: list[Category], days: int,
+            hidden: bool = False, reported: bool = False) -> Opinion:
+        other_user = None
+        title_addendum = ''
+        if hidden or reported:
             other_user = ContentTestBase.get_other_user(user)
-            title_hidden = f' hidden[{other_user.username}]'
-        else:
-            title_hidden = ''
+        if hidden:
+            title_addendum = f'{title_addendum} hidden[{other_user.username}]'
+        if reported:
+            title_addendum = f'{title_addendum} report[{other_user.username}]'
 
         kwargs = ContentTestBase.OPINION_INFO[
             index % len(ContentTestBase.OPINION_INFO)].copy()
         kwargs[Opinion.TITLE_FIELD] = \
             f'{kwargs[Opinion.TITLE_FIELD]} {user.first_name} {index}' \
-            f'{title_hidden}'
+            f'{title_addendum}'
         kwargs[Opinion.USER_FIELD] = user
         kwargs[Opinion.STATUS_FIELD] = status
         if status.name == STATUS_PUBLISHED:
@@ -92,6 +98,16 @@ class ContentTestBase(BaseUserTest):
             }
             HideStatus.objects.create(**kwargs)
 
+        if reported:
+            kwargs = {
+                Review.OPINION_FIELD: opinion,
+                Review.REQUESTED_FIELD: other_user,
+                Review.REASON_FIELD: f'{other_user} is offended',
+                Review.STATUS_FIELD:
+                    Status.objects.get(name=STATUS_PENDING_REVIEW),
+            }
+            Review.objects.create(**kwargs)
+
         return opinion
 
     @classmethod
@@ -102,6 +118,8 @@ class ContentTestBase(BaseUserTest):
         category_list = list(Category.objects.all())
 
         cls.opinions = []
+        cls.hidden_opinions = []
+        cls.reported_opinions = []
         cls.comments = []
         num_templates = len(ContentTestBase.OPINION_INFO)
 
@@ -133,24 +151,30 @@ class ContentTestBase(BaseUserTest):
                 cls.opinions.append(opinion)
                 days += 1
 
-        # add a hidden opinion for each user
+        # add hidden/reported opinions for each user
         published = Status.objects.get(name=STATUS_PUBLISHED)
         for user_idx in range(ContentTestBase.num_users()):
             user, _ = ContentTestBase.get_user_by_index(user_idx)
 
             for index in range(num_templates):
-                opinion = ContentTestBase.create_opinion(
-                    (user_idx * num_templates) + index,
-                    user, published,
-                    get_categories(user_idx, index),
-                    days=days,
-                    hidden=True
-                )
-                cls.opinions.append(opinion)
-                days += 1
+                for action in range(2):
+                    opinion = ContentTestBase.create_opinion(
+                        (user_idx * num_templates) + index,
+                        user, published,
+                        get_categories(user_idx, index),
+                        days=days,
+                        hidden=True if action else False,
+                        reported=False if action else True
+                    )
+                    cls.opinions.append(opinion)
+                    days += 1
+
+                    if action:
+                        cls.hidden_opinions.append(opinion)
+                    else:
+                        cls.reported_opinions.append(opinion)
 
         # add enough published opinions to get pagination ellipsis
-        published = Status.objects.get(name=STATUS_PUBLISHED)
         num_pages = ((OPINION_PAGINATION_ON_ENDS + 1) * 2) + \
                     (OPINION_PAGINATION_ON_EACH_SIDE * 2) + 1
         start = num_templates * ContentTestBase.num_users()

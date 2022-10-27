@@ -1,0 +1,103 @@
+<!-- report_modal.html start -->
+{% load i18n %}
+{% load form_field %}
+{# comment modal template expects: 'report_form' as ReviewForm #}
+
+<div class="modal fade" id="id--report-modal" tabindex="-1" aria-labelledby="Report opinion" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-fullscreen-md-down modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <var id="id--report-submit-url" hidden>
+                {# content replaced by click event handler for button #}
+            </var>
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="id--report-modal-heading">Report opinion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'opinions:report_opinion_id' opinion.id %}"
+                  id="id--report-modal-form">
+
+                {% csrf_token %}
+
+                <div id="id--report-form-errors-container">
+                    {% with form=report_form %}
+                        {% include "snippet/form_errors.html" %}
+                    {% endwith %}
+                </div>
+
+                <div class="modal-body">
+                    <fieldset>
+                        <div class="row mb-3">
+                            {% form_field report_form 'reason' as reason_field %}
+                            <div class="col-sm-2 text-start">
+                                <label for="{{ reason_field.auto_id }}" class="form-label">{{ reason_field.label }}</label>
+                            </div>
+                            <div class="col-sm-10">
+                                {{ reason_field }}
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+                    <button type="submit" class="btn__save-comment btn btn-outline-success">{% trans "Report" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+
+        /* Due to how HTML5 defines its semantics, the autofocus HTML attribute has no effect in Bootstrap modals.
+           To achieve the same effect, use some custom JavaScript
+           https://getbootstrap.com/docs/5.2/components/modal/#how-it-works
+         */
+        {% form_field report_form 'reason' as reason_field %}
+        $("#id--report-modal").on('shown.bs.modal', (event) => {
+            $("#{{ reason_field.auto_id }}").focus();
+        });
+
+        /* Clear form errors and entered data when modal hidden */
+        $("#id--report-modal").on('hidden.bs.modal', (event) => {
+            $("#id--report-form-errors-container").html("");
+            $("#{{ reason_field.auto_id }}").val("")
+        });
+
+        /* Submit handler for comment modal */
+        $("form[id^='id--report-modal']").submit(function (event) {
+            const formData = {
+                reason: $("#{{ reason_field.auto_id }}").val(),
+            };
+
+            const url = event.currentTarget.attributes.action.value;
+
+            $.ajax({
+                method: 'post',
+                url: url,
+                headers: {
+                    'X-CSRFTOKEN': '{{ csrf_token }}'
+                },
+                data: formData,
+            }).done(function(data) {
+                //
+                $("#" + data.element_id).replaceWith(data.html);
+
+                // close modal
+                $("#id--report-modal").modal('hide');
+
+                // set click handlers for reactions
+                setReactionHandlers();
+                enableTooltips();
+            }).fail(function(data) {
+                // redisplay modal
+                $("#id--report-form-errors-container").html(data.responseJSON.html);
+            });
+
+            event.preventDefault();
+        });
+    });
+</script>
+<!-- report_modal.html end -->

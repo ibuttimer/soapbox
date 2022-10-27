@@ -23,6 +23,7 @@
 import json
 import re
 from http import HTTPStatus
+from typing import Optional, Callable
 
 from bs4 import BeautifulSoup
 from django.http import HttpResponse
@@ -36,7 +37,9 @@ from opinions import (
     OPINION_ID_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME,
     OPINION_PREVIEW_ID_ROUTE_NAME, OPINION_STATUS_ID_ROUTE_NAME
 )
-from opinions.constants import STATUS_QUERY
+from opinions.constants import (
+    STATUS_QUERY, UNDER_REVIEW_TITLE, UNDER_REVIEW_CONTENT
+)
 from opinions.models import Opinion
 from opinions.enums import QueryStatus
 from soapbox import OPINIONS_APP_NAME
@@ -216,39 +219,55 @@ class TestOpinionView(
             len(opinions), 1, msg=f'No opinions with {status} status')
         return opinions
 
-    def test_get_other_opinion_by_id(self):
-        """ Test page content for opinion by id of not logged-in user """
+    def check_get_other_opinion(self, opinion_by: str,
+                                find_func: Optional[Callable] = None):
+        """ Test page content for opinion of not logged-in user """
         _, key = TestOpinionView.get_user_by_index(0)
         logged_in_user = self.login_user_by_key(key)
 
         # get list of other users' published opinions
         opinions = self.get_other_users_opinions(
             logged_in_user, STATUS_PUBLISHED)
-        opinion = opinions[0]
+        opinion = opinions[0] if find_func is None else find_func(opinions)
 
         self.assertNotEqual(logged_in_user, opinion.user)
-        response = self.get_opinion_by_id(opinion.id)
+        response = self.get_opinion_by(
+            opinion.id if opinion_by == BY_ID else opinion.slug, opinion_by)
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertTemplateUsed(response, OPINION_VIEW_TEMPLATE)
         TestOpinionView.verify_opinion_content(
             self, opinion, response, is_readonly=True)
+
+    def test_get_other_opinion_by_id(self):
+        """ Test page content for opinion by id of not logged-in user """
+        self.check_get_other_opinion(BY_ID)
 
     def test_get_other_opinion_by_slug(self):
         """ Test page content for opinion by slug of not logged-in user """
-        _, key = TestOpinionView.get_user_by_index(0)
-        logged_in_user = self.login_user_by_key(key)
+        self.check_get_other_opinion(BY_SLUG)
 
-        # get list of other users' published opinions
-        opinions = self.get_other_users_opinions(
-            logged_in_user, STATUS_PUBLISHED)
-        opinion = opinions[0]
+    def test_get_under_review_opinion_by_id(self):
+        """
+        Test page content for under review opinion by id of not logged-in user
+        """
+        def find_func(opinions):
+            return self.find_under_review(opinions)[0]
+        self.check_get_other_opinion(BY_ID, find_func=find_func)
 
-        self.assertNotEqual(logged_in_user, opinion.user)
-        response = self.get_opinion_by_slug(opinion.slug)
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertTemplateUsed(response, OPINION_VIEW_TEMPLATE)
-        TestOpinionView.verify_opinion_content(
-            self, opinion, response, is_readonly=True)
+    def test_get_under_review_opinion_by_slug(self):
+        """
+        Test page content for under review opinion by slug of not logged-in
+        user
+        """
+        def find_func(opinions):
+            return self.find_under_review(opinions)[0]
+        self.check_get_other_opinion(BY_SLUG, find_func=find_func)
+
+    def find_under_review(self, opinions: list[Opinion]) -> list[Opinion]:
+        ids = list(
+            map(lambda op: op.id, TestOpinionView.reported_opinions)
+        )
+        return list(filter(lambda op: op.id in ids, opinions))
 
     def check_other_opinion_access(self, opinion_by: str):
         """
@@ -410,18 +429,32 @@ class TestOpinionView(
             response.content.decode(
                 "utf-8", errors="ignore"), features="lxml"
         )
+
+        under_review = any(
+            map(lambda op: op.id == opinion.id, test_case.reported_opinions)
+        )
+        if under_review:
+            expected_title = UNDER_REVIEW_TITLE
+            expected_content = UNDER_REVIEW_CONTENT
+        else:
+            expected_title = opinion.title
+            expected_content = opinion.excerpt
+
         # check tag for title
         inputs = soup.find_all(id='id_title')
         test_case.assertEqual(len(inputs), 1)
-        title = inputs[0].text if is_readonly else inputs[0].get('value')
-        test_case.assertTrue(title, opinion.title)
+        title = inputs[0].text.strip() if is_readonly \
+            else inputs[0].get('value')
+        test_case.assertEqual(title, expected_title)
 
         if is_readonly:
-            # check for readonly_content div, can't check content as its
-            # replaced by javascript
-            SoupMixin.find_tag(test_case,
-                               soup.find_all(id='readonly_content'),
-                               lambda tag: True)
+            # check for readonly_content div
+            content = SoupMixin.find_tag(
+                test_case, soup.find_all(id='readonly_content'),
+                lambda tag: True)
+            if under_review:
+                test_case.assertEqual(content.text.strip(), expected_content)
+            # else can't check content as its replaced by javascript
         else:
             # check textarea tags for content
             SoupMixin.find_tag(test_case, soup.find_all('textarea'),
