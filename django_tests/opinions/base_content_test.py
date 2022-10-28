@@ -31,7 +31,7 @@ from opinions.constants import (
     OPINION_PAGINATION_ON_EACH_SIDE, OPINION_PAGINATION_ON_ENDS
 )
 from opinions.models import Opinion, Comment, HideStatus, Review
-from opinions.views_utils import generate_excerpt
+from opinions.views.utils import generate_excerpt
 from opinions.enums import PerPage
 from user.models import User
 from ..user.base_user_test import BaseUserTest

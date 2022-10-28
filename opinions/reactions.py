@@ -36,7 +36,7 @@ from .models import Opinion, Comment, AgreementStatus, PinStatus
 from .queries import opinion_is_pinned, content_is_reported
 from .templatetags.reaction_button_id import reaction_button_id
 from .enums import ReactionStatus
-from .views_utils import ensure_list
+from opinions.views.utils import ensure_list
 
 MODAL = "modal"
 AJAX = "ajax"

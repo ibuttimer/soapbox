@@ -46,15 +46,19 @@ from .constants import (
     COMMENT_HIDE_ID_URL, COMMENT_HIDE_ID_ROUTE_NAME,
     COMMENT_REPORT_ID_URL, COMMENT_REPORT_ID_ROUTE_NAME,
 )
-from .views_comment_create import OpinionCommentCreate, CommentCommentCreate
-from .views_comment_list import CommentList, CommentSearch, opinion_comments
-from .views_opinion_create import OpinionCreate
-from .views_opinion_by_id import (
+from opinions.views.comment_create import (
+    OpinionCommentCreate, CommentCommentCreate
+)
+from opinions.views.comment_list import (
+    CommentList, CommentSearch, opinion_comments
+)
+from opinions.views.opinion_create import OpinionCreate
+from opinions.views.opinion_by_id import (
     OpinionDetailById, OpinionDetailBySlug, OpinionDetailPreviewById,
     opinion_status_patch, opinion_like_patch, opinion_hide_patch,
     opinion_pin_patch, opinion_report_post
 )
-from .views_opinion_list import OpinionList, OpinionSearch
+from opinions.views.opinion_list import OpinionList, OpinionSearch
 
 
 # https://docs.djangoproject.com/en/4.1/topics/http/urls/#url-namespaces-and-included-urlconfs

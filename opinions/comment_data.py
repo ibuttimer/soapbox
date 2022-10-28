@@ -34,7 +34,7 @@ from .constants import (
 )
 from .models import Comment, Opinion, AgreementStatus, HideStatus, PinStatus
 from .comment_utils import get_comment_queryset
-from .views_utils import DEFAULT_COMMENT_DEPTH
+from opinions.views.utils import DEFAULT_COMMENT_DEPTH
 from .enums import QueryArg, PerPage
 
 REPLY_CONTAINER_ID = 'id--comment-collapse'

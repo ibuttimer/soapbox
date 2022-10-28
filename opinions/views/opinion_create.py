@@ -34,11 +34,11 @@ from soapbox import (
 from utils import (
     redirect_on_success_or_render, Crud, reverse_q, namespaced_url
 )
-from .constants import (
+from opinions.constants import (
     OPINION_NEW_ROUTE_NAME, SUBMIT_URL_CTX, OPINION_FORM_CTX
 )
-from .forms import OpinionForm
-from .views_utils import (
+from opinions.forms import OpinionForm
+from opinions.views.utils import (
     opinion_permission_check, opinion_save_query_args, timestamp_content,
     render_opinion_form, generate_excerpt
 )

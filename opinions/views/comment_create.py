@@ -38,13 +38,13 @@ from soapbox import (
 from utils import (
     Crud, app_template_path
 )
-from .comment_data import CommentBundle
-from .constants import TEMPLATE_TARGET_ID, TEMPLATE_REACTION_CTRLS, \
+from opinions.comment_data import CommentBundle
+from opinions.constants import TEMPLATE_TARGET_ID, TEMPLATE_REACTION_CTRLS, \
     TEMPLATE_COMMENT_REACTIONS
-from .forms import CommentForm
-from .models import Opinion, Comment
-from .reactions import COMMENT_REACTIONS, get_reaction_status
-from .views_utils import (
+from opinions.forms import CommentForm
+from opinions.models import Opinion, Comment
+from opinions.reactions import COMMENT_REACTIONS, get_reaction_status
+from opinions.views.utils import (
     comment_permission_check, timestamp_content
 )
 

@@ -20,7 +20,6 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-import re
 from datetime import datetime
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -38,11 +37,11 @@ from .models import Opinion, Comment
 from .query_params import QuerySetParams, choice_arg_query
 from .search import (
     regex_matchers, TERM_GROUP, regex_date_matchers, DATE_QUERY_GROUP,
-    DATE_QUERIES, DATE_QUERY_YR_GROUP, DATE_QUERY_MTH_GROUP,
+    DATE_QUERY_YR_GROUP, DATE_QUERY_MTH_GROUP,
     DATE_QUERY_DAY_GROUP, MARKER_CHARS
 )
-from .views_utils import (
-    NON_REORDER_COMMENT_LIST_QUERY_ARGS
+from opinions.views.utils import (
+    NON_REORDER_COMMENT_LIST_QUERY_ARGS, DATE_QUERIES
 )
 from .enums import QueryArg, QueryStatus
 

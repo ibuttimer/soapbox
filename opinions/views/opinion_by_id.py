@@ -21,10 +21,11 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 from http import HTTPStatus
-from typing import Optional
+from typing import Optional, Union
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Model
 from django.http import (
     HttpRequest, HttpResponse, HttpResponseNotAllowed, JsonResponse
 )
@@ -34,7 +35,7 @@ from django.views import View
 from django.views.decorators.http import require_http_methods
 
 from categories import (
-    STATUS_PREVIEW, STATUS_UNDER_REVIEW, STATUS_PENDING_REVIEW
+    STATUS_PREVIEW, STATUS_PENDING_REVIEW
 )
 from categories.models import Status
 from soapbox import (
@@ -44,7 +45,7 @@ from utils import (
     app_template_path, redirect_on_success_or_render, Crud, reverse_q,
     namespaced_url
 )
-from .constants import (
+from opinions.constants import (
     OPINION_ID_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME,
     OPINION_PREVIEW_ID_ROUTE_NAME, OPINION_ID_QUERY, PAGE_QUERY,
     PER_PAGE_QUERY, COMMENT_DEPTH_QUERY, PARENT_ID_QUERY, TEMPLATE_TARGET_ID,
@@ -57,24 +58,24 @@ from .constants import (
     UNDER_REVIEW_CONTENT, UNDER_REVIEW_TITLE_CTX, UNDER_REVIEW_EXCERPT_CTX,
     UNDER_REVIEW_CONTENT_CTX
 )
-from .comment_data import get_comment_bundle
-from .forms import OpinionForm, CommentForm, ReviewForm
-from .models import (
-    Opinion, Comment, AgreementStatus, HideStatus, PinStatus, Review
+from opinions.comment_data import get_comment_bundle
+from opinions.forms import OpinionForm, CommentForm, ReviewForm
+from opinions.models import (
+    Opinion, Comment, AgreementStatus, HideStatus, PinStatus
 )
-from .queries import review_status_check
-from .reactions import (
+from opinions.queries import review_status_check
+from opinions.reactions import (
     OPINION_REACTIONS, COMMENT_REACTIONS, get_reaction_status
 )
-from .templatetags.reaction_ul_id import reaction_ul_id
-from .views_utils import (
+from opinions.templatetags.reaction_ul_id import reaction_ul_id
+from opinions.views.utils import (
     opinion_permission_check, opinion_save_query_args, timestamp_content,
     own_opinion_check, published_check, get_opinion_context,
     render_opinion_form, comment_permission_check, DEFAULT_COMMENT_DEPTH,
-    opinion_like_query_args, opinion_hide_query_args, opinion_pin_query_args,
-    opinion_report_query_args, generate_excerpt
+    like_query_args, hide_query_args, pin_query_args,
+    generate_excerpt
 )
-from .enums import QueryArg, QueryStatus, ReactionStatus, PerPage, Report
+from opinions.enums import QueryArg, QueryStatus, ReactionStatus, PerPage
 
 TITLE_NEW = "Creation"
 TITLE_UPDATE = "Update"
@@ -466,14 +467,28 @@ def opinion_like_patch(request: HttpRequest, pk: int) -> HttpResponse:
     """
     opinion_permission_check(request, Crud.READ)
 
-    opinion_obj = get_object_or_404(Opinion, pk=pk)
+    return like_patch(request, Opinion, pk, AgreementStatus.OPINION_FIELD)
 
-    status, reaction = opinion_like_query_args(request)
+
+def like_patch(
+        request: HttpRequest, model: Model, pk: int, field: str
+    ) -> HttpResponse:
+    """
+    View function to update opinion like status.
+    :param request: http request
+    :param model:   content model class
+    :param pk:      id of opinion
+    :param field:   agreement status field name for model
+    :return: http response
+    """
+    content = get_object_or_404(model, pk=pk)
+
+    status, reaction = like_query_args(request)
 
     code = HTTPStatus.BAD_REQUEST
     if reaction in [ReactionStatus.AGREE, ReactionStatus.DISAGREE]:
         query_args = {
-            AgreementStatus.OPINION_FIELD: opinion_obj,
+            field: content,
             AgreementStatus.USER_FIELD: request.user
         }
         query = AgreementStatus.objects.filter(**query_args)
@@ -499,7 +514,7 @@ def opinion_like_patch(request: HttpRequest, pk: int) -> HttpResponse:
             if agreement is not None:
                 code = HTTPStatus.OK
 
-    return opinion_react_response(request, opinion_obj, code)
+    return react_response(request, content, code)
 
 
 @login_required
@@ -515,7 +530,7 @@ def opinion_pin_patch(request: HttpRequest, pk: int) -> HttpResponse:
 
     opinion_obj = get_object_or_404(Opinion, pk=pk)
 
-    reaction = opinion_pin_query_args(request)
+    reaction = pin_query_args(request)
 
     code = HTTPStatus.BAD_REQUEST
     if reaction in [ReactionStatus.PIN, ReactionStatus.UNPIN]:
@@ -535,7 +550,7 @@ def opinion_pin_patch(request: HttpRequest, pk: int) -> HttpResponse:
             if created:
                 code = HTTPStatus.OK
 
-    return opinion_react_response(request, opinion_obj, code)
+    return react_response(request, opinion_obj, code)
 
 
 @login_required
@@ -565,7 +580,7 @@ def opinion_report_post(request: HttpRequest, pk: int) -> JsonResponse:
         # django autocommits changes
         # https://docs.djangoproject.com/en/4.1/topics/db/transactions/#autocommit
 
-        response = opinion_react_response(request, opinion_obj, HTTPStatus.OK)
+        response = react_response(request, opinion_obj, HTTPStatus.OK)
 
     else:
         # display form errors
@@ -582,28 +597,31 @@ def opinion_report_post(request: HttpRequest, pk: int) -> JsonResponse:
     return response
 
 
-def opinion_react_response(
-            request: HttpRequest, opinion_obj: Opinion, code: HTTPStatus
-        ) -> JsonResponse:
+def react_response(
+        request: HttpRequest, content: Union[Opinion, Comment],
+        code: HTTPStatus
+    ) -> JsonResponse:
     """
-    View function to update opinion like status.
+    Generate response to reaction update.
     :param request: http request
-    :param opinion_obj: opinion
+    :param content: opinion or comment
     :param code: status code for response
     :return: response
     """
     # Note: if code is HTTPStatus.NO_CONTENT nothing is returned in response
-    reaction_ctrls = get_reaction_status(request.user, opinion_obj)
+    reaction_ctrls = get_reaction_status(request.user, content)
+
+    target_type = content.__class__._meta.model_name.lower()
 
     return JsonResponse({
-        'element_id': reaction_ul_id('opinion', opinion_obj.id),
+        'element_id': reaction_ul_id(target_type, content.id),
         'html': render_to_string(
             app_template_path(
                 OPINIONS_APP_NAME, "snippet", "reactions.html"),
             context={
                 # reactions template
-                TEMPLATE_TARGET_ID: opinion_obj.id,
-                TEMPLATE_TARGET_TYPE: 'opinion',
+                TEMPLATE_TARGET_ID: content.id,
+                TEMPLATE_TARGET_TYPE: target_type,
                 TEMPLATE_REACTIONS: OPINION_REACTIONS,
                 TEMPLATE_REACTION_CTRLS: reaction_ctrls,
             },
@@ -624,7 +642,7 @@ def opinion_hide_patch(request: HttpRequest, pk: int) -> HttpResponse:
 
     opinion_obj = get_object_or_404(Opinion, pk=pk)
 
-    reaction = opinion_hide_query_args(request)
+    reaction = hide_query_args(request)
 
     code = HTTPStatus.BAD_REQUEST
     if reaction in [ReactionStatus.HIDE, ReactionStatus.SHOW]:

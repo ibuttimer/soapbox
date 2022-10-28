@@ -20,9 +20,9 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Type
-
+from typing import Any, Type, Union, List, Optional, TypeVar
 from zoneinfo import ZoneInfo
 
 from django.core.exceptions import PermissionDenied
@@ -36,7 +36,7 @@ from categories import (
     STATUS_DRAFT, STATUS_PUBLISHED, CATEGORY_UNASSIGNED
 )
 from categories.models import Status, Category
-from .constants import (
+from opinions.constants import (
     ORDER_QUERY, SEARCH_QUERY, STATUS_QUERY, PER_PAGE_QUERY,
     PAGE_QUERY, TITLE_QUERY, CONTENT_QUERY, CATEGORY_QUERY, AUTHOR_QUERY,
     ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY,
@@ -46,48 +46,77 @@ from .constants import (
     OPINION_FORM_CTX, REPORT_FORM_CTX, UNDER_REVIEW_TITLE_CTX,
     UNDER_REVIEW_EXCERPT_CTX, UNDER_REVIEW_CONTENT_CTX
 )
-from .enums import (
+from opinions.enums import (
     ChoiceArg, QueryArg, QueryStatus, ReactionStatus, OpinionSortOrder,
     CommentSortOrder, PerPage, Hidden, Pinned, Report
 )
-from .models import Opinion, Comment
-from .forms import OpinionForm
+from opinions.models import Opinion, Comment
+from opinions.forms import OpinionForm
 
 DEFAULT_COMMENT_DEPTH = 2
+
+# workaround for self type hints from https://peps.python.org/pep-0673/
+TQueryOption = TypeVar("TQueryOption", bound="QueryOption")
+
+
+@dataclass
+class QueryOption:
+    """
+    Request query option class
+    """
+    query: str
+    """ Query key """
+    clazz: Optional[Type[ChoiceArg]]
+    """ Class of choice result """
+    default: Union[ChoiceArg, Any]
+    """ Default choice """
+
+    @classmethod
+    def of_no_cls_dflt(cls: Type[TQueryOption], query: str) -> TQueryOption:
+        """ Get QueryOption with no class or default """
+        return cls(query=query, clazz=None, default=None)
+
+    @classmethod
+    def of_no_cls(
+        cls: Type[TQueryOption], query: str, default: Union[ChoiceArg, Any]
+    ) -> TQueryOption:
+        """ Get QueryOption with no class or default """
+        return cls(query=query, clazz=None, default=default)
+
 
 # request arguments with always applied defaults
 APPLIED_DEFAULTS_QUERY_ARGS = [
     # query,      arg class,        default value
     # status included as default is to only show published opinions
-    (STATUS_QUERY, QueryStatus, QueryStatus.PUBLISH),
+    QueryOption(STATUS_QUERY, QueryStatus, QueryStatus.PUBLISH),
     # hidden included as default is to only show visible opinions
-    (HIDDEN_QUERY, Hidden, Hidden.DEFAULT),
+    QueryOption(HIDDEN_QUERY, Hidden, Hidden.DEFAULT),
 ]
 # request arguments for an opinion list request
 OPINION_LIST_QUERY_ARGS = [
     # query,      arg class,        default value
-    (ORDER_QUERY, OpinionSortOrder, OpinionSortOrder.DEFAULT),
-    (PAGE_QUERY, None, 1),
-    (PER_PAGE_QUERY, PerPage, PerPage.DEFAULT),
-    (REORDER_QUERY, None, 0),
-    (COMMENT_DEPTH_QUERY, None, DEFAULT_COMMENT_DEPTH),
+    QueryOption(ORDER_QUERY, OpinionSortOrder, OpinionSortOrder.DEFAULT),
+    QueryOption.of_no_cls(PAGE_QUERY, 1),
+    QueryOption(PER_PAGE_QUERY, PerPage, PerPage.DEFAULT),
+    QueryOption.of_no_cls(REORDER_QUERY, 0),
+    QueryOption.of_no_cls(COMMENT_DEPTH_QUERY, DEFAULT_COMMENT_DEPTH),
     # non-reorder query args
-    (AUTHOR_QUERY, None, None),
-    (PINNED_QUERY, Pinned, Pinned.IGNORE),
+    QueryOption.of_no_cls_dflt(AUTHOR_QUERY),
+    QueryOption(PINNED_QUERY, Pinned, Pinned.IGNORE),
 ]
 OPINION_LIST_QUERY_ARGS.extend(APPLIED_DEFAULTS_QUERY_ARGS)
 # request arguments for an comment list request
 COMMENT_LIST_QUERY_ARGS = [
     # query,      arg class,        default value
-    (ORDER_QUERY, CommentSortOrder, CommentSortOrder.DEFAULT),
-    (PAGE_QUERY, None, 1),
-    (PER_PAGE_QUERY, PerPage, PerPage.DEFAULT),
-    (REORDER_QUERY, None, 0),
-    (COMMENT_DEPTH_QUERY, None, DEFAULT_COMMENT_DEPTH),
+    QueryOption(ORDER_QUERY, CommentSortOrder, CommentSortOrder.DEFAULT),
+    QueryOption.of_no_cls(PAGE_QUERY, 1),
+    QueryOption(PER_PAGE_QUERY, PerPage, PerPage.DEFAULT),
+    QueryOption.of_no_cls(REORDER_QUERY, 0),
+    QueryOption.of_no_cls(COMMENT_DEPTH_QUERY, DEFAULT_COMMENT_DEPTH),
     # non-reorder query args
-    (AUTHOR_QUERY, None, None),
-    (OPINION_ID_QUERY, None, None),
-    (PARENT_ID_QUERY, None, None),
+    QueryOption.of_no_cls_dflt(AUTHOR_QUERY),
+    QueryOption.of_no_cls_dflt(OPINION_ID_QUERY),
+    QueryOption.of_no_cls_dflt(PARENT_ID_QUERY),
 ]
 COMMENT_LIST_QUERY_ARGS.extend(APPLIED_DEFAULTS_QUERY_ARGS)
 # args for a reorder/next page/etc. request
@@ -98,32 +127,31 @@ REORDER_REQ_QUERY_ARGS = [
 # query args sent for list request which are not always sent with
 # a reorder request
 NON_REORDER_OPINION_LIST_QUERY_ARGS = [
-    a[0] for a in OPINION_LIST_QUERY_ARGS
-    if a[0] not in REORDER_REQ_QUERY_ARGS
+    a.query for a in OPINION_LIST_QUERY_ARGS
+    if a.query not in REORDER_REQ_QUERY_ARGS
 ]
 NON_REORDER_COMMENT_LIST_QUERY_ARGS = [
-    a[0] for a in COMMENT_LIST_QUERY_ARGS
-    if a[0] not in REORDER_REQ_QUERY_ARGS
+    a.query for a in COMMENT_LIST_QUERY_ARGS
+    if a.query not in REORDER_REQ_QUERY_ARGS
 ]
 
+DATE_QUERIES = [
+    ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY,
+    EQUAL_QUERY
+]
 # date query request arguments for a search request
 DATE_QUERY_ARGS = [
     # query,       arg class, default value
-    (ON_OR_AFTER_QUERY, None, None),
-    (ON_OR_BEFORE_QUERY, None, None),
-    (AFTER_QUERY, None, None),
-    (BEFORE_QUERY, None, None),
-    (EQUAL_QUERY, None, None),
+    QueryOption.of_no_cls_dflt(query) for query in DATE_QUERIES
 ]
 
 # request arguments for an opinion search request
 OPTION_SEARCH_QUERY_ARGS = OPINION_LIST_QUERY_ARGS.copy()
 OPTION_SEARCH_QUERY_ARGS.extend([
     # query,       arg class, default value
-    (SEARCH_QUERY, None, None),
-    (TITLE_QUERY, None, None),
-    (CONTENT_QUERY, None, None),
-    (CATEGORY_QUERY, None, None),
+    QueryOption.of_no_cls_dflt(query) for query in [
+        SEARCH_QUERY, TITLE_QUERY, CONTENT_QUERY, CATEGORY_QUERY
+    ]
 ])
 OPTION_SEARCH_QUERY_ARGS.extend(DATE_QUERY_ARGS)
 
@@ -131,8 +159,9 @@ OPTION_SEARCH_QUERY_ARGS.extend(DATE_QUERY_ARGS)
 COMMENT_SEARCH_QUERY_ARGS = COMMENT_LIST_QUERY_ARGS.copy()
 COMMENT_SEARCH_QUERY_ARGS.extend([
     # query,       arg class, default value
-    (SEARCH_QUERY, None, None),
-    (CONTENT_QUERY, None, None),
+    QueryOption.of_no_cls_dflt(query) for query in [
+       SEARCH_QUERY, CONTENT_QUERY
+    ]
 ])
 COMMENT_SEARCH_QUERY_ARGS.extend(DATE_QUERY_ARGS)
 
@@ -194,40 +223,33 @@ def timestamp_content(content: [Opinion, Comment]):
             content.published = timestamp
 
 
-def opinion_query_args(
-        request: HttpRequest, query: str, clazz: Type[ChoiceArg],
-        default: ChoiceArg) -> Type[ChoiceArg]:
+def query_args_value(
+        request: HttpRequest, query_option: QueryOption) -> Type[ChoiceArg]:
     """
-    Get opinion query arguments from request query
+    Get query arguments from request query
     :param request: http request
-    :param query: query parameter in request
-    :param clazz: class of argument
-    :param default: default value
+    :param query_option: query option
     :return: argument class instance
     """
     # query params are in request.GET
     # maybe slightly unorthodox, but saves defining 3 routes
     # https://docs.djangoproject.com/en/4.1/ref/request-response/#querydict-objects
-    params = get_query_args(request, [
-        (query, clazz, default),
-    ])
-    status_query = params[query].value
+    params = get_query_args(request, query_option)
+    status_query = params[query_option.query].value
 
     return status_query
 
 
-def opinion_query_args_status(
-        request: HttpRequest, query: str, clazz: Type[ChoiceArg],
-        default: ChoiceArg) -> tuple[Status, Type[ChoiceArg]]:
+def query_args_status(
+        request: HttpRequest, query_option: QueryOption
+    ) -> tuple[Status, Type[ChoiceArg]]:
     """
-    Get opinion save query arguments from request query
+    Get query arguments from request query
     :param request: http request
-    :param query: query parameter in request
-    :param clazz: class of argument
-    :param default: default value
+    :param query_option: query option
     :return: tuple of Status and argument class instance
     """
-    status_query = opinion_query_args(request, query, clazz, default)
+    status_query = query_args_value(request, query_option)
     status = Status.objects.get(name=status_query.display)
 
     return status, status_query
@@ -240,88 +262,88 @@ def opinion_save_query_args(
     :param request: http request
     :return: tuple of Status and QueryStatus
     """
-    return opinion_query_args_status(
-        request, STATUS_QUERY, QueryStatus, QueryStatus.DRAFT)
+    return query_args_status(
+        request, QueryOption(STATUS_QUERY, QueryStatus, QueryStatus.DRAFT))
 
 
-def opinion_like_query_args(
+def like_query_args(
         request: HttpRequest) -> tuple[Status, ReactionStatus]:
     """
-    Get opinion like query arguments from request query
+    Get like query arguments from request query
     :param request: http request
     :return: tuple of Status and ReactionStatus
     """
-    return opinion_query_args_status(
-        request, STATUS_QUERY, ReactionStatus, ReactionStatus.AGREE)
+    return query_args_status(
+        request, QueryOption(STATUS_QUERY, ReactionStatus, ReactionStatus.AGREE))
 
 
-def opinion_pin_query_args(request: HttpRequest) -> ReactionStatus:
+def pin_query_args(request: HttpRequest) -> ReactionStatus:
     """
-    Get opinion pin query arguments from request query
+    Get pin query arguments from request query
     :param request: http request
     :return: tuple of Status and ReactionStatus
     """
-    return opinion_query_args(
-        request, STATUS_QUERY, ReactionStatus, ReactionStatus.PIN)
+    return query_args_value(
+        request, QueryOption(STATUS_QUERY, ReactionStatus, ReactionStatus.PIN))
 
 
-def opinion_hide_query_args(request: HttpRequest) -> ReactionStatus:
+def hide_query_args(request: HttpRequest) -> ReactionStatus:
     """
-    Get opinion hide query arguments from request query
+    Get hide query arguments from request query
     :param request: http request
     :return: tuple of Status and ReactionStatus
     """
-    return opinion_query_args(
-        request, STATUS_QUERY, ReactionStatus, ReactionStatus.HIDE)
+    return query_args_value(
+        request, QueryOption(STATUS_QUERY, ReactionStatus, ReactionStatus.HIDE))
 
 
-def opinion_report_query_args(request: HttpRequest) -> Report:
+def report_query_args(request: HttpRequest) -> Report:
     """
-    Get opinion report query arguments from request query
+    Get report query arguments from request query
     :param request: http request
     :return: tuple of Status and Report
     """
-    return opinion_query_args(
-        request, STATUS_QUERY, Report, Report.DEFAULT)
+    return query_args_value(
+        request, QueryOption(STATUS_QUERY, Report, Report.DEFAULT))
 
 
 def get_query_args(
             request: HttpRequest,
-            options: list[tuple[str, Type[ChoiceArg], Any]]
+            options: Union[QueryOption, List[QueryOption]]
         ) -> dict[str, QueryArg]:
     """
     Get opinion list query arguments from request query
-    :param options:
+    :param options: list of possible QueryOption
     :param request: http request
     :return: dict of tuples of value (ChoiceArg | int | str) and
             'was set' bool flag
     """
     # https://docs.djangoproject.com/en/4.1/ref/request-response/#querydict-objects
     params = {}
+    if isinstance(options, QueryOption):
+        options = [options]
 
-    for query, clazz, default in options:
-        #                value,   was_set
-        params[query] = QueryArg(default, False)
+    for option in options:
+        #                               value,   was_set
+        params[option.query] = QueryArg(option.default, False)
 
-        if query in request.GET:
-            param = request.GET[query].lower()
-            default_value = params[query].query_arg_value
+        if option.query in request.GET:
+            param = request.GET[option.query].lower()
+            default_value = params[option.query].query_arg_value
             if isinstance(default_value, int):
                 param = int(param)
-            if clazz:
-                for opt in clazz:
+            if option.clazz:
+                for opt in option.clazz:
                     if opt.arg == param:
-                        params[query].set(opt, True)
+                        params[option.query].set(opt, True)
                         break
             else:
-                params[query].set(param, True)
+                params[option.query].set(param, True)
 
     return params
 
 
-def opinion_list_query_args(
-            request: HttpRequest
-        ) -> dict[str, QueryArg]:
+def opinion_list_query_args(request: HttpRequest) -> dict[str, QueryArg]:
     """
     Get opinion list query arguments from request query
     :param request: http request
@@ -331,9 +353,7 @@ def opinion_list_query_args(
     return get_query_args(request, OPINION_LIST_QUERY_ARGS)
 
 
-def opinion_search_query_args(
-            request: HttpRequest
-        ) -> dict[str, QueryArg]:
+def opinion_search_query_args(request: HttpRequest) -> dict[str, QueryArg]:
     """
     Get opinion list query arguments from request query
     :param request: http request
@@ -343,9 +363,7 @@ def opinion_search_query_args(
     return get_query_args(request, OPTION_SEARCH_QUERY_ARGS)
 
 
-def comment_list_query_args(
-            request: HttpRequest
-        ) -> dict[str, QueryArg]:
+def comment_list_query_args(request: HttpRequest) -> dict[str, QueryArg]:
     """
     Get comment list query arguments from request query
     :param request: http request
@@ -355,9 +373,7 @@ def comment_list_query_args(
     return get_query_args(request, COMMENT_LIST_QUERY_ARGS)
 
 
-def comment_search_query_args(
-            request: HttpRequest
-        ) -> dict[str, QueryArg]:
+def comment_search_query_args(request: HttpRequest) -> dict[str, QueryArg]:
     """
     Get comment list query arguments from request query
     :param request: http request
@@ -433,8 +449,7 @@ def published_check(request: HttpRequest, opinion_obj: Opinion):
     """
     if request.user.id != opinion_obj.user.id and \
             opinion_obj.status.name != STATUS_PUBLISHED:
-        raise PermissionDenied(
-            "Opinion unavailable")
+        raise PermissionDenied("Opinion unavailable")
 
 
 def render_opinion_form(title: str, **kwargs) -> tuple[

@@ -37,34 +37,36 @@ from categories.models import Status, Category
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from utils import Crud, app_template_path
-from .comment_data import get_popularity_levels
-from .constants import (
+from opinions.comment_data import get_popularity_levels
+from opinions.constants import (
     ORDER_QUERY, STATUS_QUERY, PER_PAGE_QUERY, TITLE_QUERY,
     CONTENT_QUERY, CATEGORY_QUERY, AUTHOR_QUERY, ON_OR_AFTER_QUERY,
     ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY, EQUAL_QUERY,
     OPINION_PAGINATION_ON_EACH_SIDE, OPINION_PAGINATION_ON_ENDS, SEARCH_QUERY,
-    PAGE_QUERY, REORDER_QUERY, ID_FIELD, HIDDEN_QUERY, DATE_NEWEST_LOOKUP,
+    REORDER_QUERY, ID_FIELD, HIDDEN_QUERY, DATE_NEWEST_LOOKUP,
     DESC_LOOKUP, PINNED_QUERY, TEMPLATE_OPINION_REACTIONS,
     TEMPLATE_REACTION_CTRLS, UNDER_REVIEW_TITLE, UNDER_REVIEW_EXCERPT,
     UNDER_REVIEW_CONTENT, UNDER_REVIEW_TITLE_CTX, UNDER_REVIEW_EXCERPT_CTX,
     UNDER_REVIEW_CONTENT_CTX
 )
-from .models import Opinion, HideStatus, is_id_lookup, PinStatus
-from .queries import opinion_is_pinned, review_status_check
-from .reactions import OPINION_REACTIONS, get_reaction_status, ReactionsList
-from .search import (
+from opinions.models import Opinion, HideStatus, is_id_lookup, PinStatus
+from opinions.queries import opinion_is_pinned, review_status_check
+from opinions.reactions import (
+    OPINION_REACTIONS, get_reaction_status, ReactionsList
+)
+from opinions.search import (
     regex_matchers, TERM_GROUP, regex_date_matchers, DATE_QUERY_GROUP,
-    DATE_QUERIES, DATE_QUERY_YR_GROUP, DATE_QUERY_MTH_GROUP,
+    DATE_QUERY_YR_GROUP, DATE_QUERY_MTH_GROUP,
     DATE_QUERY_DAY_GROUP, MARKER_CHARS
 )
-from .views_utils import (
+from opinions.views.utils import (
     opinion_list_query_args, opinion_permission_check,
     opinion_search_query_args,
     REORDER_REQ_QUERY_ARGS,
-    NON_REORDER_OPINION_LIST_QUERY_ARGS, ensure_list
+    NON_REORDER_OPINION_LIST_QUERY_ARGS, ensure_list, DATE_QUERIES
 )
-from .query_params import QuerySetParams, choice_arg_query
-from .enums import (
+from opinions.query_params import QuerySetParams, choice_arg_query
+from opinions.enums import (
     QueryArg, QueryStatus, OpinionSortOrder, PerPage, Hidden, Pinned,
     ChoiceArg
 )
