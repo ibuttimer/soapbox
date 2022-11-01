@@ -54,6 +54,8 @@ OPINION_PREVIEW_ID_URL = url_path(OPINION_ID_URL, "preview")
 OPINION_STATUS_ID_URL = url_path(OPINION_ID_URL, "status")
 OPINION_LIKE_ID_URL = url_path(OPINION_ID_URL, "like")
 OPINION_HIDE_ID_URL = url_path(OPINION_ID_URL, "hide")
+OPINION_PIN_ID_URL = url_path(OPINION_ID_URL, "pin")
+OPINION_REPORT_ID_URL = url_path(OPINION_ID_URL, "report")
 OPINION_COMMENT_ID_URL = url_path(OPINION_ID_URL, "comment")
 
 COMMENTS_URL = append_slash("comments")
@@ -62,6 +64,7 @@ COMMENT_MORE_URL = url_path(COMMENTS_URL, "more")
 COMMENT_ID_URL = url_path(COMMENTS_URL, "<int:pk>")
 COMMENT_LIKE_ID_URL = url_path(COMMENT_ID_URL, "like")
 COMMENT_HIDE_ID_URL = url_path(COMMENT_ID_URL, "hide")
+COMMENT_REPORT_ID_URL = url_path(COMMENT_ID_URL, "report")
 COMMENT_COMMENT_ID_URL = url_path(COMMENT_ID_URL, "comment")
 
 OPINIONS_ROUTE_NAME = "opinions"
@@ -73,6 +76,8 @@ OPINION_PREVIEW_ID_ROUTE_NAME = f"preview_{OPINION_ID_ROUTE_NAME}"
 OPINION_STATUS_ID_ROUTE_NAME = f"status_{OPINION_ID_ROUTE_NAME}"
 OPINION_LIKE_ID_ROUTE_NAME = f"like_{OPINION_ID_ROUTE_NAME}"
 OPINION_HIDE_ID_ROUTE_NAME = f"hide_{OPINION_ID_ROUTE_NAME}"
+OPINION_PIN_ID_ROUTE_NAME = f"pin_{OPINION_ID_ROUTE_NAME}"
+OPINION_REPORT_ID_ROUTE_NAME = f"report_{OPINION_ID_ROUTE_NAME}"
 OPINION_COMMENT_ID_ROUTE_NAME = f"comment_{OPINION_ID_ROUTE_NAME}"
 
 COMMENTS_ROUTE_NAME = "comments"
@@ -81,6 +86,7 @@ COMMENT_SEARCH_ROUTE_NAME = "comment_search"
 COMMENT_MORE_ROUTE_NAME = "comment_more"
 COMMENT_LIKE_ID_ROUTE_NAME = f"like_{COMMENT_ID_ROUTE_NAME}"
 COMMENT_HIDE_ID_ROUTE_NAME = f"hide_{COMMENT_ID_ROUTE_NAME}"
+COMMENT_REPORT_ID_ROUTE_NAME = f"report_{COMMENT_ID_ROUTE_NAME}"
 COMMENT_COMMENT_ID_ROUTE_NAME = f"comment_{COMMENT_ID_ROUTE_NAME}"
 
 ORDER_QUERY: str = 'order'              # opinion order
@@ -90,6 +96,7 @@ REORDER_QUERY: str = 'reorder'          # reordering of previous query
 SEARCH_QUERY: str = 'search'            # search from search box in header
 # Note: a search can have any of the following queries embedded in its
 # value
+ID_QUERY: str = 'id'                        # search id
 STATUS_QUERY: str = 'status'                # search status
 CONTENT_QUERY: str = 'content'              # search content
 AUTHOR_QUERY: str = 'author'                # search author
@@ -99,6 +106,8 @@ AFTER_QUERY: str = 'after'                  # search > date
 BEFORE_QUERY: str = 'before'                # search < date
 EQUAL_QUERY: str = 'date'                   # search == date
 HIDDEN_QUERY: str = 'hidden'                # search hidden
+PINNED_QUERY: str = 'pinned'                # search pinned
+REPORT_QUERY: str = 'report'                # search report
 # Opinion specific search queries
 TITLE_QUERY: str = 'title'                  # search title
 CATEGORY_QUERY: str = 'category'            # search category
@@ -121,3 +130,49 @@ DATE_OLDEST_LOOKUP = ''
 """ Lookup order for ascending date, i.e. oldest first """
 DATE_NEWEST_LOOKUP = DESC_LOOKUP
 """ Lookup order for descending date, i.e. newest first """
+
+# templates related
+# templates/opinions/snippet/reactions.html
+TEMPLATE_TARGET_ID = 'target_id'            # id of target opinion/comment
+TEMPLATE_TARGET_TYPE = 'target_type'        # type of target; opinion/comment
+# list of Reaction (can be for opinion or comment)
+TEMPLATE_REACTIONS = 'reactions'
+TEMPLATE_REACTION_CTRLS = 'reaction_ctrls'  # dict of ReactionCtrl
+TEMPLATE_COMMENT_BUNDLE = 'bundle'          # CommentBundle
+
+# templates/opinions/opinion_view.html
+# list of Reaction for opinion
+TEMPLATE_OPINION_REACTIONS = 'opinion_reactions'
+OPINION_FORM_CTX = 'opinion_form'
+COMMENT_FORM_CTX = 'comment_form'
+REPORT_FORM_CTX = 'report_form'
+SUBMIT_URL_CTX = 'submit_url'
+READ_ONLY_CTX = 'read_only'     # read-only mode
+IS_PREVIEW_CTX = 'is_preview'   # preview mode
+VIEW_OK_CTX = 'view_ok'         # ok to view flag
+OPINION_CTX = 'opinion'
+STATUS_CTX = 'status'
+COMMENTS_CTX = 'comments'
+USER_CTX = 'user'
+CONTENT_STATUS_CTX = "content_status"
+UNDER_REVIEW_TITLE_CTX = "under_review_title"
+UNDER_REVIEW_EXCERPT_CTX = "under_review_excerpt"
+UNDER_REVIEW_CONTENT_CTX = "under_review_content"
+HIDDEN_CONTENT_CTX = "hidden_content"
+
+# templates/opinions/snippet/comment_bundle.html
+# list of Reaction for comment
+TEMPLATE_COMMENT_REACTIONS = 'comment_reactions'
+
+# miscellaneous
+ALL_FIELDS = 'all_fields'
+
+UNDER_REVIEW_TITLE = 'Under Review'
+UNDER_REVIEW_EXCERPT = 'Content not available'
+UNDER_REVIEW_OPINION_CONTENT = \
+    'The content of this opinion is not currently available to view as it ' \
+    'is under review.'
+UNDER_REVIEW_COMMENT_CONTENT = \
+    'The content of this comment is not currently available to view as it ' \
+    'is under review.'
+HIDDEN_COMMENT_CONTENT = 'The content of this comment has been hidden.'

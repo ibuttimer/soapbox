@@ -38,4 +38,4 @@ def reaction_button_id(reaction: Reaction, target_id: int):
     :param target_id: id of target
     :return: id
     """
-    return f"id--react-{reaction.id}-{target_id}"
+    return f"id--react-{reaction.identifier}-{target_id}"

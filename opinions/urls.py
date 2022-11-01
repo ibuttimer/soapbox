@@ -25,7 +25,7 @@ from django.urls import path
 
 from soapbox import OPINIONS_APP_NAME
 
-from .constants import (
+from opinions.constants import (
     OPINIONS_URL, OPINIONS_ROUTE_NAME,
     OPINION_NEW_URL, OPINION_NEW_ROUTE_NAME,
     OPINION_SEARCH_URL, OPINION_SEARCH_ROUTE_NAME,
@@ -35,6 +35,8 @@ from .constants import (
     OPINION_STATUS_ID_URL, OPINION_STATUS_ID_ROUTE_NAME,
     OPINION_LIKE_ID_URL, OPINION_LIKE_ID_ROUTE_NAME,
     OPINION_HIDE_ID_URL, OPINION_HIDE_ID_ROUTE_NAME,
+    OPINION_PIN_ID_URL, OPINION_PIN_ID_ROUTE_NAME,
+    OPINION_REPORT_ID_URL, OPINION_REPORT_ID_ROUTE_NAME,
     OPINION_COMMENT_ID_URL, OPINION_COMMENT_ID_ROUTE_NAME,
     COMMENTS_URL, COMMENTS_ROUTE_NAME,
     COMMENT_ID_URL, COMMENT_ID_ROUTE_NAME,
@@ -42,16 +44,24 @@ from .constants import (
     COMMENT_COMMENT_ID_URL, COMMENT_COMMENT_ID_ROUTE_NAME, COMMENT_SEARCH_URL,
     COMMENT_SEARCH_ROUTE_NAME, COMMENT_MORE_URL, COMMENT_MORE_ROUTE_NAME,
     COMMENT_HIDE_ID_URL, COMMENT_HIDE_ID_ROUTE_NAME,
+    COMMENT_REPORT_ID_URL, COMMENT_REPORT_ID_ROUTE_NAME,
 )
-from .views_comment_create import OpinionCommentCreate, CommentCommentCreate
-from .views_comment_list import CommentList, CommentSearch, opinion_comments
-from .views_opinion_create import OpinionCreate
-from .views_opinion_by_id import (
+from opinions.views.comment_create import (
+    OpinionCommentCreate, CommentCommentCreate
+)
+from opinions.views.comment_list import (
+    CommentList, CommentSearch, opinion_comments
+)
+from opinions.views.opinion_create import OpinionCreate
+from opinions.views.opinion_by_id import (
     OpinionDetailById, OpinionDetailBySlug, OpinionDetailPreviewById,
-    opinion_status_patch, opinion_like_patch, opinion_hide_patch
+    opinion_status_patch, opinion_like_patch, opinion_hide_patch,
+    opinion_pin_patch, opinion_report_post
 )
-from .views_opinion_list import OpinionList, OpinionSearch
-
+from opinions.views.opinion_list import OpinionList, OpinionSearch
+from opinions.views.comment_by_id import (
+    comment_like_patch, comment_report_post, comment_hide_patch
+)
 
 # https://docs.djangoproject.com/en/4.1/topics/http/urls/#url-namespaces-and-included-urlconfs
 app_name = OPINIONS_APP_NAME
@@ -80,6 +90,12 @@ urlpatterns = [
     # patch opinion hide status by id
     path(OPINION_HIDE_ID_URL, opinion_hide_patch,
          name=OPINION_HIDE_ID_ROUTE_NAME),
+    # patch opinion pin status by id
+    path(OPINION_PIN_ID_URL, opinion_pin_patch,
+         name=OPINION_PIN_ID_ROUTE_NAME),
+    # post opinion report by id
+    path(OPINION_REPORT_ID_URL, opinion_report_post,
+         name=OPINION_REPORT_ID_ROUTE_NAME),
 
     # create comment for opinion by id
     path(OPINION_COMMENT_ID_URL, OpinionCommentCreate.as_view(),
@@ -89,14 +105,20 @@ urlpatterns = [
     path(COMMENTS_URL, CommentList.as_view(),
          name=COMMENTS_ROUTE_NAME),
 
-    # FIXME comment id/like/hide urls
+    # FIXME comment id urls (required?)
     path(COMMENT_ID_URL, opinion_status_patch,
          name=COMMENT_ID_ROUTE_NAME),
 
-    path(COMMENT_LIKE_ID_URL, opinion_like_patch,
+
+    # patch comment like/unlike status by id
+    path(COMMENT_LIKE_ID_URL, comment_like_patch,
          name=COMMENT_LIKE_ID_ROUTE_NAME),
-    path(COMMENT_HIDE_ID_URL, opinion_hide_patch,
+    # patch comment hide status by id
+    path(COMMENT_HIDE_ID_URL, comment_hide_patch,
          name=COMMENT_HIDE_ID_ROUTE_NAME),
+    # post comment report by id
+    path(COMMENT_REPORT_ID_URL, comment_report_post,
+         name=COMMENT_REPORT_ID_ROUTE_NAME),
 
     # search comments
     path(COMMENT_SEARCH_URL, CommentSearch.as_view(),

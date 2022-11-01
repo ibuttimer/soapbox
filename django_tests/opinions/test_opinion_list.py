@@ -27,7 +27,8 @@ from bs4 import BeautifulSoup
 from django.http import HttpResponse
 
 from opinions.constants import (
-    OPINIONS_ROUTE_NAME, ORDER_QUERY, PAGE_QUERY, PER_PAGE_QUERY
+    OPINIONS_ROUTE_NAME, ORDER_QUERY, PAGE_QUERY, PER_PAGE_QUERY,
+    UNDER_REVIEW_TITLE, UNDER_REVIEW_EXCERPT
 )
 from opinions.models import Opinion
 from opinions.enums import OpinionSortOrder, PerPage
@@ -152,18 +153,17 @@ class TestOpinionList(SoupMixin, CategoryMixin, BaseOpinionTest):
 
         total = len(
             # all published opinions
-            TestOpinionList.published_opinions()
+            self.get_expected_list(OpinionSortOrder.DEFAULT, user)
         )
 
         for per_page in list(PerPage):
             num_pages = int((total + per_page.arg - 1) / per_page.arg)
             for count in range(1, num_pages + 1):
-                msg = f'page {count}/{num_pages}'
-
                 expected = self.get_expected_list(
                     OpinionSortOrder.DEFAULT, user, per_page=per_page,
                     page_num=count - 1)
 
+                msg = f'page {count}/{num_pages}'
                 with self.subTest(msg):
                     response = self.get_opinion_list_by(
                         per_page=per_page, page=count)
@@ -204,6 +204,17 @@ def verify_opinion_list_content(
         f'{msg}: expected {len(expected)} card(s), got {len(tags)}')
 
     for index, opinion in enumerate(expected):
+
+        under_review = any(
+            map(lambda op: op.id == opinion.id, test_case.reported_opinions)
+        )
+        if under_review:
+            expected_title = UNDER_REVIEW_TITLE
+            expected_excerpt = UNDER_REVIEW_EXCERPT
+        else:
+            expected_title = opinion.title
+            expected_excerpt = opinion.excerpt
+
         sub_msg = f'{msg} | index {index} opinion ' \
                   f'"{opinion.user.username} {opinion.title}"'
         with test_case.subTest(sub_msg):
@@ -211,12 +222,12 @@ def verify_opinion_list_content(
             # check title
             titles = soup.find_all(id=f'id_title_{index + 1}')
             test_case.assertEqual(len(titles), 1)
-            test_case.assertTrue(titles[0].text, opinion.title)
+            test_case.assertEqual(titles[0].text.strip(), expected_title)
 
             # check excerpt
             excerpts = soup.find_all(id=f'excerpt_{index + 1}')
             test_case.assertEqual(len(excerpts), 1)
-            test_case.assertTrue(excerpts[0].text, opinion.excerpt)
+            test_case.assertEqual(excerpts[0].text.strip(), expected_excerpt)
 
             # check categories
             CategoryMixin.check_categories(

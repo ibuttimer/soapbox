@@ -22,10 +22,7 @@
 #
 import re
 
-from opinions.constants import (
-    ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY,
-    EQUAL_QUERY
-)
+from opinions.views.utils import DATE_QUERIES
 
 # chars used to delimit queries
 MARKER_CHARS = ['=', '"', "'"]
@@ -51,10 +48,6 @@ def regex_matchers(queries: list[str]) -> dict:
     }
 
 
-DATE_QUERIES = [
-    ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY,
-    EQUAL_QUERY
-]
 DATE_SEP = '-'
 SLASH_SEP = '/'
 DOT_SEP = '.'

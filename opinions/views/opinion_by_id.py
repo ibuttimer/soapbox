@@ -21,9 +21,11 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 from http import HTTPStatus
+from typing import Optional, Union, Type
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Model
 from django.http import (
     HttpRequest, HttpResponse, HttpResponseNotAllowed, JsonResponse
 )
@@ -33,42 +35,50 @@ from django.views import View
 from django.views.decorators.http import require_http_methods
 
 from categories import (
-    STATUS_PREVIEW
+    STATUS_PREVIEW, STATUS_PENDING_REVIEW
 )
 from categories.models import Status
-from opinions.constants import (
-    OPINION_ID_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME,
-    OPINION_PREVIEW_ID_ROUTE_NAME, OPINION_ID_QUERY, PAGE_QUERY,
-    PER_PAGE_QUERY, COMMENT_DEPTH_QUERY, PARENT_ID_QUERY
-)
+from opinions.contexts.comment import comments_list_context_for_opinion
 from soapbox import (
-    OPINIONS_APP_NAME, HOME_ROUTE_NAME, GET, PATCH, HOME_URL
+    OPINIONS_APP_NAME, HOME_ROUTE_NAME, GET, PATCH, HOME_URL, POST
 )
-from user.models import User
 from utils import (
     app_template_path, redirect_on_success_or_render, Crud, reverse_q,
     namespaced_url
 )
-from .comment_data import get_comment_bundle
-from .forms import OpinionForm, CommentForm
-from .models import Opinion, Comment, AgreementStatus, HideStatus
-from .reactions import (
+from opinions.constants import (
+    OPINION_ID_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME,
+    OPINION_PREVIEW_ID_ROUTE_NAME, TEMPLATE_TARGET_ID,
+    TEMPLATE_TARGET_TYPE, TEMPLATE_REACTIONS, TEMPLATE_REACTION_CTRLS,
+    TEMPLATE_COMMENT_REACTIONS, TEMPLATE_OPINION_REACTIONS,
+    SUBMIT_URL_CTX,
+    COMMENT_FORM_CTX, READ_ONLY_CTX, USER_CTX, OPINION_CTX,
+    STATUS_CTX, OPINION_FORM_CTX, REPORT_FORM_CTX, IS_PREVIEW_CTX,
+    ALL_FIELDS, VIEW_OK_CTX, UNDER_REVIEW_TITLE, UNDER_REVIEW_EXCERPT,
+    UNDER_REVIEW_TITLE_CTX, UNDER_REVIEW_EXCERPT_CTX, UNDER_REVIEW_CONTENT_CTX,
+    UNDER_REVIEW_OPINION_CONTENT
+)
+from opinions.forms import OpinionForm, CommentForm, ReviewForm
+from opinions.models import (
+    Opinion, Comment, AgreementStatus, HideStatus, PinStatus, Review
+)
+from opinions.queries import content_status_check
+from opinions.reactions import (
     OPINION_REACTIONS, COMMENT_REACTIONS, get_reaction_status
 )
-from .templatetags.reaction_ul_id import reaction_ul_id
-from .views_utils import (
+from opinions.templatetags.reaction_ul_id import reaction_ul_id
+from opinions.views.utils import (
     opinion_permission_check, opinion_save_query_args, timestamp_content,
     own_opinion_check, published_check, get_opinion_context,
-    render_opinion_form, comment_permission_check, DEFAULT_COMMENT_DEPTH,
-    opinion_like_query_args, opinion_hide_query_args
+    render_opinion_form, comment_permission_check, like_query_args,
+    hide_query_args, pin_query_args, generate_excerpt
 )
-from .enums import QueryArg, QueryStatus, ReactionStatus, PerPage
+from opinions.enums import QueryStatus, ReactionStatus
 
 TITLE_NEW = "Creation"
 TITLE_UPDATE = "Update"
 TITLE_OPINION = "Opinion"
 
-READ_ONLY = 'read_only'     # read-only mode
 OWN_ONLY = 'own_only'       # access to own opinions only
 
 
@@ -91,45 +101,63 @@ class OpinionDetail(LoginRequiredMixin, View):
 
         opinion_obj = self._get_opinion(identifier)
 
-        if OWN_ONLY in kwargs and kwargs[OWN_ONLY]:
-            # perform own opinion check
-            own_opinion_check(request, opinion_obj)
+        # perform own opinion check
+        is_own = own_opinion_check(
+            request, opinion_obj, raise_ex=kwargs.get(OWN_ONLY, False))
 
         # perform published check, other users don't have access to
         # unpublished opinions
         published_check(request, opinion_obj)
 
-        comments = get_comment_bundle({
-            q: QueryArg(v, True) for q, v in [
-                (OPINION_ID_QUERY, opinion_obj.id),
-                (PARENT_ID_QUERY, Comment.NO_PARENT),
-                (PAGE_QUERY, 1),
-                (PER_PAGE_QUERY, PerPage.SIX),
-                (COMMENT_DEPTH_QUERY, DEFAULT_COMMENT_DEPTH)
-            ]
-        }, request.user) if \
-            comment_permission_check(request, Crud.READ, raise_ex=False) \
-            else []
+        # read only if not current user's opinion
+        read_only = not is_own \
+            if READ_ONLY_CTX not in kwargs else kwargs[READ_ONLY_CTX]
+        is_preview = opinion_obj.status.name == STATUS_PREVIEW
 
-        read_only = opinion_obj and opinion_obj.user.id != request.user.id \
-            if READ_ONLY not in kwargs else kwargs[READ_ONLY]
+        # ok to view check
+        content_status = content_status_check(opinion_obj)
+        # users can always view their own opinions
+        view_ok = is_own \
+            if not content_status.view_ok else content_status.view_ok
+
         render_args = {
-            READ_ONLY: read_only,
-            'opinion_obj': opinion_obj,
-            'status': opinion_obj.status
+            READ_ONLY_CTX: read_only,
+            VIEW_OK_CTX: view_ok,
+            OPINION_CTX: opinion_obj,
+            STATUS_CTX: opinion_obj.status,
+            IS_PREVIEW_CTX: is_preview,
         }
+
+        if view_ok and comment_permission_check(
+                request, Crud.READ, raise_ex=False):
+            # get first page comments for opinion
+            comments_list_context_for_opinion(
+                opinion_obj.id, request.user, context=render_args
+            )
+
         if read_only:
+            # viewing opinion
             renderer = _render_view
             render_args.update({
-                'form': CommentForm(),
-                'comments': comments,
-                'user': request.user,
+                USER_CTX: request.user,
+            })
+            render_args.update({
+                # visible opinion which may have not visible
+                # under review comments
+                COMMENT_FORM_CTX: CommentForm(),
+                REPORT_FORM_CTX: ReviewForm(),
+            } if view_ok else {
+                # not visible under review opinion
+                UNDER_REVIEW_TITLE_CTX: UNDER_REVIEW_TITLE,
+                UNDER_REVIEW_EXCERPT_CTX: UNDER_REVIEW_EXCERPT,
+                UNDER_REVIEW_CONTENT_CTX: UNDER_REVIEW_OPINION_CONTENT,
             })
         else:
+            # updating opinion
             renderer = render_opinion_form
             render_args.update({
-                'submit_url': self.url(opinion_obj),
-                'form': OpinionForm(instance=opinion_obj),
+                SUBMIT_URL_CTX: self.url(opinion_obj),
+                OPINION_FORM_CTX: OpinionForm(instance=opinion_obj),
             })
 
         template_path, context = renderer(
@@ -182,6 +210,8 @@ class OpinionDetail(LoginRequiredMixin, View):
 
             timestamp_content(opinion_obj)
 
+            opinion_obj.excerpt = generate_excerpt(opinion_obj.content)
+
             # save updated object
             opinion_obj.save()
             # django autocommits changes
@@ -197,11 +227,12 @@ class OpinionDetail(LoginRequiredMixin, View):
             template_path, context = None, None
         else:
             template_path, context = render_opinion_form(
-                form,
-                self.url(opinion_obj),
-                TITLE_UPDATE,
-                opinion_obj=opinion_obj,
-                status=opinion_obj.status)
+                TITLE_UPDATE, **{
+                    SUBMIT_URL_CTX: self.url(opinion_obj),
+                    OPINION_FORM_CTX: form,
+                    OPINION_CTX: opinion_obj,
+                    STATUS_CTX: opinion_obj.status
+                })
             success = False
 
         return redirect_on_success_or_render(
@@ -218,40 +249,36 @@ class OpinionDetail(LoginRequiredMixin, View):
             "'url' method must be overridden by sub classes")
 
 
-def _render_view(title: str,
-                 submit_url: str = None,
-                 form: OpinionForm = None,
-                 opinion_obj: Opinion = None,
-                 comments: dict = None,
-                 user: User = None,
-                 read_only: bool = False, status: Status = None) -> tuple[
+def _render_view(title: str, **kwargs) -> tuple[
         str, dict[str, Opinion | list[str] | OpinionForm | bool]]:
     """
     Render the opinion view
     :param title: title
-    :param opinion_obj: opinion object, default None
-    :param comments: details of comments
-    :param user: current user
-    :param read_only: read only flag, default False
-    :param status: status, default None
+    :param kwargs: context keyword values, see get_opinion_context()
     :return: tuple of template path and context
     """
-    context = get_opinion_context(
-        title, submit_url=submit_url, form=form, opinion_obj=opinion_obj,
-        comments=comments, read_only=read_only, status=status
-    )
+    context = get_opinion_context(title, **kwargs)
 
     # get reaction controls for opinion & comments
-    reaction_ctrls = get_reaction_status(user, opinion_obj)
+    user = kwargs.get(USER_CTX, None)
+    opinion = kwargs.get(OPINION_CTX, None)
+    is_preview = kwargs.get(IS_PREVIEW_CTX, False)
+    reaction_ctrls = kwargs.get(TEMPLATE_REACTION_CTRLS, {})
+
+    # reaction controls for opinion
     reaction_ctrls.update(
-        get_reaction_status(user, comments))
+        get_reaction_status(
+            user, opinion,
+            # no reactions for opinion preview
+            enablers={ALL_FIELDS: False} if is_preview else None
+        )
+    )
 
     context.update({
-        'categories': opinion_obj.categories.all(),
-        'is_preview': status.name == STATUS_PREVIEW if status else False,
-        'opinion_reactions': OPINION_REACTIONS,
-        'comment_reactions': COMMENT_REACTIONS,
-        'reaction_ctrls': reaction_ctrls,
+        'categories': opinion.categories.all(),
+        TEMPLATE_OPINION_REACTIONS: OPINION_REACTIONS,
+        TEMPLATE_COMMENT_REACTIONS: COMMENT_REACTIONS,
+        TEMPLATE_REACTION_CTRLS: reaction_ctrls,
     })
 
     return app_template_path(OPINIONS_APP_NAME, "opinion_view.html"), context
@@ -316,7 +343,7 @@ class OpinionDetailPreviewById(OpinionDetail):
 
         # preview is readonly and user can only preview their own opinions
         preview_kwargs = kwargs.copy()
-        preview_kwargs[READ_ONLY] = True
+        preview_kwargs[READ_ONLY_CTX] = True
         preview_kwargs[OWN_ONLY] = True
         return OpinionDetail.get(self, request, pk, *args, **preview_kwargs)
 
@@ -409,20 +436,22 @@ def opinion_status_patch(request: HttpRequest, pk: int) -> HttpResponse:
     })
 
 
-def redirect_response(url: str, extra: dict = None) -> HttpResponse:
+def redirect_response(url: str, extra: Optional[dict] = None,
+                      status: HTTPStatus = HTTPStatus.OK) -> HttpResponse:
     """
     Generate redirect response.
     :param url: url to redirect to
     :param extra: extra payload content; default None
+    :param status: http status code; default HTTPStatus.OK
     :return: response
     """
     payload = {
         'redirect': url
     }
-    if isinstance(payload, dict):
+    if isinstance(extra, dict):
         payload.update(extra)
 
-    return JsonResponse(payload, status=HTTPStatus.OK)
+    return JsonResponse(payload, status=status)
 
 
 @login_required
@@ -432,65 +461,181 @@ def opinion_like_patch(request: HttpRequest, pk: int) -> HttpResponse:
     View function to update opinion like status.
     :param request: http request
     :param pk:      id of opinion
-    :return:
+    :return: http response
     """
     opinion_permission_check(request, Crud.READ)
 
-    opinion_obj = get_object_or_404(Opinion, pk=pk)
+    return like_patch(request, Opinion, pk)
 
-    status, reaction = opinion_like_query_args(request)
 
-    agreement = None
+def like_patch(
+        request: HttpRequest, model: Type[Model], pk: int) -> HttpResponse:
+    """
+    View function to update content like status.
+    :param request: http request
+    :param model:   content model class
+    :param pk:      id of opinion
+    :return: http response
+    """
+    content = get_object_or_404(model, pk=pk)
+
+    status, reaction = like_query_args(request)
+
+    code = HTTPStatus.BAD_REQUEST
     if reaction in [ReactionStatus.AGREE, ReactionStatus.DISAGREE]:
         query_args = {
-            AgreementStatus.OPINION_FIELD: opinion_obj,
+            AgreementStatus.content_field(content): content,
             AgreementStatus.USER_FIELD: request.user
         }
         query = AgreementStatus.objects.filter(**query_args)
+
+        code = HTTPStatus.NO_CONTENT
         if query.exists():
             agreement = query.first()
             if agreement.status != status:
                 # change status
                 agreement.status = status
                 agreement.save()
+                code = HTTPStatus.OK
             else:
                 # toggle status
-                query.delete()
+                deleted, _ = query.delete()
+                if deleted:
+                    code = HTTPStatus.OK
         else:
             query_args.update({
                 AgreementStatus.STATUS_FIELD: status
             })
             agreement = AgreementStatus.objects.create(**query_args)
+            if agreement is not None:
+                code = HTTPStatus.OK
 
-    return opinion_react_response(request, opinion_obj, agreement is not None)
+    return react_response(request, content, code)
 
 
-def opinion_react_response(
-            request: HttpRequest, opinion_obj: Opinion, success: bool
-        ) -> HttpResponse:
+@login_required
+@require_http_methods([PATCH])
+def opinion_pin_patch(request: HttpRequest, pk: int) -> HttpResponse:
     """
-    View function to update opinion like status.
+    View function to update opinion pin status.
     :param request: http request
-    :param opinion_obj: opinion
-    :param success: success flag
+    :param pk:      id of opinion
+    :return: http response
+    """
+    opinion_permission_check(request, Crud.READ)
+
+    opinion_obj = get_object_or_404(Opinion, pk=pk)
+
+    reaction = pin_query_args(request)
+
+    code = HTTPStatus.BAD_REQUEST
+    if reaction in [ReactionStatus.PIN, ReactionStatus.UNPIN]:
+        query_args = {
+            PinStatus.OPINION_FIELD: opinion_obj,
+            PinStatus.USER_FIELD: request.user
+        }
+        query = PinStatus.objects.filter(**query_args)
+
+        code = HTTPStatus.NO_CONTENT
+        if query.exists() and reaction == ReactionStatus.UNPIN:
+            deleted, _ = query.delete()
+            if deleted:
+                code = HTTPStatus.OK
+        elif reaction == ReactionStatus.PIN:
+            _, created = PinStatus.objects.get_or_create(**query_args)
+            if created:
+                code = HTTPStatus.OK
+
+    return react_response(request, opinion_obj, code)
+
+
+@login_required
+@require_http_methods([POST])
+def opinion_report_post(request: HttpRequest, pk: int) -> JsonResponse:
+    """
+    View function to update opinion report status.
+    :param request: http request
+    :param pk:      id of opinion
+    :return: http response
+    """
+    opinion_permission_check(request, Crud.READ)
+
+    return report_post(request, Opinion, pk)
+
+
+def report_post(
+        request: HttpRequest, model: Type[Model], pk: int) -> JsonResponse:
+    """
+    View function to update content report status.
+    :param request: http request
+    :param model:   content model class
+    :param pk:      id of opinion
+    :return: http response
+    """
+    content = get_object_or_404(model, pk=pk)
+
+    form = ReviewForm(data=request.POST)
+
+    if form.is_valid():
+        # save new object
+        setattr(form.instance, Review.content_field(content), content)
+        form.instance.requested = request.user
+        form.instance.status = Status.objects.get(name=STATUS_PENDING_REVIEW)
+
+        timestamp_content(form.instance)
+
+        form.save()
+        # django autocommits changes
+        # https://docs.djangoproject.com/en/4.1/topics/db/transactions/#autocommit
+
+        response = react_response(request, content, HTTPStatus.OK)
+
+    else:
+        # display form errors
+        response = JsonResponse({
+            'html': render_to_string(
+                app_template_path(
+                    "snippet", "form_errors.html"),
+                context={
+                    'form': form,
+                },
+                request=request),
+        }, status=HTTPStatus.BAD_REQUEST)
+
+    return response
+
+
+def react_response(
+    request: HttpRequest, content: Union[Opinion, Comment],
+    code: HTTPStatus
+) -> JsonResponse:
+    """
+    Generate response to reaction update.
+    :param request: http request
+    :param content: opinion or comment
+    :param code: status code for response
     :return: response
     """
-    reaction_ctrls = get_reaction_status(request.user, opinion_obj)
+    # Note: if code is HTTPStatus.NO_CONTENT nothing is returned in response
+    reaction_ctrls = get_reaction_status(request.user, content)
+
+    target_type = content.__class__._meta.model_name.lower()
 
     return JsonResponse({
-        'element_id': reaction_ul_id('opinion', opinion_obj.id),
+        'element_id': reaction_ul_id(target_type, content.id),
         'html': render_to_string(
             app_template_path(
                 OPINIONS_APP_NAME, "snippet", "reactions.html"),
             context={
                 # reactions template
-                'target_id': opinion_obj.id,
-                'target_type': 'opinion',
-                'reactions': OPINION_REACTIONS,
-                'reaction_ctrls': reaction_ctrls,
+                TEMPLATE_TARGET_ID: content.id,
+                TEMPLATE_TARGET_TYPE: target_type,
+                TEMPLATE_REACTIONS: OPINION_REACTIONS
+                if isinstance(content, Opinion) else COMMENT_REACTIONS,
+                TEMPLATE_REACTION_CTRLS: reaction_ctrls,
             },
             request=request)
-    }, status=HTTPStatus.OK if success else HTTPStatus.BAD_REQUEST)
+    }, status=code)
 
 
 @login_required
@@ -504,24 +649,41 @@ def opinion_hide_patch(request: HttpRequest, pk: int) -> HttpResponse:
     """
     opinion_permission_check(request, Crud.READ)
 
-    opinion_obj = get_object_or_404(Opinion, pk=pk)
+    return hide_patch(request, Opinion, pk)
 
-    status, reaction = opinion_hide_query_args(request)
 
-    success = False
+def hide_patch(
+        request: HttpRequest, model: Type[Model], pk: int) -> HttpResponse:
+    """
+    View function to update opinion hide status.
+    :param request: http request
+    :param model:   content model class
+    :param pk:      id of opinion
+    :return:
+    """
+    content = get_object_or_404(model, pk=pk)
+
+    reaction = hide_query_args(request)
+
+    code = HTTPStatus.BAD_REQUEST
     if reaction in [ReactionStatus.HIDE, ReactionStatus.SHOW]:
         query_args = {
-            HideStatus.OPINION_FIELD: opinion_obj,
+            HideStatus.content_field(content): content,
             HideStatus.USER_FIELD: request.user
         }
         query = HideStatus.objects.filter(**query_args)
-        if reaction == ReactionStatus.SHOW:
-            # remove hide record if exists, otherwise no change
-            if query.exists():
-                query.delete()
-            success = True
-        else:
-            obj, created = HideStatus.objects.get_or_create(**query_args)
-            success = obj is not None
 
-    return redirect_response(HOME_URL)
+        code = HTTPStatus.NO_CONTENT
+        if query.exists() and reaction == ReactionStatus.SHOW:
+            # remove hide record if exists, otherwise no change
+            deleted, _ = query.delete()
+            if deleted:
+                code = HTTPStatus.OK
+        elif reaction == ReactionStatus.HIDE:
+            obj, created = HideStatus.objects.get_or_create(**query_args)
+            if created:
+                code = HTTPStatus.OK
+
+    return redirect_response(HOME_URL, extra={
+            STATUS_CTX: reaction.arg
+        }, status=code)

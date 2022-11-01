@@ -20,16 +20,15 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-import re
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, Type
 from zoneinfo import ZoneInfo
 from http import HTTPStatus
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from django.db.models.functions import Lower
 from django.http import HttpRequest, HttpResponse
 from django.views import generic
@@ -38,33 +37,44 @@ from categories.models import Status, Category
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from utils import Crud, app_template_path
-from .constants import (
+from opinions.comment_data import get_popularity_levels
+from opinions.constants import (
     ORDER_QUERY, STATUS_QUERY, PER_PAGE_QUERY, TITLE_QUERY,
     CONTENT_QUERY, CATEGORY_QUERY, AUTHOR_QUERY, ON_OR_AFTER_QUERY,
     ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY, EQUAL_QUERY,
     OPINION_PAGINATION_ON_EACH_SIDE, OPINION_PAGINATION_ON_ENDS, SEARCH_QUERY,
-    PAGE_QUERY, REORDER_QUERY, ID_FIELD, HIDDEN_QUERY, DATE_NEWEST_LOOKUP,
-    DESC_LOOKUP
+    REORDER_QUERY, ID_FIELD, HIDDEN_QUERY, DATE_NEWEST_LOOKUP,
+    DESC_LOOKUP, PINNED_QUERY, TEMPLATE_OPINION_REACTIONS,
+    TEMPLATE_REACTION_CTRLS, UNDER_REVIEW_TITLE, UNDER_REVIEW_EXCERPT,
+    UNDER_REVIEW_OPINION_CONTENT, UNDER_REVIEW_TITLE_CTX,
+    UNDER_REVIEW_EXCERPT_CTX, UNDER_REVIEW_CONTENT_CTX, CONTENT_STATUS_CTX,
+    HIDDEN_CONTENT_CTX, HIDDEN_COMMENT_CONTENT
 )
-from .models import Opinion, HideStatus, is_id_lookup
-from .search import (
+from opinions.models import Opinion, HideStatus, is_id_lookup, PinStatus
+from opinions.queries import opinion_is_pinned, content_status_check
+from opinions.reactions import (
+    OPINION_REACTIONS, get_reaction_status, ReactionsList
+)
+from opinions.search import (
     regex_matchers, TERM_GROUP, regex_date_matchers, DATE_QUERY_GROUP,
-    DATE_QUERIES, DATE_QUERY_YR_GROUP, DATE_QUERY_MTH_GROUP,
+    DATE_QUERY_YR_GROUP, DATE_QUERY_MTH_GROUP,
     DATE_QUERY_DAY_GROUP, MARKER_CHARS
 )
-from .views_utils import (
+from opinions.views.utils import (
     opinion_list_query_args, opinion_permission_check,
     opinion_search_query_args,
     REORDER_REQ_QUERY_ARGS,
-    NON_REORDER_OPINION_LIST_QUERY_ARGS
+    NON_REORDER_OPINION_LIST_QUERY_ARGS, ensure_list, DATE_QUERIES
 )
-from .query_params import QuerySetParams, choice_arg_query
-from .enums import QueryArg, QueryStatus, OpinionSortOrder, PerPage, Hidden
-
+from opinions.query_params import QuerySetParams, choice_arg_query
+from opinions.enums import (
+    QueryArg, QueryStatus, OpinionSortOrder, PerPage, Hidden, Pinned,
+    ChoiceArg
+)
 
 NON_DATE_QUERIES = [
     TITLE_QUERY, CONTENT_QUERY, AUTHOR_QUERY, CATEGORY_QUERY, STATUS_QUERY,
-    HIDDEN_QUERY
+    HIDDEN_QUERY, PINNED_QUERY
 ]
 REGEX_MATCHERS = regex_matchers(NON_DATE_QUERIES)
 REGEX_MATCHERS.update(regex_date_matchers())
@@ -94,7 +104,7 @@ ALWAYS_FILTERS = [
     STATUS_QUERY, HIDDEN_QUERY
 ]
 FILTERS_ORDER.extend(
-    [q for q in FIELD_LOOKUPS.keys() if q not in FILTERS_ORDER]
+    [q for q in FIELD_LOOKUPS if q not in FILTERS_ORDER]
 )
 
 SEARCH_REGEX = [
@@ -128,6 +138,9 @@ class OpinionList(LoginRequiredMixin, generic.ListView):
     sort_order: list[OpinionSortOrder]
     """ Sort order options to display """
 
+    user: User
+    """ User which initiated request """
+
     def get(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """
         GET method for Opinion list
@@ -141,6 +154,8 @@ class OpinionList(LoginRequiredMixin, generic.ListView):
         # TODO currently '/"/= can't be used in title/content
         # as search depends on them
         query_params = opinion_list_query_args(request)
+
+        self.user = request.user
 
         # build search term string from values that were set
         self.extra_context = {
@@ -273,6 +288,10 @@ class OpinionList(LoginRequiredMixin, generic.ListView):
         context = super(OpinionList, self).\
             get_context_data(object_list=object_list, **kwargs)
 
+        def is_pinned(opinion: Opinion):
+            """ Check if opinion is pinned by current user """
+            return opinion_is_pinned(opinion, self.user)
+
         # initial ordering if secondary sort
         main_order = self.ordering \
             if isinstance(self.ordering, str) else self.ordering[0]
@@ -296,7 +315,26 @@ class OpinionList(LoginRequiredMixin, generic.ListView):
                 number=context['page_obj'].number,
                 on_each_side=OPINION_PAGINATION_ON_EACH_SIDE,
                 on_ends=OPINION_PAGINATION_ON_ENDS)
-            ]
+            ],
+            "popularity": get_popularity_levels(context['opinion_list']),
+            TEMPLATE_OPINION_REACTIONS: OPINION_REACTIONS,
+            TEMPLATE_REACTION_CTRLS: get_reaction_status(
+                self.user, list(context['opinion_list']),
+                # display pin/unpin
+                reactions=ReactionsList.PIN_FIELDS,
+                visibility={
+                    ReactionsList.PIN_FIELD: is_pinned,
+                    ReactionsList.UNPIN_FIELD: is_pinned
+                }
+            ),
+            CONTENT_STATUS_CTX: [
+                content_status_check(opinion)
+                for opinion in context['opinion_list']
+            ],
+            UNDER_REVIEW_TITLE_CTX: UNDER_REVIEW_TITLE,
+            UNDER_REVIEW_EXCERPT_CTX: UNDER_REVIEW_EXCERPT,
+            UNDER_REVIEW_CONTENT_CTX: UNDER_REVIEW_OPINION_CONTENT,
+            HIDDEN_CONTENT_CTX: HIDDEN_COMMENT_CONTENT,
         })
         return context
 
@@ -333,6 +371,8 @@ class OpinionSearch(OpinionList):
 
         # Note: values must be in quotes for search query
         query_params = opinion_search_query_args(request)
+
+        self.user = request.user
 
         # build search term string from values that were set
         self.extra_context = {
@@ -444,6 +484,8 @@ def get_lookup(
         # else do not include status in query
     elif query == HIDDEN_QUERY:
         get_hidden_query(query_set_params, value, user)
+    elif query == PINNED_QUERY:
+        get_pinned_query(query_set_params, value, user)
     elif value:
         query_set_params.add_and_lookup(query, FIELD_LOOKUPS[query], value)
 
@@ -491,6 +533,11 @@ def get_search_term(
                 # hidden
                 hidden = Hidden.from_arg(match.group(group).lower())
                 get_hidden_query(query_set_params, hidden, user)
+            elif query == PINNED_QUERY:
+                # need to filter/exclude by list of opinions that the user has
+                # pinned
+                pinned = Pinned.from_arg(match.group(group).lower())
+                get_pinned_query(query_set_params, pinned, user)
             elif query in DATE_QUERIES:
                 try:
                     date = datetime(
@@ -545,6 +592,51 @@ def get_search_term(
     return query_set_params
 
 
+def get_yes_no_ignore_query(
+            query_set_params: QuerySetParams, query: str,
+            yes: [ChoiceArg, list[ChoiceArg]],
+            no: [ChoiceArg, list[ChoiceArg]],
+            ignore: [ChoiceArg, list[ChoiceArg]],
+            choice: ChoiceArg, clazz: Type[ChoiceArg],
+            chosen_qs: QuerySet
+        ):
+    """
+    Get a choice status query
+    :param query_set_params: query params to update
+    :param query: query term from request
+    :param yes: yes choice in ChoiceArg
+    :param no: no choice in ChoiceArg
+    :param ignore: ignore choice in ChoiceArg
+    :param choice: choice from request
+    :param clazz: ChoiceArg class
+    :param chosen_qs: query to get chosen item from db
+    :return: function to apply query
+    """
+    if choice in ensure_list(ignore):
+        query_set_params.add_all_inclusive(query)
+    elif isinstance(choice, clazz):
+        # get ids of opinions chosen by the user
+        query_params = {
+            f'{ID_FIELD}__in': chosen_qs
+        }
+
+        if choice in ensure_list(no):
+            # exclude chosen opinions
+            def qs_exclude(qs: QuerySet):
+                return qs.exclude(**query_params)
+            query_set = qs_exclude
+        elif choice in ensure_list(yes):
+            # only chosen opinions
+            def qs_filter(qs: QuerySet):
+                return qs.filter(**query_params)
+            query_set = qs_filter
+        else:
+            query_set = None
+
+        if query_set:
+            query_set_params.add_qs_func(query, query_set)
+
+
 def get_hidden_query(
         query_set_params: QuerySetParams,
         hidden: Hidden, user: User):
@@ -555,28 +647,28 @@ def get_hidden_query(
     :param user: current user
     :return: function to apply query
     """
-    if hidden == Hidden.IGNORE:
-        query_set_params.add_all_inclusive(HIDDEN_QUERY)
-    elif isinstance(hidden, Hidden):
-        # get ids of opinions hidden by the user
-        hidden_qs = HideStatus.objects.filter(**{
+    get_yes_no_ignore_query(
+        query_set_params, HIDDEN_QUERY, Hidden.YES, Hidden.NO, Hidden.IGNORE,
+        hidden, Hidden, HideStatus.objects.filter(**{
             HideStatus.USER_FIELD: user,
             f'{HideStatus.OPINION_FIELD}__isnull': False
         }).values(HideStatus.OPINION_FIELD)
+    )
 
-        query_params = {
-            f'{ID_FIELD}__in': hidden_qs
-        }
 
-        if hidden == Hidden.NO:
-            # exclude hidden opinions
-            def qs_exclude(qs):
-                return qs.exclude(**query_params)
-            query_set = qs_exclude
-        else:
-            # only hidden opinions
-            def qs_filter(qs):
-                return qs.filter(**query_params)
-            query_set = qs_filter
-
-        query_set_params.add_qs_func(HIDDEN_QUERY, query_set)
+def get_pinned_query(
+        query_set_params: QuerySetParams,
+        pinned: Pinned, user: User):
+    """
+    Get the pinned status query
+    :param query_set_params: query params to update
+    :param pinned: pinned status
+    :param user: current user
+    :return: function to apply query
+    """
+    get_yes_no_ignore_query(
+        query_set_params, PINNED_QUERY, Pinned.YES, Pinned.NO, Pinned.IGNORE,
+        pinned, Pinned, PinStatus.objects.filter(**{
+            PinStatus.USER_FIELD: user,
+        }).values(PinStatus.OPINION_FIELD)
+    )

@@ -81,7 +81,7 @@
          */
         function update_content(order, per_page, page) {
 
-            if (page == undefined) {
+            if (page === undefined) {
                 page = "?page=1"
             }
 
@@ -106,23 +106,23 @@
                     add_page_content_handlers();
                 });
             });
-        };
+        }
 
         /** Get current per page value */
         function get_per_page() {
             return $('#per-page-select').find(":selected").val();
-        };
+        }
 
         /** Get current order value */
         function get_order() {
             return $('#sort-order-select').find(":selected").val()
-        };
+        }
 
         /** Get current page value */
         function get_page() {
             page = $('#current-page').find("a")
             return page.length ? "?page=" + page.text().trim() : undefined
-        };
+        }
 
         /**
          * Add change handler for per page selector and pages

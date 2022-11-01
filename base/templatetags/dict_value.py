@@ -30,4 +30,7 @@ register = template.Library()
 
 @register.simple_tag
 def dict_value(dictionary: dict, key: str, default: str = ''):
+    assert key, 'No key specified'
+    assert isinstance(dictionary, dict),\
+        f'Expected dict got {type(dictionary)} {dictionary}'
     return dictionary.get(key, default)

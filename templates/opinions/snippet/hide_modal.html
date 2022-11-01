@@ -1,0 +1,64 @@
+<!-- hide_modal.html start -->
+{% load i18n %}
+
+<div class="modal fade" id="id--hide-modal" tabindex="-1" aria-labelledby="Hide opinion" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-fullscreen-md-down modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <var id="id--hide-submit-url" hidden>
+                {# content replaced by click event handler for button #}
+            </var>
+            <var id="id--hide-submit-option" hidden>
+                {# content replaced by click event handler for button #}
+            </var>
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="id--hide-modal-heading">
+                    {# content replaced by click handler#}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to <span id="id--hide-modal-action">{# content replaced by click handler#}</span> this <span id="id--hide-modal-element">{# content replaced by click handler#}</span>?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+                <button id="id--submit-btn-hide-modal" type="submit" class="btn__save-comment btn btn-outline-success">{% trans "Hide" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+
+        /* Submit handler for comment modal */
+        $("#id--submit-btn-hide-modal").on('click', function (event) {
+
+            $("#" + event.currentTarget.id).tooltip("hide");
+
+            const url = $("#id--hide-submit-url").text();
+            const option = $("#id--hide-submit-option").text();
+
+            $.ajax({
+                url: url + "?status=" + option,
+                method: 'patch',
+                headers: {
+                    'X-CSRFTOKEN': '{{ csrf_token }}'
+                }
+            }).done(function(data) {
+                // document.location.href = data.redirect;
+                react_response_handler(data);
+
+                // close modal
+                $("#id--hide-modal").modal('hide');
+
+                // set click handlers for reactions
+                setReactionHandlers();
+                enableTooltips();
+
+            });
+        });
+    });
+</script>
+<!-- hide_modal.html end -->

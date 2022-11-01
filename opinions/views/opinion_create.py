@@ -34,11 +34,11 @@ from soapbox import (
 from utils import (
     redirect_on_success_or_render, Crud, reverse_q, namespaced_url
 )
-from .constants import (
-    OPINION_NEW_ROUTE_NAME
+from opinions.constants import (
+    OPINION_NEW_ROUTE_NAME, SUBMIT_URL_CTX, OPINION_FORM_CTX
 )
-from .forms import OpinionForm
-from .views_utils import (
+from opinions.forms import OpinionForm
+from opinions.views.utils import (
     opinion_permission_check, opinion_save_query_args, timestamp_content,
     render_opinion_form, generate_excerpt
 )
@@ -63,7 +63,10 @@ class OpinionCreate(LoginRequiredMixin, View):
         opinion_permission_check(request, Crud.CREATE)
 
         template_path, context = render_opinion_form(
-            TITLE_NEW, submit_url=self.url(), form=OpinionForm())
+            TITLE_NEW, **{
+                SUBMIT_URL_CTX: self.url(),
+                OPINION_FORM_CTX: OpinionForm()
+            })
         return render(request, template_path, context=context)
 
     def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
@@ -100,7 +103,10 @@ class OpinionCreate(LoginRequiredMixin, View):
             template_path, context = None, None
         else:
             template_path, context = render_opinion_form(
-                TITLE_NEW, submit_url=self.url(), form=form)
+                TITLE_NEW, **{
+                    SUBMIT_URL_CTX: self.url(),
+                    OPINION_FORM_CTX: form
+                })
             success = False
 
         return redirect_on_success_or_render(

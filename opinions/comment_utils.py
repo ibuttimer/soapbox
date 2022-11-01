@@ -20,7 +20,6 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-import re
 from datetime import datetime
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -32,17 +31,18 @@ from user.models import User
 from .constants import (
     STATUS_QUERY, CONTENT_QUERY, CATEGORY_QUERY, AUTHOR_QUERY,
     ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY,
-    EQUAL_QUERY, SEARCH_QUERY, OPINION_ID_QUERY, PARENT_ID_QUERY, HIDDEN_QUERY
+    EQUAL_QUERY, SEARCH_QUERY, OPINION_ID_QUERY, PARENT_ID_QUERY, HIDDEN_QUERY,
+    ID_QUERY
 )
 from .models import Opinion, Comment
 from .query_params import QuerySetParams, choice_arg_query
 from .search import (
     regex_matchers, TERM_GROUP, regex_date_matchers, DATE_QUERY_GROUP,
-    DATE_QUERIES, DATE_QUERY_YR_GROUP, DATE_QUERY_MTH_GROUP,
+    DATE_QUERY_YR_GROUP, DATE_QUERY_MTH_GROUP,
     DATE_QUERY_DAY_GROUP, MARKER_CHARS
 )
-from .views_utils import (
-    NON_REORDER_COMMENT_LIST_QUERY_ARGS
+from opinions.views.utils import (
+    NON_REORDER_COMMENT_LIST_QUERY_ARGS, DATE_QUERIES
 )
 from .enums import QueryArg, QueryStatus
 
@@ -58,6 +58,7 @@ FIELD_LOOKUPS = {
     SEARCH_QUERY: '',
     # TODO opinion
     # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#exact
+    ID_QUERY: f'{Comment.ID_FIELD}',
     STATUS_QUERY: f'{Comment.STATUS_FIELD}__{Status.NAME_FIELD}',
     CONTENT_QUERY: f'{Comment.CONTENT_FIELD}__icontains',
     AUTHOR_QUERY: f'{Comment.USER_FIELD}__{User.USERNAME_FIELD}__icontains',

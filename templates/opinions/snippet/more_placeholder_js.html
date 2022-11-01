@@ -1,0 +1,121 @@
+<!--
+  ~ MIT License
+  ~
+  ~ Copyright (c) 2022 Ian Buttimer
+  ~
+  ~ Permission is hereby granted, free of charge, to any person obtaining a copy
+  ~ of this software and associated documentation files (the "Software"), to deal
+  ~ in the Software without restriction, including without limitation the rights
+  ~ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  ~ copies of the Software, and to permit persons to whom the Software is
+  ~ furnished to do so, subject to the following conditions:
+  ~
+  ~ The above copyright notice and this permission notice shall be included in
+  ~ all copies or substantial portions of the Software.
+  ~
+  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  ~ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  ~ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  ~ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  ~ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  ~ SOFTWARE.
+  -->
+
+<script>
+    const morePlaceholderSelector = "button[id^='id--comment-more-placeholder']";
+
+    /* Click handler for more comments placeholder */
+    function morePlaceholderClickHandler(event) {
+        const url = event.currentTarget.attributes['data-bs-href'].textContent;
+
+        // hide tooltip
+        $("#" + event.currentTarget.id).tooltip("hide");
+
+        $.ajax({
+            method: 'get',
+            url: url,
+        }).done(function (data) {
+            // remove placeholder click handlers
+            $(morePlaceholderSelector).off();
+
+            // comment card more div has id "id--comment-card-more-<id>"
+            const splits = event.currentTarget.id.split('-');
+            const moreDivIdSelector = "#id--comment-card-more-" + splits[splits.length - 1];
+            // add additional comments to end of list
+            $(moreDivIdSelector).parent().append(data.html);
+            // remove more placeholder & collapse
+            $(moreDivIdSelector).remove();
+            $("#id--comment-collapse-more-" + splits[splits.length - 1]).remove();
+
+            // set placeholder click handlers
+            $(morePlaceholderSelector).on('click', morePlaceholderClickHandler);
+            // set click handlers for reactions
+            setReactionHandlers();
+            enableTooltips();
+        });
+    }
+
+    $(document).ready(function () {
+
+        /* Click handler to request more comments.
+            More buttons on comments are named 'id--comment-more-placeholder-....'
+         */
+        $(morePlaceholderSelector).on('click', morePlaceholderClickHandler);
+
+        /* Collapse event handlers for comment reply containers */
+        $("div[id^='id--comment-collapse']").on('hidden.bs.collapse', (event) => {
+            const selector = "#" + event.currentTarget.id + "-toggle > i"
+            $(selector).removeClass("fa-chevron-up");
+            $(selector).addClass("fa-chevron-down");
+        });
+        $("div[id^='id--comment-collapse']").on('shown.bs.collapse', (event) => {
+            const selector = "#" + event.currentTarget.id + "-toggle > i"
+            $(selector).removeClass("fa-chevron-down");
+            $(selector).addClass("fa-chevron-up");
+        });
+
+        /* Submit handler for comment modal */
+        $("form[id^='id--comment-modal']").submit(function (event) {
+            const formData = {
+                content: $("#{{ content_field.auto_id }}").val(),
+            };
+
+            const url = $("#id--comment-submit-url").text();
+
+            $.ajax({
+                method: 'post',
+                url: url,
+                headers: {
+                    'X-CSRFTOKEN': '{{ csrf_token }}'
+                },
+                data: formData,
+            }).done(function(data) {
+                // add new comment to end of container
+                $("#" + data.parent_container).append(data.html);
+
+                // make toggle visible and expand collapse if necessary
+                if (!data.opinion_comment) {
+                    $("#" + data.parent_container + "-toggle").removeAttr('hidden');
+                    $("#" + data.parent_container + "-toggle").removeClass('collapsed');
+
+                    const bsCollapse = new bootstrap.Collapse("#" + data.parent_container, {
+                      toggle: false
+                    });
+                    bsCollapse.show();
+                }
+                // close modal
+                $("#id--comment-modal").modal('hide');
+
+                // set click handlers for reactions
+                setReactionHandlers();
+
+            }).fail(function(data) {
+                // redisplay modal
+                $("#id--comment-form-errors-container").html(data.responseJSON.html);
+            });
+
+            event.preventDefault();
+        });
+    });
+</script>

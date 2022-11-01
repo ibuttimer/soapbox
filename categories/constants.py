@@ -31,11 +31,11 @@ STATUS_ALL = 'All'
 STATUS_DRAFT = 'Draft'
 STATUS_PUBLISHED = 'Published'
 STATUS_PREVIEW = 'Preview'
-STATUS_WITHDRAWN = 'Withdrawn'
-STATUS_PENDING_REVIEW = 'Pending Review'
-STATUS_UNDER_REVIEW = 'Under Review'
-STATUS_APPROVED = 'Approved'
-STATUS_REJECTED = 'Rejected'
+STATUS_WITHDRAWN = 'Withdrawn'              # review request withdrawn
+STATUS_PENDING_REVIEW = 'Pending Review'    # pending review following request
+STATUS_UNDER_REVIEW = 'Under Review'        # under review
+STATUS_APPROVED = 'Approved'            # review approved, content needs work
+STATUS_REJECTED = 'Rejected'            # review rejected, content ok
 
 CATEGORY_UNASSIGNED = 'Unassigned'
 
@@ -44,5 +44,8 @@ REACTION_AGREE = 'Agree'
 REACTION_DISAGREE = 'Disagree'
 REACTION_HIDE = 'Hide'
 REACTION_SHOW = 'Show'
+REACTION_PIN = 'Pin'
+REACTION_UNPIN = 'Unpin'
 REACTION_FOLLOW = 'Follow'
 REACTION_UNFOLLOW = 'Unfollow'
+REACTION_REPORT = 'Report'

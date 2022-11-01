@@ -20,46 +20,16 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from django.contrib import admin
 
-from .models import (
-    Opinion, Comment, Review, AgreementStatus, HideStatus, PinStatus
-)
+from django import template
 
+from ..models import Opinion
 
-@admin.register(Opinion)
-class OpinionAdmin(admin.ModelAdmin):
-    """ Class representing the Opinion model in the admin interface """
-    pass
+register = template.Library()
+
+# https://docs.djangoproject.com/en/4.1/howto/custom-template-tags/#simple-tags
 
 
-@admin.register(Comment)
-class CommentAdmin(admin.ModelAdmin):
-    """ Class representing the Comment model in the admin interface """
-    pass
-
-
-@admin.register(Review)
-class ReviewAdmin(admin.ModelAdmin):
-    """ Class representing the Review model in the admin interface """
-    pass
-
-
-@admin.register(AgreementStatus)
-class AgreementStatusAdmin(admin.ModelAdmin):
-    """
-    Class representing the AgreementStatus model in the admin interface
-    """
-    pass
-
-
-@admin.register(HideStatus)
-class HideStatusAdmin(admin.ModelAdmin):
-    """ Class representing the HideStatus model in the admin interface """
-    pass
-
-
-@admin.register(PinStatus)
-class PinStatusAdmin(admin.ModelAdmin):
-    """ Class representing the PinStatus model in the admin interface """
-    pass
+@register.simple_tag
+def reaction_popularity(levels: dict, opinion: Opinion, key: str):
+    return getattr(levels[f'opinion_{opinion.id}'], key)

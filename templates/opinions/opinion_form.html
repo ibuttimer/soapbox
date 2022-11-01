@@ -24,6 +24,9 @@
 
 {% extends "base.html" %}
 
+{# --- template variable defines for includes --- #}
+{# opinion form template expects: 'opinion_form' as OpinionForm #}
+
 {% load i18n %}
 {% load static %}
 {% load humanize %}
@@ -61,7 +64,11 @@
                 {% csrf_token %}
             {% endif %}
 
-            {% include "snippet/form_errors.html" %}
+            <div id="id--opinion-form-errors-container">
+                {% with form=opinion_form %}
+                    {% include "snippet/form_errors.html" %}
+                {% endwith %}
+            </div>
 
             <fieldset
                     {% if read_only %}
@@ -71,7 +78,7 @@
                 <!-- top row: category, updated/published/author, preview/draft/publish -->
                 <div class="row mb-3">
                     <div class="col-sm-3">
-                        {% form_field form 'categories' as categories_field %}
+                        {% form_field opinion_form 'categories' as categories_field %}
                         <div class="col-sm-2 text-start">
                             <label for="{{ categories_field.auto_id }}" class="form-label">{{ categories_field.label }}</label>
                         </div>
@@ -135,7 +142,7 @@
                 </div>
 
                 <div class="row mb-3">
-                    {% form_field form 'title' as title_field %}
+                    {% form_field opinion_form 'title' as title_field %}
                     <div class="col-sm-2 text-start">
                         <label for="{{ title_field.auto_id }}" class="form-label">{{ title_field.label }}</label>
                     </div>
@@ -145,7 +152,7 @@
                 </div>
 
                 <div class="row mb-3">
-                    {% form_field form 'content' as content_field %}
+                    {% form_field opinion_form 'content' as content_field %}
                     <div class="col-sm-2 text-start">
                         <label for="{{ content_field.auto_id }}" class="form-label">{{ content_field.label }}</label>
                     </div>
@@ -187,7 +194,7 @@
     {% if read_only %}
         <script>
             $(document).ready(function() {
-                {% form_field form 'content' as content_field %}
+                {% form_field opinion_form 'content' as content_field %}
                 $('#readonly_content').html('{{ content_field.initial | safe }}');
             });
         </script>

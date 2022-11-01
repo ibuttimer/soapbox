@@ -4,90 +4,102 @@
 {% load static %}
 {% load humanize %}
 {% load tz %}
+{% load dict_value %}
 
 {# --- template variable defines for includes --- #}
 {# comment bundle template expects: 'bundle' as CommentBundle #}
+{#                                  'content_status' as dict with key: comment id, value: ContentStatus #}
 
-<div
-    {% if bundle.is_more_placeholder %}
-        id="id--comment-card-more-{{ bundle.comment.id }}"
-    {% else %}
-        id="id--comment-card-{{ bundle.comment.id }}"
-    {% endif %}
-        class="card level-{{ bundle.comment.level }}">
-    <div class="card-body">
-        <div class="row">
-            {% if bundle.is_more_placeholder %}
-                <!-- more placeholder -->
-                <div class="col-sm-12 mt-0 mb-0 text-center">
-                    <button id="id--comment-more-placeholder-{{ bundle.comment.id }}" type="button" class="btn btn-primary"
-                            aria-label="request more comments"
-                            data-bs-href="{{ bundle.next_page }}"
-                            data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="More comments">
-                        More <i class="fa-solid fa-chevron-right"></i>
-                    </button>
-                </div>
-            {% else %}
-                <!-- author avatar and user link -->
-                <div class="col-sm-2 mt-0 mb-0">
-                    <img src="{{ bundle.avatar_url }}" width="40px" height="40px" alt="{{ bundle.comment.user.username }} image">
-                    <p class="mt-0 mb-0"><a href="{% url 'user:user_id' bundle.comment.user.id %}">{{ bundle.comment.user.username }}</a></p>
-                </div>
-                <!-- comment details -->
-                <div class="col-sm-10 mt-0 mb-0">
-                    <div class="row">
-                        <div class="col-sm-10 mt-0 mb-0">
-                            {{ bundle.comment.content | safe }}
-                        </div>
-                        <div class="col-sm-2 mt-0 mb-0">
-                            <a id="{{ bundle.collapse_id }}-toggle" class="btn btn-primary collapsed" data-bs-toggle="collapse"
-                               href="#{{ bundle.collapse_id }}" role="button" aria-expanded="false"
-                               aria-controls="show comments"
-                               {% if not bundle.comments %}
-                                  hidden
-                               {% endif %}
-                            >
-                                <i class="fa-solid fa-chevron-down"></i>
-                            </a>
-                        </div>
+<div id="id--comment-section-{{ bundle.comment.id }}">
+    <div
+        {% if bundle.is_more_placeholder %}
+            id="id--comment-card-more-{{ bundle.comment.id }}"
+        {% else %}
+            id="id--comment-card-{{ bundle.comment.id }}"
+        {% endif %}
+            class="card level-{{ bundle.comment.level }}">
+        <div class="card-body">
+            <div class="row">
+                {% if bundle.is_more_placeholder %}
+                    <!-- more placeholder -->
+                    <div class="col-sm-12 mt-0 mb-0 text-center">
+                        <button id="id--comment-more-placeholder-{{ bundle.comment.id }}" type="button" class="btn btn-primary"
+                                aria-label="request more comments"
+                                data-bs-href="{{ bundle.next_page }}"
+                                data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="More comments">
+                            More <i class="fa-solid fa-chevron-right"></i>
+                        </button>
                     </div>
-                    <div class="row">
-                        <!-- comment updated info -->
-                        <div class="col-sm-6 mt-0 mb-0">
-                            {{ bundle.comment.updated | localtime | naturaltime }}
+                {% else %}
+                    <!-- author avatar and user link -->
+                    <div class="col-sm-2 mt-0 mb-0">
+                        <img src="{{ bundle.avatar_url }}" width="40px" height="40px" alt="{{ bundle.comment.user.username }} image">
+                        <p class="mt-0 mb-0"><a href="{% url 'user:user_id' bundle.comment.user.id %}">{{ bundle.comment.user.username }}</a></p>
+                    </div>
+                    <!-- comment details -->
+                    <div class="col-sm-10 mt-0 mb-0">
+                        <div class="row">
+                            <div class="col-sm-10 mt-0 mb-0">
+                                {% dict_value content_status bundle.comment.id as status %}
+                                {% if status.review_wip %}
+                                    <em>{{ under_review_content }}</em>
+                                {% elif status.hidden %}
+                                    <em>{{ hidden_content }}</em>
+                                {% else %}
+                                    {{ bundle.comment.content | safe }}
+                                {% endif %}
+                            </div>
+                            <div class="col-sm-2 mt-0 mb-0">
+                                <a id="{{ bundle.collapse_id }}-toggle" class="btn btn-primary collapsed" data-bs-toggle="collapse"
+                                   href="#{{ bundle.collapse_id }}" role="button" aria-expanded="false"
+                                   aria-controls="show comments"
+                                   {% if not bundle.comments %}
+                                      hidden
+                                   {% endif %}
+                                >
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                </a>
+                                {# HACK display id for dev purposes #}
+                                <span class="badge rounded-pill text-bg-warning">{{ bundle.comment.id }}</span>
+                            </div>
                         </div>
-                        <!-- comment reactions -->
-                        <div class="col-sm-6 mt-0 mb-0 justify-content-start">
+                        <div class="row">
+                            <!-- comment updated info -->
+                            <div class="col-sm-6 mt-0 mb-0">
+                                {{ bundle.comment.updated | localtime | naturaltime }}
+                            </div>
+                            <!-- comment reactions -->
+                            <div class="col-sm-6 mt-0 mb-0 justify-content-start">
 
-                            {# --- template variable defines for includes --- #}
-                            {# reactions template expects: 'target_id' as id of target opinion/comment #}
-                            {#                             'target_type' as opinion/comment #}
-                            {#                             'reactions' as list of Reaction #}
-                            {#                             'reaction_ctrls' as dict of ReactionCtrl #}
-                            {% with reactions=comment_reactions %}
-                                {% with target_type="comment" %}
-                                    {% with target_id=bundle.comment.id %}
-                                        {% include "opinions/snippet/reactions.html" %}
+                                {# --- template variable defines for includes --- #}
+                                {# reactions template expects: 'target_id' as id of target opinion/comment #}
+                                {#                             'target_type' as opinion/comment #}
+                                {#                             'reactions' as list of Reaction #}
+                                {#                             'reaction_ctrls' as dict of ReactionCtrl #}
+                                {% with reactions=comment_reactions %}
+                                    {% with target_type="comment" %}
+                                        {% with target_id=bundle.comment.id %}
+                                            {% include "opinions/snippet/reactions.html" %}
+                                        {% endwith %}
                                     {% endwith %}
                                 {% endwith %}
-                            {% endwith %}
+                            </div>
                         </div>
                     </div>
-                </div>
-            {% endif %}
+                {% endif %}
+            </div>
         </div>
     </div>
-</div>
 
-<!-- collapse container for replies to comment -->
-<div class="collapse" id="{{ bundle.collapse_id }}">
-{% if bundle.comments %}
-    {% for reply in bundle.comments %}
-        {% with bundle=reply %}
-            {% include "opinions/snippet/comment_bundle.html" %}
-        {% endwith %}
-    {% endfor %}
-{% endif %}
+    <!-- collapse container for replies to comment -->
+    <div class="collapse" id="{{ bundle.collapse_id }}">
+    {% if bundle.comments %}
+        {% for reply in bundle.comments %}
+            {% with bundle=reply %}
+                {% include "opinions/snippet/comment_bundle.html" %}
+            {% endwith %}
+        {% endfor %}
+    {% endif %}
+    </div>
 </div>
-
 <!-- comment_bundle.html end -->

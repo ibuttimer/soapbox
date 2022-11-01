@@ -29,14 +29,15 @@ from django.http import HttpResponse
 
 from categories import (
     REACTION_AGREE,
-    REACTION_DISAGREE
+    REACTION_DISAGREE, REACTION_PIN, REACTION_UNPIN
 )
 from categories.models import Status
-from opinions.constants import STATUS_QUERY, OPINION_LIKE_ID_ROUTE_NAME
-from opinions.models import Opinion
-from opinions.reactions import (
-    OPINION_REACTION_AGREE, OPINION_REACTION_DISAGREE
+from opinions.constants import (
+    STATUS_QUERY, OPINION_LIKE_ID_ROUTE_NAME, OPINION_PIN_ID_ROUTE_NAME
 )
+from opinions.data_structures import Reaction
+from opinions.models import Opinion
+from opinions.reactions import OPINION_REACTIONS_LIST
 from opinions.templatetags.reaction_button_id import reaction_button_id
 from opinions.templatetags.reaction_ul_id import reaction_ul_id
 from opinions.enums import ReactionStatus
@@ -50,6 +51,11 @@ LIKE_REACTIONS = [REACTION_AGREE, REACTION_DISAGREE]
 LIKE_PARAMS = {
     REACTION_AGREE: ReactionStatus.AGREE,
     REACTION_DISAGREE: ReactionStatus.DISAGREE,
+}
+PIN_REACTIONS = [REACTION_PIN, REACTION_UNPIN]
+PIN_PARAMS = {
+    REACTION_PIN: ReactionStatus.PIN,
+    REACTION_UNPIN: ReactionStatus.UNPIN,
 }
 
 
@@ -82,13 +88,8 @@ class TestOpinionReaction(SoupMixin, OpinionMixin, BaseOpinionTest):
         Test setting like/unlike status of opinion
         """
         opinion = TestOpinionReaction.opinions[0]
-        for index in range(TestOpinionReaction.num_users()):
-            user, _ = TestOpinionReaction.get_user_by_index(index)
-            if user.id != opinion.user.id:
-                logged_in_user = self.login_user_by_id(user.id)
-                break
-        else:
-            self.fail("Non-author user not found")
+        logged_in_user = TestOpinionReaction.login_user(
+            self, TestOpinionReaction.get_other_user(opinion.user))
 
         self.assertNotEqual(logged_in_user, opinion.user)
 
@@ -131,45 +132,92 @@ class TestOpinionReaction(SoupMixin, OpinionMixin, BaseOpinionTest):
                     agree = query_params[index] == ReactionStatus.AGREE
                     disagree = query_params[index] == ReactionStatus.DISAGREE
                 self.verify_opinion_like_status(
-                    opinion, response, agree, disagree)
+                    opinion, response, [
+                        (OPINION_REACTIONS_LIST.agree, agree),
+                        (OPINION_REACTIONS_LIST.disagree, disagree)
+                    ], HTTPStatus.OK)
+
+    def test_opinion_pin_patch(self):
+        """
+        Test setting pin/unpin status of opinion
+        """
+        opinion = TestOpinionReaction.opinions[0]
+        logged_in_user = TestOpinionReaction.login_user(
+            self, TestOpinionReaction.get_other_user(opinion.user))
+
+        self.assertNotEqual(logged_in_user, opinion.user)
+
+        # like statuses and query params
+        statuses = list(
+            Status.objects.filter(name__in=PIN_REACTIONS)
+        )
+        # p - p => p
+        query_params = [
+            PIN_PARAMS[statuses[0].name] for _ in range(2)
+        ]
+        # u - u => u
+        query_params.extend([
+            PIN_PARAMS[statuses[1].name] for _ in range(2)
+        ])
+
+        for index, param in enumerate(query_params):
+            with self.subTest(
+                    f'status {param.arg} index {index}'):
+                url = reverse_q(
+                    namespaced_url(
+                        OPINIONS_APP_NAME, OPINION_PIN_ID_ROUTE_NAME),
+                    args=[opinion.id],
+                    query_kwargs={
+                        STATUS_QUERY: param.arg
+                    })
+                response = self.client.patch(url)
+
+                pinned = param == ReactionStatus.PIN
+                # ok if changed, no content if no change
+                code = HTTPStatus.OK if index % 2 == 0 else\
+                    HTTPStatus.NO_CONTENT
+                self.verify_opinion_like_status(
+                    opinion, response, [
+                        (OPINION_REACTIONS_LIST.unpin
+                         if pinned else OPINION_REACTIONS_LIST.pin, pinned)
+                    ], code)
 
     def verify_opinion_like_status(
                 self, opinion: Opinion, response: HttpResponse,
-                agree: bool, disagree: bool
+                reaction_selected: list[tuple[Reaction, bool]],
+                code: HTTPStatus
             ):
         """
         Verify opinion like status
         :param opinion: opinion
         :param response: http response
-        :param agree: expected agreement flag
-        :param disagree: expected disagreement flag
+        :param reaction_selected: list of reactions and statuses to verify
+        :param code: expected response status code
         """
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-        result = json.loads(response.content)
-        self.assertEqual(result['element_id'],
-                         reaction_ul_id('opinion', opinion.id))
+        self.assertEqual(response.status_code, code)
+        if code != HTTPStatus.NO_CONTENT:
+            result = json.loads(response.content)
+            self.assertEqual(result['element_id'],
+                             reaction_ul_id('opinion', opinion.id))
 
-        soup = BeautifulSoup(result['html'], features="lxml")
-        tags = soup.find_all('button')
+            soup = BeautifulSoup(result['html'], features="lxml")
+            tags = soup.find_all('button')
 
-        for reaction, selected in [
-            (OPINION_REACTION_AGREE, agree),
-            (OPINION_REACTION_DISAGREE, disagree)
-        ]:
-            button_id = reaction_button_id(reaction, opinion.id)
-            button = SoupMixin.find_tag(
-                self, tags, lambda tag: tag['id'] == button_id)
-            if selected:
-                # check selected
-                self.assertTrue(
-                    SoupMixin.in_tag_attr(
-                        button, 'class', 'reactions-selected'),
-                    f'{reaction.name} not selected'
-                )
-            else:
-                # check not selected
-                self.assertTrue(
-                    SoupMixin.not_in_tag_attr(
-                        button, 'class', 'reactions-selected'),
-                    f'{reaction.name} selected'
-                )
+            for reaction, selected in reaction_selected:
+                button_id = reaction_button_id(reaction, opinion.id)
+                button = SoupMixin.find_tag(
+                    self, tags, lambda tag: tag['id'] == button_id)
+                if selected:
+                    # check selected
+                    self.assertTrue(
+                        SoupMixin.in_tag_attr(
+                            button, 'class', 'reactions-selected'),
+                        f'{reaction.name} not selected'
+                    )
+                else:
+                    # check not selected
+                    self.assertTrue(
+                        SoupMixin.not_in_tag_attr(
+                            button, 'class', 'reactions-selected'),
+                        f'{reaction.name} selected'
+                    )

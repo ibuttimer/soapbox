@@ -26,34 +26,37 @@ from http import HTTPStatus
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
-from django.db.models import Q
 from django.db.models.functions import Lower
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.template.loader import render_to_string
 from django.views import generic
 from django.views.decorators.http import require_http_methods
 
+from opinions.contexts.comment import comments_list_context_for_opinion
 from soapbox import OPINIONS_APP_NAME, GET
 from user.models import User
 from utils import Crud, app_template_path
-from .comment_data import CommentData, get_comment_bundle
-from .comment_utils import get_comment_lookup, COMMENT_ALWAYS_FILTERS, \
-    COMMENT_FILTERS_ORDER
-from .constants import (
+from opinions.comment_data import (
+    CommentData, get_comments_review_status
+)
+from opinions.comment_utils import (
+    get_comment_lookup, COMMENT_ALWAYS_FILTERS, COMMENT_FILTERS_ORDER
+)
+from opinions.constants import (
     ORDER_QUERY, STATUS_QUERY, PER_PAGE_QUERY,
     AUTHOR_QUERY, OPINION_PAGINATION_ON_EACH_SIDE, OPINION_PAGINATION_ON_ENDS,
-    SEARCH_QUERY,
-    REORDER_QUERY, DESC_LOOKUP, DATE_NEWEST_LOOKUP
+    SEARCH_QUERY, REORDER_QUERY, DESC_LOOKUP, DATE_NEWEST_LOOKUP,
+    CONTENT_STATUS_CTX, UNDER_REVIEW_CONTENT_CTX,
+    UNDER_REVIEW_COMMENT_CONTENT, HIDDEN_CONTENT_CTX, HIDDEN_COMMENT_CONTENT
 )
-from .models import Comment, is_id_lookup
-from .query_params import QuerySetParams
-from .reactions import COMMENT_REACTIONS, get_reaction_status
-from .views_utils import (
+from opinions.models import Comment, is_id_lookup
+from opinions.query_params import QuerySetParams
+from opinions.views.utils import (
     comment_list_query_args, comment_permission_check,
     comment_search_query_args, REORDER_REQ_QUERY_ARGS,
     NON_REORDER_COMMENT_LIST_QUERY_ARGS
 )
-from .enums import QueryArg, QueryStatus, CommentSortOrder, PerPage
+from opinions.enums import QueryArg, QueryStatus, CommentSortOrder, PerPage
 
 
 class ListTemplate(Enum):
@@ -221,6 +224,12 @@ class CommentList(LoginRequiredMixin, generic.ListView):
         context = super(CommentList, self).\
             get_context_data(object_list=object_list, **kwargs)
 
+        comment_bundles = [
+            CommentData(comment) for comment in context['object_list']
+        ]
+        # get review status of comments
+        comments_review_status = get_comments_review_status(comment_bundles)
+
         # initial ordering if secondary sort
         main_order = self.ordering \
             if isinstance(self.ordering, str) else self.ordering[0]
@@ -245,9 +254,10 @@ class CommentList(LoginRequiredMixin, generic.ListView):
                 on_each_side=OPINION_PAGINATION_ON_EACH_SIDE,
                 on_ends=OPINION_PAGINATION_ON_ENDS)
             ],
-            'comment_list': [
-                CommentData(comment) for comment in context['comment_list']
-            ]
+            'comment_list': comment_bundles,
+            CONTENT_STATUS_CTX: comments_review_status,
+            UNDER_REVIEW_CONTENT_CTX: UNDER_REVIEW_COMMENT_CONTENT,
+            HIDDEN_CONTENT_CTX: HIDDEN_COMMENT_CONTENT,
         })
         return context
 
@@ -372,6 +382,7 @@ class CommentSearch(CommentList):
 def opinion_comments(request: HttpRequest) -> HttpResponse:
     """
     Function view for opinion comments.
+    This is the endpoint hit by a request for more comments.
     :param request: http request
     :return:
     """
@@ -379,20 +390,12 @@ def opinion_comments(request: HttpRequest) -> HttpResponse:
 
     query_params = comment_list_query_args(request)
 
-    comments = get_comment_bundle(query_params, request.user)
-
-    # get reaction controls for comments
-    reaction_ctrls = get_reaction_status(request.user, comments)
+    context = comments_list_context_for_opinion(query_params, request.user)
 
     return JsonResponse({
         'html': render_to_string(
             app_template_path(
                 OPINIONS_APP_NAME, "snippet", "view_comments.html"),
-            context={
-                # same context as OpinionDetail::get
-                'comments': comments,
-                'comment_reactions': COMMENT_REACTIONS,
-                'reaction_ctrls': reaction_ctrls,
-            },
+            context=context,
             request=request)
     }, status=HTTPStatus.OK)

@@ -27,8 +27,8 @@ from opinions.constants import (
     STATUS_QUERY, HIDDEN_QUERY, CONTENT_QUERY, AUTHOR_QUERY, DESC_LOOKUP,
     DATE_NEWEST_LOOKUP
 )
-from opinions.models import HideStatus, Comment
-from opinions.views_opinion_list import DATE_QUERIES
+from opinions.models import Comment
+from opinions.views.utils import DATE_QUERIES
 from opinions.enums import PerPage, CommentSortOrder, QueryStatus, Hidden
 from user.models import User
 from .base_content_test import ContentTestBase

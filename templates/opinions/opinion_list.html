@@ -39,6 +39,10 @@
 
 {% block head_title %}SoapBox - {{ title }}{% endblock %}
 
+{% block extra_css %}
+<link href="{% static 'css/styles-opinion.css' %}" rel="stylesheet">
+{% endblock extra_css %}
+
 {% block content %}
 {% if search_term %}
 <div class="row mt-2">

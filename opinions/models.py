@@ -21,9 +21,11 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 from datetime import datetime, MINYEAR, timezone
+from typing import Type, Optional
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.template.defaultfilters import truncatechars
 
 from user.models import User
 from categories.models import Category, Status
@@ -55,6 +57,11 @@ class Opinion(SlugMixin, models.Model):
     CREATED_FIELD = CREATED_FIELD
     UPDATED_FIELD = UPDATED_FIELD
     PUBLISHED_FIELD = PUBLISHED_FIELD
+    ALL_FIELDS = [
+        ID_FIELD, TITLE_FIELD, CONTENT_FIELD, EXCERPT_FIELD,
+        CATEGORIES_FIELD, STATUS_FIELD, USER_FIELD, SLUG_FIELD,
+        CREATED_FIELD, UPDATED_FIELD, PUBLISHED_FIELD
+    ]
 
     SEARCH_DATE_FIELD = PUBLISHED_FIELD
     DATE_FIELDS = [CREATED_FIELD, UPDATED_FIELD, PUBLISHED_FIELD]
@@ -93,7 +100,8 @@ class Opinion(SlugMixin, models.Model):
         ordering = [TITLE_FIELD]
 
     def __str__(self):
-        return f'{self.title} {self.status.short_name}'
+        return f'{Opinion.MODEL_NAME}[{self.id}]:' \
+               f'{truncatechars(self.title, 20)} {self.status.short_name}'
 
     def set_slug(self, title: str):
         """
@@ -173,7 +181,8 @@ class Comment(SlugMixin, models.Model):
         ordering = [ID_FIELD]
 
     def __str__(self):
-        return f'{self.content} {self.status.short_name}'
+        return f'{Comment.MODEL_NAME}[{self.id}]:' \
+               f'{truncatechars(self.content, 20)} {self.status.short_name}'
 
     def set_slug(self, content: str):
         """
@@ -208,19 +217,22 @@ class Review(models.Model):
     # field names
     ID_FIELD = ID_FIELD
     OPINION_FIELD = OPINION_FIELD
+    COMMENT_FIELD = COMMENT_FIELD
     REQUESTED_FIELD = REQUESTED_FIELD
     REASON_FIELD = REASON_FIELD
     REVIEWER_FIELD = REVIEWER_FIELD
-    COMMENT_FIELD = COMMENT_FIELD
     STATUS_FIELD = STATUS_FIELD
     CREATED_FIELD = CREATED_FIELD
     UPDATED_FIELD = UPDATED_FIELD
     RESOLVED_FIELD = RESOLVED_FIELD
 
     REVIEW_ATTRIB_REASON_MAX_LEN: int = 500
-    REVIEW_ATTRIB_COMMENT_MAX_LEN: int = 500
 
-    opinion = models.ForeignKey(Opinion, on_delete=models.CASCADE)
+    opinion = models.ForeignKey(
+        Opinion, null=True, blank=True, on_delete=models.CASCADE)
+
+    comment = models.ForeignKey(
+        Comment, null=True, blank=True, on_delete=models.CASCADE)
 
     requested = models.ForeignKey(User, on_delete=models.CASCADE,
                                   related_name='requested_by')
@@ -228,11 +240,9 @@ class Review(models.Model):
     reason = models.CharField(
         _('reason'), max_length=REVIEW_ATTRIB_REASON_MAX_LEN, blank=False)
 
-    reviewer = models.ForeignKey(User, on_delete=models.CASCADE,
-                                 related_name='reviewed_by')
-
-    comment = models.CharField(
-        _('comment'), max_length=REVIEW_ATTRIB_COMMENT_MAX_LEN, blank=False)
+    reviewer = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.CASCADE,
+        related_name='reviewed_by')
 
     status = models.ForeignKey(Status, on_delete=models.CASCADE)
 
@@ -240,6 +250,16 @@ class Review(models.Model):
     updated = models.DateTimeField(auto_now=True)
     resolved = models.DateTimeField(
         default=datetime(MINYEAR, 1, 1, tzinfo=timezone.utc))
+
+    @classmethod
+    def content_field(cls, model: Type[models.Model]) -> Optional[str]:
+        """
+        Return the name of the content field for the specified model
+        :param model: model to get field for
+        :return: field name or None
+        """
+        return Review.OPINION_FIELD if isinstance(model, Opinion) else \
+            Review.COMMENT_FIELD if isinstance(model, Comment) else None
 
     class Meta:
         permissions = [
@@ -250,7 +270,8 @@ class Review(models.Model):
         ]
 
     def __str__(self):
-        return f'Review: {self.opinion.title}'
+        return f'{Review.MODEL_NAME}[{self.id}]: {self.opinion} - ' \
+               f'{self.status.short_name}'
 
 
 class AgreementStatus(models.Model):
@@ -278,10 +299,21 @@ class AgreementStatus(models.Model):
 
     updated = models.DateTimeField(auto_now=True)
 
+    @classmethod
+    def content_field(cls, model: Type[models.Model]) -> Optional[str]:
+        """
+        Return the name of the content field for the specified model
+        :param model: model to get field for
+        :return: field name or None
+        """
+        return AgreementStatus.OPINION_FIELD if isinstance(model, Opinion) \
+            else AgreementStatus.COMMENT_FIELD if isinstance(model, Comment) \
+            else None
+
     def __str__(self):
-        return f'AgreementStatus: ' \
-               f'{self.opinion if self.opinion else self.comment} ' \
-               f'{self.status}'
+        return f'{AgreementStatus.MODEL_NAME}[{self.id}]: ' \
+               f'{self.opinion if self.opinion else self.comment} - ' \
+               f'{self.status.short_name}'
 
 
 class HideStatus(models.Model):
@@ -306,10 +338,42 @@ class HideStatus(models.Model):
 
     updated = models.DateTimeField(auto_now=True)
 
+    @classmethod
+    def content_field(cls, model: Type[models.Model]) -> Optional[str]:
+        """
+        Return the name of the content field for the specified model
+        :param model: model to get field for
+        :return: field name or None
+        """
+        return HideStatus.OPINION_FIELD if isinstance(model, Opinion) \
+            else HideStatus.COMMENT_FIELD if isinstance(model, Comment) \
+            else None
+
     def __str__(self):
-        return f'HideStatus: ' \
-               f'{self.opinion if self.opinion else self.comment} ' \
-               f'{self.status}'
+        return f'{HideStatus.MODEL_NAME}[{self.id}]: ' \
+               f'{self.opinion if self.opinion else self.comment}'
+
+
+class PinStatus(models.Model):
+    """ PinStatus model """
+
+    MODEL_NAME = 'PinStatus'
+
+    # field names
+    ID_FIELD = ID_FIELD
+    OPINION_FIELD = OPINION_FIELD
+    USER_FIELD = USER_FIELD
+    UPDATED_FIELD = UPDATED_FIELD
+
+    opinion = models.ForeignKey(
+        Opinion, null=True, blank=True, on_delete=models.CASCADE)
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{PinStatus.MODEL_NAME}[{self.id}]: {self.opinion}'
 
 
 def is_id_lookup(lookup: str):

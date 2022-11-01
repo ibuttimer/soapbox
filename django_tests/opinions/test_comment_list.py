@@ -44,6 +44,7 @@ from ..user.base_user_test import BaseUserTest
 COMMENT_LIST_TEMPLATE = f'{OPINIONS_APP_NAME}/comment_list.html'
 COMMENT_LIST_CONTENT_TEMPLATE = \
     f'{OPINIONS_APP_NAME}/comment_list_content.html'
+COMMENT_TEMPLATE = f'{OPINIONS_APP_NAME}/snippet/comment.html'
 
 
 class TestCommentList(SoupMixin, CategoryMixin, BaseCommentTest):
@@ -108,8 +109,13 @@ class TestCommentList(SoupMixin, CategoryMixin, BaseCommentTest):
 
         response = self.get_comment_list_by()
         self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assert_comment_list_templates(response)
+
+    def assert_comment_list_templates(self, response: HttpResponse):
+        """ Check the templates used in response """
         self.assertTemplateUsed(response, COMMENT_LIST_TEMPLATE)
         self.assertTemplateUsed(response, COMMENT_LIST_CONTENT_TEMPLATE)
+        self.assertTemplateUsed(response, COMMENT_TEMPLATE)
 
     def test_get_comment_list_sorted(self):
         """
@@ -121,14 +127,14 @@ class TestCommentList(SoupMixin, CategoryMixin, BaseCommentTest):
 
         for order in list(CommentSortOrder):
             # check contents of first page
+            msg = f'order {order}'
             expected = self.get_expected_list(
                 order, user, per_page=PerPage.DEFAULT)
 
-            with self.subTest(f'order {order}'):
+            with self.subTest(msg):
                 response = self.get_comment_list_by(order=order)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
-                self.assertTemplateUsed(
-                    response, COMMENT_LIST_CONTENT_TEMPLATE)
+                self.assert_comment_list_templates(response)
                 verify_comment_list_content(
                     self, expected, response, msg=order)
 
@@ -144,7 +150,7 @@ class TestCommentList(SoupMixin, CategoryMixin, BaseCommentTest):
         """
         return BaseCommentTest.get_expected(
             self, {
-                # no query required as default is all published opinions
+                # no query required as default is all published comments
             }, order, user, per_page=per_page, page_num=page_num)
 
     def test_get_comment_list_pagination(self):
@@ -164,17 +170,16 @@ class TestCommentList(SoupMixin, CategoryMixin, BaseCommentTest):
             num_pages = int((total + per_page.arg - 1) / per_page.arg)
             for count in range(1, num_pages + 1):
 
+                msg = f'page {count}/{num_pages}'
                 expected = self.get_expected_list(
                     CommentSortOrder.DEFAULT, user,
                     per_page=per_page, page_num=count - 1)
 
-                msg = f'page {count}/{num_pages}'
                 with self.subTest(msg):
                     response = self.get_comment_list_by(
                         per_page=per_page, page=count)
                     self.assertEqual(response.status_code, HTTPStatus.OK)
-                    self.assertTemplateUsed(
-                        response, COMMENT_LIST_CONTENT_TEMPLATE)
+                    self.assert_comment_list_templates(response)
                     verify_comment_list_content(
                         self, expected, response,
                         pagination=num_pages > 1, msg=msg)
@@ -188,8 +193,8 @@ def verify_comment_list_content(
     """
     Verify comment list page content
     :param test_case: opinion test object
-    :param expected: expected opinions
-    :param response: opinion response
+    :param expected: expected comments
+    :param response: comments response
     :param pagination: check for pagination flag
     :param msg: message
     """
@@ -211,10 +216,8 @@ def verify_comment_list_content(
     for index, comment in enumerate(expected):
         sub_msg = f'{msg} | index {index} comment "{comment.content}"'
         with test_case.subTest(sub_msg):
-
             TestCommentView.verify_comment_content(
-                test_case, comment.opinion, comment, response
-            )
+                test_case, comment, response)
 
     if pagination:
         SoupMixin.find_tag(

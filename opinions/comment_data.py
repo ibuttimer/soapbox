@@ -20,17 +20,24 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
+from collections import namedtuple
+from typing import Union, List, Optional, Type
+from itertools import chain
+
+from categories import REACTION_AGREE, REACTION_DISAGREE
+from categories.models import Status
 from soapbox import AVATAR_BLANK_URL, OPINIONS_APP_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
 from .constants import (
     PAGE_QUERY, PER_PAGE_QUERY, PARENT_ID_QUERY, COMMENT_DEPTH_QUERY,
-    COMMENT_MORE_ROUTE_NAME
+    COMMENT_MORE_ROUTE_NAME, OPINION_ID_QUERY
 )
-from .models import Comment
+from .models import Comment, Opinion, AgreementStatus, HideStatus, PinStatus
 from .comment_utils import get_comment_queryset
-from .views_utils import DEFAULT_COMMENT_DEPTH
+from opinions.views.utils import DEFAULT_COMMENT_DEPTH, ensure_list
 from .enums import QueryArg, PerPage
+from .queries import content_status_check
 
 REPLY_CONTAINER_ID = 'id--comment-collapse'
 REPLY_MORE_CONTAINER_ID = f'{REPLY_CONTAINER_ID}-more'
@@ -49,7 +56,20 @@ class CommentData:
         """ Get avatar url of comment author """
         return AVATAR_BLANK_URL \
             if User.AVATAR_BLANK in self.comment.user.avatar.url \
-            else self.comment.user.avatar
+            else self.comment.user.avatar.url
+
+    @property
+    def id(self):
+        """ Get comment """
+        return self.comment.id
+
+    def comment_iterable(self) -> chain[Comment]:
+        """
+        Generate an iterator that cycles through all the comments in this
+        object, i.e. the comment
+        :return: iterator
+        """
+        return chain([self.comment])
 
     def __str__(self):
         return f'{self.comment.level}: {self.comment}'
@@ -106,18 +126,41 @@ class CommentBundle(CommentData):
             else REPLY_CONTAINER_ID
         return f'{name}-{comment_id}'
 
+    def comment_iterable(self) -> chain[Comment]:
+        """
+        Generate an iterator that cycles through all the comments in this
+        object, i.e. the comment, any replies to the comment,
+        any replies to the replies etc.
+        :return: iterator
+        """
+        return chain([self.comment], chain.from_iterable(list(
+            map(lambda cmt: list(cmt.comment_iterable()), self.comments)
+        )))
 
-def get_comment_bundle(
-        query_params: dict[str, QueryArg], user: User) -> list[CommentBundle]:
+
+def get_comment_tree(
+        query_params: Union[int, dict[str, QueryArg]], user: User
+) -> list[CommentBundle]:
     """
-    Get comment bundle, i.e. comments on opinion and comments on those
-    comments
-    :param query_params: query parameters
+    Get comment tree, i.e. comments and comments on those comments etc.
+    :param query_params: query parameters or opinion id; default
+                page 1, PerPage.DEFAULT, DEFAULT_COMMENT_DEPTH
     :param user: current user
-    :return: list of comments
+    :return: list of comments (including a 'more' element if necessary)
     """
+    if isinstance(query_params, int):
+        query_params = {
+            q: QueryArg(v, True) for q, v in [
+                (OPINION_ID_QUERY, query_params),
+                (PARENT_ID_QUERY, Comment.NO_PARENT),
+                (PAGE_QUERY, 1),
+                (PER_PAGE_QUERY, PerPage.DEFAULT),
+                (COMMENT_DEPTH_QUERY, DEFAULT_COMMENT_DEPTH)
+            ]
+        }
+
     # get first level comments
-    comment_bundles = get_comments(query_params, user)
+    comment_bundles = get_comments_page(query_params, user)
 
     depth = query_params.get(COMMENT_DEPTH_QUERY, DEFAULT_COMMENT_DEPTH)
     if isinstance(depth, QueryArg):
@@ -134,18 +177,18 @@ def get_comment_bundle(
             sub_query_params[PARENT_ID_QUERY] = comment_bundle.comment.id
             # recursive call to get next level comments
             comment_bundle.comments = \
-                get_comment_bundle(sub_query_params, user)
+                get_comment_tree(sub_query_params, user)
 
     return comment_bundles
 
 
-def get_comments(
+def get_comments_page(
         query_params: dict[str, QueryArg], user: User) -> list[CommentBundle]:
     """
-    Get comment bundle, i.e. comments on opinion/comment
-    :param query_params: query parameters
+    Get a page of comments, i.e. comments on opinion/comment
+    :param query_params: query parameters; default page 1, PerPage.DEFAULT
     :param user: current user
-    :return: list of comments
+    :return: list of comments (including a 'more' element if necessary)
     """
     query_set = get_comment_queryset(query_params, user)
 
@@ -158,15 +201,15 @@ def get_comments(
     end = start + per_page
 
     count = query_set.count()
-    add_placeholder = end < count
-    if add_placeholder:
+    add_more_placeholder = end < count
+    if add_more_placeholder:
         end += 1    # add extra for more placeholder
 
     comments = [
         CommentBundle(comment) for comment in list(query_set[start:end])
     ]
 
-    if add_placeholder:
+    if add_more_placeholder:
         # set placeholder for more
         next_query_params = query_params.copy()
         next_query_params[PAGE_QUERY] = page + 1
@@ -182,3 +225,75 @@ def get_comments(
             ))
 
     return comments
+
+
+def get_comments_review_status(
+    comment_bundles: [Type[CommentData], List[Type[CommentData]]],
+    comments_review_status: Optional[dict] = None
+):
+    """
+    Get the review status of content
+    :param comment_bundles: CommentBundle(s) to get review statuses of
+    :param comments_review_status: dict to add to; default None
+    :return: dict of the form {
+                   key: comment id
+                   value: ContentStatus
+               }
+    """
+    if comments_review_status is None:
+        comments_review_status = {}
+
+    # get review status of comments
+    for comment in ensure_list(comment_bundles):
+        comments_review_status.update({
+            # key: comment id, value: ContentStatus
+            cmt.id: content_status_check(cmt)
+            for cmt in comment.comment_iterable()
+        })
+
+    return comments_review_status
+
+
+PopularityLevel = namedtuple("PopularityLevel", [
+    "comments",     # comments count
+    "agree",        # agrees count
+    "disagree",     # disagrees count
+    "hide",         # hide count
+    "pin",          # pin count
+], defaults=[0, 0, 0, 0, 0])
+
+
+def get_popularity_levels(opinions: Union[Opinion, list[Opinion]]) -> dict:
+    """
+    Get popularity levels for specified opinion(s)
+    :param opinions: opinion ot list of opinions
+    :return: dict with 'opinion_<id>' as the key and PopularityLevel value
+    """
+    if isinstance(opinions, Opinion):
+        opinions = [opinions]
+    levels = {}
+
+    for opinion in opinions:
+        levels[f'opinion_{opinion.id}'] = PopularityLevel(
+            comments=Comment.objects.filter(**{
+                f'{Comment.OPINION_FIELD}': opinion
+            }).count(),
+            agree=AgreementStatus.objects.filter(**{
+                f'{AgreementStatus.OPINION_FIELD}': opinion,
+                f'{AgreementStatus.STATUS_FIELD}__{Status.NAME_FIELD}':
+                    REACTION_AGREE
+            }).count(),
+            disagree=AgreementStatus.objects.filter(**{
+                f'{AgreementStatus.OPINION_FIELD}': opinion,
+                f'{AgreementStatus.STATUS_FIELD}__{Status.NAME_FIELD}':
+                    REACTION_DISAGREE
+            }).count(),
+            hide=HideStatus.objects.filter(**{
+                f'{HideStatus.OPINION_FIELD}': opinion
+            }).count(),
+            pin=PinStatus.objects.filter(**{
+                f'{PinStatus.OPINION_FIELD}': opinion
+            }).count(),
+        )
+
+    return levels
