@@ -25,7 +25,7 @@ from django.urls import path
 
 from soapbox import OPINIONS_APP_NAME
 
-from .constants import (
+from opinions.constants import (
     OPINIONS_URL, OPINIONS_ROUTE_NAME,
     OPINION_NEW_URL, OPINION_NEW_ROUTE_NAME,
     OPINION_SEARCH_URL, OPINION_SEARCH_ROUTE_NAME,
@@ -59,7 +59,9 @@ from opinions.views.opinion_by_id import (
     opinion_pin_patch, opinion_report_post
 )
 from opinions.views.opinion_list import OpinionList, OpinionSearch
-
+from opinions.views.comment_by_id import (
+    comment_like_patch, comment_report_post, comment_hide_patch
+)
 
 # https://docs.djangoproject.com/en/4.1/topics/http/urls/#url-namespaces-and-included-urlconfs
 app_name = OPINIONS_APP_NAME
@@ -103,17 +105,19 @@ urlpatterns = [
     path(COMMENTS_URL, CommentList.as_view(),
          name=COMMENTS_ROUTE_NAME),
 
-    # FIXME comment id/like/hide/report urls
+    # FIXME comment id urls (required?)
     path(COMMENT_ID_URL, opinion_status_patch,
          name=COMMENT_ID_ROUTE_NAME),
 
-    path(COMMENT_LIKE_ID_URL, opinion_like_patch,
+
+    # patch comment like/unlike status by id
+    path(COMMENT_LIKE_ID_URL, comment_like_patch,
          name=COMMENT_LIKE_ID_ROUTE_NAME),
-    path(COMMENT_HIDE_ID_URL, opinion_hide_patch,
+    # patch comment hide status by id
+    path(COMMENT_HIDE_ID_URL, comment_hide_patch,
          name=COMMENT_HIDE_ID_ROUTE_NAME),
-
-
-    path(COMMENT_REPORT_ID_URL, opinion_hide_patch,
+    # post comment report by id
+    path(COMMENT_REPORT_ID_URL, comment_report_post,
          name=COMMENT_REPORT_ID_ROUTE_NAME),
 
     # search comments

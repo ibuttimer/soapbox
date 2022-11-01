@@ -32,6 +32,7 @@ from categories import (
 from opinions import (
     OPINION_ID_ROUTE_NAME
 )
+from opinions.constants import UNDER_REVIEW_COMMENT_CONTENT
 from opinions.models import Opinion, Comment
 from soapbox import OPINIONS_APP_NAME, USER_APP_NAME
 from user import USER_ID_ROUTE_NAME
@@ -130,18 +131,14 @@ class TestCommentView(SoupMixin, CategoryMixin, BaseOpinionTest):
             Comment.OPINION_FIELD: opinion,
             Comment.PARENT_FIELD: Comment.NO_PARENT
         })
-        TestCommentView.verify_comment_content(
-            self, opinion, comments[0], response)
+        TestCommentView.verify_comment_content(self, comments[0], response)
 
     @staticmethod
-    def verify_comment_content(
-                test_case: TestCase, opinion: Opinion, comment: Comment,
-                response: HttpResponse
-            ):
+    def verify_comment_content(test_case: TestCase, comment: Comment,
+                               response: HttpResponse):
         """
         Verify comment page content for user
         :param test_case: TestCase instance
-        :param opinion: expected opinion
         :param comment: expected comment
         :param response: opinion response
         """
@@ -150,6 +147,12 @@ class TestCommentView(SoupMixin, CategoryMixin, BaseOpinionTest):
         soup = BeautifulSoup(
             response.content.decode("utf-8", errors="ignore"), features="lxml"
         )
+
+        under_review = any(
+            map(lambda op: op.id == comment.id, test_case.reported_comments)
+        )
+        expected_content = UNDER_REVIEW_COMMENT_CONTENT \
+            if under_review else comment.content
 
         # check comment card
         cards = soup.find_all(id=f'id--comment-card-{comment.id}')
@@ -162,15 +165,17 @@ class TestCommentView(SoupMixin, CategoryMixin, BaseOpinionTest):
                         SoupMixin.in_tag_attr(
                             child, 'alt', comment.user.username))
                 elif child.name == 'a' and \
-                        child.id == f'id--comment-avatar-link-{comment.id}':
+                        child.get('id') == \
+                        f'id--comment-avatar-link-{comment.id}':
                     # user link
                     test_case.assertTrue(
                         SoupMixin.in_tag_attr(
                             child, 'href', reverse_q(
                                 namespaced_url(
                                     USER_APP_NAME, USER_ID_ROUTE_NAME),
-                                args=[opinion.user.id])))
+                                args=[comment.user.id])))
                     test_case.assertIn(comment.user.username, child.text)
-                elif child.id == f'id--comment-content-{comment.id}':
+                elif child.get('id') == f'id--comment-content-{comment.id}':
                     # comment content
-                    test_case.assertEqual(child.text, comment.content)
+                    test_case.assertEqual(
+                        child.text.strip(), expected_content)

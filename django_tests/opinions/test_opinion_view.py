@@ -38,7 +38,7 @@ from opinions import (
     OPINION_PREVIEW_ID_ROUTE_NAME, OPINION_STATUS_ID_ROUTE_NAME
 )
 from opinions.constants import (
-    STATUS_QUERY, UNDER_REVIEW_TITLE, UNDER_REVIEW_CONTENT
+    STATUS_QUERY, UNDER_REVIEW_TITLE, UNDER_REVIEW_OPINION_CONTENT
 )
 from opinions.models import Opinion
 from opinions.enums import QueryStatus
@@ -435,7 +435,7 @@ class TestOpinionView(
         )
         if under_review:
             expected_title = UNDER_REVIEW_TITLE
-            expected_content = UNDER_REVIEW_CONTENT
+            expected_content = UNDER_REVIEW_OPINION_CONTENT
         else:
             expected_title = opinion.title
             expected_content = opinion.excerpt

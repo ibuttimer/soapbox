@@ -73,6 +73,13 @@
             </h1>
         </div>
 
+        <div class="row mb-3">
+            <div class="col-1">
+                {# HACK display id for dev purposes #}
+                <span class="badge rounded-pill text-bg-warning">{{ opinion.id }}</span>
+            </div>
+        </div>
+
         <!-- top row: category, updated/published/author, preview/draft/publish -->
         <div class="row mb-3">
             <div class="col-sm-4">
@@ -99,7 +106,7 @@
                 {% if view_ok %}
                     {{ opinion.content | safe }}
                 {% else %}
-                    {{ under_review_content }}
+                    <em>{{ under_review_content }}</em>
                 {% endif %}
             </div>
         </div>
@@ -140,6 +147,10 @@
         <!-- Modal to create review reports -->
         <div id="id--report-modal-container">
             {% include "opinions/snippet/report_modal.html" %}
+        </div>
+        <!-- Modal to hide opinion/comment -->
+        <div id="id--hide-modal-container">
+            {% include "opinions/snippet/hide_modal.html" %}
         </div>
     {% endif %}
 </article>

@@ -32,6 +32,7 @@ from django.views import View
 
 from categories import STATUS_PUBLISHED
 from categories.models import Status
+from opinions.contexts.comment import get_comment_bundle_context
 from soapbox import (
     OPINIONS_APP_NAME
 )
@@ -39,11 +40,8 @@ from utils import (
     Crud, app_template_path
 )
 from opinions.comment_data import CommentBundle
-from opinions.constants import TEMPLATE_TARGET_ID, TEMPLATE_REACTION_CTRLS, \
-    TEMPLATE_COMMENT_REACTIONS
 from opinions.forms import CommentForm
 from opinions.models import Opinion, Comment
-from opinions.reactions import COMMENT_REACTIONS, get_reaction_status
 from opinions.views.utils import (
     comment_permission_check, timestamp_content
 )
@@ -90,19 +88,15 @@ class CommentCreate(LoginRequiredMixin, View):
                 if comment.parent != Comment.NO_PARENT else \
                 "id--comments-container"
 
-            # get reaction controls for opinion & comments
-            reaction_ctrls = get_reaction_status(request.user, comment)
+            context = get_comment_bundle_context(
+                comment.id, request.user, depth=0
+            )
 
             response = JsonResponse({
                 'html': render_to_string(
                     app_template_path(
                         OPINIONS_APP_NAME, "snippet", "comment_bundle.html"),
-                    context={
-                        'bundle': CommentBundle(comment),
-                        TEMPLATE_TARGET_ID: comment.id,
-                        TEMPLATE_COMMENT_REACTIONS: COMMENT_REACTIONS,
-                        TEMPLATE_REACTION_CTRLS: reaction_ctrls,
-                    },
+                    context=context,
                     request=request),
                 'parent_container': parent_container,
                 'opinion_comment': comment.parent == Comment.NO_PARENT,

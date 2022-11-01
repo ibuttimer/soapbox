@@ -96,6 +96,7 @@ REORDER_QUERY: str = 'reorder'          # reordering of previous query
 SEARCH_QUERY: str = 'search'            # search from search box in header
 # Note: a search can have any of the following queries embedded in its
 # value
+ID_QUERY: str = 'id'                        # search id
 STATUS_QUERY: str = 'status'                # search status
 CONTENT_QUERY: str = 'content'              # search content
 AUTHOR_QUERY: str = 'author'                # search author
@@ -137,6 +138,7 @@ TEMPLATE_TARGET_TYPE = 'target_type'        # type of target; opinion/comment
 # list of Reaction (can be for opinion or comment)
 TEMPLATE_REACTIONS = 'reactions'
 TEMPLATE_REACTION_CTRLS = 'reaction_ctrls'  # dict of ReactionCtrl
+TEMPLATE_COMMENT_BUNDLE = 'bundle'          # CommentBundle
 
 # templates/opinions/opinion_view.html
 # list of Reaction for opinion
@@ -152,9 +154,11 @@ OPINION_CTX = 'opinion'
 STATUS_CTX = 'status'
 COMMENTS_CTX = 'comments'
 USER_CTX = 'user'
+CONTENT_STATUS_CTX = "content_status"
 UNDER_REVIEW_TITLE_CTX = "under_review_title"
 UNDER_REVIEW_EXCERPT_CTX = "under_review_excerpt"
 UNDER_REVIEW_CONTENT_CTX = "under_review_content"
+HIDDEN_CONTENT_CTX = "hidden_content"
 
 # templates/opinions/snippet/comment_bundle.html
 # list of Reaction for comment
@@ -165,5 +169,10 @@ ALL_FIELDS = 'all_fields'
 
 UNDER_REVIEW_TITLE = 'Under Review'
 UNDER_REVIEW_EXCERPT = 'Content not available'
-UNDER_REVIEW_CONTENT = 'The content of this opinion is not currently ' \
-                       'available to view as it is under review.'
+UNDER_REVIEW_OPINION_CONTENT = \
+    'The content of this opinion is not currently available to view as it ' \
+    'is under review.'
+UNDER_REVIEW_COMMENT_CONTENT = \
+    'The content of this comment is not currently available to view as it ' \
+    'is under review.'
+HIDDEN_COMMENT_CONTENT = 'The content of this comment has been hidden.'

@@ -21,6 +21,7 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 from datetime import datetime, MINYEAR, timezone
+from typing import Type, Optional
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -250,6 +251,16 @@ class Review(models.Model):
     resolved = models.DateTimeField(
         default=datetime(MINYEAR, 1, 1, tzinfo=timezone.utc))
 
+    @classmethod
+    def content_field(cls, model: Type[models.Model]) -> Optional[str]:
+        """
+        Return the name of the content field for the specified model
+        :param model: model to get field for
+        :return: field name or None
+        """
+        return Review.OPINION_FIELD if isinstance(model, Opinion) else \
+            Review.COMMENT_FIELD if isinstance(model, Comment) else None
+
     class Meta:
         permissions = [
             (CLOSE_REVIEW_PERM,
@@ -288,6 +299,17 @@ class AgreementStatus(models.Model):
 
     updated = models.DateTimeField(auto_now=True)
 
+    @classmethod
+    def content_field(cls, model: Type[models.Model]) -> Optional[str]:
+        """
+        Return the name of the content field for the specified model
+        :param model: model to get field for
+        :return: field name or None
+        """
+        return AgreementStatus.OPINION_FIELD if isinstance(model, Opinion) \
+            else AgreementStatus.COMMENT_FIELD if isinstance(model, Comment) \
+            else None
+
     def __str__(self):
         return f'{AgreementStatus.MODEL_NAME}[{self.id}]: ' \
                f'{self.opinion if self.opinion else self.comment} - ' \
@@ -315,6 +337,17 @@ class HideStatus(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     updated = models.DateTimeField(auto_now=True)
+
+    @classmethod
+    def content_field(cls, model: Type[models.Model]) -> Optional[str]:
+        """
+        Return the name of the content field for the specified model
+        :param model: model to get field for
+        :return: field name or None
+        """
+        return HideStatus.OPINION_FIELD if isinstance(model, Opinion) \
+            else HideStatus.COMMENT_FIELD if isinstance(model, Comment) \
+            else None
 
     def __str__(self):
         return f'{HideStatus.MODEL_NAME}[{self.id}]: ' \

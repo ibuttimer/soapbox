@@ -31,7 +31,8 @@ from user.models import User
 from .constants import (
     STATUS_QUERY, CONTENT_QUERY, CATEGORY_QUERY, AUTHOR_QUERY,
     ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY,
-    EQUAL_QUERY, SEARCH_QUERY, OPINION_ID_QUERY, PARENT_ID_QUERY, HIDDEN_QUERY
+    EQUAL_QUERY, SEARCH_QUERY, OPINION_ID_QUERY, PARENT_ID_QUERY, HIDDEN_QUERY,
+    ID_QUERY
 )
 from .models import Opinion, Comment
 from .query_params import QuerySetParams, choice_arg_query
@@ -57,6 +58,7 @@ FIELD_LOOKUPS = {
     SEARCH_QUERY: '',
     # TODO opinion
     # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#exact
+    ID_QUERY: f'{Comment.ID_FIELD}',
     STATUS_QUERY: f'{Comment.STATUS_FIELD}__{Status.NAME_FIELD}',
     CONTENT_QUERY: f'{Comment.CONTENT_FIELD}__icontains',
     AUTHOR_QUERY: f'{Comment.USER_FIELD}__{User.USERNAME_FIELD}__icontains',

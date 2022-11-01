@@ -4,9 +4,11 @@
 {% load static %}
 {% load humanize %}
 {% load tz %}
+{% load dict_value %}
 
 {# --- template variable defines for includes --- #}
 {# comment template expects: 'comment_data' as CommentData #}
+{#                           'content_status' as dict with key: comment id, value: ContentStatus #}
 
 <div id="id--comment-card-{{ comment_data.comment.id }}" class="card">
     <div class="card-body">
@@ -24,10 +26,19 @@
             <!-- comment details -->
             <div class="col-sm-10 mt-0 mb-0">
                 <div class="row">
-                    <div class="col-sm-10 mt-0 mb-0" id="id--comment-content-{{ comment_data.comment.id }}">
-                        {{ comment_data.comment.content | safe }}
+                    <div class="col-sm-10 mt-0 mb-0" id="id--comment-content-{{ comment_data.id }}">
+                        {% dict_value content_status comment_data.id as status %}
+                        {% if status.review_wip %}
+                            <em>{{ under_review_content }}</em>
+                        {% elif status.hidden %}
+                            <em>{{ hidden_content }}</em>
+                        {% else %}
+                            {{ comment_data.comment.content | safe }}
+                        {% endif %}
                     </div>
                     <div class="col-sm-2 mt-0 mb-0">
+                        {# HACK display id for dev purposes #}
+                        <span class="badge rounded-pill text-bg-warning">{{ comment_data.id }}</span>
                     </div>
                 </div>
                 <div class="row">

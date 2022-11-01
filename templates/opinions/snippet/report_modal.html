@@ -17,6 +17,8 @@
             </div>
             <form method="post" action="{% url 'opinions:report_opinion_id' opinion.id %}"
                   id="id--report-modal-form">
+                {# form action defaults to report opinion, but it is overridden by content of 'id--report-submit-url' #}
+                {# which is set by the click handlers on reaction buttons #}
 
                 {% csrf_token %}
 
@@ -72,7 +74,7 @@
                 reason: $("#{{ reason_field.auto_id }}").val(),
             };
 
-            const url = event.currentTarget.attributes.action.value;
+            const url = $("#id--report-submit-url").text();
 
             $.ajax({
                 method: 'post',

@@ -33,13 +33,10 @@
         // hide tooltip
         $("#" + event.currentTarget.id).tooltip("hide");
 
-        // href is on the button
-        const url = event.currentTarget.attributes['data-bs-href'].textContent;
-        // status option is on the span in the button (see reactions.html)
-        const statusOption = event.currentTarget.firstElementChild.attributes['data-bs-option'].textContent;
+        const reaction = get_react_info(event)
 
         $.ajax({
-            url: url + "?status=" + statusOption,
+            url: reaction.url + "?status=" + reaction.option,
             method: 'patch',
             headers: {
                 'X-CSRFTOKEN': '{{ csrf_token }}'
@@ -53,14 +50,64 @@
         });
     }
 
+    const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+
+    /**
+     * Get react info
+     * :param event: click event
+     */
+    function get_react_info(event) {
+        // ids are of the form 'id--react-<reaction>-<type>-<id>' e.g. 'id--react-agree-opinion-1'
+        const split = event.currentTarget.attributes['id'].textContent.split('-')
+        let data_bs_option = '';
+        if (event.currentTarget.firstElementChild.attributes.hasOwnProperty('data-bs-option')) {
+            data_bs_option = event.currentTarget.firstElementChild.attributes['data-bs-option'].textContent
+        }
+        return {
+            // href is on the button
+            url: event.currentTarget.attributes['data-bs-href'].textContent,
+            // title is on the button
+            title: event.currentTarget.attributes['data-bs-title'].textContent,
+            // type is taken from the button id
+            type: split[4],
+            // status option is on the span in the button (see reactions.html)
+            option: data_bs_option,
+            // status option is the action to perform
+            action: data_bs_option,
+            submit: capitalize(data_bs_option)
+        };
+    }
+    /**
+     * Set react info vars
+     * :param event: click event
+     * :param ids: object with keys matching those returned by get_react_info()
+     *             and values as ids of element to be set
+     */
+    function set_react_info_vars(event, ids) {
+        const reaction = get_react_info(event)
+        for (const [key, value] of Object.entries(ids)) {
+            $(value).text(reaction[key]);
+        }
+    }
+
+    /**
+     * Handle the response to a reaction
+     * :param data: json data
+     */
+    function react_response_handler(data) {
+        if (data.hasOwnProperty('redirect')) {
+            document.location.href = data.redirect;
+        } else if (data.hasOwnProperty('element_id')) {
+            $("#" + data.element_id).replaceWith(data.html);
+        }
+    }
+
     /**
      * Update like/unlike status of current opinion
      * :param event: click event
      */
     function updateLikeUnlike(event) {
-        updateReactStatus(event, function(data) {
-            $("#" + data.element_id).replaceWith(data.html);
-        });
+        updateReactStatus(event, react_response_handler);
     }
 
     /**
@@ -68,19 +115,7 @@
      * :param event: click event
      */
     function updatePinUnpin(event) {
-        updateReactStatus(event, function(data) {
-            $("#" + data.element_id).replaceWith(data.html);
-        });
-    }
-
-    /**
-     * Update hide status of current opinion
-     * :param event: click event
-     */
-    function updateHide(event) {
-        updateReactStatus(event, function(data) {
-            document.location.href = data.redirect;
-        });
+        updateReactStatus(event, react_response_handler);
     }
 
     // Reaction buttons for comments are named 'id--react-comment-....'
@@ -97,6 +132,8 @@
     const pinReactionsSelector = "button[id^='id--react-pin']";
     // Reaction buttons for unpin are named 'id--react-unpin-....'
     const unpinReactionsSelector = "button[id^='id--react-unpin']";
+    // Reaction buttons for report are named 'id--react-report-....'
+    const reportReactionsSelector = "button[id^='id--react-report']";
 
     /* Set the click handlers to set the submit url for comments */
     function setReactionHandlers() {
@@ -106,7 +143,8 @@
         for (let selector of [
                 commentReactionsSelector, likeReactionsSelector, unlikeReactionsSelector,
                 hideReactionsSelector, showReactionsSelector,
-                pinReactionsSelector, unpinReactionsSelector
+                pinReactionsSelector, unpinReactionsSelector,
+                reportReactionsSelector
         ]) {
             $(selector).off();
         }
@@ -114,9 +152,15 @@
         // add new handlers
         $(commentReactionsSelector).on('click', (event) => {
             // set the submit url for comments
-            $("#id--comment-submit-url").text(
-                event.currentTarget.attributes['data-bs-href'].textContent
-            );
+            set_react_info_vars(event, {
+                url: "#id--comment-submit-url"
+            });
+        });
+        $(reportReactionsSelector).on('click', (event) => {
+            // set the submit url for reports
+            set_react_info_vars(event, {
+                url: "#id--report-submit-url"
+            });
         });
         for (let selector of [likeReactionsSelector, unlikeReactionsSelector]) {
             $(selector).on('click', (event) => {
@@ -126,8 +170,16 @@
         }
         for (let selector of [hideReactionsSelector, showReactionsSelector]) {
             $(selector).on('click', (event) => {
-                // update hide status
-                updateHide(event);
+                // set the submit url/option/title for hide/show
+                set_react_info_vars(event, {
+                    // keys are value names, values are ids of tags to update
+                    url: "#id--hide-submit-url",
+                    option: "#id--hide-submit-option",
+                    title: "#id--hide-modal-heading",
+                    type: "#id--hide-modal-element",
+                    action: "#id--hide-modal-action",
+                    submit: "#id--submit-btn-hide-modal",
+                });
             });
         }
         for (let selector of [pinReactionsSelector, unpinReactionsSelector]) {

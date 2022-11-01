@@ -44,20 +44,21 @@
             <div class="col-12 mt-2">
                 <div class="row d-flex align-items-center">
                     {% for opinion in opinion_list %}
-                        {% array_value review_status forloop.counter0 as review_stat %}
+                        {% array_value content_status forloop.counter0 as status %}
                         <div class="col-md-4">
                             <div class="card mb-4">
                                 <div class="card-body">
                                     <div class="row">
                                         <div class="col-sm-8 mt-0 mb-0">
                                             <!-- title -->
-                                            <a {% if review_stat.view_ok %} href="{% url 'opinions:opinion_slug' opinion.slug  %}" {% endif %}
+                                            <a {% if status.view_ok %} href="{% url 'opinions:opinion_slug' opinion.slug %}" {% endif %}
                                                class="post-link">
                                                 <h4 id="id_title_{{ forloop.counter }}" class="card-title">
-                                                    {% if review_stat.view_ok %}{{ opinion.title }}{% else %}{{ under_review_title }}{% endif %}
+                                                    {% if status.review_wip %}{{ under_review_title }}{% else %}{{ opinion.title }}{% endif %}
                                                 </h4>
-                                                <span class="badge rounded-pill text-bg-warning">{{ opinion.id }}</span>
                                             </a>
+                                            {# HACK display id for dev purposes #}
+                                            <span class="badge rounded-pill text-bg-warning">{{ opinion.id }}</span>
                                         </div>
                                         <div id="categories_{{ forloop.counter }}" class="col-sm-3 mt-0 mb-0">
                                             {% for category in opinion.categories.all %}
@@ -82,15 +83,15 @@
                                     <div class="row">
                                         <!-- excerpt -->
                                         <p id="excerpt_{{ forloop.counter }}" class="card-text text-muted">
-                                            {% if review_stat.view_ok %}{{ opinion.excerpt }}{% else %}{{ under_review_excerpt }}{% endif %}
+                                            {% if status.review_wip %}{{ under_review_excerpt }}{% else %}{{ opinion.excerpt }}{% endif %}
                                         </p>
                                     </div>
                                     <hr />
                                     <div class="row">
                                         <div class="col-sm-3 mt-0 mb-0">
                                             <a
-                                                {% if review_stat.view_ok %}
-                                                class="btn btn-primary" href="{% url 'opinions:opinion_slug' opinion.slug  %}" alt="read {{ opinion.title }}"
+                                                {% if status.view_ok %}
+                                                class="btn btn-primary" href="{% url 'opinions:opinion_slug' opinion.slug %}" alt="read {{ opinion.title }}"
                                                 {% else %}}
                                                 class="btn btn-primary disabled" alt="Not available for reading" aria-disabled="true"
                                                 {% endif %}

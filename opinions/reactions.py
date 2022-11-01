@@ -26,14 +26,14 @@ from utils import namespaced_url
 from .comment_data import CommentBundle
 from .constants import (
     OPINION_ID_ROUTE_NAME, OPINION_LIKE_ID_ROUTE_NAME,
-    OPINION_HIDE_ID_ROUTE_NAME,
-    OPINION_COMMENT_ID_ROUTE_NAME,
+    OPINION_HIDE_ID_ROUTE_NAME, OPINION_COMMENT_ID_ROUTE_NAME,
     COMMENT_COMMENT_ID_ROUTE_NAME, COMMENT_LIKE_ID_ROUTE_NAME,
-    COMMENT_HIDE_ID_ROUTE_NAME, OPINION_PIN_ID_ROUTE_NAME, ALL_FIELDS
+    COMMENT_HIDE_ID_ROUTE_NAME, OPINION_PIN_ID_ROUTE_NAME, ALL_FIELDS,
+    COMMENT_REPORT_ID_ROUTE_NAME, OPINION_REPORT_ID_ROUTE_NAME
 )
-from .data_structures import Reaction, ReactionCtrl, HtmlTag
+from .data_structures import Reaction, ReactionCtrl, HtmlTag, ContentStatus
 from .models import Opinion, Comment, AgreementStatus, PinStatus
-from .queries import opinion_is_pinned, content_is_reported
+from .queries import opinion_is_pinned, get_content_status, StatusCheck
 from .templatetags.reaction_button_id import reaction_button_id
 from .enums import ReactionStatus
 from opinions.views.utils import ensure_list
@@ -85,6 +85,7 @@ class ReactionsList:
 
 COMMENT_MODAL_ID = 'id--comment-modal'
 REPORT_MODAL_ID = 'id--report-modal'
+HIDE_MODAL_ID = 'id--hide-modal'
 COMMENT_REACTION_ID = 'comment'     # used to id comment modal button in js
 
 # TODO share/report
@@ -100,7 +101,7 @@ DISAGREE_TEMPLATE = Reaction.ajax_of(
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-thumbs-down"))
 COMMENT_TEMPLATE = Reaction.modal_of(
     name="Comment", identifier="to-set", icon="", aria="to-set", url="to-set",
-    option=f"#{COMMENT_MODAL_ID}", field=ReactionsList.COMMENT_FIELD
+    modal=f"#{COMMENT_MODAL_ID}", field=ReactionsList.COMMENT_FIELD
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-comment"))
 FOLLOW_TEMPLATE = Reaction.ajax_of(
     name="Follow opinion author", identifier="to-set", icon="", aria="to-set",
@@ -114,22 +115,22 @@ UNFOLLOW_TEMPLATE = Reaction.ajax_of(
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-user-xmark"))
 SHARE_TEMPLATE = Reaction.modal_of(
     name="to-set", identifier="to-set", icon="", aria="to-set",
-    url="to-set", option=f"#{COMMENT_MODAL_ID}",
+    url="to-set", modal=f"#{COMMENT_MODAL_ID}",
     field=ReactionsList.SHARE_FIELD
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-share-nodes"))
-HIDE_TEMPLATE = Reaction.ajax_of(
+HIDE_TEMPLATE = Reaction.modal_of(
     name="to-set", identifier="to-set", icon="", aria="to-set",
-    url="to-set", option=ReactionStatus.HIDE.arg,
+    url="to-set", option=ReactionStatus.HIDE.arg, modal=f"#{HIDE_MODAL_ID}",
     field=ReactionsList.HIDE_FIELD
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-eye-slash"))
-SHOW_TEMPLATE = Reaction.ajax_of(
+SHOW_TEMPLATE = Reaction.modal_of(
     name="to-set", identifier="to-set", icon="", aria="to-set",
-    url="to-set", option=ReactionStatus.SHOW.arg,
+    url="to-set", option=ReactionStatus.SHOW.arg, modal=f"#{HIDE_MODAL_ID}",
     field=ReactionsList.SHOW_FIELD
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-eye"))
 REPORT_TEMPLATE = Reaction.modal_of(
     name="to-set", identifier="to-set", icon="", aria="to-set",
-    url="to-set", option=f"#{REPORT_MODAL_ID}",
+    url="to-set", modal=f"#{REPORT_MODAL_ID}",
     field=ReactionsList.REPORT_FIELD
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-person-military-pointing"))
 
@@ -177,7 +178,7 @@ OPINION_REACTIONS_LIST = ReactionsList(
     report=REPORT_TEMPLATE.copy(
         name="Report opinion", identifier="report-opinion",
         aria="Report opinion",
-        url=namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME))
+        url=namespaced_url(OPINIONS_APP_NAME, OPINION_REPORT_ID_ROUTE_NAME))
 )
 
 # list of opinion reaction fields in display order
@@ -227,7 +228,7 @@ COMMENT_REACTIONS_LIST = ReactionsList(
     report=REPORT_TEMPLATE.copy(
         name="Report comment", identifier="report-comment",
         aria="Report comment",
-        url=namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME))
+        url=namespaced_url(OPINIONS_APP_NAME, COMMENT_REPORT_ID_ROUTE_NAME))
 )
 
 # list of comment reaction fields in display order
@@ -250,10 +251,11 @@ ALWAYS_AVAILABLE = [
 
 
 def get_reaction_status(
-            user: User, content: [Opinion, Comment, CommentBundle, list],
-            statuses: dict = None, reactions: list[str] = None,
-            enablers: dict = None, visibility: dict = None
-        ) -> dict:
+    user: User, content: [Opinion, Comment, CommentBundle, list],
+    statuses: dict = None, reactions: list[str] = None,
+    enablers: dict = None, visibility: dict = None,
+    status_by_id: dict[int, ContentStatus] = None
+) -> dict:
     """
     Get the reaction status for the specified content
     :param user: current user
@@ -265,6 +267,8 @@ def get_reaction_status(
     :param visibility: dict of visible conditions for reactions; value can
                 be a boolean or a function accepting an Opinion/Comment and
                 returning a boolean
+    :param status_by_id: dict of ContentStatus values with
+                Opinion/Comment id as key
     :return: statuses dict
     """
     if statuses is None:
@@ -279,15 +283,11 @@ def get_reaction_status(
                     'statuses': statuses,
                     'reactions': reactions,
                     'enablers': enablers,
-                    'visibility': visibility
+                    'visibility': visibility,
+                    'status_by_id': status_by_id
                 }
-                # get status for bundle comment
-                statuses = get_reaction_status(
-                    user, entry.comment, **reaction_kwargs)
-                # get statuses for replies to bundle comment
-                for reply in entry.comments:
-                    statuses = get_reaction_status(
-                        user, reply, **reaction_kwargs)
+                for cmt in entry.comment_iterable():
+                    get_reaction_status(user, cmt, **reaction_kwargs)
             else:
                 if isinstance(entry, Opinion):
                     # get status for opinion
@@ -317,19 +317,29 @@ def get_reaction_status(
                 enabled = {}
                 displayer = {}
                 for field in ReactionsList.ALL_FIELDS:
-                    # enabler if specified, True for ALWAYS_AVAILABLE
-                    # or disabled for users' own stuff
-                    enabled[field] = enablers_check(field) if enablers else \
-                        True if field in ALWAYS_AVAILABLE else \
-                        entry.user != user
+                    if field in ReactionsList.PIN_FIELDS and \
+                            pin_field is None:
+                        # False if pin field not in reactions_list
+                        enabled[field] = False
+                        displayer[field] = False
+                    else:
+                        # ContentStatus.view_ok if specified or,
+                        # enabler if specified or, True for ALWAYS_AVAILABLE
+                        # or disabled for users' own stuff
+                        enabled[field] = \
+                            field_check(
+                                status_by_id, entry, entry.id,
+                                default=ContentStatus.VIEW_OK).view_ok \
+                            if status_by_id else \
+                            enablers_check(field) if enablers else \
+                            True if field in ALWAYS_AVAILABLE else \
+                            entry.user != user
 
-                    # False if pin field not in reactions_list else
-                    # visibility if specified, or True for fields in reactions
-                    displayer[field] = False \
-                        if pin_field is None and \
-                        field in ReactionsList.PIN_FIELDS \
-                        else visibility_check(field) if visibility else \
-                        field in reactions
+                        # visibility if specified or, True for fields in
+                        # reactions
+                        displayer[field] = \
+                            visibility_check(field) if visibility else \
+                            field in reactions
 
                 control_param = [
                     # reaction, selected, visible
@@ -398,7 +408,8 @@ def get_reaction_status(
                 # (2 separate icons but only 1 ever displayed)
                 hidden = False
                 if any_true(displayer, ReactionsList.HIDE_FIELDS):
-                    pass
+                    hidden = get_content_status(
+                        entry, StatusCheck.HIDDEN, user=user).hidden
 
                 control_param.extend([
                     # reaction, selected, visible
@@ -411,7 +422,8 @@ def get_reaction_status(
                 # get reported status
                 reported = False
                 if any_true(displayer, ReactionsList.REPORT_FIELD):
-                    reported = content_is_reported(entry, user=user).reported
+                    reported = get_content_status(
+                        entry, StatusCheck.REPORTED, user=user).reported
 
                 control_param.extend([
                     # reaction, selected, visible
@@ -449,10 +461,21 @@ def any_true(dictionary: dict, keys: [str, list[str]]):
 
 def field_check(dictionary: dict, content: [Opinion, Comment],
                 field: str, default: bool = False) -> bool:
+    """
+    Check the enabled value for a field in the specified dictionary.
+    :param dictionary: dict to check
+    :param content: content object to pass to check function if field
+                    value is callable
+    :param field: field name
+    :param default: default value; False
+    :return:
+    """
     result = default
     if dictionary:
+        # if all fields is specified use its value
         fld = ALL_FIELDS if ALL_FIELDS in dictionary else field
         if fld in dictionary:
+            # get result of check function otherwise use value
             result = dictionary[fld](content) \
                 if callable(dictionary[fld]) else dictionary[fld]
     return result

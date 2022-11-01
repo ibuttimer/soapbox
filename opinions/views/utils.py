@@ -41,10 +41,9 @@ from opinions.constants import (
     PAGE_QUERY, TITLE_QUERY, CONTENT_QUERY, CATEGORY_QUERY, AUTHOR_QUERY,
     ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY,
     EQUAL_QUERY, REORDER_QUERY, OPINION_ID_QUERY, PARENT_ID_QUERY,
-    COMMENT_DEPTH_QUERY, HIDDEN_QUERY, PINNED_QUERY, COMMENT_FORM_CTX,
-    SUBMIT_URL_CTX, READ_ONLY_CTX, STATUS_CTX, OPINION_CTX, COMMENTS_CTX,
-    OPINION_FORM_CTX, REPORT_FORM_CTX, UNDER_REVIEW_TITLE_CTX,
-    UNDER_REVIEW_EXCERPT_CTX, UNDER_REVIEW_CONTENT_CTX
+    COMMENT_DEPTH_QUERY, HIDDEN_QUERY, PINNED_QUERY,
+    SUBMIT_URL_CTX, READ_ONLY_CTX, STATUS_CTX, OPINION_CTX, OPINION_FORM_CTX,
+    ID_QUERY
 )
 from opinions.enums import (
     ChoiceArg, QueryArg, QueryStatus, ReactionStatus, OpinionSortOrder,
@@ -117,6 +116,7 @@ COMMENT_LIST_QUERY_ARGS = [
     QueryOption.of_no_cls_dflt(AUTHOR_QUERY),
     QueryOption.of_no_cls_dflt(OPINION_ID_QUERY),
     QueryOption.of_no_cls_dflt(PARENT_ID_QUERY),
+    QueryOption.of_no_cls_dflt(ID_QUERY),
 ]
 COMMENT_LIST_QUERY_ARGS.extend(APPLIED_DEFAULTS_QUERY_ARGS)
 # args for a reorder/next page/etc. request
@@ -198,14 +198,13 @@ def get_opinion_context(title: str, **kwargs) -> dict:
         context[OPINION_FORM_CTX] = opinion_form
         context[SUBMIT_URL_CTX] = kwargs.get(SUBMIT_URL_CTX, None)
 
-    for param in [
-        OPINION_CTX, COMMENTS_CTX, COMMENT_FORM_CTX, REPORT_FORM_CTX,
-        UNDER_REVIEW_TITLE_CTX, UNDER_REVIEW_EXCERPT_CTX,
-        UNDER_REVIEW_CONTENT_CTX
-    ]:
-        value = kwargs.get(param, None)
-        if value is not None:
-            context[param] = value
+    for key, value in kwargs.items():
+        if key not in [
+            READ_ONLY_CTX, STATUS_CTX, OPINION_FORM_CTX, SUBMIT_URL_CTX
+        ]:
+            value = kwargs.get(key, None)
+            if value is not None:
+                context[key] = value
 
     return context
 
@@ -241,8 +240,8 @@ def query_args_value(
 
 
 def query_args_status(
-        request: HttpRequest, query_option: QueryOption
-    ) -> tuple[Status, Type[ChoiceArg]]:
+    request: HttpRequest, query_option: QueryOption
+) -> tuple[Status, Type[ChoiceArg]]:
     """
     Get query arguments from request query
     :param request: http request
@@ -274,7 +273,8 @@ def like_query_args(
     :return: tuple of Status and ReactionStatus
     """
     return query_args_status(
-        request, QueryOption(STATUS_QUERY, ReactionStatus, ReactionStatus.AGREE))
+        request, QueryOption(
+            STATUS_QUERY, ReactionStatus, ReactionStatus.AGREE))
 
 
 def pin_query_args(request: HttpRequest) -> ReactionStatus:
@@ -284,7 +284,8 @@ def pin_query_args(request: HttpRequest) -> ReactionStatus:
     :return: tuple of Status and ReactionStatus
     """
     return query_args_value(
-        request, QueryOption(STATUS_QUERY, ReactionStatus, ReactionStatus.PIN))
+        request, QueryOption(
+            STATUS_QUERY, ReactionStatus, ReactionStatus.PIN))
 
 
 def hide_query_args(request: HttpRequest) -> ReactionStatus:
@@ -294,7 +295,8 @@ def hide_query_args(request: HttpRequest) -> ReactionStatus:
     :return: tuple of Status and ReactionStatus
     """
     return query_args_value(
-        request, QueryOption(STATUS_QUERY, ReactionStatus, ReactionStatus.HIDE))
+        request, QueryOption(
+            STATUS_QUERY, ReactionStatus, ReactionStatus.HIDE))
 
 
 def report_query_args(request: HttpRequest) -> Report:

@@ -57,6 +57,7 @@ class ContentTestBase(BaseUserTest):
     hidden_opinions: list[Opinion]
     reported_opinions: list[Opinion]
     comments: list[Comment]
+    reported_comments: list[Comment]
 
     @staticmethod
     def create_opinion(
@@ -99,16 +100,20 @@ class ContentTestBase(BaseUserTest):
             HideStatus.objects.create(**kwargs)
 
         if reported:
-            kwargs = {
-                Review.OPINION_FIELD: opinion,
-                Review.REQUESTED_FIELD: other_user,
-                Review.REASON_FIELD: f'{other_user} is offended',
-                Review.STATUS_FIELD:
-                    Status.objects.get(name=STATUS_PENDING_REVIEW),
-            }
-            Review.objects.create(**kwargs)
+            ContentTestBase.report_content(opinion, other_user)
 
         return opinion
+
+    @staticmethod
+    def report_content(content: [Opinion, Comment], reporter: User):
+        kwargs = {
+            Review.content_field(content): content,
+            Review.REQUESTED_FIELD: reporter,
+            Review.REASON_FIELD: f'{reporter} is offended',
+            Review.STATUS_FIELD:
+                Status.objects.get(name=STATUS_PENDING_REVIEW),
+        }
+        Review.objects.create(**kwargs)
 
     @classmethod
     def setUpTestData(cls):
@@ -121,6 +126,7 @@ class ContentTestBase(BaseUserTest):
         cls.hidden_opinions = []
         cls.reported_opinions = []
         cls.comments = []
+        cls.reported_comments = []
         num_templates = len(ContentTestBase.OPINION_INFO)
 
         def get_categories(u_idx, idx):
@@ -191,26 +197,39 @@ class ContentTestBase(BaseUserTest):
             cls.opinions.append(opinion)
             days += 1
 
-        # add a comment on each published opinion
+        # add comments (normal/reported) on each published opinion
         for index, opinion in enumerate(cls.opinions):
             if opinion.status == published:
                 user = cls.get_other_user(opinion.user)
 
-                comment = Comment.objects.create(**{
-                    Comment.CONTENT_FIELD:
-                        f'Comment from {user.username} '
-                        f'on opinion {opinion.id} {opinion}',
-                    Comment.OPINION_FIELD: opinion,
-                    Comment.USER_FIELD: user,
-                    Comment.STATUS_FIELD: published,
-                    Comment.PUBLISHED_FIELD: datetime(
-                        2022, 1, 1, hour=12,
-                        tzinfo=ZoneInfo("UTC")) + timedelta(days=index)
-                })
-                comment.set_slug(comment.content)
-                comment.save()
+                for cmt_idx in range(2):
+                    if index % 2 == 1 and cmt_idx == 1:
+                        # only report comments on odd numbered opinions
+                        continue
 
-                cls.comments.append(comment)
+                    reported = f' reported[{user}]' if cmt_idx == 1 else ''
+
+                    comment = Comment.objects.create(**{
+                        Comment.CONTENT_FIELD:
+                            f"Comment {cmt_idx} from {user.username} "
+                            f"on '{opinion}'{reported}",
+                        Comment.OPINION_FIELD: opinion,
+                        Comment.USER_FIELD: user,
+                        Comment.STATUS_FIELD: published,
+                        Comment.PUBLISHED_FIELD: datetime(
+                            2022, 1, 1, hour=12,
+                            tzinfo=ZoneInfo("UTC")) + timedelta(days=days)
+                    })
+                    comment.set_slug(comment.content)
+                    comment.save()
+
+                    cls.comments.append(comment)
+                    days += 1
+
+                    if cmt_idx == 1:
+                        # report comment
+                        ContentTestBase.report_content(comment, user)
+                        cls.reported_comments.append(comment)
 
     @classmethod
     def all_opinions_of_status(cls, name: str) -> list[Opinion]:

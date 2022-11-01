@@ -21,7 +21,7 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 from http import HTTPStatus
-from typing import Optional, Union
+from typing import Optional, Union, Type
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -38,6 +38,7 @@ from categories import (
     STATUS_PREVIEW, STATUS_PENDING_REVIEW
 )
 from categories.models import Status
+from opinions.contexts.comment import comments_list_context_for_opinion
 from soapbox import (
     OPINIONS_APP_NAME, HOME_ROUTE_NAME, GET, PATCH, HOME_URL, POST
 )
@@ -47,23 +48,21 @@ from utils import (
 )
 from opinions.constants import (
     OPINION_ID_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME,
-    OPINION_PREVIEW_ID_ROUTE_NAME, OPINION_ID_QUERY, PAGE_QUERY,
-    PER_PAGE_QUERY, COMMENT_DEPTH_QUERY, PARENT_ID_QUERY, TEMPLATE_TARGET_ID,
+    OPINION_PREVIEW_ID_ROUTE_NAME, TEMPLATE_TARGET_ID,
     TEMPLATE_TARGET_TYPE, TEMPLATE_REACTIONS, TEMPLATE_REACTION_CTRLS,
     TEMPLATE_COMMENT_REACTIONS, TEMPLATE_OPINION_REACTIONS,
     SUBMIT_URL_CTX,
-    COMMENT_FORM_CTX, READ_ONLY_CTX, USER_CTX, OPINION_CTX, COMMENTS_CTX,
+    COMMENT_FORM_CTX, READ_ONLY_CTX, USER_CTX, OPINION_CTX,
     STATUS_CTX, OPINION_FORM_CTX, REPORT_FORM_CTX, IS_PREVIEW_CTX,
     ALL_FIELDS, VIEW_OK_CTX, UNDER_REVIEW_TITLE, UNDER_REVIEW_EXCERPT,
-    UNDER_REVIEW_CONTENT, UNDER_REVIEW_TITLE_CTX, UNDER_REVIEW_EXCERPT_CTX,
-    UNDER_REVIEW_CONTENT_CTX
+    UNDER_REVIEW_TITLE_CTX, UNDER_REVIEW_EXCERPT_CTX, UNDER_REVIEW_CONTENT_CTX,
+    UNDER_REVIEW_OPINION_CONTENT
 )
-from opinions.comment_data import get_comment_bundle
 from opinions.forms import OpinionForm, CommentForm, ReviewForm
 from opinions.models import (
-    Opinion, Comment, AgreementStatus, HideStatus, PinStatus
+    Opinion, Comment, AgreementStatus, HideStatus, PinStatus, Review
 )
-from opinions.queries import review_status_check
+from opinions.queries import content_status_check
 from opinions.reactions import (
     OPINION_REACTIONS, COMMENT_REACTIONS, get_reaction_status
 )
@@ -71,11 +70,10 @@ from opinions.templatetags.reaction_ul_id import reaction_ul_id
 from opinions.views.utils import (
     opinion_permission_check, opinion_save_query_args, timestamp_content,
     own_opinion_check, published_check, get_opinion_context,
-    render_opinion_form, comment_permission_check, DEFAULT_COMMENT_DEPTH,
-    like_query_args, hide_query_args, pin_query_args,
-    generate_excerpt
+    render_opinion_form, comment_permission_check, like_query_args,
+    hide_query_args, pin_query_args, generate_excerpt
 )
-from opinions.enums import QueryArg, QueryStatus, ReactionStatus, PerPage
+from opinions.enums import QueryStatus, ReactionStatus
 
 TITLE_NEW = "Creation"
 TITLE_UPDATE = "Update"
@@ -114,31 +112,28 @@ class OpinionDetail(LoginRequiredMixin, View):
         # read only if not current user's opinion
         read_only = not is_own \
             if READ_ONLY_CTX not in kwargs else kwargs[READ_ONLY_CTX]
+        is_preview = opinion_obj.status.name == STATUS_PREVIEW
 
         # ok to view check
-        review_status = review_status_check(opinion_obj)
+        content_status = content_status_check(opinion_obj)
         # users can always view their own opinions
         view_ok = is_own \
-            if not review_status.view_ok else review_status.view_ok
+            if not content_status.view_ok else content_status.view_ok
 
         render_args = {
             READ_ONLY_CTX: read_only,
             VIEW_OK_CTX: view_ok,
             OPINION_CTX: opinion_obj,
-            STATUS_CTX: opinion_obj.status
+            STATUS_CTX: opinion_obj.status,
+            IS_PREVIEW_CTX: is_preview,
         }
 
-        comments = get_comment_bundle({
-            q: QueryArg(v, True) for q, v in [
-                (OPINION_ID_QUERY, opinion_obj.id),
-                (PARENT_ID_QUERY, Comment.NO_PARENT),
-                (PAGE_QUERY, 1),
-                (PER_PAGE_QUERY, PerPage.SIX),
-                (COMMENT_DEPTH_QUERY, DEFAULT_COMMENT_DEPTH)
-            ]
-        }, request.user) if view_ok and \
-            comment_permission_check(request, Crud.READ, raise_ex=False) \
-            else []
+        if view_ok and comment_permission_check(
+                request, Crud.READ, raise_ex=False):
+            # get first page comments for opinion
+            comments_list_context_for_opinion(
+                opinion_obj.id, request.user, context=render_args
+            )
 
         if read_only:
             # viewing opinion
@@ -147,13 +142,15 @@ class OpinionDetail(LoginRequiredMixin, View):
                 USER_CTX: request.user,
             })
             render_args.update({
+                # visible opinion which may have not visible
+                # under review comments
                 COMMENT_FORM_CTX: CommentForm(),
                 REPORT_FORM_CTX: ReviewForm(),
-                COMMENTS_CTX: comments,
             } if view_ok else {
+                # not visible under review opinion
                 UNDER_REVIEW_TITLE_CTX: UNDER_REVIEW_TITLE,
                 UNDER_REVIEW_EXCERPT_CTX: UNDER_REVIEW_EXCERPT,
-                UNDER_REVIEW_CONTENT_CTX: UNDER_REVIEW_CONTENT,
+                UNDER_REVIEW_CONTENT_CTX: UNDER_REVIEW_OPINION_CONTENT,
             })
         else:
             # updating opinion
@@ -265,21 +262,20 @@ def _render_view(title: str, **kwargs) -> tuple[
     # get reaction controls for opinion & comments
     user = kwargs.get(USER_CTX, None)
     opinion = kwargs.get(OPINION_CTX, None)
-    status = kwargs.get(STATUS_CTX, None)
-    view_ok = kwargs.get(VIEW_OK_CTX, True)
+    is_preview = kwargs.get(IS_PREVIEW_CTX, False)
+    reaction_ctrls = kwargs.get(TEMPLATE_REACTION_CTRLS, {})
 
-    is_preview = status.name == STATUS_PREVIEW if status else False
-    enablers = {ALL_FIELDS: False} if is_preview else None
-
-    reaction_ctrls = get_reaction_status(user, opinion, enablers=enablers)
+    # reaction controls for opinion
     reaction_ctrls.update(
         get_reaction_status(
-            user, kwargs.get(COMMENTS_CTX, None), enablers=enablers))
+            user, opinion,
+            # no reactions for opinion preview
+            enablers={ALL_FIELDS: False} if is_preview else None
+        )
+    )
 
     context.update({
         'categories': opinion.categories.all(),
-        IS_PREVIEW_CTX: is_preview,
-        VIEW_OK_CTX: view_ok,
         TEMPLATE_OPINION_REACTIONS: OPINION_REACTIONS,
         TEMPLATE_COMMENT_REACTIONS: COMMENT_REACTIONS,
         TEMPLATE_REACTION_CTRLS: reaction_ctrls,
@@ -440,11 +436,13 @@ def opinion_status_patch(request: HttpRequest, pk: int) -> HttpResponse:
     })
 
 
-def redirect_response(url: str, extra: Optional[dict] = None) -> HttpResponse:
+def redirect_response(url: str, extra: Optional[dict] = None,
+                      status: HTTPStatus = HTTPStatus.OK) -> HttpResponse:
     """
     Generate redirect response.
     :param url: url to redirect to
     :param extra: extra payload content; default None
+    :param status: http status code; default HTTPStatus.OK
     :return: response
     """
     payload = {
@@ -453,7 +451,7 @@ def redirect_response(url: str, extra: Optional[dict] = None) -> HttpResponse:
     if isinstance(extra, dict):
         payload.update(extra)
 
-    return JsonResponse(payload, status=HTTPStatus.OK)
+    return JsonResponse(payload, status=status)
 
 
 @login_required
@@ -467,18 +465,16 @@ def opinion_like_patch(request: HttpRequest, pk: int) -> HttpResponse:
     """
     opinion_permission_check(request, Crud.READ)
 
-    return like_patch(request, Opinion, pk, AgreementStatus.OPINION_FIELD)
+    return like_patch(request, Opinion, pk)
 
 
 def like_patch(
-        request: HttpRequest, model: Model, pk: int, field: str
-    ) -> HttpResponse:
+        request: HttpRequest, model: Type[Model], pk: int) -> HttpResponse:
     """
-    View function to update opinion like status.
+    View function to update content like status.
     :param request: http request
     :param model:   content model class
     :param pk:      id of opinion
-    :param field:   agreement status field name for model
     :return: http response
     """
     content = get_object_or_404(model, pk=pk)
@@ -488,7 +484,7 @@ def like_patch(
     code = HTTPStatus.BAD_REQUEST
     if reaction in [ReactionStatus.AGREE, ReactionStatus.DISAGREE]:
         query_args = {
-            field: content,
+            AgreementStatus.content_field(content): content,
             AgreementStatus.USER_FIELD: request.user
         }
         query = AgreementStatus.objects.filter(**query_args)
@@ -564,13 +560,25 @@ def opinion_report_post(request: HttpRequest, pk: int) -> JsonResponse:
     """
     opinion_permission_check(request, Crud.READ)
 
-    opinion_obj = get_object_or_404(Opinion, pk=pk)
+    return report_post(request, Opinion, pk)
+
+
+def report_post(
+        request: HttpRequest, model: Type[Model], pk: int) -> JsonResponse:
+    """
+    View function to update content report status.
+    :param request: http request
+    :param model:   content model class
+    :param pk:      id of opinion
+    :return: http response
+    """
+    content = get_object_or_404(model, pk=pk)
 
     form = ReviewForm(data=request.POST)
 
     if form.is_valid():
         # save new object
-        form.instance.opinion = opinion_obj
+        setattr(form.instance, Review.content_field(content), content)
         form.instance.requested = request.user
         form.instance.status = Status.objects.get(name=STATUS_PENDING_REVIEW)
 
@@ -580,7 +588,7 @@ def opinion_report_post(request: HttpRequest, pk: int) -> JsonResponse:
         # django autocommits changes
         # https://docs.djangoproject.com/en/4.1/topics/db/transactions/#autocommit
 
-        response = react_response(request, opinion_obj, HTTPStatus.OK)
+        response = react_response(request, content, HTTPStatus.OK)
 
     else:
         # display form errors
@@ -598,9 +606,9 @@ def opinion_report_post(request: HttpRequest, pk: int) -> JsonResponse:
 
 
 def react_response(
-        request: HttpRequest, content: Union[Opinion, Comment],
-        code: HTTPStatus
-    ) -> JsonResponse:
+    request: HttpRequest, content: Union[Opinion, Comment],
+    code: HTTPStatus
+) -> JsonResponse:
     """
     Generate response to reaction update.
     :param request: http request
@@ -622,7 +630,8 @@ def react_response(
                 # reactions template
                 TEMPLATE_TARGET_ID: content.id,
                 TEMPLATE_TARGET_TYPE: target_type,
-                TEMPLATE_REACTIONS: OPINION_REACTIONS,
+                TEMPLATE_REACTIONS: OPINION_REACTIONS
+                if isinstance(content, Opinion) else COMMENT_REACTIONS,
                 TEMPLATE_REACTION_CTRLS: reaction_ctrls,
             },
             request=request)
@@ -640,14 +649,26 @@ def opinion_hide_patch(request: HttpRequest, pk: int) -> HttpResponse:
     """
     opinion_permission_check(request, Crud.READ)
 
-    opinion_obj = get_object_or_404(Opinion, pk=pk)
+    return hide_patch(request, Opinion, pk)
+
+
+def hide_patch(
+        request: HttpRequest, model: Type[Model], pk: int) -> HttpResponse:
+    """
+    View function to update opinion hide status.
+    :param request: http request
+    :param model:   content model class
+    :param pk:      id of opinion
+    :return:
+    """
+    content = get_object_or_404(model, pk=pk)
 
     reaction = hide_query_args(request)
 
     code = HTTPStatus.BAD_REQUEST
     if reaction in [ReactionStatus.HIDE, ReactionStatus.SHOW]:
         query_args = {
-            HideStatus.OPINION_FIELD: opinion_obj,
+            HideStatus.content_field(content): content,
             HideStatus.USER_FIELD: request.user
         }
         query = HideStatus.objects.filter(**query_args)
@@ -663,4 +684,6 @@ def opinion_hide_patch(request: HttpRequest, pk: int) -> HttpResponse:
             if created:
                 code = HTTPStatus.OK
 
-    return redirect_response(HOME_URL)
+    return redirect_response(HOME_URL, extra={
+            STATUS_CTX: reaction.arg
+        }, status=code)

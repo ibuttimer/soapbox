@@ -22,12 +22,7 @@
 #
 from copy import copy
 from dataclasses import dataclass
-from datetime import datetime
 from enum import Enum, auto
-
-from categories.models import Category, Status
-from opinions.models import Opinion
-from user.models import User
 
 
 class HandleType(Enum):
@@ -111,7 +106,8 @@ class Reaction:
     aria: str           # aria label
     handle_type: HandleType    # type; MODAL or AJAX
     url: str            # url
-    option: str         # selected option/target modal
+    option: str         # selected option
+    modal: str          # target modal
     field: str          # ReactionsList field
 
     def __init__(self, **kwargs) -> None:
@@ -143,11 +139,14 @@ class Reaction:
         :icon: icon html to use
         :aria: aria label
         :url: url
-        :option: target modal
+        :option: selected option
+        :modal: target modal
         :return: Reaction instance
         """
         reaction_kwargs = kwargs.copy()
         reaction_kwargs['handle_type'] = HandleType.MODAL
+        if 'option' not in reaction_kwargs:
+            reaction_kwargs['option'] = ''
         return Reaction(**reaction_kwargs)
 
     @classmethod
@@ -159,7 +158,7 @@ class Reaction:
         return Reaction(**{
             'name': '', 'identifier': '', 'icon': '', 'aria': '',
             'handle_type': HandleType.NONE, 'url': '', 'option': '',
-            'field': ''
+            'modal': '', 'field': ''
         })
 
     def set_icon(self, icon: HtmlTag):
@@ -180,7 +179,9 @@ class Reaction:
         if self.is_modal:
             # https://getbootstrap.com/docs/5.2/components/modal/
             span_attrib['data-bs-toggle'] = 'modal'
-            span_attrib['data-bs-target'] = f'{self.option}'
+            span_attrib['data-bs-target'] = f'{self.modal}'
+            if self.option:
+                span_attrib['data-bs-option'] = f'{self.option}'
         else:
             span_attrib['data-bs-option'] = f'{self.option}'
 
@@ -227,9 +228,18 @@ class ReactionCtrl:
 
 
 @dataclass
-class ReviewStatus:
+class ContentStatus:
     """ Review status for Opinion/Comment """
 
     reported: bool      # was reported
-    view_ok: bool       # ok to view
+    viewable: bool      # ok to view (with respect to reporting)
     review_wip: bool    # review in progress
+    hidden: bool        # was hidden (has precedence over viewable)
+
+    @property
+    def view_ok(self):
+        return self.viewable and not self.hidden
+
+
+ContentStatus.VIEW_OK = ContentStatus(
+    reported=False, viewable=True, review_wip=False, hidden=False)

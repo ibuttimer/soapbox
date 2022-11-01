@@ -46,11 +46,12 @@ from opinions.constants import (
     REORDER_QUERY, ID_FIELD, HIDDEN_QUERY, DATE_NEWEST_LOOKUP,
     DESC_LOOKUP, PINNED_QUERY, TEMPLATE_OPINION_REACTIONS,
     TEMPLATE_REACTION_CTRLS, UNDER_REVIEW_TITLE, UNDER_REVIEW_EXCERPT,
-    UNDER_REVIEW_CONTENT, UNDER_REVIEW_TITLE_CTX, UNDER_REVIEW_EXCERPT_CTX,
-    UNDER_REVIEW_CONTENT_CTX
+    UNDER_REVIEW_OPINION_CONTENT, UNDER_REVIEW_TITLE_CTX,
+    UNDER_REVIEW_EXCERPT_CTX, UNDER_REVIEW_CONTENT_CTX, CONTENT_STATUS_CTX,
+    HIDDEN_CONTENT_CTX, HIDDEN_COMMENT_CONTENT
 )
 from opinions.models import Opinion, HideStatus, is_id_lookup, PinStatus
-from opinions.queries import opinion_is_pinned, review_status_check
+from opinions.queries import opinion_is_pinned, content_status_check
 from opinions.reactions import (
     OPINION_REACTIONS, get_reaction_status, ReactionsList
 )
@@ -326,13 +327,14 @@ class OpinionList(LoginRequiredMixin, generic.ListView):
                     ReactionsList.UNPIN_FIELD: is_pinned
                 }
             ),
-            "review_status": [
-                review_status_check(opinion)
+            CONTENT_STATUS_CTX: [
+                content_status_check(opinion)
                 for opinion in context['opinion_list']
             ],
             UNDER_REVIEW_TITLE_CTX: UNDER_REVIEW_TITLE,
             UNDER_REVIEW_EXCERPT_CTX: UNDER_REVIEW_EXCERPT,
-            UNDER_REVIEW_CONTENT_CTX: UNDER_REVIEW_CONTENT,
+            UNDER_REVIEW_CONTENT_CTX: UNDER_REVIEW_OPINION_CONTENT,
+            HIDDEN_CONTENT_CTX: HIDDEN_COMMENT_CONTENT,
         })
         return context
 

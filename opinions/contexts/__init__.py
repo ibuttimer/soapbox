@@ -20,17 +20,3 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-
-from django import template
-
-register = template.Library()
-
-# https://docs.djangoproject.com/en/4.1/howto/custom-template-tags/#simple-tags
-
-
-@register.simple_tag
-def dict_value(dictionary: dict, key: str, default: str = ''):
-    assert key, 'No key specified'
-    assert isinstance(dictionary, dict),\
-        f'Expected dict got {type(dictionary)} {dictionary}'
-    return dictionary.get(key, default)
