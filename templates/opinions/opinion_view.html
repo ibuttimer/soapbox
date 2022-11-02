@@ -120,13 +120,16 @@
             <div class="col-sm-5 justify-content-start">
                 {# --- template variable defines for includes --- #}
                 {# reactions template expects: 'target_id' as id of target opinion/comment #}
+                {#                             'target_slug' as slug of target opinion/comment #}
                 {#                             'target_type' as opinion/comment #}
                 {#                             'reactions' as list of Reaction #}
                 {#                             'reaction_ctrls' as dict of ReactionCtrl #}
                 {% with reactions=opinion_reactions %}
                     {% with target_type="opinion" %}
                         {% with target_id=opinion.id %}
-                            {% include "opinions/snippet/reactions.html" %}
+                            {% with target_slug=opinion.slug %}
+                                {% include "opinions/snippet/reactions.html" %}
+                            {% endwith %}
                         {% endwith %}
                     {% endwith %}
                 {% endwith %}
@@ -136,6 +139,8 @@
     </div>
 
     <div id="id--comments-container" class="col-12 mt-2">
+        {# --- template variable defines for includes --- #}
+        {# view comments template expects: 'comments' as list[CommentBundle] #}
         {% include "opinions/snippet/view_comments.html" %}
     </div>
 
@@ -151,6 +156,10 @@
         <!-- Modal to hide opinion/comment -->
         <div id="id--hide-modal-container">
             {% include "opinions/snippet/hide_modal.html" %}
+        </div>
+        <!-- Modal to share opinion/comment -->
+        <div id="id--share-modal-container">
+            {% include "opinions/snippet/share_modal.html" %}
         </div>
     {% endif %}
 </article>

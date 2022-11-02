@@ -44,7 +44,8 @@ from opinions.constants import (
     COMMENT_COMMENT_ID_URL, COMMENT_COMMENT_ID_ROUTE_NAME, COMMENT_SEARCH_URL,
     COMMENT_SEARCH_ROUTE_NAME, COMMENT_MORE_URL, COMMENT_MORE_ROUTE_NAME,
     COMMENT_HIDE_ID_URL, COMMENT_HIDE_ID_ROUTE_NAME,
-    COMMENT_REPORT_ID_URL, COMMENT_REPORT_ID_ROUTE_NAME,
+    COMMENT_REPORT_ID_URL, COMMENT_REPORT_ID_ROUTE_NAME, COMMENT_SLUG_URL,
+    COMMENT_SLUG_ROUTE_NAME,
 )
 from opinions.views.comment_create import (
     OpinionCommentCreate, CommentCommentCreate
@@ -60,7 +61,8 @@ from opinions.views.opinion_by_id import (
 )
 from opinions.views.opinion_list import OpinionList, OpinionSearch
 from opinions.views.comment_by_id import (
-    comment_like_patch, comment_report_post, comment_hide_patch
+    comment_like_patch, comment_report_post, comment_hide_patch,
+    CommentDetailById, CommentDetailBySlug
 )
 
 # https://docs.djangoproject.com/en/4.1/topics/http/urls/#url-namespaces-and-included-urlconfs
@@ -105,10 +107,9 @@ urlpatterns = [
     path(COMMENTS_URL, CommentList.as_view(),
          name=COMMENTS_ROUTE_NAME),
 
-    # FIXME comment id urls (required?)
-    path(COMMENT_ID_URL, opinion_status_patch,
+    # get comment by id
+    path(COMMENT_ID_URL, CommentDetailById.as_view(),
          name=COMMENT_ID_ROUTE_NAME),
-
 
     # patch comment like/unlike status by id
     path(COMMENT_LIKE_ID_URL, comment_like_patch,
@@ -134,6 +135,9 @@ urlpatterns = [
     # TODO slug has be last as it'll match the 'comment' url. Move comments
     # to own app?
 
+    # get comment by slug
+    path(COMMENT_SLUG_URL, CommentDetailBySlug.as_view(),
+         name=COMMENT_SLUG_ROUTE_NAME),
     # get/update opinion by slug
     path(OPINION_SLUG_URL, OpinionDetailBySlug.as_view(),
          name=OPINION_SLUG_ROUTE_NAME),

@@ -428,30 +428,34 @@ def comment_permission_check(request: HttpRequest, op: Crud,
                             raise_ex=raise_ex)
 
 
-def own_opinion_check(request: HttpRequest, opinion_obj: Opinion,
-                      raise_ex: bool = True) -> bool:
+def own_content_check(
+        request: HttpRequest, content_obj: Union[Opinion, Comment],
+        raise_ex: bool = True) -> bool:
     """
-    Check request user is opinion author
+    Check request user is content author
     :param request: http request
-    :param opinion_obj: opinion
+    :param content_obj: opinion/comment
     :param raise_ex: raise exception if not own; default True
     """
-    is_own = request.user.id == opinion_obj.user.id
+    is_own = request.user.id == content_obj.user.id
     if not is_own and raise_ex:
         raise PermissionDenied(
-            "Opinions may only be updated by their authors")
+            f"{content_obj.__class__._meta.model_name}s "
+            f"may only be updated by their authors")
     return is_own
 
 
-def published_check(request: HttpRequest, opinion_obj: Opinion):
+def published_check(
+        request: HttpRequest, content_obj: Union[Opinion, Comment]):
     """
-    Check requested opinion is published
+    Check requested content is published
     :param request: http request
-    :param opinion_obj: opinion
+    :param content_obj: opinion/comment
     """
-    if request.user.id != opinion_obj.user.id and \
-            opinion_obj.status.name != STATUS_PUBLISHED:
-        raise PermissionDenied("Opinion unavailable")
+    if request.user.id != content_obj.user.id and \
+            content_obj.status.name != STATUS_PUBLISHED:
+        raise PermissionDenied(
+            f"{content_obj.__class__._meta.model_name} unavailable")
 
 
 def render_opinion_form(title: str, **kwargs) -> tuple[

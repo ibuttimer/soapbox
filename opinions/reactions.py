@@ -29,9 +29,12 @@ from .constants import (
     OPINION_HIDE_ID_ROUTE_NAME, OPINION_COMMENT_ID_ROUTE_NAME,
     COMMENT_COMMENT_ID_ROUTE_NAME, COMMENT_LIKE_ID_ROUTE_NAME,
     COMMENT_HIDE_ID_ROUTE_NAME, OPINION_PIN_ID_ROUTE_NAME, ALL_FIELDS,
-    COMMENT_REPORT_ID_ROUTE_NAME, OPINION_REPORT_ID_ROUTE_NAME
+    COMMENT_REPORT_ID_ROUTE_NAME, OPINION_REPORT_ID_ROUTE_NAME,
+    OPINION_SLUG_ROUTE_NAME, COMMENT_SLUG_ROUTE_NAME
 )
-from .data_structures import Reaction, ReactionCtrl, HtmlTag, ContentStatus
+from .data_structures import (
+    Reaction, ReactionCtrl, HtmlTag, ContentStatus, UrlType
+)
 from .models import Opinion, Comment, AgreementStatus, PinStatus
 from .queries import opinion_is_pinned, get_content_status, StatusCheck
 from .templatetags.reaction_button_id import reaction_button_id
@@ -86,97 +89,109 @@ class ReactionsList:
 COMMENT_MODAL_ID = 'id--comment-modal'
 REPORT_MODAL_ID = 'id--report-modal'
 HIDE_MODAL_ID = 'id--hide-modal'
+SHARE_MODAL_ID = 'id--share-modal'
 COMMENT_REACTION_ID = 'comment'     # used to id comment modal button in js
 
-# TODO share/report
 
 AGREE_TEMPLATE = Reaction.ajax_of(
     name="Agree", identifier="to-set", icon="", aria="to-set", url="to-set",
-    option=ReactionStatus.AGREE.arg, field=ReactionsList.AGREE_FIELD
+    url_type=UrlType.ID, option=ReactionStatus.AGREE.arg,
+    field=ReactionsList.AGREE_FIELD
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-hands-clapping"))
 DISAGREE_TEMPLATE = Reaction.ajax_of(
     name="Disagree", identifier="to-set", icon="", aria="to-set",
-    url="to-set", option=ReactionStatus.DISAGREE.arg,
+    url="to-set", url_type=UrlType.ID, option=ReactionStatus.DISAGREE.arg,
     field=ReactionsList.DISAGREE_FIELD
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-thumbs-down"))
 COMMENT_TEMPLATE = Reaction.modal_of(
     name="Comment", identifier="to-set", icon="", aria="to-set", url="to-set",
-    modal=f"#{COMMENT_MODAL_ID}", field=ReactionsList.COMMENT_FIELD
+    url_type=UrlType.ID, modal=f"#{COMMENT_MODAL_ID}",
+    field=ReactionsList.COMMENT_FIELD
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-comment"))
 FOLLOW_TEMPLATE = Reaction.ajax_of(
     name="Follow opinion author", identifier="to-set", icon="", aria="to-set",
-    url="to-set", option=ReactionStatus.FOLLOW.arg,
+    url="to-set", url_type=UrlType.ID, option=ReactionStatus.FOLLOW.arg,
     field=ReactionsList.FOLLOW_FIELD
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-user-tag"))
 UNFOLLOW_TEMPLATE = Reaction.ajax_of(
     name="to-set", identifier="to-set", icon="", aria="to-set",
-    url="to-set", option=ReactionStatus.UNFOLLOW.arg,
+    url="to-set", url_type=UrlType.ID, option=ReactionStatus.UNFOLLOW.arg,
     field=ReactionsList.UNFOLLOW_FIELD
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-user-xmark"))
 SHARE_TEMPLATE = Reaction.modal_of(
     name="to-set", identifier="to-set", icon="", aria="to-set",
-    url="to-set", modal=f"#{COMMENT_MODAL_ID}",
+    url="to-set", url_type=UrlType.SLUG, modal=f"#{SHARE_MODAL_ID}",
     field=ReactionsList.SHARE_FIELD
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-share-nodes"))
 HIDE_TEMPLATE = Reaction.modal_of(
     name="to-set", identifier="to-set", icon="", aria="to-set",
-    url="to-set", option=ReactionStatus.HIDE.arg, modal=f"#{HIDE_MODAL_ID}",
-    field=ReactionsList.HIDE_FIELD
+    url="to-set", url_type=UrlType.ID, option=ReactionStatus.HIDE.arg,
+    modal=f"#{HIDE_MODAL_ID}", field=ReactionsList.HIDE_FIELD
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-eye-slash"))
 SHOW_TEMPLATE = Reaction.modal_of(
     name="to-set", identifier="to-set", icon="", aria="to-set",
-    url="to-set", option=ReactionStatus.SHOW.arg, modal=f"#{HIDE_MODAL_ID}",
-    field=ReactionsList.SHOW_FIELD
+    url="to-set", url_type=UrlType.ID, option=ReactionStatus.SHOW.arg,
+    modal=f"#{HIDE_MODAL_ID}", field=ReactionsList.SHOW_FIELD
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-eye"))
 REPORT_TEMPLATE = Reaction.modal_of(
     name="to-set", identifier="to-set", icon="", aria="to-set",
-    url="to-set", modal=f"#{REPORT_MODAL_ID}",
+    url="to-set", url_type=UrlType.ID, modal=f"#{REPORT_MODAL_ID}",
     field=ReactionsList.REPORT_FIELD
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-person-military-pointing"))
 
 
 OPINION_REACTIONS_LIST = ReactionsList(
     agree=AGREE_TEMPLATE.copy(
-        identifier="agree-opinion", aria="Agree with opinion",
+        identifier=f"{ReactionStatus.AGREE.arg}-opinion",
+        aria="Agree with opinion",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_LIKE_ID_ROUTE_NAME)),
     disagree=DISAGREE_TEMPLATE.copy(
-        identifier="disagree-opinion", aria="Disagree with opinion",
+        identifier=f"{ReactionStatus.DISAGREE.arg}-opinion",
+        aria="Disagree with opinion",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_LIKE_ID_ROUTE_NAME)),
     comment=COMMENT_TEMPLATE.copy(
-        identifier=f"{COMMENT_REACTION_ID}-opinion", aria="Comment on opinion",
+        identifier=f"{COMMENT_REACTION_ID}-opinion",
+        aria="Comment on opinion",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_COMMENT_ID_ROUTE_NAME)),
     follow=FOLLOW_TEMPLATE.copy(
-        name="Follow opinion author", identifier="follow-opinion",
+        name="Follow opinion author",
+        identifier=f"{ReactionStatus.FOLLOW.arg}-opinion",
         aria="Follow opinion author",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME)),
     unfollow=UNFOLLOW_TEMPLATE.copy(
-        name="Unfollow opinion author", identifier="unfollow-opinion",
+        name="Unfollow opinion author",
+        identifier=f"{ReactionStatus.UNFOLLOW.arg}-opinion",
         aria="Unfollow opinion author",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME)),
     share=SHARE_TEMPLATE.copy(
-        name="Share opinion", identifier="share-opinion",
+        name="Share opinion",
+        identifier=f"{ReactionStatus.SHARE.arg}-opinion",
         aria="Share opinion",
-        url=namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME)),
+        url=namespaced_url(OPINIONS_APP_NAME, OPINION_SLUG_ROUTE_NAME)),
     hide=HIDE_TEMPLATE.copy(
-        name="Hide opinion", identifier="hide-opinion", aria="Hide opinion",
+        name="Hide opinion",
+        identifier=f"{ReactionStatus.HIDE.arg}-opinion", aria="Hide opinion",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_HIDE_ID_ROUTE_NAME)),
     show=SHOW_TEMPLATE.copy(
-        name="Show opinion", identifier="show-opinion", aria="Show opinion",
+        name="Show opinion",
+        identifier=f"{ReactionStatus.SHOW.arg}-opinion", aria="Show opinion",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_HIDE_ID_ROUTE_NAME)),
     pin=Reaction.ajax_of(
-        name="Pin opinion", identifier="pin-opinion",
-        icon="", aria="Pin opinion",
+        name="Pin opinion", identifier=f"{ReactionStatus.PIN.arg}-opinion",
+        icon="", aria="Pin opinion", url_type=UrlType.ID,
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_PIN_ID_ROUTE_NAME),
         option=ReactionStatus.PIN.arg, field=ReactionsList.PIN_FIELD
     ).set_icon(HtmlTag.i(clazz="fa-solid fa-lock")),
     unpin=Reaction.ajax_of(
-        name="Unpin opinion", identifier="unpin-opinion",
-        icon="", aria="Unpin opinion",
+        name="Unpin opinion",
+        identifier=f"{ReactionStatus.UNPIN.arg}-opinion",
+        icon="", aria="Unpin opinion", url_type=UrlType.ID,
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_PIN_ID_ROUTE_NAME),
         option=ReactionStatus.UNPIN.arg, field=ReactionsList.UNPIN_FIELD
     ).set_icon(HtmlTag.i(clazz="fa-solid fa-unlock")),
     report=REPORT_TEMPLATE.copy(
-        name="Report opinion", identifier="report-opinion",
+        name="Report opinion",
+        identifier=f"{ReactionStatus.REPORT.arg}-opinion",
         aria="Report opinion",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_REPORT_ID_ROUTE_NAME))
 )
@@ -198,35 +213,43 @@ OPINION_REACTIONS = [
 
 COMMENT_REACTIONS_LIST = ReactionsList(
     agree=AGREE_TEMPLATE.copy(
-        identifier="agree-comment", aria="Agree with comment",
+        identifier=f"{ReactionStatus.AGREE.arg}-comment",
+        aria="Agree with comment",
         url=namespaced_url(OPINIONS_APP_NAME, COMMENT_LIKE_ID_ROUTE_NAME)),
     disagree=DISAGREE_TEMPLATE.copy(
-        identifier="disagree-comment", aria="Disagree with comment",
+        identifier=f"{ReactionStatus.DISAGREE.arg}-comment",
+        aria="Disagree with comment",
         url=namespaced_url(OPINIONS_APP_NAME, COMMENT_LIKE_ID_ROUTE_NAME)),
     comment=COMMENT_TEMPLATE.copy(
         identifier=f"{COMMENT_REACTION_ID}-comment",
         aria="Comment on comment",
         url=namespaced_url(OPINIONS_APP_NAME, COMMENT_COMMENT_ID_ROUTE_NAME)),
     follow=FOLLOW_TEMPLATE.copy(
-        name="Follow comment author", identifier="follow-comment",
+        name="Follow comment author",
+        identifier=f"{ReactionStatus.FOLLOW.arg}-comment",
         aria="Follow comment author",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME)),
     unfollow=UNFOLLOW_TEMPLATE.copy(
-        name="Unfollow comment author", identifier="unfollow-comment",
+        name="Unfollow comment author",
+        identifier=f"{ReactionStatus.UNFOLLOW.arg}-comment",
         aria="Unfollow comment author",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME)),
     share=SHARE_TEMPLATE.copy(
-        name="Share comment", identifier="share-comment",
+        name="Share comment",
+        identifier=f"{ReactionStatus.SHARE.arg}-comment",
         aria="Share comment",
-        url=namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME)),
+        url=namespaced_url(OPINIONS_APP_NAME, COMMENT_SLUG_ROUTE_NAME)),
     hide=HIDE_TEMPLATE.copy(
-        name="Hide comment", identifier="hide-comment", aria="Hide comment",
+        name="Hide comment", identifier=f"{ReactionStatus.HIDE.arg}-comment",
+        aria="Hide comment",
         url=namespaced_url(OPINIONS_APP_NAME, COMMENT_HIDE_ID_ROUTE_NAME)),
     show=SHOW_TEMPLATE.copy(
-        name="Show comment", identifier="show-comment", aria="Show comment",
+        name="Show comment", identifier=f"{ReactionStatus.SHOW.arg}-comment",
+        aria="Show comment",
         url=namespaced_url(OPINIONS_APP_NAME, COMMENT_HIDE_ID_ROUTE_NAME)),
     report=REPORT_TEMPLATE.copy(
-        name="Report comment", identifier="report-comment",
+        name="Report comment",
+        identifier=f"{ReactionStatus.REPORT.arg}-comment",
         aria="Report comment",
         url=namespaced_url(OPINIONS_APP_NAME, COMMENT_REPORT_ID_ROUTE_NAME))
 )

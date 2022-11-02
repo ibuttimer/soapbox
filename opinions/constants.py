@@ -62,6 +62,7 @@ COMMENTS_URL = append_slash("comments")
 COMMENT_SEARCH_URL = url_path(COMMENTS_URL, "search")
 COMMENT_MORE_URL = url_path(COMMENTS_URL, "more")
 COMMENT_ID_URL = url_path(COMMENTS_URL, "<int:pk>")
+COMMENT_SLUG_URL = url_path(COMMENTS_URL, "<slug:slug>")
 COMMENT_LIKE_ID_URL = url_path(COMMENT_ID_URL, "like")
 COMMENT_HIDE_ID_URL = url_path(COMMENT_ID_URL, "hide")
 COMMENT_REPORT_ID_URL = url_path(COMMENT_ID_URL, "report")
@@ -82,6 +83,7 @@ OPINION_COMMENT_ID_ROUTE_NAME = f"comment_{OPINION_ID_ROUTE_NAME}"
 
 COMMENTS_ROUTE_NAME = "comments"
 COMMENT_ID_ROUTE_NAME = "comment_id"
+COMMENT_SLUG_ROUTE_NAME = "comment_slug"
 COMMENT_SEARCH_ROUTE_NAME = "comment_search"
 COMMENT_MORE_ROUTE_NAME = "comment_more"
 COMMENT_LIKE_ID_ROUTE_NAME = f"like_{COMMENT_ID_ROUTE_NAME}"
@@ -134,6 +136,7 @@ DATE_NEWEST_LOOKUP = DESC_LOOKUP
 # templates related
 # templates/opinions/snippet/reactions.html
 TEMPLATE_TARGET_ID = 'target_id'            # id of target opinion/comment
+TEMPLATE_TARGET_SLUG = 'target_slug'        # slug of target opinion/comment
 TEMPLATE_TARGET_TYPE = 'target_type'        # type of target; opinion/comment
 # list of Reaction (can be for opinion or comment)
 TEMPLATE_REACTIONS = 'reactions'
@@ -151,6 +154,7 @@ READ_ONLY_CTX = 'read_only'     # read-only mode
 IS_PREVIEW_CTX = 'is_preview'   # preview mode
 VIEW_OK_CTX = 'view_ok'         # ok to view flag
 OPINION_CTX = 'opinion'
+COMMENT_CTX = 'comment'
 STATUS_CTX = 'status'
 COMMENTS_CTX = 'comments'
 USER_CTX = 'user'

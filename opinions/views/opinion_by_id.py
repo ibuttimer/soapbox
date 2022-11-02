@@ -38,6 +38,7 @@ from categories import (
     STATUS_PREVIEW, STATUS_PENDING_REVIEW
 )
 from categories.models import Status
+from opinions.comment_data import get_comment_query_args
 from opinions.contexts.comment import comments_list_context_for_opinion
 from soapbox import (
     OPINIONS_APP_NAME, HOME_ROUTE_NAME, GET, PATCH, HOME_URL, POST
@@ -56,7 +57,7 @@ from opinions.constants import (
     STATUS_CTX, OPINION_FORM_CTX, REPORT_FORM_CTX, IS_PREVIEW_CTX,
     ALL_FIELDS, VIEW_OK_CTX, UNDER_REVIEW_TITLE, UNDER_REVIEW_EXCERPT,
     UNDER_REVIEW_TITLE_CTX, UNDER_REVIEW_EXCERPT_CTX, UNDER_REVIEW_CONTENT_CTX,
-    UNDER_REVIEW_OPINION_CONTENT
+    UNDER_REVIEW_OPINION_CONTENT, TEMPLATE_TARGET_SLUG
 )
 from opinions.forms import OpinionForm, CommentForm, ReviewForm
 from opinions.models import (
@@ -69,7 +70,7 @@ from opinions.reactions import (
 from opinions.templatetags.reaction_ul_id import reaction_ul_id
 from opinions.views.utils import (
     opinion_permission_check, opinion_save_query_args, timestamp_content,
-    own_opinion_check, published_check, get_opinion_context,
+    own_content_check, published_check, get_opinion_context,
     render_opinion_form, comment_permission_check, like_query_args,
     hide_query_args, pin_query_args, generate_excerpt
 )
@@ -102,7 +103,7 @@ class OpinionDetail(LoginRequiredMixin, View):
         opinion_obj = self._get_opinion(identifier)
 
         # perform own opinion check
-        is_own = own_opinion_check(
+        is_own = own_content_check(
             request, opinion_obj, raise_ex=kwargs.get(OWN_ONLY, False))
 
         # perform published check, other users don't have access to
@@ -132,7 +133,8 @@ class OpinionDetail(LoginRequiredMixin, View):
                 request, Crud.READ, raise_ex=False):
             # get first page comments for opinion
             comments_list_context_for_opinion(
-                opinion_obj.id, request.user, context=render_args
+                get_comment_query_args(opinion=opinion_obj),
+                request.user, context=render_args
             )
 
         if read_only:
@@ -172,7 +174,10 @@ class OpinionDetail(LoginRequiredMixin, View):
         :param identifier: id or slug of opinion to get
         :return: opinion
         """
-        query = {'id' if isinstance(identifier, int) else 'slug': identifier}
+        query = {
+            Opinion.ID_FIELD if isinstance(identifier, int)
+            else Opinion.SLUG_FIELD: identifier
+        }
         return get_object_or_404(Opinion, **query)
 
     def post(self, request: HttpRequest,
@@ -193,7 +198,7 @@ class OpinionDetail(LoginRequiredMixin, View):
         success_args = []                   # on success route args
 
         # perform own opinion check
-        own_opinion_check(request, opinion_obj)
+        own_content_check(request, opinion_obj)
 
         form = OpinionForm(data=request.POST, files=request.FILES,
                            instance=opinion_obj)
@@ -424,7 +429,7 @@ def opinion_status_patch(request: HttpRequest, pk: int) -> HttpResponse:
 
     opinion_obj = get_object_or_404(Opinion, pk=pk)
 
-    own_opinion_check(request, opinion_obj)
+    own_content_check(request, opinion_obj)
 
     status, query = opinion_save_query_args(request)
 
@@ -629,6 +634,7 @@ def react_response(
             context={
                 # reactions template
                 TEMPLATE_TARGET_ID: content.id,
+                TEMPLATE_TARGET_SLUG: content.slug,
                 TEMPLATE_TARGET_TYPE: target_type,
                 TEMPLATE_REACTIONS: OPINION_REACTIONS
                 if isinstance(content, Opinion) else COMMENT_REACTIONS,

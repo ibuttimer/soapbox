@@ -2,6 +2,7 @@
 
 {# --- template variable defines for includes --- #}
 {# reactions template expects: 'target_id' as id of target opinion/comment #}
+{#                             'target_slug' as slug of target opinion/comment #}
 {#                             'target_type' as opinion/comment #}
 {#                             'reactions' as list of Reaction #}
 {#                             'reaction_ctrls' as dict of ReactionCtrl #}
@@ -32,7 +33,11 @@
                     {% if ctrl.disabled %}
                         disabled
                     {% endif %}
-                    data-bs-href="{% url reaction.url target_id %}"
+                    {% if reaction.is_slug_url %}
+                        data-bs-href="{% url reaction.url target_slug %}"
+                    {% elif reaction.is_id_url %}
+                        data-bs-href="{% url reaction.url target_id %}"
+                    {% endif %}
                     {# using left placement for tooltip as stacked icons with fa-slash look terrible with top #}
                     data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="{{ reaction.name }}">
                     {{ reaction.icon | safe }}

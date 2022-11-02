@@ -68,13 +68,16 @@
                                         <div id="pinned_{{ forloop.counter }}" class="col-sm-1 mt-0 mb-0">
                                             {# --- template variable defines for includes --- #}
                                             {# reactions template expects: 'target_id' as id of target opinion/comment #}
+                                            {#                             'target_slug' as slug of target opinion/comment #}
                                             {#                             'target_type' as opinion/comment #}
                                             {#                             'reactions' as list of Reaction #}
                                             {#                             'reaction_ctrls' as dict of ReactionCtrl #}
                                             {% with reactions=opinion_reactions %}
                                                 {% with target_type="opinion" %}
                                                     {% with target_id=opinion.id %}
-                                                        {% include "opinions/snippet/reactions.html" %}
+                                                        {% with target_slug=opinion.slug %}
+                                                            {% include "opinions/snippet/reactions.html" %}
+                                                        {% endwith %}
                                                     {% endwith %}
                                                 {% endwith %}
                                             {% endwith %}

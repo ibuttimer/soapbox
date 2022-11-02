@@ -31,7 +31,7 @@ from user.models import User
 from utils import reverse_q, namespaced_url
 from .constants import (
     PAGE_QUERY, PER_PAGE_QUERY, PARENT_ID_QUERY, COMMENT_DEPTH_QUERY,
-    COMMENT_MORE_ROUTE_NAME, OPINION_ID_QUERY
+    COMMENT_MORE_ROUTE_NAME, OPINION_ID_QUERY, ID_QUERY
 )
 from .models import Comment, Opinion, AgreementStatus, HideStatus, PinStatus
 from .comment_utils import get_comment_queryset
@@ -138,27 +138,73 @@ class CommentBundle(CommentData):
         )))
 
 
+def get_comment_query_args(
+        opinion: Union[int, Opinion] = None,
+        comment: Union[int, Comment] = None,
+        parent: Union[int, Comment] = None,
+        depth: int = DEFAULT_COMMENT_DEPTH,
+        page: int = 1, per_page: PerPage = PerPage.DEFAULT
+) -> dict[str, QueryArg]:
+    """
+    Get comment query args
+    :param opinion: opinion (id or object) to get comments for; default None
+    :param comment: comment (id or object) to get comments for; default None
+    :param parent: parent (id or object) to get comments for; default None
+    :param depth: comment depth; default DEFAULT_COMMENT_DEPTH
+    :param page: 1-based page number to get; default 1
+    :param per_page: options per page; default PerPage.DEFAULT
+    :return: list of comments (including a 'more' element if necessary)
+    """
+    arg_list = [
+        (PAGE_QUERY, page),
+        (PER_PAGE_QUERY, per_page),
+        (COMMENT_DEPTH_QUERY, depth)
+    ]
+    if opinion:
+        if isinstance(opinion, Opinion):
+            opinion = (Comment.OPINION_FIELD, opinion)
+        else:
+            assert isinstance(opinion, int), \
+                f"Expected [Opinion, int] got {type(opinion)} {opinion}"
+            opinion = (OPINION_ID_QUERY, opinion)
+        arg_list.append(opinion)
+
+    if comment:
+        if isinstance(comment, Comment):
+            comment = comment.id
+        else:
+            assert isinstance(comment, int),\
+                f"Expected [Comment, int] got {type(comment)} {comment}"
+        arg_list.append(
+            (ID_QUERY, comment)
+        )
+
+    if parent:
+        if isinstance(parent, Comment):
+            parent = parent.id
+        else:
+            assert isinstance(parent, int),\
+                f"Expected [Comment, int] got {type(parent)} {parent}"
+    else:
+        parent = Comment.NO_PARENT
+    arg_list.append(
+        (PARENT_ID_QUERY, parent)
+    )
+
+    return {
+        q: QueryArg(v, True) for q, v in arg_list
+    }
+
+
 def get_comment_tree(
-        query_params: Union[int, dict[str, QueryArg]], user: User
+    query_params: dict[str, QueryArg], user: User
 ) -> list[CommentBundle]:
     """
     Get comment tree, i.e. comments and comments on those comments etc.
-    :param query_params: query parameters or opinion id; default
-                page 1, PerPage.DEFAULT, DEFAULT_COMMENT_DEPTH
+    :param query_params: query parameters
     :param user: current user
     :return: list of comments (including a 'more' element if necessary)
     """
-    if isinstance(query_params, int):
-        query_params = {
-            q: QueryArg(v, True) for q, v in [
-                (OPINION_ID_QUERY, query_params),
-                (PARENT_ID_QUERY, Comment.NO_PARENT),
-                (PAGE_QUERY, 1),
-                (PER_PAGE_QUERY, PerPage.DEFAULT),
-                (COMMENT_DEPTH_QUERY, DEFAULT_COMMENT_DEPTH)
-            ]
-        }
-
     # get first level comments
     comment_bundles = get_comments_page(query_params, user)
 
@@ -168,6 +214,9 @@ def get_comment_tree(
 
     if depth > 1:
         sub_query_params = query_params.copy()
+        if Comment.ID_FIELD in sub_query_params:
+            # remove comment id if present
+            del sub_query_params[Comment.ID_FIELD]
 
         # get first page of comments on comments
         sub_query_params[PAGE_QUERY] = 1

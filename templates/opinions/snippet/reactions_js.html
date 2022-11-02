@@ -57,7 +57,7 @@
      * :param event: click event
      */
     function get_react_info(event) {
-        // ids are of the form 'id--react-<reaction>-<type>-<id>' e.g. 'id--react-agree-opinion-1'
+        // ids are of the form 'id--react-<action>-<type>-<id>' e.g. 'id--react-agree-opinion-1'
         const split = event.currentTarget.attributes['id'].textContent.split('-')
         let data_bs_option = '';
         if (event.currentTarget.firstElementChild.attributes.hasOwnProperty('data-bs-option')) {
@@ -72,7 +72,7 @@
             type: split[4],
             // status option is on the span in the button (see reactions.html)
             option: data_bs_option,
-            // status option is the action to perform
+            // status option is the action to perform, e.g. 'show'/'hide'/etc. i.e. ReactionStatus.XXX.arg
             action: data_bs_option,
             submit: capitalize(data_bs_option)
         };
@@ -82,11 +82,16 @@
      * :param event: click event
      * :param ids: object with keys matching those returned by get_react_info()
      *             and values as ids of element to be set
+     * :param baseUrl: base url to prepend to url value
      */
-    function set_react_info_vars(event, ids) {
+    function set_react_info_vars(event, ids, baseUrl = undefined) {
         const reaction = get_react_info(event)
-        for (const [key, value] of Object.entries(ids)) {
-            $(value).text(reaction[key]);
+        for (const [key, selector] of Object.entries(ids)) {
+            let value = reaction[key];
+            if (key === 'url' && baseUrl !== undefined) {
+                value = baseUrl + value;
+            }
+            $(selector).text(value);
         }
     }
 
@@ -118,6 +123,11 @@
         updateReactStatus(event, react_response_handler);
     }
 
+    // Reaction buttons have the general form: "id--react-<action>-<type>-<id>"
+    // where: action is [agree|disagree|comment|follow|unfollow|share|hide|unhide|pin|unpin|report]
+    //        type is [opinion|comment]
+    //        id is id of target opinion/comment
+
     // Reaction buttons for comments are named 'id--react-comment-....'
     const commentReactionsSelector = "button[id^='id--react-comment']";
     // Reaction buttons for like are named 'id--react-agree-....'
@@ -134,6 +144,8 @@
     const unpinReactionsSelector = "button[id^='id--react-unpin']";
     // Reaction buttons for report are named 'id--react-report-....'
     const reportReactionsSelector = "button[id^='id--react-report']";
+    // Reaction buttons for share are named 'id--react-share-....'
+    const reportShareSelector = "button[id^='id--react-share']";
 
     /* Set the click handlers to set the submit url for comments */
     function setReactionHandlers() {
@@ -144,7 +156,7 @@
                 commentReactionsSelector, likeReactionsSelector, unlikeReactionsSelector,
                 hideReactionsSelector, showReactionsSelector,
                 pinReactionsSelector, unpinReactionsSelector,
-                reportReactionsSelector
+                reportReactionsSelector, reportShareSelector
         ]) {
             $(selector).off();
         }
@@ -161,6 +173,14 @@
             set_react_info_vars(event, {
                 url: "#id--report-submit-url"
             });
+        });
+        $(reportShareSelector).on('click', (event) => {
+            // set the share url for share
+            const baseUrl = window.location.href.slice(0, window.location.href.indexOf(window.location.pathname))
+            set_react_info_vars(event, {
+                url: "#id--share-url",
+                title: "#id--share-modal-heading"
+            }, baseUrl);
         });
         for (let selector of [likeReactionsSelector, unlikeReactionsSelector]) {
             $(selector).on('click', (event) => {

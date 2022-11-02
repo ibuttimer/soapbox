@@ -20,31 +20,30 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from typing import Union, Optional
+from typing import Optional
 
-from opinions.comment_data import get_comment_tree, get_comments_review_status
+from opinions.comment_data import (
+    get_comment_tree, get_comments_review_status, get_comment_query_args
+)
 from opinions.constants import (
     IS_PREVIEW_CTX, ALL_FIELDS, UNDER_REVIEW_CONTENT_CTX,
     UNDER_REVIEW_COMMENT_CONTENT, HIDDEN_CONTENT_CTX, HIDDEN_COMMENT_CONTENT,
     COMMENTS_CTX, CONTENT_STATUS_CTX, TEMPLATE_COMMENT_REACTIONS,
-    TEMPLATE_REACTION_CTRLS, PAGE_QUERY, PER_PAGE_QUERY, COMMENT_DEPTH_QUERY,
-    TEMPLATE_COMMENT_BUNDLE
+    TEMPLATE_REACTION_CTRLS, TEMPLATE_COMMENT_BUNDLE
 )
-from opinions.enums import QueryArg, PerPage
-from opinions.models import Comment
+from opinions.enums import QueryArg
 from opinions.reactions import get_reaction_status, COMMENT_REACTIONS
 from opinions.views.utils import DEFAULT_COMMENT_DEPTH
 from user.models import User
 
 
 def comments_list_context_for_opinion(
-        query_params: Union[int, dict[str, QueryArg]], user: User,
-        context: Optional[dict] = None, reaction_ctrls: Optional[dict] = None,
+    query_params: dict[str, QueryArg], user: User,
+    context: Optional[dict] = None, reaction_ctrls: Optional[dict] = None
 ) -> dict:
     """
     Get the context and comment list for an opinion display
-    :param query_params: query parameters or opinion id; default
-                page 1, PerPage.DEFAULT, DEFAULT_COMMENT_DEPTH
+    :param query_params: query parameters
     :param user: current user
     :param context: context object to update; default None
     :param reaction_ctrls: reaction controls object to update; default None
@@ -82,25 +81,22 @@ def comments_list_context_for_opinion(
 
 
 def get_comment_bundle_context(
-    pk: int, user: User, depth: int = DEFAULT_COMMENT_DEPTH
+    pk: int, user: User, depth: int = DEFAULT_COMMENT_DEPTH,
+    context: Optional[dict] = None, reaction_ctrls: Optional[dict] = None
 ) -> dict:
     """
     Get the context for use with 'comment_bundle.html'
     :param pk: id of comment
     :param user: current user
     :param depth: comment depth: default DEFAULT_COMMENT_DEPTH
+    :param context: context object to update; default None
+    :param reaction_ctrls: reaction controls object to update; default None
     :return: context dict
     """
-    query_params = {
-        q: QueryArg(v, True) for q, v in [
-            (Comment.ID_FIELD, pk),
-            (PAGE_QUERY, 1),
-            (PER_PAGE_QUERY, PerPage.DEFAULT),
-            (COMMENT_DEPTH_QUERY, depth)
-        ]
-    }
-    context = comments_list_context_for_opinion(query_params, user)
-    # comment template expects: 'bundle' as CommentBundle so transform
+    query_params = get_comment_query_args(comment=pk, depth=depth)
+    context = comments_list_context_for_opinion(
+        query_params, user, context=context, reaction_ctrls=reaction_ctrls)
+    # comment template expects: 'bundle' as CommentBundle, so transform
     # CommentBundle list
     assert len(context[COMMENTS_CTX]) == 1
     context[TEMPLATE_COMMENT_BUNDLE] = context[COMMENTS_CTX][0]

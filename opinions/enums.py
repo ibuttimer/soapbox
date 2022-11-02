@@ -31,7 +31,7 @@ from categories import (
     REACTION_PIN, REACTION_UNPIN, REACTION_FOLLOW, REACTION_UNFOLLOW,
     REACTION_REPORT
 )
-from categories.constants import STATUS_ALL
+from categories.constants import STATUS_ALL, REACTION_SHARE
 from categories.models import Status
 from opinions.models import Opinion, Comment
 from user.models import User
@@ -182,6 +182,7 @@ class ReactionStatus(ChoiceArg):
     UNPIN = (REACTION_UNPIN, 'unpin')
     FOLLOW = (REACTION_FOLLOW, 'follow')
     UNFOLLOW = (REACTION_UNFOLLOW, 'unfollow')
+    SHARE = (REACTION_SHARE, 'share')
     REPORT = (REACTION_REPORT, 'report')
 
     def __init__(self, display: str, arg: str):
