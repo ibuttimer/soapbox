@@ -62,9 +62,9 @@ from opinions.search import (
 )
 from opinions.views.utils import (
     opinion_list_query_args, opinion_permission_check,
-    opinion_search_query_args,
-    REORDER_REQ_QUERY_ARGS,
-    NON_REORDER_OPINION_LIST_QUERY_ARGS, ensure_list, DATE_QUERIES
+    opinion_search_query_args, REORDER_REQ_QUERY_ARGS,
+    NON_REORDER_OPINION_LIST_QUERY_ARGS, ensure_list, DATE_QUERIES,
+    query_search_term
 )
 from opinions.query_params import QuerySetParams, choice_arg_query
 from opinions.enums import (
@@ -159,10 +159,8 @@ class OpinionList(LoginRequiredMixin, generic.ListView):
 
         # build search term string from values that were set
         self.extra_context = {
-            "repeat_search_term": '&'.join([
-                f'{q}={v.query_arg_value}'
-                for q, v in query_params.items()
-                if q not in REORDER_REQ_QUERY_ARGS and v.was_set])
+            "repeat_search_term": query_search_term(
+                query_params, exclude_queries=REORDER_REQ_QUERY_ARGS)
         }
 
         # select sort order options to display

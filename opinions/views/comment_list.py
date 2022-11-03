@@ -54,7 +54,7 @@ from opinions.query_params import QuerySetParams
 from opinions.views.utils import (
     comment_list_query_args, comment_permission_check,
     comment_search_query_args, REORDER_REQ_QUERY_ARGS,
-    NON_REORDER_COMMENT_LIST_QUERY_ARGS
+    NON_REORDER_COMMENT_LIST_QUERY_ARGS, query_search_term
 )
 from opinions.enums import QueryArg, QueryStatus, CommentSortOrder, PerPage
 
@@ -96,10 +96,8 @@ class CommentList(LoginRequiredMixin, generic.ListView):
 
         # build search term string from values that were set
         self.extra_context = {
-            "repeat_search_term": '&'.join([
-                f'{q}={v.query_arg_value}'
-                for q, v in query_params.items()
-                if q not in REORDER_REQ_QUERY_ARGS and v.was_set])
+            "repeat_search_term": query_search_term(
+                query_params, exclude_queries=REORDER_REQ_QUERY_ARGS)
         }
 
         # select sort order options to display

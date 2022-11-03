@@ -503,3 +503,24 @@ def ensure_list(item: Any) -> list[Any]:
     :return: list
     """
     return item if isinstance(item, list) else [item]
+
+
+def query_search_term(
+    query_params: dict[str, QueryArg], exclude_queries: list[str] = None,
+    join_by: str = '&'
+) -> str:
+    """
+    Get the query search terms for a client to use to request
+    :param query_params: query params
+    :param exclude_queries: list of queries to exclude; default none
+    :param join_by: string to join entries; default '&'
+    :return: joined sting
+    """
+    if exclude_queries is None:
+        exclude_queries = []
+
+    return join_by.join([
+        f'{q}={v.query_arg_value if isinstance(v, QueryArg) else v}'
+        for q, v in query_params.items()
+        if q not in exclude_queries and
+           (v.was_set if isinstance(v, QueryArg) else True)])

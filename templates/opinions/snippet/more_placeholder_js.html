@@ -23,7 +23,14 @@
   -->
 
 <script>
-    const morePlaceholderSelector = "button[id^='id--comment-more-placeholder']";
+    // More placeholder buttons are named 'id--comment-more-placeholder-<id>'
+    const MORE_PLACEHOLDER_SELECTOR = "button[id^='id--comment-more-placeholder']";
+    // Comment collapse divs are named 'id--comment-collapse-<id>'
+    const COMMENT_COLLAPSE_SELECTOR = "div[id^='id--comment-collapse']"
+    // Comment collapse toggle links are named 'id--comment-collapse-<id>-toggle'
+    const COMMENT_COLLAPSE_TOGGLE_SELECTOR = "a[id^='id--comment-collapse'][id$='toggle']";
+
+    const DATA_COMMENT_QUERY = 'data-comment-query';
 
     /* Click handler for more comments placeholder */
     function morePlaceholderClickHandler(event) {
@@ -37,85 +44,92 @@
             url: url,
         }).done(function (data) {
             // remove placeholder click handlers
-            $(morePlaceholderSelector).off();
+            $(MORE_PLACEHOLDER_SELECTOR).off();
 
             // comment card more div has id "id--comment-card-more-<id>"
             const splits = event.currentTarget.id.split('-');
-            const moreDivIdSelector = "#id--comment-card-more-" + splits[splits.length - 1];
+            const commentId = splits[splits.length - 1]
+            const moreDivIdSelector = "#id--comment-card-more-" + commentId;
             // add additional comments to end of list
             $(moreDivIdSelector).parent().append(data.html);
             // remove more placeholder & collapse
             $(moreDivIdSelector).remove();
-            $("#id--comment-collapse-more-" + splits[splits.length - 1]).remove();
+            $("#id--comment-collapse-more-" + commentId).remove();
 
             // set placeholder click handlers
-            $(morePlaceholderSelector).on('click', morePlaceholderClickHandler);
+            $(MORE_PLACEHOLDER_SELECTOR).on('click', morePlaceholderClickHandler);
             // set click handlers for reactions
             setReactionHandlers();
             enableTooltips();
         });
     }
 
-    $(document).ready(function () {
+    /* Click handler for sub-level comments */
+    function subLevelCommentsClickHandler(event) {
+        if (event.currentTarget.hasAttribute(DATA_COMMENT_QUERY)) {
+            const query = event.currentTarget.attributes[DATA_COMMENT_QUERY].textContent;
 
-        /* Click handler to request more comments.
-            More buttons on comments are named 'id--comment-more-placeholder-....'
-         */
-        $(morePlaceholderSelector).on('click', morePlaceholderClickHandler);
-
-        /* Collapse event handlers for comment reply containers */
-        $("div[id^='id--comment-collapse']").on('hidden.bs.collapse', (event) => {
-            const selector = "#" + event.currentTarget.id + "-toggle > i"
-            $(selector).removeClass("fa-chevron-up");
-            $(selector).addClass("fa-chevron-down");
-        });
-        $("div[id^='id--comment-collapse']").on('shown.bs.collapse', (event) => {
-            const selector = "#" + event.currentTarget.id + "-toggle > i"
-            $(selector).removeClass("fa-chevron-down");
-            $(selector).addClass("fa-chevron-up");
-        });
-
-        /* Submit handler for comment modal */
-        $("form[id^='id--comment-modal']").submit(function (event) {
-            const formData = {
-                content: $("#{{ content_field.auto_id }}").val(),
-            };
-
-            const url = $("#id--comment-submit-url").text();
+            const url = "{% url 'opinions:comment_more' %}?" + query;
 
             $.ajax({
-                method: 'post',
+                method: 'get',
                 url: url,
-                headers: {
-                    'X-CSRFTOKEN': '{{ csrf_token }}'
-                },
-                data: formData,
-            }).done(function(data) {
-                // add new comment to end of container
-                $("#" + data.parent_container).append(data.html);
+            }).done(function (data) {
 
-                // make toggle visible and expand collapse if necessary
-                if (!data.opinion_comment) {
-                    $("#" + data.parent_container + "-toggle").removeAttr('hidden');
-                    $("#" + data.parent_container + "-toggle").removeClass('collapsed');
+                // Comment collapse toggle links are named 'id--comment-collapse-<id>-toggle'
+                const splits = event.currentTarget.id.split('-');
+                const commentId = splits[splits.length - 2]
+                const collapseDivIdSelector = "#id--comment-collapse-" + commentId;
 
-                    const bsCollapse = new bootstrap.Collapse("#" + data.parent_container, {
-                      toggle: false
-                    });
-                    bsCollapse.show();
-                }
-                // close modal
-                $("#id--comment-modal").modal('hide');
+                // add additional comments to end of list
+                $(collapseDivIdSelector).append(data.html);
+                // remove comment query from collapse toggle
+                event.currentTarget.removeAttribute(DATA_COMMENT_QUERY);
 
                 // set click handlers for reactions
                 setReactionHandlers();
-
-            }).fail(function(data) {
-                // redisplay modal
-                $("#id--comment-form-errors-container").html(data.responseJSON.html);
+                enableTooltips();
+                // set collapse event handlers for comment reply containers
+                setCollapseDisplayHandlers();
             });
+        }
+    }
 
-            event.preventDefault();
-        });
+    function setCollapseDisplayHandlers() {
+        // remove old handlers to prevent duplicates
+        $(COMMENT_COLLAPSE_SELECTOR).off();
+
+        for (const type of ['hidden.bs.collapse', 'shown.bs.collapse']) {
+            $(COMMENT_COLLAPSE_SELECTOR).on(type, updateCollapseDisplay);
+        }
+    }
+
+
+    const toggleSpanSelector = (event) => "#" + event.currentTarget.id + "-toggle > i";
+
+    /* Event handler to update collapse toggle display */
+    function updateCollapseDisplay(event) {
+        const selector = toggleSpanSelector(event)
+        // default shown event
+        let toRemove = "fa-chevron-down";
+        let toAdd = "fa-chevron-up";
+        if (event.type === 'hidden') {
+            toRemove = "fa-chevron-up";
+            toAdd = "fa-chevron-down";
+        }
+        $(selector).removeClass(toRemove);
+        $(selector).addClass(toAdd);
+        // prevent propagation back up to the parent tags to stop them changing as well
+        event.stopPropagation();
+    }
+
+    $(document).ready(function () {
+
+        /* Click handler to request more comments */
+        $(MORE_PLACEHOLDER_SELECTOR).on('click', morePlaceholderClickHandler);
+        /* Add collapse event handlers for comment reply containers */
+        setCollapseDisplayHandlers();
+        /* Event handlers for sub-level comments containers */
+        $(COMMENT_COLLAPSE_TOGGLE_SELECTOR).on('click', subLevelCommentsClickHandler);
     });
 </script>

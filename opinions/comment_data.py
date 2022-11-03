@@ -31,11 +31,13 @@ from user.models import User
 from utils import reverse_q, namespaced_url
 from .constants import (
     PAGE_QUERY, PER_PAGE_QUERY, PARENT_ID_QUERY, COMMENT_DEPTH_QUERY,
-    COMMENT_MORE_ROUTE_NAME, OPINION_ID_QUERY, ID_QUERY
+    COMMENT_MORE_ROUTE_NAME, OPINION_ID_QUERY, ID_QUERY, OPINION_CTX
 )
 from .models import Comment, Opinion, AgreementStatus, HideStatus, PinStatus
 from .comment_utils import get_comment_queryset
-from opinions.views.utils import DEFAULT_COMMENT_DEPTH, ensure_list
+from opinions.views.utils import (
+    DEFAULT_COMMENT_DEPTH, ensure_list, query_search_term
+)
 from .enums import QueryArg, PerPage
 from .queries import content_status_check
 
@@ -81,6 +83,8 @@ class CommentBundle(CommentData):
     """
     comments: list[CommentData]
     """ Replies to comment """
+    comment_query: str
+    """ Query to get sub-level comments """
     collapse_id: str
     """ Id for comment collapse """
     next_page: [str, None]
@@ -91,6 +95,7 @@ class CommentBundle(CommentData):
         self.comments = [] if comments is None else comments
         self.collapse_id = CommentBundle.generate_collapse_id(comment.id)
         self.next_page = None
+        self.comment_query = None
 
     def __str__(self):
         text = f'{self.comment} {len(self.comments)} replies' \
@@ -162,12 +167,13 @@ def get_comment_query_args(
     ]
     if opinion:
         if isinstance(opinion, Opinion):
-            opinion = (Comment.OPINION_FIELD, opinion)
+            opinion = opinion.id
         else:
             assert isinstance(opinion, int), \
                 f"Expected [Opinion, int] got {type(opinion)} {opinion}"
-            opinion = (OPINION_ID_QUERY, opinion)
-        arg_list.append(opinion)
+        arg_list.append(
+            (OPINION_ID_QUERY, opinion)
+        )
 
     if comment:
         if isinstance(comment, Comment):
@@ -179,17 +185,19 @@ def get_comment_query_args(
             (ID_QUERY, comment)
         )
 
+    parent_query = None
     if parent:
         if isinstance(parent, Comment):
             parent = parent.id
         else:
             assert isinstance(parent, int),\
                 f"Expected [Comment, int] got {type(parent)} {parent}"
-    else:
-        parent = Comment.NO_PARENT
-    arg_list.append(
-        (PARENT_ID_QUERY, parent)
-    )
+        parent_query =(PARENT_ID_QUERY, parent)
+    elif comment is None:
+        parent_query =(PARENT_ID_QUERY, Comment.NO_PARENT)
+
+    if parent_query:
+        arg_list.append(parent_query)
 
     return {
         q: QueryArg(v, True) for q, v in arg_list
@@ -212,8 +220,8 @@ def get_comment_tree(
     if isinstance(depth, QueryArg):
         depth = depth.query_arg_value
 
+    sub_query_params = query_params.copy()
     if depth > 1:
-        sub_query_params = query_params.copy()
         if Comment.ID_FIELD in sub_query_params:
             # remove comment id if present
             del sub_query_params[Comment.ID_FIELD]
@@ -222,11 +230,39 @@ def get_comment_tree(
         sub_query_params[PAGE_QUERY] = 1
         sub_query_params[COMMENT_DEPTH_QUERY] = depth - 1
 
-        for comment_bundle in comment_bundles:
-            sub_query_params[PARENT_ID_QUERY] = comment_bundle.comment.id
+        def next_level_comments(
+                bundle: CommentBundle, sq_params: dict[str, QueryArg]):
             # recursive call to get next level comments
-            comment_bundle.comments = \
-                get_comment_tree(sub_query_params, user)
+            bundle.comments = get_comment_tree(sq_params, user)
+
+        next_level_func = next_level_comments
+    else:
+        # check if there are sub-level comments for another request
+        sub_query_params[PAGE_QUERY] = 1
+        sub_query_params[COMMENT_DEPTH_QUERY] = DEFAULT_COMMENT_DEPTH
+
+        # convert opinion query to opinion id query
+        if OPINION_CTX in sub_query_params:
+            opinion = sub_query_params[OPINION_CTX]
+            sub_query_params[OPINION_ID_QUERY] = \
+                (opinion.value
+                 if isinstance(opinion, QueryArg) else opinion).id
+            del sub_query_params[OPINION_CTX]
+
+        def next_level_query(
+                bundle: CommentBundle, sq_params: dict[str, QueryArg]):
+            # query to retrieve next level comments
+            query_set = get_comment_queryset(sq_params, user)
+            if query_set.exists():
+                bundle.comment_query = query_search_term(sq_params)
+
+        next_level_func = next_level_query
+
+    for comment_bundle in comment_bundles:
+        if comment_bundle.is_more_placeholder:
+            continue
+        sub_query_params[PARENT_ID_QUERY] = comment_bundle.comment.id
+        next_level_func(comment_bundle, sub_query_params)
 
     return comment_bundles
 

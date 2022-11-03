@@ -53,14 +53,17 @@
                                 <a id="{{ bundle.collapse_id }}-toggle" class="btn btn-primary collapsed" data-bs-toggle="collapse"
                                    href="#{{ bundle.collapse_id }}" role="button" aria-expanded="false"
                                    aria-controls="show comments"
-                                   {% if not bundle.comments %}
+                                   {% if bundle.comment_query %}
+                                      data-comment-query="{{ bundle.comment_query }}"
+                                   {% endif %}
+                                   {% if not bundle.comments and not bundle.comment_query %}
                                       hidden
                                    {% endif %}
                                 >
                                     <i class="fa-solid fa-chevron-down"></i>
                                 </a>
                                 {# HACK display id for dev purposes #}
-                                <span class="badge rounded-pill text-bg-warning">{{ bundle.comment.id }}</span>
+                                <span class="badge rounded-pill text-bg-warning">c{{ bundle.comment.id }} o{{ bundle.comment.opinion.id }}</span>
                             </div>
                         </div>
                         <div class="row">
