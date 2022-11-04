@@ -112,6 +112,16 @@ class ChoiceArg(Enum):
 
         return cls._find_value(display, func=func)
 
+    @staticmethod
+    def arg_if_choice_arg(obj):
+        """
+        Get the value if `obj` is a ChoiceArg, otherwise `obj`
+        :param obj: object to get value of
+        :return: value
+        """
+        return obj.arg \
+            if isinstance(obj, ChoiceArg) else obj
+
 
 class QueryArg:
     """ Class representing query args """
@@ -144,13 +154,24 @@ class QueryArg:
         return self.was_set and chk_value == value
 
     @property
-    def query_arg_value(self):
+    def value_arg_or_value(self):
         """
-        Get the arg value of a query argument
+        Get the arg value if this object's value is a ChoiceArg, otherwise
+        this object's value
         :return: value
         """
         return self.value.arg \
             if isinstance(self.value, ChoiceArg) else self.value
+
+    @staticmethod
+    def value_arg_or_object(obj):
+        """
+        Get the arg value if `obj` is a ChoiceArg, otherwise `obj`
+        :param obj: object to get value of
+        :return: value
+        """
+        return ChoiceArg.arg_if_choice_arg(obj.value) \
+            if isinstance(obj, QueryArg) else obj
 
     def __str__(self):
         return f'{self.value}, was_set {self.was_set}'

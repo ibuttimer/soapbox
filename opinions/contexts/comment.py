@@ -82,7 +82,8 @@ def comments_list_context_for_opinion(
 
 def get_comment_bundle_context(
     pk: int, user: User, depth: int = DEFAULT_COMMENT_DEPTH,
-    context: Optional[dict] = None, reaction_ctrls: Optional[dict] = None
+    context: Optional[dict] = None, reaction_ctrls: Optional[dict] = None,
+    is_dynamic_insert: bool = False
 ) -> dict:
     """
     Get the context for use with 'comment_bundle.html'
@@ -91,6 +92,7 @@ def get_comment_bundle_context(
     :param depth: comment depth: default DEFAULT_COMMENT_DEPTH
     :param context: context object to update; default None
     :param reaction_ctrls: reaction controls object to update; default None
+    :param is_dynamic_insert: is a dynamic insert flag; default False
     :return: context dict
     """
     query_params = get_comment_query_args(comment=pk, depth=depth)
@@ -101,5 +103,6 @@ def get_comment_bundle_context(
     assert len(context[COMMENTS_CTX]) == 1
     context[TEMPLATE_COMMENT_BUNDLE] = context[COMMENTS_CTX][0]
     del context[COMMENTS_CTX]
+    context[TEMPLATE_COMMENT_BUNDLE].dynamic_insert = is_dynamic_insert
 
     return context

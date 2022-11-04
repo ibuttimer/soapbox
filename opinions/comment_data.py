@@ -83,8 +83,10 @@ class CommentBundle(CommentData):
     """
     comments: list[CommentData]
     """ Replies to comment """
-    comment_query: str
+    comment_query: [str, None]
     """ Query to get sub-level comments """
+    dynamic_insert: bool
+    """ Object was dynamically inserted, so is not in correct location """
     collapse_id: str
     """ Id for comment collapse """
     next_page: [str, None]
@@ -96,6 +98,7 @@ class CommentBundle(CommentData):
         self.collapse_id = CommentBundle.generate_collapse_id(comment.id)
         self.next_page = None
         self.comment_query = None
+        self.dynamic_insert = False
 
     def __str__(self):
         text = f'{self.comment} {len(self.comments)} replies' \
@@ -192,9 +195,9 @@ def get_comment_query_args(
         else:
             assert isinstance(parent, int),\
                 f"Expected [Comment, int] got {type(parent)} {parent}"
-        parent_query =(PARENT_ID_QUERY, parent)
+        parent_query = (PARENT_ID_QUERY, parent)
     elif comment is None:
-        parent_query =(PARENT_ID_QUERY, Comment.NO_PARENT)
+        parent_query = (PARENT_ID_QUERY, Comment.NO_PARENT)
 
     if parent_query:
         arg_list.append(parent_query)
@@ -218,7 +221,7 @@ def get_comment_tree(
 
     depth = query_params.get(COMMENT_DEPTH_QUERY, DEFAULT_COMMENT_DEPTH)
     if isinstance(depth, QueryArg):
-        depth = depth.query_arg_value
+        depth = depth.value_arg_or_value
 
     sub_query_params = query_params.copy()
     if depth > 1:
@@ -238,15 +241,17 @@ def get_comment_tree(
         next_level_func = next_level_comments
     else:
         # check if there are sub-level comments for another request
-        sub_query_params[PAGE_QUERY] = 1
+        page = QueryArg.value_arg_or_object(
+            sub_query_params[PAGE_QUERY]) + 1 \
+            if PAGE_QUERY in sub_query_params else 1
+        sub_query_params[PAGE_QUERY] = page
         sub_query_params[COMMENT_DEPTH_QUERY] = DEFAULT_COMMENT_DEPTH
 
         # convert opinion query to opinion id query
         if OPINION_CTX in sub_query_params:
             opinion = sub_query_params[OPINION_CTX]
             sub_query_params[OPINION_ID_QUERY] = \
-                (opinion.value
-                 if isinstance(opinion, QueryArg) else opinion).id
+                QueryArg.value_arg_or_value(opinion).id
             del sub_query_params[OPINION_CTX]
 
         def next_level_query(
@@ -278,10 +283,10 @@ def get_comments_page(
     query_set = get_comment_queryset(query_params, user)
 
     per_page = query_params.get(
-        PER_PAGE_QUERY, PerPage.DEFAULT).query_arg_value
+        PER_PAGE_QUERY, PerPage.DEFAULT).value_arg_or_value
     page = query_params.get(PAGE_QUERY, 1)
     if isinstance(page, QueryArg):
-        page = page.query_arg_value
+        page = page.value_arg_or_value
     start = per_page * (page - 1)
     end = start + per_page
 
@@ -296,12 +301,16 @@ def get_comments_page(
 
     if add_more_placeholder:
         # set placeholder for more
-        next_query_params = query_params.copy()
+        next_query_params = {}
+        for q, v in query_params.items():
+            if not isinstance(v, QueryArg):
+                next_query_params[q] = v
+            elif isinstance(v, QueryArg) and v.was_set:
+                # filter out unset query params
+                next_query_params[q] = v.value_arg_or_value
+
         next_query_params[PAGE_QUERY] = page + 1
         next_query_params[PER_PAGE_QUERY] = per_page
-        for q, v in next_query_params.items():
-            if isinstance(v, QueryArg):
-                next_query_params[q] = v.query_arg_value
 
         comments[-1].set_placeholder(
             reverse_q(

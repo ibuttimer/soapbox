@@ -10,7 +10,11 @@
 {# comment bundle template expects: 'bundle' as CommentBundle #}
 {#                                  'content_status' as dict with key: comment id, value: ContentStatus #}
 
-<div id="id--comment-section-{{ bundle.comment.id }}">
+<div
+    {% if bundle.dynamic_insert %}
+        class="dynamic-insert"
+    {% endif %}
+    id="id--comment-section-{{ bundle.comment.id }}">
     <div
         {% if bundle.is_more_placeholder %}
             id="id--comment-card-more-{{ bundle.comment.id }}"

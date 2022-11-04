@@ -244,7 +244,7 @@ class OpinionList(LoginRequiredMixin, generic.ListView):
         :param query_params: request query
         """
         # set pagination
-        self.paginate_by = query_params[PER_PAGE_QUERY].query_arg_value
+        self.paginate_by = query_params[PER_PAGE_QUERY].value_arg_or_value
 
     def select_template(
             self, query_params: dict[str, QueryArg]):

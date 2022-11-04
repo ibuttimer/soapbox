@@ -115,8 +115,7 @@ class CommentList(LoginRequiredMixin, generic.ListView):
         # set template
         self.select_template(query_params)
 
-        return super(CommentList, self). \
-            get(request, *args, **kwargs)
+        return super().get(request, *args, **kwargs)
 
     def set_queryset(self, query_params: dict[str, QueryArg], user: User):
         """
@@ -180,7 +179,7 @@ class CommentList(LoginRequiredMixin, generic.ListView):
         :param query_params: request query
         """
         # set pagination
-        self.paginate_by = query_params[PER_PAGE_QUERY].query_arg_value
+        self.paginate_by = query_params[PER_PAGE_QUERY].value_arg_or_value
 
     def select_template(
             self, query_params: dict[str, QueryArg]):
@@ -219,8 +218,7 @@ class CommentList(LoginRequiredMixin, generic.ListView):
         :param kwargs: additional keyword arguments
         :return:
         """
-        context = super(CommentList, self).\
-            get_context_data(object_list=object_list, **kwargs)
+        context = super().get_context_data(object_list=object_list, **kwargs)
 
         comment_bundles = [
             CommentData(comment) for comment in context['object_list']
@@ -271,8 +269,7 @@ class CommentList(LoginRequiredMixin, generic.ListView):
                 len(context['object_list']) == 0:
             response_kwargs['status'] = HTTPStatus.NO_CONTENT
 
-        return super(CommentList, self).render_to_response(
-            context, **response_kwargs)
+        return super().render_to_response(context, **response_kwargs)
 
 
 class CommentSearch(CommentList):

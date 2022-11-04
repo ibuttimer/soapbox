@@ -49,12 +49,14 @@
             // comment card more div has id "id--comment-card-more-<id>"
             const splits = event.currentTarget.id.split('-');
             const commentId = splits[splits.length - 1]
-            const moreDivIdSelector = "#id--comment-card-more-" + commentId;
+            const moreDivIdSelector = `#id--comment-card-more-${commentId}`;
             // add additional comments to end of list
             $(moreDivIdSelector).parent().append(data.html);
             // remove more placeholder & collapse
             $(moreDivIdSelector).remove();
-            $("#id--comment-collapse-more-" + commentId).remove();
+            $(`#id--comment-collapse-more-${commentId}`).remove();
+            // remove any (on whatever level) dynamically inserted elements that are displaying out of place
+            $(".dynamic-insert-remove").remove();
 
             // set placeholder click handlers
             $(MORE_PLACEHOLDER_SELECTOR).on('click', morePlaceholderClickHandler);

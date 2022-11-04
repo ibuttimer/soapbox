@@ -331,7 +331,7 @@ def get_query_args(
 
         if option.query in request.GET:
             param = request.GET[option.query].lower()
-            default_value = params[option.query].query_arg_value
+            default_value = params[option.query].value_arg_or_value
             if isinstance(default_value, int):
                 param = int(param)
             if option.clazz:
@@ -520,7 +520,7 @@ def query_search_term(
         exclude_queries = []
 
     return join_by.join([
-        f'{q}={v.query_arg_value if isinstance(v, QueryArg) else v}'
+        f'{q}={v.value_arg_or_value if isinstance(v, QueryArg) else v}'
         for q, v in query_params.items()
         if q not in exclude_queries and
-           (v.was_set if isinstance(v, QueryArg) else True)])
+        (v.was_set if isinstance(v, QueryArg) else True)])
