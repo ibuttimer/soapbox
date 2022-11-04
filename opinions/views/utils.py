@@ -55,7 +55,7 @@ from opinions.forms import OpinionForm
 DEFAULT_COMMENT_DEPTH = 2
 
 # workaround for self type hints from https://peps.python.org/pep-0673/
-TQueryOption = TypeVar("TQueryOption", bound="QueryOption")
+TypeQueryOption = TypeVar("TypeQueryOption", bound="QueryOption")
 
 
 @dataclass
@@ -71,14 +71,14 @@ class QueryOption:
     """ Default choice """
 
     @classmethod
-    def of_no_cls_dflt(cls: Type[TQueryOption], query: str) -> TQueryOption:
+    def of_no_cls_dflt(cls: Type[TypeQueryOption], query: str) -> TypeQueryOption:
         """ Get QueryOption with no class or default """
         return cls(query=query, clazz=None, default=None)
 
     @classmethod
     def of_no_cls(
-        cls: Type[TQueryOption], query: str, default: Union[ChoiceArg, Any]
-    ) -> TQueryOption:
+        cls: Type[TypeQueryOption], query: str, default: Union[ChoiceArg, Any]
+    ) -> TypeQueryOption:
         """ Get QueryOption with no class or default """
         return cls(query=query, clazz=None, default=default)
 
@@ -315,8 +315,8 @@ def get_query_args(
         ) -> dict[str, QueryArg]:
     """
     Get opinion list query arguments from request query
-    :param options: list of possible QueryOption
     :param request: http request
+    :param options: list of possible QueryOption
     :return: dict of tuples of value (ChoiceArg | int | str) and
             'was set' bool flag
     """
