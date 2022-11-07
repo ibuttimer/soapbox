@@ -45,7 +45,9 @@ from opinions.constants import (
     COMMENT_SEARCH_ROUTE_NAME, COMMENT_MORE_URL, COMMENT_MORE_ROUTE_NAME,
     COMMENT_HIDE_ID_URL, COMMENT_HIDE_ID_ROUTE_NAME,
     COMMENT_REPORT_ID_URL, COMMENT_REPORT_ID_ROUTE_NAME, COMMENT_SLUG_URL,
-    COMMENT_SLUG_ROUTE_NAME,
+    COMMENT_SLUG_ROUTE_NAME, OPINION_FOLLOW_ID_URL,
+    OPINION_FOLLOW_ID_ROUTE_NAME, COMMENT_FOLLOW_ID_URL,
+    COMMENT_FOLLOW_ID_ROUTE_NAME,
 )
 from opinions.views.comment_create import (
     OpinionCommentCreate, CommentCommentCreate
@@ -57,12 +59,12 @@ from opinions.views.opinion_create import OpinionCreate
 from opinions.views.opinion_by_id import (
     OpinionDetailById, OpinionDetailBySlug, OpinionDetailPreviewById,
     opinion_status_patch, opinion_like_patch, opinion_hide_patch,
-    opinion_pin_patch, opinion_report_post
+    opinion_pin_patch, opinion_report_post, opinion_follow_patch
 )
 from opinions.views.opinion_list import OpinionList, OpinionSearch
 from opinions.views.comment_by_id import (
     comment_like_patch, comment_report_post, comment_hide_patch,
-    CommentDetailById, CommentDetailBySlug
+    CommentDetailById, CommentDetailBySlug, comment_follow_patch
 )
 
 # https://docs.djangoproject.com/en/4.1/topics/http/urls/#url-namespaces-and-included-urlconfs
@@ -95,6 +97,9 @@ urlpatterns = [
     # patch opinion pin status by id
     path(OPINION_PIN_ID_URL, opinion_pin_patch,
          name=OPINION_PIN_ID_ROUTE_NAME),
+    # patch follow opinion author by id
+    path(OPINION_FOLLOW_ID_URL, opinion_follow_patch,
+         name=OPINION_FOLLOW_ID_ROUTE_NAME),
     # post opinion report by id
     path(OPINION_REPORT_ID_URL, opinion_report_post,
          name=OPINION_REPORT_ID_ROUTE_NAME),
@@ -117,6 +122,9 @@ urlpatterns = [
     # patch comment hide status by id
     path(COMMENT_HIDE_ID_URL, comment_hide_patch,
          name=COMMENT_HIDE_ID_ROUTE_NAME),
+    # patch follow comment author by id
+    path(COMMENT_FOLLOW_ID_URL, comment_follow_patch,
+         name=COMMENT_FOLLOW_ID_ROUTE_NAME),
     # post comment report by id
     path(COMMENT_REPORT_ID_URL, comment_report_post,
          name=COMMENT_REPORT_ID_ROUTE_NAME),

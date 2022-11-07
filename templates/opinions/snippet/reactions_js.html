@@ -100,10 +100,12 @@
      * :param data: json data
      */
     function react_response_handler(data) {
-        if (data.hasOwnProperty('redirect')) {
-            document.location.href = data.redirect;
-        } else if (data.hasOwnProperty('element_id')) {
-            $("#" + data.element_id).replaceWith(data.html);
+        if (data !== undefined) {
+            if (data.hasOwnProperty('redirect')) {
+                document.location.href = data.redirect;
+            } else if (data.hasOwnProperty('element_id')) {
+                $("#" + data.element_id).replaceWith(data.html);
+            }
         }
     }
 
@@ -111,15 +113,7 @@
      * Update like/unlike status of current opinion
      * :param event: click event
      */
-    function updateLikeUnlike(event) {
-        updateReactStatus(event, react_response_handler);
-    }
-
-    /**
-     * Update pin/unpin status of current opinion
-     * :param event: click event
-     */
-    function updatePinUnpin(event) {
+    function updateOnOffReaction(event) {
         updateReactStatus(event, react_response_handler);
     }
 
@@ -142,6 +136,10 @@
     const pinReactionsSelector = "button[id^='id--react-pin']";
     // Reaction buttons for unpin are named 'id--react-unpin-....'
     const unpinReactionsSelector = "button[id^='id--react-unpin']";
+    // Reaction buttons for follow are named 'id--react-follow-....'
+    const followReactionsSelector = "button[id^='id--react-follow']";
+    // Reaction buttons for unfollow are named 'id--react-unfollow-....'
+    const unfollowReactionsSelector = "button[id^='id--react-unfollow']";
     // Reaction buttons for report are named 'id--react-report-....'
     const reportReactionsSelector = "button[id^='id--react-report']";
     // Reaction buttons for share are named 'id--react-share-....'
@@ -156,6 +154,7 @@
                 commentReactionsSelector, likeReactionsSelector, unlikeReactionsSelector,
                 hideReactionsSelector, showReactionsSelector,
                 pinReactionsSelector, unpinReactionsSelector,
+                followReactionsSelector, unfollowReactionsSelector,
                 reportReactionsSelector, reportShareSelector
         ]) {
             $(selector).off();
@@ -182,10 +181,16 @@
                 title: "#id--share-modal-heading"
             }, baseUrl);
         });
-        for (let selector of [likeReactionsSelector, unlikeReactionsSelector]) {
+        for (let selector of [
+            // update like/unlike status
+            likeReactionsSelector, unlikeReactionsSelector,
+            // update pin/unpin status
+            pinReactionsSelector, unpinReactionsSelector,
+            // update follow/unfollow status
+            followReactionsSelector, unfollowReactionsSelector,
+        ]) {
             $(selector).on('click', (event) => {
-                // update like/unlike status
-                updateLikeUnlike(event);
+                updateOnOffReaction(event);
             });
         }
         for (let selector of [hideReactionsSelector, showReactionsSelector]) {
@@ -200,12 +205,6 @@
                     action: "#id--hide-modal-action",
                     submit: "#id--submit-btn-hide-modal",
                 });
-            });
-        }
-        for (let selector of [pinReactionsSelector, unpinReactionsSelector]) {
-            $(selector).on('click', (event) => {
-                // update pin/unpin status
-                updatePinUnpin(event);
             });
         }
     }

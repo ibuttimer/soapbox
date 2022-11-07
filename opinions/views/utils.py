@@ -71,7 +71,8 @@ class QueryOption:
     """ Default choice """
 
     @classmethod
-    def of_no_cls_dflt(cls: Type[TypeQueryOption], query: str) -> TypeQueryOption:
+    def of_no_cls_dflt(
+            cls: Type[TypeQueryOption], query: str) -> TypeQueryOption:
         """ Get QueryOption with no class or default """
         return cls(query=query, clazz=None, default=None)
 
@@ -297,6 +298,17 @@ def hide_query_args(request: HttpRequest) -> ReactionStatus:
     return query_args_value(
         request, QueryOption(
             STATUS_QUERY, ReactionStatus, ReactionStatus.HIDE))
+
+
+def follow_query_args(request: HttpRequest) -> ReactionStatus:
+    """
+    Get follow query arguments from request query
+    :param request: http request
+    :return: tuple of Status and ReactionStatus
+    """
+    return query_args_value(
+        request, QueryOption(
+            STATUS_QUERY, ReactionStatus, ReactionStatus.FOLLOW))
 
 
 def report_query_args(request: HttpRequest) -> Report:

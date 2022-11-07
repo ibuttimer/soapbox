@@ -117,6 +117,7 @@ class Reaction:
     option: str         # selected option
     modal: str          # target modal
     field: str          # ReactionsList field
+    group: str          # group identifier
 
     def __init__(self, **kwargs) -> None:
         for key, val in kwargs.items():
@@ -153,8 +154,9 @@ class Reaction:
         """
         reaction_kwargs = kwargs.copy()
         reaction_kwargs['handle_type'] = HandleType.MODAL
-        if 'option' not in reaction_kwargs:
-            reaction_kwargs['option'] = ''
+        for attrib in ['option', 'group']:
+            if attrib not in reaction_kwargs:
+                reaction_kwargs[attrib] = ''
         return Reaction(**reaction_kwargs)
 
     @classmethod
@@ -166,7 +168,8 @@ class Reaction:
         return Reaction(**{
             'name': '', 'identifier': '', 'icon': '', 'aria': '',
             'handle_type': HandleType.NONE, 'url': '',
-            'url_type': UrlType.NONE, 'option': '', 'modal': '', 'field': ''
+            'url_type': UrlType.NONE, 'option': '', 'modal': '', 'field': '',
+            'group': ''
         })
 
     def set_icon(self, icon: HtmlTag):

@@ -1,50 +1,23 @@
 <!-- reactions.html start -->
-
 {# --- template variable defines for includes --- #}
 {# reactions template expects: 'target_id' as id of target opinion/comment #}
 {#                             'target_slug' as slug of target opinion/comment #}
 {#                             'target_type' as opinion/comment #}
+{#                             'target_author' as id of opinion/comment author #}
 {#                             'reactions' as list of Reaction #}
 {#                             'reaction_ctrls' as dict of ReactionCtrl #}
 
 {% load dict_value %}
 {% load reaction_ul_id %}
 {% load reaction_li_id %}
-{% load reaction_button_id %}
 
 {% reaction_ul_id target_type target_id as ul_id %}
 <ul id="{{ ul_id }}" class="nav list-unstyled d-flex">
     {% for reaction in reactions %}
         {% reaction_li_id reaction target_id as li_id %}
         <li id="{{ li_id }}">
-            {# button id is "id--react-{{ [agree|disagree|comment|follow|unfollow|share|hide|unhide|pin|unpin|report]-[opinion|comment] }}-{{ id of target [opinion|comment] }}", used to assign click handlers #}
-            {# tooltip needs to be on the button as the outer element, modal is in the inner span, otherwise tooltip reappears after closing modal #}
-            {% reaction_button_id reaction target_id as button_id %}
-            {% dict_value reaction_ctrls button_id as ctrl %}
-            {% if ctrl.visible %}
-                <button id="{{ button_id }}" type="button" aria-label="{{ reaction.aria }}"
-                    {% if ctrl.selected %}
-                        class="reactions reactions-selected"
-                    {% elif ctrl.disabled %}
-                        class="reactions reactions-disabled"
-                    {% else %}
-                        class="reactions"
-                    {% endif %}
-                    {% if ctrl.disabled %}
-                        disabled
-                    {% endif %}
-                    {% if reaction.is_slug_url %}
-                        data-bs-href="{% url reaction.url target_slug %}"
-                    {% elif reaction.is_id_url %}
-                        data-bs-href="{% url reaction.url target_id %}"
-                    {% endif %}
-                    {# using left placement for tooltip as stacked icons with fa-slash look terrible with top #}
-                    data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="{{ reaction.name }}">
-                    {{ reaction.icon | safe }}
-                </button>
-            {% endif %}
+            {% include "opinions/snippet/reaction.html" %}
         </li>
     {% endfor %}
 </ul>
-
 <!-- reactions.html end -->

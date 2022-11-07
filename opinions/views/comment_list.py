@@ -37,8 +37,8 @@ from opinions.comment_utils import (
     get_comment_lookup, COMMENT_ALWAYS_FILTERS, COMMENT_FILTERS_ORDER
 )
 from opinions.constants import (
-    STATUS_QUERY, AUTHOR_QUERY, SEARCH_QUERY, REORDER_QUERY, CONTENT_STATUS_CTX,
-    UNDER_REVIEW_CONTENT_CTX,
+    STATUS_QUERY, AUTHOR_QUERY, SEARCH_QUERY, REORDER_QUERY,
+    CONTENT_STATUS_CTX, UNDER_REVIEW_CONTENT_CTX,
     UNDER_REVIEW_COMMENT_CONTENT, HIDDEN_CONTENT_CTX, HIDDEN_COMMENT_CONTENT
 )
 from opinions.contexts.comment import comments_list_context_for_opinion

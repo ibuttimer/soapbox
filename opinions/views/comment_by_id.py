@@ -50,7 +50,9 @@ from opinions.contexts.comment import (
 )
 from opinions.queries import content_status_check
 from opinions.reactions import COMMENT_REACTIONS
-from opinions.views.opinion_by_id import like_patch, report_post, hide_patch
+from opinions.views.opinion_by_id import (
+    like_patch, report_post, hide_patch, follow_patch
+)
 from opinions.views.utils import (
     opinion_permission_check, comment_permission_check, DEFAULT_COMMENT_DEPTH,
     published_check, own_content_check
@@ -311,3 +313,17 @@ def comment_hide_patch(request: HttpRequest, pk: int) -> HttpResponse:
         }, status=HTTPStatus.OK)
 
     return response
+
+
+@login_required
+@require_http_methods([PATCH])
+def comment_follow_patch(request: HttpRequest, pk: int) -> HttpResponse:
+    """
+    View function to update follow comment author status.
+    :param request: http request
+    :param pk:      id of author
+    :return: http response
+    """
+    comment_permission_check(request, Crud.READ)
+
+    return follow_patch(request, Comment, pk)

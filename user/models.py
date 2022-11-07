@@ -39,8 +39,8 @@ class User(AbstractUser):
     (Recommended by
     https://docs.djangoproject.com/en/4.1/topics/auth/customizing/#auth-custom-user)
     """
-
     MODEL_NAME = 'User'
+
     # field names
     FIRST_NAME_FIELD = FIRST_NAME
     LAST_NAME_FIELD = LAST_NAME

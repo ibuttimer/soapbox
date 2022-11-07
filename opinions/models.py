@@ -36,8 +36,8 @@ from .constants import (
     STATUS_FIELD, USER_FIELD, SLUG_FIELD, CREATED_FIELD, UPDATED_FIELD,
     PUBLISHED_FIELD, PARENT_FIELD, LEVEL_FIELD,
     OPINION_FIELD, REQUESTED_FIELD, REASON_FIELD,
-    REVIEWER_FIELD, COMMENT_FIELD, RESOLVED_FIELD,
-    CLOSE_REVIEW_PERM, WITHDRAW_REVIEW_PERM, DESC_LOOKUP
+    REVIEWER_FIELD, COMMENT_FIELD, RESOLVED_FIELD, CLOSE_REVIEW_PERM,
+    WITHDRAW_REVIEW_PERM, DESC_LOOKUP, AUTHOR_FIELD
 )
 
 
@@ -388,3 +388,27 @@ def is_id_lookup(lookup: str):
     """
     lookup = lookup.lower()
     return lookup == ID_FIELD or lookup == f'{DESC_LOOKUP}{ID_FIELD}'
+
+
+class FollowStatus(models.Model):
+    """ FollowStatus model """
+
+    MODEL_NAME = 'FollowStatus'
+
+    # field names
+    ID_FIELD = ID_FIELD
+    AUTHOR_FIELD = AUTHOR_FIELD
+    USER_FIELD = USER_FIELD
+    UPDATED_FIELD = UPDATED_FIELD
+
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='authored_by'
+    )
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{FollowStatus.MODEL_NAME}[{self.id}]: ' \
+               f'{self.opinion if self.opinion else self.comment}'

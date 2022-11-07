@@ -20,23 +20,29 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
+from typing import Callable
+
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from utils import namespaced_url
 from .comment_data import CommentBundle
 from .constants import (
-    OPINION_ID_ROUTE_NAME, OPINION_LIKE_ID_ROUTE_NAME,
+    OPINION_LIKE_ID_ROUTE_NAME,
     OPINION_HIDE_ID_ROUTE_NAME, OPINION_COMMENT_ID_ROUTE_NAME,
     COMMENT_COMMENT_ID_ROUTE_NAME, COMMENT_LIKE_ID_ROUTE_NAME,
     COMMENT_HIDE_ID_ROUTE_NAME, OPINION_PIN_ID_ROUTE_NAME, ALL_FIELDS,
     COMMENT_REPORT_ID_ROUTE_NAME, OPINION_REPORT_ID_ROUTE_NAME,
-    OPINION_SLUG_ROUTE_NAME, COMMENT_SLUG_ROUTE_NAME
+    OPINION_SLUG_ROUTE_NAME, COMMENT_SLUG_ROUTE_NAME,
+    OPINION_FOLLOW_ID_ROUTE_NAME, COMMENT_FOLLOW_ID_ROUTE_NAME
 )
 from .data_structures import (
     Reaction, ReactionCtrl, HtmlTag, ContentStatus, UrlType
 )
 from .models import Opinion, Comment, AgreementStatus, PinStatus
-from .queries import opinion_is_pinned, get_content_status, StatusCheck
+from .queries import (
+    opinion_is_pinned, get_content_status, StatusCheck,
+    following_content_author, content_is_hidden
+)
 from .templatetags.reaction_button_id import reaction_button_id
 from .enums import ReactionStatus
 from opinions.views.utils import ensure_list
@@ -111,12 +117,12 @@ COMMENT_TEMPLATE = Reaction.modal_of(
 FOLLOW_TEMPLATE = Reaction.ajax_of(
     name="Follow opinion author", identifier="to-set", icon="", aria="to-set",
     url="to-set", url_type=UrlType.ID, option=ReactionStatus.FOLLOW.arg,
-    field=ReactionsList.FOLLOW_FIELD
+    field=ReactionsList.FOLLOW_FIELD, group="to-set"
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-user-tag"))
 UNFOLLOW_TEMPLATE = Reaction.ajax_of(
     name="to-set", identifier="to-set", icon="", aria="to-set",
     url="to-set", url_type=UrlType.ID, option=ReactionStatus.UNFOLLOW.arg,
-    field=ReactionsList.UNFOLLOW_FIELD
+    field=ReactionsList.UNFOLLOW_FIELD, group="to-set"
 ).set_icon(HtmlTag.i(clazz="fa-solid fa-user-xmark"))
 SHARE_TEMPLATE = Reaction.modal_of(
     name="to-set", identifier="to-set", icon="", aria="to-set",
@@ -157,12 +163,12 @@ OPINION_REACTIONS_LIST = ReactionsList(
         name="Follow opinion author",
         identifier=f"{ReactionStatus.FOLLOW.arg}-opinion",
         aria="Follow opinion author",
-        url=namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME)),
+        url=namespaced_url(OPINIONS_APP_NAME, OPINION_FOLLOW_ID_ROUTE_NAME)),
     unfollow=UNFOLLOW_TEMPLATE.copy(
         name="Unfollow opinion author",
         identifier=f"{ReactionStatus.UNFOLLOW.arg}-opinion",
         aria="Unfollow opinion author",
-        url=namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME)),
+        url=namespaced_url(OPINIONS_APP_NAME, OPINION_FOLLOW_ID_ROUTE_NAME)),
     share=SHARE_TEMPLATE.copy(
         name="Share opinion",
         identifier=f"{ReactionStatus.SHARE.arg}-opinion",
@@ -228,12 +234,12 @@ COMMENT_REACTIONS_LIST = ReactionsList(
         name="Follow comment author",
         identifier=f"{ReactionStatus.FOLLOW.arg}-comment",
         aria="Follow comment author",
-        url=namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME)),
+        url=namespaced_url(OPINIONS_APP_NAME, COMMENT_FOLLOW_ID_ROUTE_NAME)),
     unfollow=UNFOLLOW_TEMPLATE.copy(
         name="Unfollow comment author",
         identifier=f"{ReactionStatus.UNFOLLOW.arg}-comment",
         aria="Unfollow comment author",
-        url=namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME)),
+        url=namespaced_url(OPINIONS_APP_NAME, COMMENT_FOLLOW_ID_ROUTE_NAME)),
     share=SHARE_TEMPLATE.copy(
         name="Share comment",
         identifier=f"{ReactionStatus.SHARE.arg}-comment",
@@ -339,6 +345,34 @@ def get_reaction_status(
                 # set enabled and visibility conditions for reactions
                 enabled = {}
                 displayer = {}
+
+                def two_icon_single_display(
+                    ctrl_param: list[tuple[ReactionsList, bool, bool]],
+                    active_field: str,
+                    inactive_field: str,
+                    check_func: Callable[[[Opinion, Comment], User], bool]
+                ):
+                    """
+                    Process reaction with 2 separate icons but only 1 is ever
+                    displayed
+                    :param ctrl_param: list of tuples to control reactions
+                    :param active_field: reaction active field
+                    :param inactive_field: reaction inactive field
+                    :param check_func: function to check status
+                    """
+                    active = check_func(entry, user=user) \
+                        if any_true(displayer, [
+                            active_field, inactive_field
+                        ]) else False
+
+                    ctrl_param.extend([
+                        # reaction, selected, visible
+                        (getattr(reactions_list, active_field), active,
+                         displayer[active_field] and not active),
+                        (getattr(reactions_list, inactive_field), active,
+                         displayer[inactive_field] and active),
+                    ])
+
                 for field in ReactionsList.ALL_FIELDS:
                     if field in ReactionsList.PIN_FIELDS and \
                             pin_field is None:
@@ -398,49 +432,29 @@ def get_reaction_status(
                 ])
 
                 # get pin status for opinion
-                # (2 separate icons but only 1 ever displayed)
                 if pin_field is not None:
-                    pinned = False
-                    if any_true(displayer, ReactionsList.PIN_FIELDS):
-                        # need to display pin/unpin
-                        pinned = opinion_is_pinned(entry, user=user)
-
-                    control_param.extend([
-                        # reaction, selected, visible
-                        (reactions_list.pin, pinned,
-                         displayer[ReactionsList.PIN_FIELD] and not pinned),
-                        (reactions_list.unpin, pinned,
-                         displayer[ReactionsList.UNPIN_FIELD] and pinned),
-                    ])
+                    two_icon_single_display(
+                        control_param,
+                        ReactionsList.PIN_FIELD,
+                        ReactionsList.UNPIN_FIELD,
+                        opinion_is_pinned
+                    )
 
                 # get following status
-                # (2 separate icons but only 1 ever displayed)
-                following = False
-                if any_true(displayer, ReactionsList.FOLLOW_FIELDS):
-                    pass
-
-                control_param.extend([
-                    # reaction, selected, visible
-                    (reactions_list.follow, following,
-                     displayer[ReactionsList.FOLLOW_FIELD] and not following),
-                    (reactions_list.unfollow, not following,
-                     displayer[ReactionsList.UNFOLLOW_FIELD] and following),
-                ])
+                two_icon_single_display(
+                    control_param,
+                    ReactionsList.FOLLOW_FIELD,
+                    ReactionsList.UNFOLLOW_FIELD,
+                    following_content_author
+                )
 
                 # get hidden status
-                # (2 separate icons but only 1 ever displayed)
-                hidden = False
-                if any_true(displayer, ReactionsList.HIDE_FIELDS):
-                    hidden = get_content_status(
-                        entry, StatusCheck.HIDDEN, user=user).hidden
-
-                control_param.extend([
-                    # reaction, selected, visible
-                    (reactions_list.hide, hidden,
-                     displayer[ReactionsList.HIDE_FIELD] and not hidden),
-                    (reactions_list.show, not hidden,
-                     displayer[ReactionsList.SHOW_FIELD] and hidden),
-                ])
+                two_icon_single_display(
+                    control_param,
+                    ReactionsList.HIDE_FIELD,
+                    ReactionsList.SHOW_FIELD,
+                    content_is_hidden
+                )
 
                 # get reported status
                 reported = False

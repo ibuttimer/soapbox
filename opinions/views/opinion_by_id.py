@@ -57,11 +57,12 @@ from opinions.constants import (
     STATUS_CTX, OPINION_FORM_CTX, REPORT_FORM_CTX, IS_PREVIEW_CTX,
     ALL_FIELDS, VIEW_OK_CTX, UNDER_REVIEW_TITLE, UNDER_REVIEW_EXCERPT,
     UNDER_REVIEW_TITLE_CTX, UNDER_REVIEW_EXCERPT_CTX, UNDER_REVIEW_CONTENT_CTX,
-    UNDER_REVIEW_OPINION_CONTENT, TEMPLATE_TARGET_SLUG
+    UNDER_REVIEW_OPINION_CONTENT, TEMPLATE_TARGET_SLUG, TEMPLATE_TARGET_AUTHOR
 )
 from opinions.forms import OpinionForm, CommentForm, ReviewForm
 from opinions.models import (
-    Opinion, Comment, AgreementStatus, HideStatus, PinStatus, Review
+    Opinion, Comment, AgreementStatus, HideStatus, PinStatus, Review,
+    FollowStatus
 )
 from opinions.queries import content_status_check
 from opinions.reactions import (
@@ -72,7 +73,7 @@ from opinions.views.utils import (
     opinion_permission_check, opinion_save_query_args, timestamp_content,
     own_content_check, published_check, get_opinion_context,
     render_opinion_form, comment_permission_check, like_query_args,
-    hide_query_args, pin_query_args, generate_excerpt
+    hide_query_args, pin_query_args, generate_excerpt, follow_query_args
 )
 from opinions.enums import QueryStatus, ReactionStatus
 
@@ -431,7 +432,7 @@ def opinion_status_patch(request: HttpRequest, pk: int) -> HttpResponse:
 
     own_content_check(request, opinion_obj)
 
-    status, query = opinion_save_query_args(request)
+    status, _ = opinion_save_query_args(request)
 
     opinion_obj.status = status
     opinion_obj.save()
@@ -612,10 +613,10 @@ def report_post(
 
 def react_response(
     request: HttpRequest, content: Union[Opinion, Comment],
-    code: HTTPStatus
+    code: Union[HTTPStatus, int]
 ) -> JsonResponse:
     """
-    Generate response to reaction update.
+    Generate reactions element response to a reaction update.
     :param request: http request
     :param content: opinion or comment
     :param code: status code for response
@@ -626,6 +627,9 @@ def react_response(
 
     target_type = content.__class__._meta.model_name.lower()
 
+    # TODO after follow/unfollow reflect status ia all elements by author
+    # not just the one clicked
+
     return JsonResponse({
         'element_id': reaction_ul_id(target_type, content.id),
         'html': render_to_string(
@@ -635,6 +639,7 @@ def react_response(
                 # reactions template
                 TEMPLATE_TARGET_ID: content.id,
                 TEMPLATE_TARGET_SLUG: content.slug,
+                TEMPLATE_TARGET_AUTHOR: content.user.id,
                 TEMPLATE_TARGET_TYPE: target_type,
                 TEMPLATE_REACTIONS: OPINION_REACTIONS
                 if isinstance(content, Opinion) else COMMENT_REACTIONS,
@@ -693,3 +698,52 @@ def hide_patch(
     return redirect_response(HOME_URL, extra={
             STATUS_CTX: reaction.arg
         }, status=code)
+
+
+@login_required
+@require_http_methods([PATCH])
+def opinion_follow_patch(request: HttpRequest, pk: int) -> HttpResponse:
+    """
+    View function to update follow opinion author status.
+    :param request: http request
+    :param pk:      id of content
+    :return: http response
+    """
+    opinion_permission_check(request, Crud.READ)
+
+    return follow_patch(request, Opinion, pk)
+
+
+def follow_patch(
+        request: HttpRequest, model: Type[Model], pk: int) -> HttpResponse:
+    """
+    View function to update follow content author status.
+    :param request: http request
+    :param model:   content model class
+    :param pk:      id of content
+    :return: http response
+    """
+    content = get_object_or_404(model, pk=pk)
+
+    reaction = follow_query_args(request)
+
+    code = HTTPStatus.BAD_REQUEST
+    if reaction in [ReactionStatus.FOLLOW, ReactionStatus.UNFOLLOW]:
+        query_args = {
+            FollowStatus.AUTHOR_FIELD: content.user,
+            FollowStatus.USER_FIELD: request.user
+        }
+        query = FollowStatus.objects.filter(**query_args)
+
+        code = HTTPStatus.NO_CONTENT
+        if query.exists() and reaction == ReactionStatus.UNFOLLOW:
+            # remove follow record if exists, otherwise no change
+            deleted, _ = query.delete()
+            if deleted:
+                code = HTTPStatus.OK
+        elif reaction == ReactionStatus.FOLLOW:
+            obj, created = FollowStatus.objects.get_or_create(**query_args)
+            if created:
+                code = HTTPStatus.OK
+
+    return react_response(request, content, code)

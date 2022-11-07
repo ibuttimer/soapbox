@@ -29,11 +29,13 @@ from django.http import HttpResponse
 
 from categories import (
     REACTION_AGREE,
-    REACTION_DISAGREE, REACTION_PIN, REACTION_UNPIN
+    REACTION_DISAGREE, REACTION_PIN, REACTION_UNPIN, REACTION_FOLLOW,
+    REACTION_UNFOLLOW
 )
 from categories.models import Status
 from opinions.constants import (
-    STATUS_QUERY, OPINION_LIKE_ID_ROUTE_NAME, OPINION_PIN_ID_ROUTE_NAME
+    STATUS_QUERY, OPINION_LIKE_ID_ROUTE_NAME, OPINION_PIN_ID_ROUTE_NAME,
+    OPINION_FOLLOW_ID_ROUTE_NAME
 )
 from opinions.data_structures import Reaction
 from opinions.models import Opinion
@@ -56,6 +58,11 @@ PIN_REACTIONS = [REACTION_PIN, REACTION_UNPIN]
 PIN_PARAMS = {
     REACTION_PIN: ReactionStatus.PIN,
     REACTION_UNPIN: ReactionStatus.UNPIN,
+}
+FOLLOW_REACTIONS = [REACTION_FOLLOW, REACTION_UNFOLLOW]
+FOLLOW_PARAMS = {
+    REACTION_FOLLOW: ReactionStatus.FOLLOW,
+    REACTION_UNFOLLOW: ReactionStatus.UNFOLLOW,
 }
 
 
@@ -131,7 +138,7 @@ class TestOpinionReaction(SoupMixin, OpinionMixin, BaseOpinionTest):
                     # set setting
                     agree = query_params[index] == ReactionStatus.AGREE
                     disagree = query_params[index] == ReactionStatus.DISAGREE
-                self.verify_opinion_like_status(
+                self.verify_opinion_reactions_status(
                     opinion, response, [
                         (OPINION_REACTIONS_LIST.agree, agree),
                         (OPINION_REACTIONS_LIST.disagree, disagree)
@@ -176,13 +183,59 @@ class TestOpinionReaction(SoupMixin, OpinionMixin, BaseOpinionTest):
                 # ok if changed, no content if no change
                 code = HTTPStatus.OK if index % 2 == 0 else\
                     HTTPStatus.NO_CONTENT
-                self.verify_opinion_like_status(
+                self.verify_opinion_reactions_status(
                     opinion, response, [
                         (OPINION_REACTIONS_LIST.unpin
                          if pinned else OPINION_REACTIONS_LIST.pin, pinned)
                     ], code)
 
-    def verify_opinion_like_status(
+    def test_opinion_follow_patch(self):
+        """
+        Test setting follow/unfollow status of opinion
+        """
+        opinion = TestOpinionReaction.opinions[0]
+        logged_in_user = TestOpinionReaction.login_user(
+            self, TestOpinionReaction.get_other_user(opinion.user))
+
+        self.assertNotEqual(logged_in_user, opinion.user)
+
+        # like statuses and query params
+        statuses = list(
+            Status.objects.filter(name__in=FOLLOW_REACTIONS)
+        )
+        # f - f => f
+        query_params = [
+            FOLLOW_PARAMS[statuses[0].name] for _ in range(2)
+        ]
+        # u - u => u
+        query_params.extend([
+            FOLLOW_PARAMS[statuses[1].name] for _ in range(2)
+        ])
+
+        for index, param in enumerate(query_params):
+            with self.subTest(
+                    f'status {param.arg} index {index}'):
+                url = reverse_q(
+                    namespaced_url(
+                        OPINIONS_APP_NAME, OPINION_FOLLOW_ID_ROUTE_NAME),
+                    args=[opinion.id],
+                    query_kwargs={
+                        STATUS_QUERY: param.arg
+                    })
+                response = self.client.patch(url)
+
+                follow = param == ReactionStatus.FOLLOW
+                # ok if changed, no content if no change
+                code = HTTPStatus.OK if index % 2 == 0 else\
+                    HTTPStatus.NO_CONTENT
+                self.verify_opinion_reactions_status(
+                    opinion, response, [
+                        (OPINION_REACTIONS_LIST.unfollow
+                         if follow else OPINION_REACTIONS_LIST.follow,
+                         follow)
+                    ], code)
+
+    def verify_opinion_reactions_status(
                 self, opinion: Opinion, response: HttpResponse,
                 reaction_selected: list[tuple[Reaction, bool]],
                 code: HTTPStatus

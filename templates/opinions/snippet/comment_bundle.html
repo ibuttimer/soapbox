@@ -82,13 +82,16 @@
                                 {# reactions template expects: 'target_id' as id of target opinion/comment #}
                                 {#                             'target_slug' as slug of target opinion/comment #}
                                 {#                             'target_type' as opinion/comment #}
+                                {#                             'target_author' as id of opinion/comment author #}
                                 {#                             'reactions' as list of Reaction #}
                                 {#                             'reaction_ctrls' as dict of ReactionCtrl #}
                                 {% with reactions=comment_reactions %}
                                     {% with target_type="comment" %}
                                         {% with target_id=bundle.comment.id %}
-                                            {% with target_slug=bundle.comment.slug %}
-                                                {% include "opinions/snippet/reactions.html" %}
+                                            {% with target_author=bundle.comment.user.id %}
+                                                {% with target_slug=bundle.comment.slug %}
+                                                    {% include "opinions/snippet/reactions.html" %}
+                                                {% endwith %}
                                             {% endwith %}
                                         {% endwith %}
                                     {% endwith %}
