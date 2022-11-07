@@ -32,18 +32,19 @@ from categories import (
 from opinions import (
     OPINION_ID_ROUTE_NAME
 )
-from opinions.constants import UNDER_REVIEW_COMMENT_CONTENT
+from opinions.constants import UNDER_REVIEW_COMMENT_CONTENT, \
+    COMMENT_ID_ROUTE_NAME, COMMENT_SLUG_ROUTE_NAME
 from opinions.models import Opinion, Comment
 from soapbox import OPINIONS_APP_NAME, USER_APP_NAME
 from user import USER_ID_ROUTE_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
-from .base_opinion_test import BaseOpinionTest
+from .base_comment_test import BaseCommentTest
 from ..category_mixin import CategoryMixin
 from ..soup_mixin import SoupMixin
 from ..user.base_user_test import BaseUserTest
 
-OPINION_VIEW_TEMPLATE = f'{OPINIONS_APP_NAME}/opinion_view.html'
+COMMENT_VIEW_TEMPLATE = f'{OPINIONS_APP_NAME}/comment_view.html'
 OPINION_VIEW_COMMENTS_TEMPLATE = \
     f'{OPINIONS_APP_NAME}/snippet/view_comments.html'
 OPINION_COMMENTS_BUNDLE_TEMPLATE = \
@@ -51,10 +52,13 @@ OPINION_COMMENTS_BUNDLE_TEMPLATE = \
 OPINION_COMMENTS_REACTIONS_TEMPLATE = \
     f'{OPINIONS_APP_NAME}/snippet/reactions.html'
 
+BY_ID = 'id'
+BY_SLUG = 'slug'
 
-class TestCommentView(SoupMixin, CategoryMixin, BaseOpinionTest):
+
+class TestCommentView(SoupMixin, CategoryMixin, BaseCommentTest):
     """
-    Test opinion page view
+    Test comment page view
     https://docs.djangoproject.com/en/4.1/topics/testing/tools/
     """
 
@@ -79,59 +83,92 @@ class TestCommentView(SoupMixin, CategoryMixin, BaseOpinionTest):
         """
         return BaseUserTest.login_user_by_id(self, pk)
 
-    def get_opinion_by_id(self, pk: int) -> HttpResponse:
+    def get_comment_by_id(self, pk: int) -> HttpResponse:
         """
-        Get the opinion page
-        :param pk: id of opinion
+        Get the comment page
+        :param pk: id of comment
         """
         return self.client.get(
             reverse_q(
-                namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME),
+                namespaced_url(OPINIONS_APP_NAME, COMMENT_ID_ROUTE_NAME),
                 args=[pk]))
 
-    def get_other_users_opinions(
-            self, not_me: User, status: str) -> list[Opinion]:
+    def get_comment_by_slug(self, slug: str) -> HttpResponse:
         """
-        Get a list of other users' opinions with the specified status
+        Get the comment page
+        :param slug: slug of comment
+        """
+        return self.client.get(
+            reverse_q(
+                namespaced_url(OPINIONS_APP_NAME, COMMENT_SLUG_ROUTE_NAME),
+                args=[slug]))
+
+    def get_comment_by(
+            self, identifier: [int, str], comment_by: str) -> HttpResponse:
+        """
+        Get the comment page
+        :param identifier: comment identifier
+        :param comment_by: method of accessing opinion; 'id' or 'slug'
+        :returns response
+        """
+        get_by = self.get_comment_by_id \
+            if comment_by == BY_ID else self.get_comment_by_slug
+        return get_by(identifier)
+
+    def get_other_users_comments(
+            self, not_me: User, status: str) -> list[Comment]:
+        """
+        Get a list of other users' comments with the specified status
         :param not_me: user to
         :param status: required status
-        :return: list of opinions
+        :return: list of comments
         """
-        # get list of other users' published opinions
-        opinions = list(
-            filter(lambda op: op.user.id != not_me.id
-                   and op.status.name == status,
-                   TestCommentView.opinions)
+        # get list of other users' published comments
+        comments = list(
+            filter(lambda cmt: cmt.user.id != not_me.id
+                   and cmt.status.name == status,
+                   TestCommentView.comments)
         )
         self.assertGreaterEqual(
-            len(opinions), 1, msg=f'No opinions with {status} status')
-        return opinions
+            len(comments), 1, msg=f'No comments with {status} status')
+        return comments
 
-    def test_get_other_opinion_with_comment(self):
-        """ Test comment content of opinion of not logged-in user """
+    def check_get_other_comment(self, comment_by: str):
+        """ Test comment content of not logged-in user """
         _, key = TestCommentView.get_user_by_index(0)
         logged_in_user = self.login_user_by_key(key)
 
-        # get list of other users' published opinions
-        opinions = self.get_other_users_opinions(
+        # get list of other users' published comments
+        comments = self.get_other_users_comments(
             logged_in_user, STATUS_PUBLISHED)
-        opinion = opinions[0]
+        comment = comments[0]
 
-        self.assertNotEqual(logged_in_user, opinion.user)
-        response = self.get_opinion_by_id(opinion.id)
+        self.assertNotEqual(logged_in_user, comment.user)
+        response = self.get_comment_by(
+            comment.id if comment_by == BY_ID else comment.slug, comment_by)
         self.assertEqual(response.status_code, HTTPStatus.OK)
         for template in [
-            OPINION_VIEW_TEMPLATE, OPINION_VIEW_COMMENTS_TEMPLATE,
+            COMMENT_VIEW_TEMPLATE, OPINION_VIEW_COMMENTS_TEMPLATE,
             OPINION_COMMENTS_BUNDLE_TEMPLATE,
             OPINION_COMMENTS_REACTIONS_TEMPLATE
         ]:
             self.assertTemplateUsed(response, template)
 
         comments = Comment.objects.filter(**{
-            Comment.OPINION_FIELD: opinion,
+            Comment.OPINION_FIELD: comment.opinion,
             Comment.PARENT_FIELD: Comment.NO_PARENT
         })
         TestCommentView.verify_comment_content(self, comments[0], response)
+
+        # TODO extend comment testing to comments on comments
+
+    def test_get_other_comment_by_id(self):
+        """ Test comment content by id of not logged-in user """
+        self.check_get_other_comment(BY_ID)
+
+    def test_get_other_comment_by_slug(self):
+        """ Test comment content by slug of not logged-in user """
+        self.check_get_other_comment(BY_SLUG)
 
     @staticmethod
     def verify_comment_content(test_case: TestCase, comment: Comment,

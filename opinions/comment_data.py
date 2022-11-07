@@ -31,11 +31,13 @@ from user.models import User
 from utils import reverse_q, namespaced_url
 from .constants import (
     PAGE_QUERY, PER_PAGE_QUERY, PARENT_ID_QUERY, COMMENT_DEPTH_QUERY,
-    COMMENT_MORE_ROUTE_NAME, OPINION_ID_QUERY
+    COMMENT_MORE_ROUTE_NAME, OPINION_ID_QUERY, ID_QUERY, OPINION_CTX
 )
 from .models import Comment, Opinion, AgreementStatus, HideStatus, PinStatus
 from .comment_utils import get_comment_queryset
-from opinions.views.utils import DEFAULT_COMMENT_DEPTH, ensure_list
+from opinions.views.utils import (
+    DEFAULT_COMMENT_DEPTH, ensure_list, query_search_term
+)
 from .enums import QueryArg, PerPage
 from .queries import content_status_check
 
@@ -81,6 +83,10 @@ class CommentBundle(CommentData):
     """
     comments: list[CommentData]
     """ Replies to comment """
+    comment_query: [str, None]
+    """ Query to get sub-level comments """
+    dynamic_insert: bool
+    """ Object was dynamically inserted, so is not in correct location """
     collapse_id: str
     """ Id for comment collapse """
     next_page: [str, None]
@@ -91,6 +97,8 @@ class CommentBundle(CommentData):
         self.comments = [] if comments is None else comments
         self.collapse_id = CommentBundle.generate_collapse_id(comment.id)
         self.next_page = None
+        self.comment_query = None
+        self.dynamic_insert = False
 
     def __str__(self):
         text = f'{self.comment} {len(self.comments)} replies' \
@@ -138,46 +146,128 @@ class CommentBundle(CommentData):
         )))
 
 
+def get_comment_query_args(
+        opinion: Union[int, Opinion] = None,
+        comment: Union[int, Comment] = None,
+        parent: Union[int, Comment] = None,
+        depth: int = DEFAULT_COMMENT_DEPTH,
+        page: int = 1, per_page: PerPage = PerPage.DEFAULT
+) -> dict[str, QueryArg]:
+    """
+    Get comment query args
+    :param opinion: opinion (id or object) to get comments for; default None
+    :param comment: comment (id or object) to get comments for; default None
+    :param parent: parent (id or object) to get comments for; default None
+    :param depth: comment depth; default DEFAULT_COMMENT_DEPTH
+    :param page: 1-based page number to get; default 1
+    :param per_page: options per page; default PerPage.DEFAULT
+    :return: list of comments (including a 'more' element if necessary)
+    """
+    arg_list = [
+        (PAGE_QUERY, page),
+        (PER_PAGE_QUERY, per_page),
+        (COMMENT_DEPTH_QUERY, depth)
+    ]
+    if opinion:
+        if isinstance(opinion, Opinion):
+            opinion = opinion.id
+        else:
+            assert isinstance(opinion, int), \
+                f"Expected [Opinion, int] got {type(opinion)} {opinion}"
+        arg_list.append(
+            (OPINION_ID_QUERY, opinion)
+        )
+
+    if comment:
+        if isinstance(comment, Comment):
+            comment = comment.id
+        else:
+            assert isinstance(comment, int),\
+                f"Expected [Comment, int] got {type(comment)} {comment}"
+        arg_list.append(
+            (ID_QUERY, comment)
+        )
+
+    parent_query = None
+    if parent:
+        if isinstance(parent, Comment):
+            parent = parent.id
+        else:
+            assert isinstance(parent, int),\
+                f"Expected [Comment, int] got {type(parent)} {parent}"
+        parent_query = (PARENT_ID_QUERY, parent)
+    elif comment is None:
+        parent_query = (PARENT_ID_QUERY, Comment.NO_PARENT)
+
+    if parent_query:
+        arg_list.append(parent_query)
+
+    return {
+        q: QueryArg(v, True) for q, v in arg_list
+    }
+
+
 def get_comment_tree(
-        query_params: Union[int, dict[str, QueryArg]], user: User
+    query_params: dict[str, QueryArg], user: User
 ) -> list[CommentBundle]:
     """
     Get comment tree, i.e. comments and comments on those comments etc.
-    :param query_params: query parameters or opinion id; default
-                page 1, PerPage.DEFAULT, DEFAULT_COMMENT_DEPTH
+    :param query_params: query parameters
     :param user: current user
     :return: list of comments (including a 'more' element if necessary)
     """
-    if isinstance(query_params, int):
-        query_params = {
-            q: QueryArg(v, True) for q, v in [
-                (OPINION_ID_QUERY, query_params),
-                (PARENT_ID_QUERY, Comment.NO_PARENT),
-                (PAGE_QUERY, 1),
-                (PER_PAGE_QUERY, PerPage.DEFAULT),
-                (COMMENT_DEPTH_QUERY, DEFAULT_COMMENT_DEPTH)
-            ]
-        }
-
     # get first level comments
     comment_bundles = get_comments_page(query_params, user)
 
     depth = query_params.get(COMMENT_DEPTH_QUERY, DEFAULT_COMMENT_DEPTH)
     if isinstance(depth, QueryArg):
-        depth = depth.query_arg_value
+        depth = depth.value_arg_or_value
 
+    sub_query_params = query_params.copy()
     if depth > 1:
-        sub_query_params = query_params.copy()
+        if Comment.ID_FIELD in sub_query_params:
+            # remove comment id if present
+            del sub_query_params[Comment.ID_FIELD]
 
         # get first page of comments on comments
         sub_query_params[PAGE_QUERY] = 1
         sub_query_params[COMMENT_DEPTH_QUERY] = depth - 1
 
-        for comment_bundle in comment_bundles:
-            sub_query_params[PARENT_ID_QUERY] = comment_bundle.comment.id
+        def next_level_comments(
+                bundle: CommentBundle, sq_params: dict[str, QueryArg]):
             # recursive call to get next level comments
-            comment_bundle.comments = \
-                get_comment_tree(sub_query_params, user)
+            bundle.comments = get_comment_tree(sq_params, user)
+
+        next_level_func = next_level_comments
+    else:
+        # check if there are sub-level comments for another request
+        page = QueryArg.value_arg_or_object(
+            sub_query_params[PAGE_QUERY]) + 1 \
+            if PAGE_QUERY in sub_query_params else 1
+        sub_query_params[PAGE_QUERY] = page
+        sub_query_params[COMMENT_DEPTH_QUERY] = DEFAULT_COMMENT_DEPTH
+
+        # convert opinion query to opinion id query
+        if OPINION_CTX in sub_query_params:
+            opinion = sub_query_params[OPINION_CTX]
+            sub_query_params[OPINION_ID_QUERY] = \
+                QueryArg.value_arg_or_value(opinion).id
+            del sub_query_params[OPINION_CTX]
+
+        def next_level_query(
+                bundle: CommentBundle, sq_params: dict[str, QueryArg]):
+            # query to retrieve next level comments
+            query_set = get_comment_queryset(sq_params, user)
+            if query_set.exists():
+                bundle.comment_query = query_search_term(sq_params)
+
+        next_level_func = next_level_query
+
+    for comment_bundle in comment_bundles:
+        if comment_bundle.is_more_placeholder:
+            continue
+        sub_query_params[PARENT_ID_QUERY] = comment_bundle.comment.id
+        next_level_func(comment_bundle, sub_query_params)
 
     return comment_bundles
 
@@ -193,10 +283,10 @@ def get_comments_page(
     query_set = get_comment_queryset(query_params, user)
 
     per_page = query_params.get(
-        PER_PAGE_QUERY, PerPage.DEFAULT).query_arg_value
+        PER_PAGE_QUERY, PerPage.DEFAULT).value_arg_or_value
     page = query_params.get(PAGE_QUERY, 1)
     if isinstance(page, QueryArg):
-        page = page.query_arg_value
+        page = page.value_arg_or_value
     start = per_page * (page - 1)
     end = start + per_page
 
@@ -211,12 +301,16 @@ def get_comments_page(
 
     if add_more_placeholder:
         # set placeholder for more
-        next_query_params = query_params.copy()
+        next_query_params = {}
+        for q, v in query_params.items():
+            if not isinstance(v, QueryArg):
+                next_query_params[q] = v
+            elif isinstance(v, QueryArg) and v.was_set:
+                # filter out unset query params
+                next_query_params[q] = v.value_arg_or_value
+
         next_query_params[PAGE_QUERY] = page + 1
         next_query_params[PER_PAGE_QUERY] = per_page
-        for q, v in next_query_params.items():
-            if isinstance(v, QueryArg):
-                next_query_params[q] = v.query_arg_value
 
         comments[-1].set_placeholder(
             reverse_q(

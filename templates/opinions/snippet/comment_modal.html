@@ -87,15 +87,31 @@
                 },
                 data: formData,
             }).done(function(data) {
-                // add new comment to end of container
-                $("#" + data.parent_container).append(data.html);
+                const parentSelector = `#${data.parent_container}`;
+                //                                                     "id--comment-section-<id>"
+                const lastCommentSectionSelector = `${parentSelector} > div:last-child`;
+                //                                                     "id--comment-card-{more}-<id>"
+                const lastCommentId = $(`${lastCommentSectionSelector} > div:first-child`).attr('id')
+                // last section in parent container is a 'more'
+                const lastIsMore = lastCommentId.includes('more');
+
+                if (lastIsMore) {
+                    // insert new html before 'more' comment section, marking as for removal if 'more' requested
+                    $(lastCommentSectionSelector).before(
+                        data.html.replace('dynamic-insert', 'dynamic-insert-remove')
+                    );
+                } else {
+                    // add new comment to end of container
+                    $(parentSelector).append(data.html);
+                }
 
                 // make toggle visible and expand collapse if necessary
                 if (!data.opinion_comment) {
-                    $("#" + data.parent_container + "-toggle").removeAttr('hidden');
-                    $("#" + data.parent_container + "-toggle").removeClass('collapsed');
+                    const toggleSelector = `${parentSelector}-toggle`;
+                    $(toggleSelector).removeAttr('hidden');
+                    $(toggleSelector).removeClass('collapsed');
 
-                    const bsCollapse = new bootstrap.Collapse("#" + data.parent_container, {
+                    const bsCollapse = new bootstrap.Collapse(parentSelector, {
                         toggle: false
                     });
                     bsCollapse.show();

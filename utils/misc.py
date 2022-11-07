@@ -73,7 +73,7 @@ def url_path(*args: str) -> str:
     :param args: elements of path
     :return: path string
     """
-    return "".join([append_slash(segment) for segment in args])
+    return "".join([append_slash(segment) for segment in args if segment])
 
 
 def reverse_q(viewname, urlconf=None, args=None, kwargs=None,

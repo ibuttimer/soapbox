@@ -29,10 +29,12 @@ from categories import (
 from categories.models import Status
 from user.models import User
 from .data_structures import ContentStatus
-from .models import Opinion, PinStatus, Review, Comment, HideStatus
+from .models import (
+    Opinion, PinStatus, Review, Comment, HideStatus, FollowStatus
+)
 
 
-def opinion_is_pinned(opinion: Opinion, user: User = None):
+def opinion_is_pinned(opinion: Opinion, user: User = None) -> bool:
     """
     Check if an opinion is pinned
     :param opinion: opinion to check
@@ -45,6 +47,34 @@ def opinion_is_pinned(opinion: Opinion, user: User = None):
     if user:
         query_args[PinStatus.USER_FIELD] = user
     query = PinStatus.objects.filter(**query_args)
+    return query.exists()
+
+
+def content_is_hidden(
+        content: [Opinion, Comment], user: User = None) -> bool:
+    """
+    Check if an opinion is pinned
+    :param content: content to check
+    :param user: user to check with; default None, i.e. any user
+    :return: True if user has pinned opinion
+    """
+    return get_content_status(content, StatusCheck.HIDDEN, user=user).hidden
+
+
+def following_content_author(
+        content: [Opinion, Comment], user: User = None) -> bool:
+    """
+    Check if user is following content author
+    :param content: content to check
+    :param user: user to check with; default None, i.e. any user
+    :return: True if user is following
+    """
+    query_args = {
+        FollowStatus.AUTHOR_FIELD: content.user
+    }
+    if user:
+        query_args[FollowStatus.USER_FIELD] = user
+    query = FollowStatus.objects.filter(**query_args)
     return query.exists()
 
 

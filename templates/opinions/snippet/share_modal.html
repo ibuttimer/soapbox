@@ -1,0 +1,66 @@
+<!-- report_modal.html start -->
+{% load i18n %}
+{% load form_field %}
+
+<div class="modal fade" id="id--share-modal" tabindex="-1" aria-labelledby="Share opinion" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-fullscreen-md-down modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="id--share-modal-heading">
+                    {# content replaced by click handler #}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <fieldset>
+                    <div class="row mb-3">
+                        <div class="col-sm-10" id="id--share-url">
+                            {# content replaced by click event handler for button #}
+                        </div>
+                        <div class="col-sm-2">
+                            <button id="id--btn-share" type="button" class="btn btn-outline-success">{% trans "Copy" %}</button>
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="id--shared-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+            URL copied to clipboard.
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+
+        /* Submit handler for comment modal */
+        $("#id--btn-share").on("click", function (event) {
+
+            const url = $("#id--share-url").text();
+            navigator.clipboard.writeText(url).then(
+                () => {
+                    /* clipboard successfully set */
+                    const toastLiveExample = document.getElementById('id--shared-toast')
+                    const toast = new bootstrap.Toast(toastLiveExample)
+                    toast.show()
+                },
+                () => {
+                    /* clipboard write failed */
+                }
+            );
+        });
+    });
+</script>
+<!-- report_modal.html end -->

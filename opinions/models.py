@@ -24,6 +24,7 @@ from datetime import datetime, MINYEAR, timezone
 from typing import Type, Optional
 
 from django.db import models
+from django.utils.html import strip_tags
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import truncatechars
 
@@ -35,8 +36,8 @@ from .constants import (
     STATUS_FIELD, USER_FIELD, SLUG_FIELD, CREATED_FIELD, UPDATED_FIELD,
     PUBLISHED_FIELD, PARENT_FIELD, LEVEL_FIELD,
     OPINION_FIELD, REQUESTED_FIELD, REASON_FIELD,
-    REVIEWER_FIELD, COMMENT_FIELD, RESOLVED_FIELD,
-    CLOSE_REVIEW_PERM, WITHDRAW_REVIEW_PERM, DESC_LOOKUP
+    REVIEWER_FIELD, COMMENT_FIELD, RESOLVED_FIELD, CLOSE_REVIEW_PERM,
+    WITHDRAW_REVIEW_PERM, DESC_LOOKUP, AUTHOR_FIELD
 )
 
 
@@ -74,6 +75,8 @@ class Opinion(SlugMixin, models.Model):
     title = models.CharField(
         _('title'), max_length=OPINION_ATTRIB_TITLE_MAX_LEN, blank=False,
         unique=True)
+
+    # TODO ensure opinion content safe before saving to database
 
     content = models.CharField(
         _('content'), max_length=OPINION_ATTRIB_CONTENT_MAX_LEN, blank=False)
@@ -157,6 +160,8 @@ class Comment(SlugMixin, models.Model):
     content = models.CharField(
         _('content'), max_length=COMMENT_ATTRIB_CONTENT_MAX_LEN, blank=False)
 
+    # TODO ensure comment content safe before saving to database
+
     opinion = models.ForeignKey(Opinion, on_delete=models.CASCADE)
 
     parent = models.BigIntegerField(
@@ -189,9 +194,8 @@ class Comment(SlugMixin, models.Model):
         Set slug from specified content
         :param content: content to generate slug from
         """
-        # TODO remove html tags before generating slug
         self.slug = Comment.generate_unique_slug(
-            self, Comment.COMMENT_ATTRIB_SLUG_MAX_LEN, content)
+            self, Comment.COMMENT_ATTRIB_SLUG_MAX_LEN, strip_tags(content))
 
     @staticmethod
     def is_date_field(field: str):
@@ -384,3 +388,27 @@ def is_id_lookup(lookup: str):
     """
     lookup = lookup.lower()
     return lookup == ID_FIELD or lookup == f'{DESC_LOOKUP}{ID_FIELD}'
+
+
+class FollowStatus(models.Model):
+    """ FollowStatus model """
+
+    MODEL_NAME = 'FollowStatus'
+
+    # field names
+    ID_FIELD = ID_FIELD
+    AUTHOR_FIELD = AUTHOR_FIELD
+    USER_FIELD = USER_FIELD
+    UPDATED_FIELD = UPDATED_FIELD
+
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='authored_by'
+    )
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{FollowStatus.MODEL_NAME}[{self.id}]: ' \
+               f'{self.opinion if self.opinion else self.comment}'

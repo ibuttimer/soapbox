@@ -46,6 +46,8 @@ from opinions.views.utils import (
     comment_permission_check, timestamp_content
 )
 
+COMMENTS_CONTAINER_ID = 'id--comments-container'
+
 
 class CommentCreate(LoginRequiredMixin, View):
     """
@@ -86,10 +88,10 @@ class CommentCreate(LoginRequiredMixin, View):
             parent_container = \
                 CommentBundle.generate_collapse_id(comment.parent) \
                 if comment.parent != Comment.NO_PARENT else \
-                "id--comments-container"
+                COMMENTS_CONTAINER_ID
 
             context = get_comment_bundle_context(
-                comment.id, request.user, depth=0
+                comment.id, request.user, depth=0, is_dynamic_insert=True
             )
 
             response = JsonResponse({
@@ -142,7 +144,7 @@ class OpinionCommentCreate(CommentCreate):
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        return super(OpinionCommentCreate, self).post(request, pk)
+        return super().post(request, pk)
 
     def comment_hierarchy(self, comment: Comment, pk: int):
         """
@@ -171,7 +173,7 @@ class CommentCommentCreate(CommentCreate):
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        return super(CommentCommentCreate, self).post(request, pk)
+        return super().post(request, pk)
 
     def comment_hierarchy(self, comment: Comment, pk: int):
         """

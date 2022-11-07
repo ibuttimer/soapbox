@@ -32,6 +32,13 @@ class HandleType(Enum):
     MODAL = auto()
 
 
+class UrlType(Enum):
+    """ Url types enum """
+    NONE = 'none'
+    ID = 'id'
+    SLUG = 'slug'
+
+
 class HtmlTag:
     """ Class representing a HTML tag """
     tag: str
@@ -106,9 +113,11 @@ class Reaction:
     aria: str           # aria label
     handle_type: HandleType    # type; MODAL or AJAX
     url: str            # url
+    url_type: UrlType   # type; ID or SLUG
     option: str         # selected option
     modal: str          # target modal
     field: str          # ReactionsList field
+    group: str          # group identifier
 
     def __init__(self, **kwargs) -> None:
         for key, val in kwargs.items():
@@ -145,8 +154,9 @@ class Reaction:
         """
         reaction_kwargs = kwargs.copy()
         reaction_kwargs['handle_type'] = HandleType.MODAL
-        if 'option' not in reaction_kwargs:
-            reaction_kwargs['option'] = ''
+        for attrib in ['option', 'group']:
+            if attrib not in reaction_kwargs:
+                reaction_kwargs[attrib] = ''
         return Reaction(**reaction_kwargs)
 
     @classmethod
@@ -157,8 +167,9 @@ class Reaction:
         """
         return Reaction(**{
             'name': '', 'identifier': '', 'icon': '', 'aria': '',
-            'handle_type': HandleType.NONE, 'url': '', 'option': '',
-            'modal': '', 'field': ''
+            'handle_type': HandleType.NONE, 'url': '',
+            'url_type': UrlType.NONE, 'option': '', 'modal': '', 'field': '',
+            'group': ''
         })
 
     def set_icon(self, icon: HtmlTag):
@@ -214,6 +225,21 @@ class Reaction:
     def is_empty(self):
         """ Is NONE type """
         return self.handle_type == HandleType.NONE
+
+    @property
+    def is_id_url(self):
+        """ Is ID type """
+        return self.url_type == UrlType.ID
+
+    @property
+    def is_slug_url(self):
+        """ Is SLUG type """
+        return self.url_type == UrlType.SLUG
+
+    @property
+    def is_no_url(self):
+        """ Is NONE type """
+        return self.url_type == UrlType.NONE
 
     def __str__(self) -> str:
         return f'{type(self).__name__}: {self.name} {self.identifier}'

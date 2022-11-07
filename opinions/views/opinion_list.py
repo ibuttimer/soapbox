@@ -22,36 +22,33 @@
 #
 from datetime import datetime
 from enum import Enum
-from typing import Any, Type
+from typing import Any, Type, Callable
 from zoneinfo import ZoneInfo
-from http import HTTPStatus
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.paginator import Paginator
 from django.db.models import Q, QuerySet
-from django.db.models.functions import Lower
-from django.http import HttpRequest, HttpResponse
-from django.views import generic
+from django.http import HttpRequest
 
 from categories.models import Status, Category
-from soapbox import OPINIONS_APP_NAME
-from user.models import User
-from utils import Crud, app_template_path
 from opinions.comment_data import get_popularity_levels
 from opinions.constants import (
-    ORDER_QUERY, STATUS_QUERY, PER_PAGE_QUERY, TITLE_QUERY,
+    STATUS_QUERY, TITLE_QUERY,
     CONTENT_QUERY, CATEGORY_QUERY, AUTHOR_QUERY, ON_OR_AFTER_QUERY,
     ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY, EQUAL_QUERY,
-    OPINION_PAGINATION_ON_EACH_SIDE, OPINION_PAGINATION_ON_ENDS, SEARCH_QUERY,
-    REORDER_QUERY, ID_FIELD, HIDDEN_QUERY, DATE_NEWEST_LOOKUP,
-    DESC_LOOKUP, PINNED_QUERY, TEMPLATE_OPINION_REACTIONS,
+    SEARCH_QUERY, REORDER_QUERY, ID_FIELD, HIDDEN_QUERY, PINNED_QUERY,
+    TEMPLATE_OPINION_REACTIONS,
     TEMPLATE_REACTION_CTRLS, UNDER_REVIEW_TITLE, UNDER_REVIEW_EXCERPT,
     UNDER_REVIEW_OPINION_CONTENT, UNDER_REVIEW_TITLE_CTX,
     UNDER_REVIEW_EXCERPT_CTX, UNDER_REVIEW_CONTENT_CTX, CONTENT_STATUS_CTX,
     HIDDEN_CONTENT_CTX, HIDDEN_COMMENT_CONTENT
 )
-from opinions.models import Opinion, HideStatus, is_id_lookup, PinStatus
+from opinions.enums import (
+    QueryArg, QueryStatus, OpinionSortOrder, Hidden, Pinned,
+    ChoiceArg, SortOrder
+)
+from opinions.models import Opinion, HideStatus, PinStatus
 from opinions.queries import opinion_is_pinned, content_status_check
+from opinions.query_params import QuerySetParams, choice_arg_query
 from opinions.reactions import (
     OPINION_REACTIONS, get_reaction_status, ReactionsList
 )
@@ -60,17 +57,16 @@ from opinions.search import (
     DATE_QUERY_YR_GROUP, DATE_QUERY_MTH_GROUP,
     DATE_QUERY_DAY_GROUP, MARKER_CHARS
 )
+from opinions.views.content_list_mixin import ContentListMixin
 from opinions.views.utils import (
     opinion_list_query_args, opinion_permission_check,
-    opinion_search_query_args,
-    REORDER_REQ_QUERY_ARGS,
-    NON_REORDER_OPINION_LIST_QUERY_ARGS, ensure_list, DATE_QUERIES
+    opinion_search_query_args, REORDER_REQ_QUERY_ARGS,
+    NON_REORDER_OPINION_LIST_QUERY_ARGS, ensure_list, DATE_QUERIES,
+    query_search_term
 )
-from opinions.query_params import QuerySetParams, choice_arg_query
-from opinions.enums import (
-    QueryArg, QueryStatus, OpinionSortOrder, PerPage, Hidden, Pinned,
-    ChoiceArg
-)
+from soapbox import OPINIONS_APP_NAME
+from user.models import User
+from utils import Crud, app_template_path
 
 NON_DATE_QUERIES = [
     TITLE_QUERY, CONTENT_QUERY, AUTHOR_QUERY, CATEGORY_QUERY, STATUS_QUERY,
@@ -122,66 +118,48 @@ SEARCH_REGEX.extend([
 class ListTemplate(Enum):
     """ Enum representing possible response template """
     FULL_TEMPLATE = app_template_path(OPINIONS_APP_NAME, 'opinion_list.html')
+    """ Whole page template """
     CONTENT_TEMPLATE = app_template_path(OPINIONS_APP_NAME,
                                          'opinion_list_content.html')
+    """ List-only template for requery """
 
 
-class OpinionList(LoginRequiredMixin, generic.ListView):
+class OpinionList(LoginRequiredMixin, ContentListMixin):
     """
     Opinion list response
     """
+    # inherited from MultipleObjectMixin via ListView
     model = Opinion
 
     response_template: ListTemplate
     """ Response template to use """
 
-    sort_order: list[OpinionSortOrder]
-    """ Sort order options to display """
-
-    user: User
-    """ User which initiated request """
-
-    def get(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+    def permission_check_func(
+            self) -> Callable[[HttpRequest, Crud, bool], bool]:
         """
-        GET method for Opinion list
-        :param request: http request
-        :param args: additional arbitrary arguments
-        :param kwargs: additional keyword arguments
-        :return: http response
+        Get the permission check function
+        :return: permission check function
         """
-        opinion_permission_check(request, Crud.READ)
+        return opinion_permission_check
 
-        # TODO currently '/"/= can't be used in title/content
-        # as search depends on them
-        query_params = opinion_list_query_args(request)
+    def req_query_args(self) -> Callable[[HttpRequest], dict[str, QueryArg]]:
+        """
+        Get the request query args function
+        :return: request query args function
+        """
+        return opinion_list_query_args
 
-        self.user = request.user
-
+    def set_extra_context(self, query_params: dict[str, QueryArg]):
+        """
+        Set the context extra content to be added to context
+        :param query_params: request query
+        """
         # build search term string from values that were set
+        # inherited from ContextMixin via ListView
         self.extra_context = {
-            "repeat_search_term": '&'.join([
-                f'{q}={v.query_arg_value}'
-                for q, v in query_params.items()
-                if q not in REORDER_REQ_QUERY_ARGS and v.was_set])
+            "repeat_search_term": query_search_term(
+                query_params, exclude_queries=REORDER_REQ_QUERY_ARGS)
         }
-
-        # select sort order options to display
-        self.set_sort_order_options(request, query_params)
-
-        # set queryset
-        self.set_queryset(query_params, request.user)
-
-        # set ordering
-        self.set_ordering(query_params)
-
-        # set pagination
-        self.set_pagination(query_params)
-
-        # set template
-        self.select_template(query_params)
-
-        return super(OpinionList, self). \
-            get(request, *args, **kwargs)
 
     def set_queryset(self, query_params: dict[str, QueryArg], user: User):
         """
@@ -222,31 +200,12 @@ class OpinionList(LoginRequiredMixin, generic.ListView):
             so for so in OpinionSortOrder if so not in excludes
         ]
 
-    def set_ordering(self, query_params: dict[str, QueryArg]):
+    def get_sort_order_enum(self) -> Type[SortOrder]:
         """
-        Set the ordering for the response
-        :param query_params: request query
+        Get the subclass-specific SortOrder enum
+        :return: SortOrder enum
         """
-        # set ordering
-        order: OpinionSortOrder = query_params[ORDER_QUERY].value
-        ordering = [order.order]    # list of lookups
-        if order.to_field() != OpinionSortOrder.DEFAULT.to_field():
-            # add secondary sort by default sort option
-            ordering.append(OpinionSortOrder.DEFAULT.order)
-        # published date is only set once opinion is published so apply an
-        # additional orderings: by updated and id
-        ordering.append(f'{DATE_NEWEST_LOOKUP}{Opinion.UPDATED_FIELD}')
-        ordering.append(f'{Opinion.ID_FIELD}')
-        self.ordering = tuple(ordering)
-
-    def set_pagination(
-            self, query_params: dict[str, QueryArg]):
-        """
-        Set pagination for the response
-        :param query_params: request query
-        """
-        # set pagination
-        self.paginate_by = query_params[PER_PAGE_QUERY].query_arg_value
+        return OpinionSortOrder
 
     def select_template(
             self, query_params: dict[str, QueryArg]):
@@ -259,24 +218,8 @@ class OpinionList(LoginRequiredMixin, generic.ListView):
         self.response_template = ListTemplate.CONTENT_TEMPLATE \
             if reorder_query else ListTemplate.FULL_TEMPLATE
 
+        # inherited from TemplateResponseMixin via ListView
         self.template_name = self.response_template.value
-
-    def get_ordering(self):
-        """ Get ordering of list """
-        ordering = self.ordering
-        if isinstance(ordering, tuple):
-            # make primary sort case-insensitive
-            # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#django.db.models.query.QuerySet.order_by
-            def insensitive_order(order: str):
-                """ Make text orderings case-insensitive """
-                non_text = Opinion.is_date_lookup(order) or is_id_lookup(order)
-                return \
-                    order if non_text else \
-                    Lower(order[1:]).desc() \
-                    if order.startswith(DESC_LOOKUP) else Lower(order)
-            ordering = tuple(
-                map(insensitive_order, ordering))
-        return ordering
 
     def get_context_data(self, *, object_list=None, **kwargs) -> dict:
         """
@@ -285,37 +228,15 @@ class OpinionList(LoginRequiredMixin, generic.ListView):
         :param kwargs: additional keyword arguments
         :return:
         """
-        context = super(OpinionList, self).\
-            get_context_data(object_list=object_list, **kwargs)
+        context = super().get_context_data(object_list=object_list, **kwargs)
 
         def is_pinned(opinion: Opinion):
             """ Check if opinion is pinned by current user """
             return opinion_is_pinned(opinion, self.user)
 
-        # initial ordering if secondary sort
-        main_order = self.ordering \
-            if isinstance(self.ordering, str) else self.ordering[0]
+        self.context_std_elements(context)
+
         context.update({
-            'sort_order': self.sort_order,
-            'selected_sort': list(
-                filter(lambda order: order.order == main_order,
-                       OpinionSortOrder)
-            )[0],
-            'per_page': list(PerPage),
-            'selected_per_page': self.paginate_by,
-            'page_range': [{
-                'page_num': page,
-                'disabled': page == Paginator.ELLIPSIS,
-                'href':
-                    f"?page={page}" if page != Paginator.ELLIPSIS else '#',
-                'label':
-                    f"page {page}" if page != Paginator.ELLIPSIS else '',
-                'hidden': f'{bool(page != Paginator.ELLIPSIS)}',
-            } for page in context['paginator'].get_elided_page_range(
-                number=context['page_obj'].number,
-                on_each_side=OPINION_PAGINATION_ON_EACH_SIDE,
-                on_ends=OPINION_PAGINATION_ON_ENDS)
-            ],
             "popularity": get_popularity_levels(context['opinion_list']),
             TEMPLATE_OPINION_REACTIONS: OPINION_REACTIONS,
             TEMPLATE_REACTION_CTRLS: get_reaction_status(
@@ -338,20 +259,12 @@ class OpinionList(LoginRequiredMixin, generic.ListView):
         })
         return context
 
-    def render_to_response(self, context, **response_kwargs):
+    def is_list_only_template(self) -> bool:
         """
-        Return a response, using the `response_class` for this view, with a
-        template rendered with the given context.
-
-        Pass response_kwargs to the constructor of the response class.
+        Is the current render template, the list only template
+        :return: True if the list only template
         """
-        # return 204 for no content
-        if self.response_template == ListTemplate.CONTENT_TEMPLATE and \
-                len(context['object_list']) == 0:
-            response_kwargs['status'] = HTTPStatus.NO_CONTENT
-
-        return super(OpinionList, self).render_to_response(
-            context, **response_kwargs)
+        return self.response_template == ListTemplate.CONTENT_TEMPLATE
 
 
 class OpinionSearch(OpinionList):
@@ -359,21 +272,18 @@ class OpinionSearch(OpinionList):
     Search Opinion list response
     """
 
-    def get(self, request: HttpRequest, *args, **kwargs):
+    def req_query_args(self) -> Callable[[HttpRequest], dict[str, QueryArg]]:
         """
-        GET method for Opinion search list
-        :param request: http request
-        :param args: additional arbitrary arguments
-        :param kwargs: additional keyword arguments
-        :return: http response
+        Get the request query args function
+        :return: request query args function
         """
-        opinion_permission_check(request, Crud.READ)
+        return opinion_search_query_args
 
-        # Note: values must be in quotes for search query
-        query_params = opinion_search_query_args(request)
-
-        self.user = request.user
-
+    def set_extra_context(self, query_params: dict[str, QueryArg]):
+        """
+        Set the context extra content to be added to context
+        :param query_params: request query
+        """
         # build search term string from values that were set
         self.extra_context = {
             "search_term": ', '.join([
@@ -384,24 +294,6 @@ class OpinionSearch(OpinionList):
                 f'{SEARCH_QUERY}='
                 f'{query_params[SEARCH_QUERY].value}'
         }
-
-        # select sort order options to display
-        self.set_sort_order_options(request, query_params)
-
-        # set the query
-        self.set_queryset(query_params, request.user)
-
-        # set ordering
-        self.set_ordering(query_params)
-
-        # set pagination
-        self.set_pagination(query_params)
-
-        # set template
-        self.select_template(query_params)
-
-        return super(OpinionList, self). \
-            get(request, *args, **kwargs)
 
     def set_queryset(self, query_params: dict[str, QueryArg], user: User):
         """

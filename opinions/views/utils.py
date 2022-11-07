@@ -55,7 +55,7 @@ from opinions.forms import OpinionForm
 DEFAULT_COMMENT_DEPTH = 2
 
 # workaround for self type hints from https://peps.python.org/pep-0673/
-TQueryOption = TypeVar("TQueryOption", bound="QueryOption")
+TypeQueryOption = TypeVar("TypeQueryOption", bound="QueryOption")
 
 
 @dataclass
@@ -71,14 +71,15 @@ class QueryOption:
     """ Default choice """
 
     @classmethod
-    def of_no_cls_dflt(cls: Type[TQueryOption], query: str) -> TQueryOption:
+    def of_no_cls_dflt(
+            cls: Type[TypeQueryOption], query: str) -> TypeQueryOption:
         """ Get QueryOption with no class or default """
         return cls(query=query, clazz=None, default=None)
 
     @classmethod
     def of_no_cls(
-        cls: Type[TQueryOption], query: str, default: Union[ChoiceArg, Any]
-    ) -> TQueryOption:
+        cls: Type[TypeQueryOption], query: str, default: Union[ChoiceArg, Any]
+    ) -> TypeQueryOption:
         """ Get QueryOption with no class or default """
         return cls(query=query, clazz=None, default=default)
 
@@ -299,6 +300,17 @@ def hide_query_args(request: HttpRequest) -> ReactionStatus:
             STATUS_QUERY, ReactionStatus, ReactionStatus.HIDE))
 
 
+def follow_query_args(request: HttpRequest) -> ReactionStatus:
+    """
+    Get follow query arguments from request query
+    :param request: http request
+    :return: tuple of Status and ReactionStatus
+    """
+    return query_args_value(
+        request, QueryOption(
+            STATUS_QUERY, ReactionStatus, ReactionStatus.FOLLOW))
+
+
 def report_query_args(request: HttpRequest) -> Report:
     """
     Get report query arguments from request query
@@ -315,8 +327,8 @@ def get_query_args(
         ) -> dict[str, QueryArg]:
     """
     Get opinion list query arguments from request query
-    :param options: list of possible QueryOption
     :param request: http request
+    :param options: list of possible QueryOption
     :return: dict of tuples of value (ChoiceArg | int | str) and
             'was set' bool flag
     """
@@ -331,7 +343,7 @@ def get_query_args(
 
         if option.query in request.GET:
             param = request.GET[option.query].lower()
-            default_value = params[option.query].query_arg_value
+            default_value = params[option.query].value_arg_or_value
             if isinstance(default_value, int):
                 param = int(param)
             if option.clazz:
@@ -428,30 +440,34 @@ def comment_permission_check(request: HttpRequest, op: Crud,
                             raise_ex=raise_ex)
 
 
-def own_opinion_check(request: HttpRequest, opinion_obj: Opinion,
-                      raise_ex: bool = True) -> bool:
+def own_content_check(
+        request: HttpRequest, content_obj: Union[Opinion, Comment],
+        raise_ex: bool = True) -> bool:
     """
-    Check request user is opinion author
+    Check request user is content author
     :param request: http request
-    :param opinion_obj: opinion
+    :param content_obj: opinion/comment
     :param raise_ex: raise exception if not own; default True
     """
-    is_own = request.user.id == opinion_obj.user.id
+    is_own = request.user.id == content_obj.user.id
     if not is_own and raise_ex:
         raise PermissionDenied(
-            "Opinions may only be updated by their authors")
+            f"{content_obj.__class__._meta.model_name}s "
+            f"may only be updated by their authors")
     return is_own
 
 
-def published_check(request: HttpRequest, opinion_obj: Opinion):
+def published_check(
+        request: HttpRequest, content_obj: Union[Opinion, Comment]):
     """
-    Check requested opinion is published
+    Check requested content is published
     :param request: http request
-    :param opinion_obj: opinion
+    :param content_obj: opinion/comment
     """
-    if request.user.id != opinion_obj.user.id and \
-            opinion_obj.status.name != STATUS_PUBLISHED:
-        raise PermissionDenied("Opinion unavailable")
+    if request.user.id != content_obj.user.id and \
+            content_obj.status.name != STATUS_PUBLISHED:
+        raise PermissionDenied(
+            f"{content_obj.__class__._meta.model_name} unavailable")
 
 
 def render_opinion_form(title: str, **kwargs) -> tuple[
@@ -499,3 +515,24 @@ def ensure_list(item: Any) -> list[Any]:
     :return: list
     """
     return item if isinstance(item, list) else [item]
+
+
+def query_search_term(
+    query_params: dict[str, QueryArg], exclude_queries: list[str] = None,
+    join_by: str = '&'
+) -> str:
+    """
+    Get the query search terms for a client to use to request
+    :param query_params: query params
+    :param exclude_queries: list of queries to exclude; default none
+    :param join_by: string to join entries; default '&'
+    :return: joined sting
+    """
+    if exclude_queries is None:
+        exclude_queries = []
+
+    return join_by.join([
+        f'{q}={v.value_arg_or_value if isinstance(v, QueryArg) else v}'
+        for q, v in query_params.items()
+        if q not in exclude_queries and
+        (v.was_set if isinstance(v, QueryArg) else True)])

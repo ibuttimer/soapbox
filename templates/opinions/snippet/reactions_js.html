@@ -57,7 +57,7 @@
      * :param event: click event
      */
     function get_react_info(event) {
-        // ids are of the form 'id--react-<reaction>-<type>-<id>' e.g. 'id--react-agree-opinion-1'
+        // ids are of the form 'id--react-<action>-<type>-<id>' e.g. 'id--react-agree-opinion-1'
         const split = event.currentTarget.attributes['id'].textContent.split('-')
         let data_bs_option = '';
         if (event.currentTarget.firstElementChild.attributes.hasOwnProperty('data-bs-option')) {
@@ -72,7 +72,7 @@
             type: split[4],
             // status option is on the span in the button (see reactions.html)
             option: data_bs_option,
-            // status option is the action to perform
+            // status option is the action to perform, e.g. 'show'/'hide'/etc. i.e. ReactionStatus.XXX.arg
             action: data_bs_option,
             submit: capitalize(data_bs_option)
         };
@@ -82,11 +82,16 @@
      * :param event: click event
      * :param ids: object with keys matching those returned by get_react_info()
      *             and values as ids of element to be set
+     * :param baseUrl: base url to prepend to url value
      */
-    function set_react_info_vars(event, ids) {
+    function set_react_info_vars(event, ids, baseUrl = undefined) {
         const reaction = get_react_info(event)
-        for (const [key, value] of Object.entries(ids)) {
-            $(value).text(reaction[key]);
+        for (const [key, selector] of Object.entries(ids)) {
+            let value = reaction[key];
+            if (key === 'url' && baseUrl !== undefined) {
+                value = baseUrl + value;
+            }
+            $(selector).text(value);
         }
     }
 
@@ -95,10 +100,12 @@
      * :param data: json data
      */
     function react_response_handler(data) {
-        if (data.hasOwnProperty('redirect')) {
-            document.location.href = data.redirect;
-        } else if (data.hasOwnProperty('element_id')) {
-            $("#" + data.element_id).replaceWith(data.html);
+        if (data !== undefined) {
+            if (data.hasOwnProperty('redirect')) {
+                document.location.href = data.redirect;
+            } else if (data.hasOwnProperty('element_id')) {
+                $("#" + data.element_id).replaceWith(data.html);
+            }
         }
     }
 
@@ -106,17 +113,14 @@
      * Update like/unlike status of current opinion
      * :param event: click event
      */
-    function updateLikeUnlike(event) {
+    function updateOnOffReaction(event) {
         updateReactStatus(event, react_response_handler);
     }
 
-    /**
-     * Update pin/unpin status of current opinion
-     * :param event: click event
-     */
-    function updatePinUnpin(event) {
-        updateReactStatus(event, react_response_handler);
-    }
+    // Reaction buttons have the general form: "id--react-<action>-<type>-<id>"
+    // where: action is [agree|disagree|comment|follow|unfollow|share|hide|unhide|pin|unpin|report]
+    //        type is [opinion|comment]
+    //        id is id of target opinion/comment
 
     // Reaction buttons for comments are named 'id--react-comment-....'
     const commentReactionsSelector = "button[id^='id--react-comment']";
@@ -132,8 +136,14 @@
     const pinReactionsSelector = "button[id^='id--react-pin']";
     // Reaction buttons for unpin are named 'id--react-unpin-....'
     const unpinReactionsSelector = "button[id^='id--react-unpin']";
+    // Reaction buttons for follow are named 'id--react-follow-....'
+    const followReactionsSelector = "button[id^='id--react-follow']";
+    // Reaction buttons for unfollow are named 'id--react-unfollow-....'
+    const unfollowReactionsSelector = "button[id^='id--react-unfollow']";
     // Reaction buttons for report are named 'id--react-report-....'
     const reportReactionsSelector = "button[id^='id--react-report']";
+    // Reaction buttons for share are named 'id--react-share-....'
+    const reportShareSelector = "button[id^='id--react-share']";
 
     /* Set the click handlers to set the submit url for comments */
     function setReactionHandlers() {
@@ -144,7 +154,8 @@
                 commentReactionsSelector, likeReactionsSelector, unlikeReactionsSelector,
                 hideReactionsSelector, showReactionsSelector,
                 pinReactionsSelector, unpinReactionsSelector,
-                reportReactionsSelector
+                followReactionsSelector, unfollowReactionsSelector,
+                reportReactionsSelector, reportShareSelector
         ]) {
             $(selector).off();
         }
@@ -162,10 +173,24 @@
                 url: "#id--report-submit-url"
             });
         });
-        for (let selector of [likeReactionsSelector, unlikeReactionsSelector]) {
+        $(reportShareSelector).on('click', (event) => {
+            // set the share url for share
+            const baseUrl = window.location.href.slice(0, window.location.href.indexOf(window.location.pathname))
+            set_react_info_vars(event, {
+                url: "#id--share-url",
+                title: "#id--share-modal-heading"
+            }, baseUrl);
+        });
+        for (let selector of [
+            // update like/unlike status
+            likeReactionsSelector, unlikeReactionsSelector,
+            // update pin/unpin status
+            pinReactionsSelector, unpinReactionsSelector,
+            // update follow/unfollow status
+            followReactionsSelector, unfollowReactionsSelector,
+        ]) {
             $(selector).on('click', (event) => {
-                // update like/unlike status
-                updateLikeUnlike(event);
+                updateOnOffReaction(event);
             });
         }
         for (let selector of [hideReactionsSelector, showReactionsSelector]) {
@@ -180,12 +205,6 @@
                     action: "#id--hide-modal-action",
                     submit: "#id--submit-btn-hide-modal",
                 });
-            });
-        }
-        for (let selector of [pinReactionsSelector, unpinReactionsSelector]) {
-            $(selector).on('click', (event) => {
-                // update pin/unpin status
-                updatePinUnpin(event);
             });
         }
     }
