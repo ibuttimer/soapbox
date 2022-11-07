@@ -2,6 +2,7 @@
 
 {% load i18n %}
 {% load static %}
+{% load form_field %}
 {% load account socialaccount %}
 
 {% block head_title %}{% trans "Sign In" %}{% endblock head_title %}
@@ -57,8 +58,35 @@
       <form class="login" method="POST" action="{% url 'account_login' %}">
         {% csrf_token %}
 
-        {# TODO style errors display #}
-        {{ form.as_p }}
+        {% include "snippet/form_errors.html" %}
+
+        <div class="row mb-3">
+            {% form_field form 'login' as login_field %}
+            <div class="col-sm-3">
+              <label for="{{ login_field.auto_id }}" class="form-label">{{ login_field.label }}</label>
+            </div>
+            <div class="col-sm-9">
+              {{ login_field }}
+            </div>
+        </div>
+        <div class="row mb-3">
+            {% form_field form 'password' as password_field %}
+            <div class="col-sm-3">
+              <label for="{{ password_field.auto_id }}" class="form-label">{{ password_field.label }}</label>
+            </div>
+            <div class="col-sm-9">
+              {{ password_field }}
+            </div>
+        </div>
+        <div class="row mb-3">
+            {% form_field form 'remember' as remember_field %}
+            <div class="col-sm-3">
+              <label for="{{ remember_field.auto_id }}" class="form-label">{{ remember_field.label }}</label>
+            </div>
+            <div class="col-sm-9 text-start">
+              {{ remember_field }}
+            </div>
+        </div>
 
         {% if redirect_field_value %}
           <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
