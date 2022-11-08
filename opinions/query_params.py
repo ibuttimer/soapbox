@@ -80,6 +80,15 @@ class QuerySetParams:
         self.and_lookups[lookup] = value
         self.params.add(key)
 
+    def add_and_lookups(self, key, lookups: dict[str, Any]):
+        """
+        Add an AND lookup
+        :param key: query key
+        :param lookups: dict with lookup term as key and lookup value
+        """
+        for lookup, value in lookups.items():
+            self.add_and_lookup(key, lookup, value)
+
     def add_or_lookup(self, key: str, value: Any):
         """
         Add an OR lookup
@@ -107,6 +116,14 @@ class QuerySetParams:
         """
         self.all_inclusive += 1
         self.params.add(key)
+
+    def key_in_set(self, key):
+        """
+        Check if a query corresponding to the specified `key` has been added
+        :param key: query key
+        :return: True if added
+        """
+        return key in self.params
 
     def apply(self, query_set: QuerySet) -> QuerySet:
         """

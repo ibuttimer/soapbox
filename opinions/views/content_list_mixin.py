@@ -56,11 +56,11 @@ class ContentListMixin(generic.ListView):
         """
         self.permission_check_func()(request, Crud.READ)
 
+        self.user = request.user
+
         # TODO currently '/"/= can't be used in content
         # as search depends on them
         query_params = self.req_query_args()(request)
-
-        self.user = request.user
 
         # set context extra content
         self.set_extra_context(query_params)

@@ -21,10 +21,13 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 from enum import Enum, auto
+from typing import Optional, Union
+
+from django.db.models import QuerySet
 
 from categories import (
     STATUS_PENDING_REVIEW, STATUS_UNDER_REVIEW, STATUS_WITHDRAWN,
-    STATUS_REJECTED
+    STATUS_REJECTED, STATUS_PUBLISHED
 )
 from categories.models import Status
 from user.models import User
@@ -166,3 +169,33 @@ def get_content_status(content: [Opinion, Comment], *args,
     return ContentStatus(
         reported=reported, viewable=viewable, review_wip=review_wip,
         hidden=hidden)
+
+
+def followed_author_publications(
+    user: User, new: bool = True, as_params: bool = False
+) -> Optional[Union[QuerySet, dict]]:
+    """
+    Get the list of opinions of authors which the specified user is following
+    :param user: user to check
+    :param new: only newly published flag: default True
+    :param as_params: return dict of params flag: default False
+    :return: query set
+    """
+    query = None
+
+    followed_ids = FollowStatus.objects.filter(**{
+        FollowStatus.USER_FIELD: user
+    }).values_list(FollowStatus.AUTHOR_FIELD, flat=True)
+
+    if len(followed_ids) > 0:
+        query_params = {
+            f"{Opinion.USER_FIELD}__in": followed_ids,
+            f"{Opinion.STATUS_FIELD}__{Status.NAME_FIELD}": STATUS_PUBLISHED,
+        }
+        if new:
+            query_params[f"{Opinion.PUBLISHED_FIELD}__gte"] = user.last_login
+
+        query = query_params if as_params else \
+            Opinion.objects.filter(**query_params)
+
+    return query

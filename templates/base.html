@@ -113,6 +113,9 @@
                                         <a class="dropdown-item" href="{% url 'opinions:opinions' %}?pinned=yes">Pinned</a>
                                     </li>
                                     <li>
+                                        <a class="dropdown-item" href="{% url 'opinions:opinion_followed' %}">New followed</a>
+                                    </li>
+                                    <li>
                                         <a class="dropdown-item" href="{% url 'opinions:opinions' %}">All</a>
                                     </li>
                                     {% endif %}

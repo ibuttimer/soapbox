@@ -39,7 +39,8 @@ from opinions.comment_utils import (
 from opinions.constants import (
     STATUS_QUERY, AUTHOR_QUERY, SEARCH_QUERY, REORDER_QUERY,
     CONTENT_STATUS_CTX, UNDER_REVIEW_CONTENT_CTX,
-    UNDER_REVIEW_COMMENT_CONTENT, HIDDEN_CONTENT_CTX, HIDDEN_COMMENT_CONTENT
+    UNDER_REVIEW_COMMENT_CONTENT, HIDDEN_CONTENT_CTX, HIDDEN_COMMENT_CONTENT,
+    REPEAT_SEARCH_TERM_CTX, PAGE_HEADING_CTX
 )
 from opinions.contexts.comment import comments_list_context_for_opinion
 from opinions.enums import QueryArg, QueryStatus, CommentSortOrder, SortOrder
@@ -98,7 +99,7 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
         # build search term string from values that were set
         # inherited from ContextMixin via ListView
         self.extra_context = {
-            "repeat_search_term": query_search_term(
+            REPEAT_SEARCH_TERM_CTX: query_search_term(
                 query_params, exclude_queries=REORDER_REQ_QUERY_ARGS)
         }
 
@@ -212,12 +213,13 @@ class CommentSearch(CommentList):
         :param query_params: request query
         """
         # build search term string from values that were set
+        search_term = ', '.join([
+            f'{q}: {v.value}'
+            for q, v in query_params.items() if v.was_set
+        ])
         self.extra_context = {
-            "search_term": ', '.join([
-                f'{q}: {v.value}'
-                for q, v in query_params.items() if v.was_set
-            ]),
-            "repeat_search_term":
+            PAGE_HEADING_CTX: f"Results of {search_term}",
+            REPEAT_SEARCH_TERM_CTX:
                 f'{SEARCH_QUERY}='
                 f'{query_params[SEARCH_QUERY].value}'
         }
@@ -261,7 +263,7 @@ class CommentSearch(CommentList):
             # or query term => search
 
             for key in COMMENT_ALWAYS_FILTERS:
-                if key in query_set_params.params:
+                if query_set_params.key_in_set(key):
                     continue    # always filter was already applied
 
                 value = query_params[key].value

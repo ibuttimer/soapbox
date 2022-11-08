@@ -88,7 +88,7 @@ class QueryOption:
 APPLIED_DEFAULTS_QUERY_ARGS = [
     # query,      arg class,        default value
     # status included as default is to only show published opinions
-    QueryOption(STATUS_QUERY, QueryStatus, QueryStatus.PUBLISH),
+    QueryOption(STATUS_QUERY, QueryStatus, QueryStatus.DEFAULT),
     # hidden included as default is to only show visible opinions
     QueryOption(HIDDEN_QUERY, Hidden, Hidden.DEFAULT),
 ]

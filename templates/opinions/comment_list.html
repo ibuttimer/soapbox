@@ -40,10 +40,10 @@
 {% block head_title %}SoapBox - {{ title }}{% endblock %}
 
 {% block content %}
-{% if search_term %}
+{% if page_heading %}
 <div class="row mt-2">
     <div class="col-12 text-center">
-        <h3>Results of {{ search_term }}</h3>
+        <h3>{{ page_heading }}</h3>
     </div>
 </div>
 {% endif %}

@@ -49,6 +49,7 @@ AUTHOR_FIELD = 'author'
 OPINIONS_URL = ""
 OPINION_NEW_URL = append_slash("new")
 OPINION_SEARCH_URL = append_slash("search")
+OPINION_FOLLOWED_URL = append_slash("followed")
 OPINION_ID_URL = append_slash("<int:pk>")
 OPINION_SLUG_URL = append_slash("<slug:slug>")
 OPINION_PREVIEW_ID_URL = url_path(OPINION_ID_URL, "preview")
@@ -74,6 +75,7 @@ COMMENT_FOLLOW_ID_URL = url_path(COMMENT_ID_URL, "follow")
 OPINIONS_ROUTE_NAME = "opinions"
 OPINION_NEW_ROUTE_NAME = "opinion_new"
 OPINION_SEARCH_ROUTE_NAME = "opinion_search"
+OPINION_FOLLOWED_ROUTE_NAME = "opinion_followed"
 OPINION_ID_ROUTE_NAME = "opinion_id"
 OPINION_SLUG_ROUTE_NAME = "opinion_slug"
 OPINION_PREVIEW_ID_ROUTE_NAME = f"preview_{OPINION_ID_ROUTE_NAME}"
@@ -173,6 +175,10 @@ HIDDEN_CONTENT_CTX = "hidden_content"
 # templates/opinions/snippet/comment_bundle.html
 # list of Reaction for comment
 TEMPLATE_COMMENT_REACTIONS = 'comment_reactions'
+
+TITLE_CTX = 'title'                             # page title
+PAGE_HEADING_CTX = 'page_heading'               # page heading display
+REPEAT_SEARCH_TERM_CTX = 'repeat_search_term'   # search term for query
 
 # miscellaneous
 ALL_FIELDS = 'all_fields'

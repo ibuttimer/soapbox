@@ -24,6 +24,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Type, Callable
 from zoneinfo import ZoneInfo
+from string import capwords
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, QuerySet
@@ -40,14 +41,17 @@ from opinions.constants import (
     TEMPLATE_REACTION_CTRLS, UNDER_REVIEW_TITLE, UNDER_REVIEW_EXCERPT,
     UNDER_REVIEW_OPINION_CONTENT, UNDER_REVIEW_TITLE_CTX,
     UNDER_REVIEW_EXCERPT_CTX, UNDER_REVIEW_CONTENT_CTX, CONTENT_STATUS_CTX,
-    HIDDEN_CONTENT_CTX, HIDDEN_COMMENT_CONTENT
+    HIDDEN_CONTENT_CTX, HIDDEN_COMMENT_CONTENT, REPEAT_SEARCH_TERM_CTX,
+    PAGE_HEADING_CTX, TITLE_CTX
 )
 from opinions.enums import (
     QueryArg, QueryStatus, OpinionSortOrder, Hidden, Pinned,
     ChoiceArg, SortOrder
 )
 from opinions.models import Opinion, HideStatus, PinStatus
-from opinions.queries import opinion_is_pinned, content_status_check
+from opinions.queries import (
+    opinion_is_pinned, content_status_check, followed_author_publications
+)
 from opinions.query_params import QuerySetParams, choice_arg_query
 from opinions.reactions import (
     OPINION_REACTIONS, get_reaction_status, ReactionsList
@@ -156,9 +160,28 @@ class OpinionList(LoginRequiredMixin, ContentListMixin):
         """
         # build search term string from values that were set
         # inherited from ContextMixin via ListView
+        if query_params.get(
+            PINNED_QUERY, QueryArg(Pinned.IGNORE, False)
+        ).value == Pinned.YES:
+            # current users pinned opinions
+            title = 'Pinned opinions'
+        elif query_params.get(
+            AUTHOR_QUERY, QueryArg(None, False)
+        ).value == self.user.username:
+            # current users opinions by status
+            status = query_params.get(
+                STATUS_QUERY, QueryArg(QueryStatus.DEFAULT, False)).value
+            title = f'All my opinions' \
+                if status.display == QueryStatus.ALL.display \
+                else f'My {status.display} opinions'
+        else:
+            title = 'Opinions'
+
         self.extra_context = {
-            "repeat_search_term": query_search_term(
-                query_params, exclude_queries=REORDER_REQ_QUERY_ARGS)
+            REPEAT_SEARCH_TERM_CTX: query_search_term(
+                query_params, exclude_queries=REORDER_REQ_QUERY_ARGS),
+            TITLE_CTX: title,
+            PAGE_HEADING_CTX: capwords(title)
         }
 
     def set_queryset(self, query_params: dict[str, QueryArg], user: User):
@@ -285,14 +308,16 @@ class OpinionSearch(OpinionList):
         :param query_params: request query
         """
         # build search term string from values that were set
+        search_term = ', '.join([
+            f'{q}: {v.value}'
+            for q, v in query_params.items() if v.was_set
+        ])
         self.extra_context = {
-            "search_term": ', '.join([
-                f'{q}: {v.value}'
-                for q, v in query_params.items() if v.was_set
-            ]),
-            "repeat_search_term":
+            TITLE_CTX: 'Opinion search',
+            PAGE_HEADING_CTX: f"Results of {search_term}",
+            REPEAT_SEARCH_TERM_CTX:
                 f'{SEARCH_QUERY}='
-                f'{query_params[SEARCH_QUERY].value}'
+                f'{query_params[SEARCH_QUERY].value}',
         }
 
     def set_queryset(self, query_params: dict[str, QueryArg], user: User):
@@ -333,7 +358,7 @@ class OpinionSearch(OpinionList):
             # or query term => search
 
             for key in ALWAYS_FILTERS:
-                if key in query_set_params.params:
+                if query_set_params.key_in_set(key):
                     continue    # always filter was already applied
 
                 value = query_params[key].value
@@ -347,6 +372,56 @@ class OpinionSearch(OpinionList):
         else:
             # invalid query term entered
             self.queryset = Opinion.objects.none()
+
+
+class OpinionFollowed(OpinionList):
+    """
+    Followed authors opinion list response
+    """
+
+    def req_query_args(self) -> Callable[[HttpRequest], dict[str, QueryArg]]:
+        """
+        Get the request query args function
+        :return: request query args function
+        """
+        # TODO probably should be a more restricted list of args
+        return super().req_query_args()
+
+    def set_extra_context(self, query_params: dict[str, QueryArg]):
+        """
+        Set the context extra content to be added to context
+        :param query_params: request query
+        """
+        # build search term string from values that were set
+        super().set_extra_context(query_params)
+        self.extra_context.update({
+            TITLE_CTX: 'Followed new opinions',
+            PAGE_HEADING_CTX: 'New Opinions By Followed Authors',
+        })
+
+    def set_queryset(self, query_params: dict[str, QueryArg], user: User):
+        """
+        Set the queryset to get the list of items for this view
+        :param query_params: request query
+        :param user: current user
+        """
+        # https://docs.djangoproject.com/en/4.1/ref/models/querysets/
+        # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#id4
+        # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#field-lookups
+
+        query_set_params = QuerySetParams()
+
+        for query in NON_REORDER_OPINION_LIST_QUERY_ARGS:
+            get_lookup(query, query_params[query].value, user,
+                       query_set_params=query_set_params)
+
+        qs_params = followed_author_publications(user, as_params=True)
+
+        query_set_params.add_and_lookups('followed', qs_params)
+
+        self.queryset = query_set_params.apply(
+            Opinion.objects.prefetch_related('categories')
+        )
 
 
 def get_lookup(
@@ -514,12 +589,12 @@ def get_yes_no_ignore_query(
 
         if choice in ensure_list(no):
             # exclude chosen opinions
-            def qs_exclude(qs: QuerySet):
+            def qs_exclude(qs: QuerySet) -> QuerySet:
                 return qs.exclude(**query_params)
             query_set = qs_exclude
         elif choice in ensure_list(yes):
             # only chosen opinions
-            def qs_filter(qs: QuerySet):
+            def qs_filter(qs: QuerySet) -> QuerySet:
                 return qs.filter(**query_params)
             query_set = qs_filter
         else:

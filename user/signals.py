@@ -29,12 +29,16 @@ from allauth.socialaccount.signals import (
     social_account_removed
 )
 
+from opinions.notifications import process_login_opinions
 from .permissions import add_to_authors
 
 
 @receiver(user_logged_in)
 def user_logged_in_callback(sender, **kwargs):
     print("user_logged_in!")
+
+    process_login_opinions(
+        kwargs.get('request', None), kwargs.get('user', None))
 
 
 @receiver(user_logged_out)

@@ -193,6 +193,9 @@ class QueryStatus(ChoiceArg):
         super().__init__(display, arg)
 
 
+QueryStatus.DEFAULT = QueryStatus.PUBLISH
+
+
 class ReactionStatus(ChoiceArg):
     """ Enum representing reactions query params """
     AGREE = (REACTION_AGREE, 'agree')
