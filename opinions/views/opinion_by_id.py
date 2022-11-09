@@ -625,7 +625,7 @@ def react_response(
     # Note: if code is HTTPStatus.NO_CONTENT nothing is returned in response
     reaction_ctrls = get_reaction_status(request.user, content)
 
-    target_type = content.__class__._meta.model_name.lower()
+    target_type = content.model_name_lower()
 
     # TODO after follow/unfollow reflect status ia all elements by author
     # not just the one clicked

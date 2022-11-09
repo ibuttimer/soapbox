@@ -27,19 +27,19 @@ from cloudinary.models import CloudinaryField
 
 from soapbox import AVATAR_FOLDER, DEVELOPMENT
 from categories.models import Category
+from utils.models import ModelMixin
 
 from .constants import (
     FIRST_NAME, LAST_NAME, BIO, AVATAR, CATEGORIES
 )
 
 
-class User(AbstractUser):
+class User(ModelMixin, AbstractUser):
     """
     Custom user model
     (Recommended by
     https://docs.djangoproject.com/en/4.1/topics/auth/customizing/#auth-custom-user)
     """
-    MODEL_NAME = 'User'
 
     # field names
     FIRST_NAME_FIELD = FIRST_NAME
@@ -81,3 +81,6 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+
+    def __repr__(self):
+        return f'{self.model_name()}[{self.id}]: {str(self)}'

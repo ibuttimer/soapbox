@@ -205,7 +205,7 @@ class UserForm(forms.ModelForm):
             AVATAR: 'User avatar',
         }
         error_messages = error_messages(
-            model.MODEL_NAME,
+            model.model_name_caps(),
             *[ErrorMsgs(field, max_length=True)
               for field in (FIRST_NAME, LAST_NAME)]
         )

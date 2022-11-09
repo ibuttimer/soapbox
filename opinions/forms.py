@@ -75,7 +75,7 @@ class OpinionForm(forms.ModelForm):
             CATEGORIES_FIELD: 'Opinion categories.',
         }
         error_messages = error_messages(
-            model.MODEL_NAME,
+            model.model_name_caps(),
             *[ErrorMsgs(field, max_length=True)
               for field in (TITLE_FIELD, CONTENT_FIELD)]
         )
@@ -120,7 +120,7 @@ class CommentForm(forms.ModelForm):
             CONTENT_FIELD: 'Comment content.',
         }
         error_messages = error_messages(
-            model.MODEL_NAME,
+            model.model_name_caps(),
             *[ErrorMsgs(field, max_length=True)
               for field in (CONTENT_FIELD, )]
         )
@@ -186,7 +186,7 @@ class ReviewForm(forms.ModelForm):
             REASON_FIELD: 'Reason content.',
         }
         error_messages = error_messages(
-            model.MODEL_NAME,
+            model.model_name_caps(),
             *[ErrorMsgs(field, max_length=True)
               for field in (REASON_FIELD, )]
         )

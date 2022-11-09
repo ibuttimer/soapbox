@@ -405,8 +405,8 @@ def opinion_permissions(request: HttpRequest) -> dict:
     """
     permissions = {}
     for model, check_func in [
-        (Opinion._meta.model_name.lower(), opinion_permission_check),
-        (Comment._meta.model_name.lower(), comment_permission_check)
+        (Opinion.model_name().lower(), opinion_permission_check),
+        (Comment.model_name().lower(), comment_permission_check)
     ]:
         permissions.update({
             f'{model}_{op.name.lower()}':
@@ -452,7 +452,7 @@ def own_content_check(
     is_own = request.user.id == content_obj.user.id
     if not is_own and raise_ex:
         raise PermissionDenied(
-            f"{content_obj.__class__._meta.model_name}s "
+            f"{content_obj.model_name_caps()}s "
             f"may only be updated by their authors")
     return is_own
 
@@ -467,7 +467,7 @@ def published_check(
     if request.user.id != content_obj.user.id and \
             content_obj.status.name != STATUS_PUBLISHED:
         raise PermissionDenied(
-            f"{content_obj.__class__._meta.model_name} unavailable")
+            f"{content_obj.model_name_caps()} unavailable")
 
 
 def render_opinion_form(title: str, **kwargs) -> tuple[

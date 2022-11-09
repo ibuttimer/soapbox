@@ -31,6 +31,7 @@ from django.template.defaultfilters import truncatechars
 from user.models import User
 from categories.models import Category, Status
 from utils import SlugMixin
+from utils.models import ModelMixin
 from .constants import (
     ID_FIELD, TITLE_FIELD, CONTENT_FIELD, EXCERPT_FIELD, CATEGORIES_FIELD,
     STATUS_FIELD, USER_FIELD, SLUG_FIELD, CREATED_FIELD, UPDATED_FIELD,
@@ -41,10 +42,8 @@ from .constants import (
 )
 
 
-class Opinion(SlugMixin, models.Model):
+class Opinion(ModelMixin, SlugMixin, models.Model):
     """ Opinions model """
-
-    MODEL_NAME = 'Opinion'
 
     # field names
     ID_FIELD = ID_FIELD
@@ -103,8 +102,7 @@ class Opinion(SlugMixin, models.Model):
         ordering = [TITLE_FIELD]
 
     def __str__(self):
-        return f'{Opinion.MODEL_NAME}[{self.id}]:' \
-               f'{truncatechars(self.title, 20)} {self.status.short_name}'
+        return f'{truncatechars(self.title, 20)} {self.status.short_name}'
 
     def set_slug(self, title: str):
         """
@@ -130,10 +128,8 @@ class Opinion(SlugMixin, models.Model):
         )
 
 
-class Comment(SlugMixin, models.Model):
+class Comment(ModelMixin, SlugMixin, models.Model):
     """ Opinions model """
-
-    MODEL_NAME = 'Comment'
 
     NO_PARENT = 0
     """ Value representing no parent """
@@ -186,8 +182,7 @@ class Comment(SlugMixin, models.Model):
         ordering = [ID_FIELD]
 
     def __str__(self):
-        return f'{Comment.MODEL_NAME}[{self.id}]:' \
-               f'{truncatechars(self.content, 20)} {self.status.short_name}'
+        return f'{truncatechars(self.content, 20)} {self.status.short_name}'
 
     def set_slug(self, content: str):
         """
@@ -213,10 +208,8 @@ class Comment(SlugMixin, models.Model):
         )
 
 
-class Review(models.Model):
+class Review(ModelMixin, models.Model):
     """ Reviews model """
-
-    MODEL_NAME = 'Review'
 
     # field names
     ID_FIELD = ID_FIELD
@@ -274,14 +267,11 @@ class Review(models.Model):
         ]
 
     def __str__(self):
-        return f'{Review.MODEL_NAME}[{self.id}]: {self.opinion} - ' \
-               f'{self.status.short_name}'
+        return f'{self.opinion} - {self.status.short_name}'
 
 
-class AgreementStatus(models.Model):
+class AgreementStatus(ModelMixin, models.Model):
     """ AgreementStatus model """
-
-    MODEL_NAME = 'AgreementStatus'
 
     # field names
     ID_FIELD = ID_FIELD
@@ -315,15 +305,12 @@ class AgreementStatus(models.Model):
             else None
 
     def __str__(self):
-        return f'{AgreementStatus.MODEL_NAME}[{self.id}]: ' \
-               f'{self.opinion if self.opinion else self.comment} - ' \
+        return f'{self.opinion if self.opinion else self.comment} - ' \
                f'{self.status.short_name}'
 
 
-class HideStatus(models.Model):
+class HideStatus(ModelMixin, models.Model):
     """ HideStatus model """
-
-    MODEL_NAME = 'HideStatus'
 
     # field names
     ID_FIELD = ID_FIELD
@@ -354,14 +341,11 @@ class HideStatus(models.Model):
             else None
 
     def __str__(self):
-        return f'{HideStatus.MODEL_NAME}[{self.id}]: ' \
-               f'{self.opinion if self.opinion else self.comment}'
+        return f'Hide {self.opinion if self.opinion else self.comment}'
 
 
-class PinStatus(models.Model):
+class PinStatus(ModelMixin, models.Model):
     """ PinStatus model """
-
-    MODEL_NAME = 'PinStatus'
 
     # field names
     ID_FIELD = ID_FIELD
@@ -377,7 +361,7 @@ class PinStatus(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f'{PinStatus.MODEL_NAME}[{self.id}]: {self.opinion}'
+        return f'Pin {self.model_name()}[{self.id}]: {self.opinion}'
 
 
 def is_id_lookup(lookup: str):
@@ -390,10 +374,8 @@ def is_id_lookup(lookup: str):
     return lookup == ID_FIELD or lookup == f'{DESC_LOOKUP}{ID_FIELD}'
 
 
-class FollowStatus(models.Model):
+class FollowStatus(ModelMixin, models.Model):
     """ FollowStatus model """
-
-    MODEL_NAME = 'FollowStatus'
 
     # field names
     ID_FIELD = ID_FIELD
@@ -410,5 +392,4 @@ class FollowStatus(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f'{FollowStatus.MODEL_NAME}[{self.id}]: ' \
-               f'{self.opinion if self.opinion else self.comment}'
+        return f'{self.user} following {self.author}'
