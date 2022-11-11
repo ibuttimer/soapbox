@@ -57,7 +57,8 @@ def comments_list_context_for_opinion(
     # get first page comments for opinion
     comment_bundles = get_comment_tree(query_params, user)
     # get review status of comments
-    comments_review_status = get_comments_review_status(comment_bundles)
+    comments_review_status = get_comments_review_status(
+        comment_bundles, current_user=user)
 
     # reaction controls for comments
     is_preview = context.get(IS_PREVIEW_CTX, False)

@@ -136,7 +136,7 @@ class TestCommentSearch(SoupMixin, CategoryMixin, BaseCommentTest):
     def test_no_comments_found(self):
         """ Test response for no comments found """
         comment = TestCommentSearch.opinions[0]
-        user = self.login_user_by_id(comment.user.id)
+        _ = self.login_user_by_id(comment.user.id)
 
         content = 'there are no comments like this'
         for comment in self.comments:
@@ -184,13 +184,13 @@ class TestCommentSearch(SoupMixin, CategoryMixin, BaseCommentTest):
         comment, user, queries = self.get_query_options()
         user = self.login_user_by_id(user.id)
 
-        for q, v in queries:
+        for qry, val in queries:
             for order in list(CommentSortOrder):
                 # check contents of first page
                 query = {
-                    q: v
+                    qry: val
                 }
-                msg = f'{q}: {v}, order {order}'
+                msg = f'{qry}: {val}, order {order}'
 
                 expected = BaseCommentTest.get_expected(
                     self, query, order, user, per_page=PerPage.DEFAULT)
@@ -201,7 +201,7 @@ class TestCommentSearch(SoupMixin, CategoryMixin, BaseCommentTest):
                     self.assertTemplateUsed(
                         response, COMMENT_LIST_CONTENT_TEMPLATE)
                     verify_comment_list_content(
-                        self, expected, response, msg=msg)
+                        self, expected, response, user=user, msg=msg)
 
     def test_search_comment_pagination(self):
         """
@@ -236,7 +236,7 @@ class TestCommentSearch(SoupMixin, CategoryMixin, BaseCommentTest):
                         self.assertTemplateUsed(
                             response, COMMENT_LIST_CONTENT_TEMPLATE)
                         verify_comment_list_content(
-                            self, expected, response,
+                            self, expected, response, user=user,
                             pagination=num_pages > 1, msg=msg)
 
     def test_opinion_search_multi_query(self):
@@ -248,15 +248,15 @@ class TestCommentSearch(SoupMixin, CategoryMixin, BaseCommentTest):
         user = self.login_user_by_id(user.id)
 
         for idx1 in range(len(queries)):
-            q1, v1 = queries[idx1]
+            qry1, val1 = queries[idx1]
             query = {
-                q1: v1
+                qry1: val1
             }
 
             for idx2 in range(idx1 + 1, len(queries)):
-                q2, v2 = queries[idx2]
+                qry2, val2 = queries[idx2]
                 query.update({
-                    q2: v2
+                    qry2: val2
                 })
                 msg = f'{query}'
 
@@ -271,4 +271,4 @@ class TestCommentSearch(SoupMixin, CategoryMixin, BaseCommentTest):
                     self.assertTemplateUsed(
                         response, COMMENT_LIST_CONTENT_TEMPLATE)
                     verify_comment_list_content(
-                        self, expected, response, msg=msg)
+                        self, expected, response, user=user, msg=msg)

@@ -35,7 +35,7 @@ def category_permissions(request: HttpRequest) -> dict:
     :param request: current request
     :return: dict of permissions
     """
-    model = Category._meta.model_name.lower()
+    model = Category.model_name_lower()
     return {
         f'{model}_{op.name.lower()}':
             category_permission_check(request, op, raise_ex=False)

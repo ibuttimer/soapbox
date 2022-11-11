@@ -126,7 +126,7 @@ class TestOpinionList(SoupMixin, CategoryMixin, BaseOpinionTest):
                 self.assertEqual(response.status_code, HTTPStatus.OK)
                 self.assertTemplateUsed(response, OPINION_LIST_SORT_TEMPLATE)
                 verify_opinion_list_content(
-                    self, expected, response, msg=order)
+                    self, expected, response, user=user, msg=order)
 
     def get_expected_list(self, order: OpinionSortOrder, user: User,
                           per_page: [PerPage, None] = None,
@@ -171,19 +171,19 @@ class TestOpinionList(SoupMixin, CategoryMixin, BaseOpinionTest):
                     self.assertTemplateUsed(
                         response, OPINION_LIST_SORT_TEMPLATE)
                     verify_opinion_list_content(
-                        self, expected, response,
+                        self, expected, response, user=user,
                         pagination=num_pages > 1, msg=msg)
 
 
 def verify_opinion_list_content(
-            test_case: BaseOpinionTest, expected: list[Opinion],
-            response: HttpResponse, pagination: bool = False,
-            msg: str = ''
-        ):
+        test_case: BaseOpinionTest, expected: list[Opinion],
+        response: HttpResponse, user: User = None, pagination: bool = False,
+        msg: str = ''):
     """
     Verify opinion list page content
     :param test_case: opinion test object
     :param expected: expected opinions
+    :param user: current user; default None
     :param response: opinion response
     :param pagination: check for pagination flag
     :param msg: message
@@ -205,9 +205,13 @@ def verify_opinion_list_content(
 
     for index, opinion in enumerate(expected):
 
-        under_review = any(
-            map(lambda op: op.id == opinion.id, test_case.reported_opinions)
-        )
+        # opinion author can always see own opinions
+        under_review = user and opinion.user != user
+        if under_review:
+            under_review = any(
+                map(lambda op: op.id == opinion.id,
+                    test_case.reported_opinions)
+            )
         if under_review:
             expected_title = UNDER_REVIEW_TITLE
             expected_excerpt = UNDER_REVIEW_EXCERPT

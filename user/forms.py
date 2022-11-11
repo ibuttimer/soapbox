@@ -19,17 +19,20 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
+from allauth.account import app_settings
 from cloudinary.forms import CloudinaryFileField
 from django import forms
 from django.http import HttpRequest
 from django.utils.translation import gettext_lazy as _
-from allauth.account.forms import SignupForm
+from allauth.account.forms import SignupForm, LoginForm, PasswordField
 from django_summernote.fields import SummernoteTextField
 from django_summernote.widgets import SummernoteWidget
 from django.contrib.auth.models import Group
 
 from categories.models import Category
-from soapbox import IMAGE_FILE_TYPES, DEVELOPMENT, DEV_IMAGE_FILE_TYPES
+from soapbox import (
+    IMAGE_FILE_TYPES, DEVELOPMENT, DEV_IMAGE_FILE_TYPES, MIN_PASSWORD_LEN
+)
 from utils import update_field_widgets, error_messages, ErrorMsgs
 from .models import User
 from .constants import (
@@ -51,6 +54,16 @@ class UserSignupForm(SignupForm):
     def __init__(self, *args, **kwargs):
         super(UserSignupForm, self).__init__(*args, **kwargs)
 
+        self.fields[UserSignupForm.PASSWORD_FF] = PasswordField(
+            label=_("Password"), autocomplete="new-password",
+            min_length=MIN_PASSWORD_LEN
+        )
+        if app_settings.SIGNUP_PASSWORD_ENTER_TWICE:
+            self.fields[UserSignupForm.PASSWORD_CONFIRM_FF] = PasswordField(
+                label=_("Confirm password"), autocomplete="new-password",
+                min_length=MIN_PASSWORD_LEN
+            )
+
         # add first & last name fields
         self.fields[UserSignupForm.FIRST_NAME_FF] = forms.CharField(
             label=_("First name"),
@@ -71,6 +84,13 @@ class UserSignupForm(SignupForm):
         self.fields.move_to_end(UserSignupForm.LAST_NAME_FF, last=False)
         self.fields.move_to_end(UserSignupForm.FIRST_NAME_FF, last=False)
 
+        # add the bootstrap class to the widget
+        update_field_widgets(
+            self,
+            # exclude non-bootstrap fields
+            [field for field in UserSignupForm.Meta.fields],
+            {'class': 'form-control'})
+
     class Meta:
         model = User
         fields = [
@@ -84,6 +104,24 @@ class UserSignupForm(SignupForm):
         :param user: user object
         """
         pass
+
+
+class UserLoginForm(LoginForm):
+    """ Custom user login form """
+
+    password = PasswordField(
+        label=_("Password"), autocomplete="current-password",
+        min_length=MIN_PASSWORD_LEN
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # add the bootstrap class to the widget
+        update_field_widgets(
+            self,
+            # exclude non-bootstrap fields
+            [field for field in ["login", "password"]],
+            {'class': 'form-control'})
 
 
 class NoCurrentClearableFileInput(forms.ClearableFileInput):
@@ -167,7 +205,7 @@ class UserForm(forms.ModelForm):
             AVATAR: 'User avatar',
         }
         error_messages = error_messages(
-            model.MODEL_NAME,
+            model.model_name_caps(),
             *[ErrorMsgs(field, max_length=True)
               for field in (FIRST_NAME, LAST_NAME)]
         )

@@ -202,11 +202,11 @@ def get_comment_search_term(
             #   "WHERE ("title") LIKE '<term>'",
             #   "WHERE ("content") LIKE '<term>'"
             # ]
-            for q in to_query:
+            for qry in to_query:
                 query_set_params.add_or_lookup(
                     '-'.join(to_query),
                     Q(_connector=Q.OR, **{
-                        FIELD_LOOKUPS[q]: term for term in or_q[q]
+                        FIELD_LOOKUPS[qry]: term for term in or_q[qry]
                     })
                 )
 

@@ -39,7 +39,8 @@ import environ
 from django.contrib.messages import constants as messages
 
 from .constants import (
-    BASE_APP_NAME, USER_APP_NAME, CATEGORIES_APP_NAME, OPINIONS_APP_NAME
+    BASE_APP_NAME, USER_APP_NAME, CATEGORIES_APP_NAME, OPINIONS_APP_NAME,
+    MIN_PASSWORD_LEN
 )
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -234,9 +235,10 @@ AUTHENTICATION_BACKENDS = [
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
-# ACCOUNT_SIGNUP_FORM_CLASS = 'user.forms.UserSignupForm'
+# https://django-allauth.readthedocs.io/en/latest/forms.html
 ACCOUNT_FORMS = {
-    'signup': 'user.forms.UserSignupForm'
+    'signup': 'user.forms.UserSignupForm',
+    'login': 'user.forms.UserLoginForm'
 }
 
 # https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-MESSAGE_TAGS
@@ -276,21 +278,19 @@ DATABASES = {
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
-
-AUTH_PASSWORD_VALIDATORS = [
-    {
+AUTH_PASSWORD_VALIDATORS = [{
         'NAME': 'django.contrib.auth.password_validation'
                 '.UserAttributeSimilarityValidator',
-    },
-    {
+    }, {
         'NAME': 'django.contrib.auth.password_validation'
                 '.MinimumLengthValidator',
-    },
-    {
+        'OPTIONS': {
+            'min_length': MIN_PASSWORD_LEN,
+        }
+    }, {
         'NAME': 'django.contrib.auth.password_validation'
                 '.CommonPasswordValidator',
-    },
-    {
+    }, {
         'NAME': 'django.contrib.auth.password_validation'
                 '.NumericPasswordValidator',
     },

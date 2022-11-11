@@ -21,7 +21,7 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 from enum import Enum
-from typing import Any, Callable
+from typing import Any, Callable, TypeVar
 
 from categories import (
     STATUS_DRAFT, STATUS_PUBLISHED, STATUS_PREVIEW, STATUS_WITHDRAWN,
@@ -109,8 +109,11 @@ class ChoiceArg(Enum):
             def trans_func(val):
                 return cls._lower_str(val.display)
             func = trans_func
+            display_func = cls._lower_str
+        else:
+            display_func = cls._pass_thru()
 
-        return cls._find_value(display, func=func)
+        return cls._find_value(display_func(display), func=func)
 
     @staticmethod
     def arg_if_choice_arg(obj):
@@ -177,6 +180,10 @@ class QueryArg:
         return f'{self.value}, was_set {self.was_set}'
 
 
+# workaround for self type hints from https://peps.python.org/pep-0673/
+TypeQueryStatus = TypeVar("TypeQueryStatus", bound="QueryStatus")
+
+
 class QueryStatus(ChoiceArg):
     """ Enum representing status query params """
     ALL = (STATUS_ALL, 'all')
@@ -187,10 +194,39 @@ class QueryStatus(ChoiceArg):
     PENDING_REVIEW = (STATUS_PENDING_REVIEW, 'pending-review')
     UNDER_REVIEW = (STATUS_UNDER_REVIEW, 'under-review')
     APPROVED = (STATUS_APPROVED, 'approved')
+    """ Review approved, content needs work """
     REJECTED = (STATUS_REJECTED, 'rejected')
+    """ Review rejected, content ok """
+
+    @classmethod
+    def pre_publish_statuses(cls) -> list[TypeQueryStatus]:
+        """ List of pre-publish statuses """
+        return [QueryStatus.DRAFT, QueryStatus.PREVIEW]
+
+    @classmethod
+    def review_wip_statuses(cls) -> list[TypeQueryStatus]:
+        """ List of review in progress statuses """
+        return [QueryStatus.PENDING_REVIEW, QueryStatus.UNDER_REVIEW]
+
+    @classmethod
+    def review_statuses(cls) -> list[TypeQueryStatus]:
+        """ List of review statuses """
+        statuses = [
+            QueryStatus.WITHDRAWN, QueryStatus.APPROVED, QueryStatus.REJECTED
+        ]
+        statuses.extend(cls.review_wip_statuses())
+        return statuses
+
+    @classmethod
+    def review_over_statuses(cls) -> list[TypeQueryStatus]:
+        """ List of review over (i.e. ok to view) statuses """
+        return [QueryStatus.WITHDRAWN, QueryStatus.REJECTED]
 
     def __init__(self, display: str, arg: str):
         super().__init__(display, arg)
+
+
+QueryStatus.DEFAULT = QueryStatus.PUBLISH
 
 
 class ReactionStatus(ChoiceArg):
@@ -218,6 +254,11 @@ class SortOrder(ChoiceArg):
         self.order = order
 
 
+# workaround for self type hints from https://peps.python.org/pep-0673/
+TypeOpinionSortOrder = \
+    TypeVar("TypeOpinionSortOrder", bound="OpinionSortOrder")
+
+
 class OpinionSortOrder(SortOrder):
     """ Enum representing opinion sort orders """
     NEWEST = ('Newest first', 'new',
@@ -238,25 +279,47 @@ class OpinionSortOrder(SortOrder):
                  f'{DESC_LOOKUP}{Opinion.STATUS_FIELD}__'
                  f'{Status.NAME_FIELD}')
 
-    @property
-    def is_date_order(self):
-        return self in [OpinionSortOrder.NEWEST, OpinionSortOrder.OLDEST]
+    @classmethod
+    def date_orders(cls) -> list[TypeOpinionSortOrder]:
+        """ List of date-related sort orders """
+        return [OpinionSortOrder.NEWEST, OpinionSortOrder.OLDEST]
 
     @property
-    def is_author_order(self):
-        return self in [
-            OpinionSortOrder.AUTHOR_AZ, OpinionSortOrder.AUTHOR_ZA]
+    def is_date_order(self) -> bool:
+        """ Check if this object is a date-related sort order """
+        return self in self.date_orders()
+
+    @classmethod
+    def author_orders(cls) -> list[TypeOpinionSortOrder]:
+        """ List of author-related sort orders """
+        return [OpinionSortOrder.AUTHOR_AZ, OpinionSortOrder.AUTHOR_ZA]
 
     @property
-    def is_title_order(self):
-        return self in [OpinionSortOrder.TITLE_AZ, OpinionSortOrder.TITLE_ZA]
+    def is_author_order(self) -> bool:
+        """ Check if this object is an author-related sort order """
+        return self in self.author_orders()
+
+    @classmethod
+    def title_orders(cls) -> list[TypeOpinionSortOrder]:
+        """ List of title-related sort orders """
+        return [OpinionSortOrder.TITLE_AZ, OpinionSortOrder.TITLE_ZA]
 
     @property
-    def is_status_order(self):
-        return self in [
-            OpinionSortOrder.STATUS_AZ, OpinionSortOrder.STATUS_ZA]
+    def is_title_order(self) -> bool:
+        """ Check if this object is a title-related sort order """
+        return self in self.title_orders()
 
-    def to_field(self):
+    @classmethod
+    def status_orders(cls) -> list[TypeOpinionSortOrder]:
+        """ List of status-related sort orders """
+        return [OpinionSortOrder.STATUS_AZ, OpinionSortOrder.STATUS_ZA]
+
+    @property
+    def is_status_order(self) -> bool:
+        """ Check if this object is a status-related sort order """
+        return self in self.status_orders()
+
+    def to_field(self) -> str:
         """ Get Opinion field used for sorting """
         return Opinion.USER_FIELD if self.is_author_order else \
             Opinion.TITLE_FIELD if self.is_title_order else \
@@ -265,6 +328,11 @@ class OpinionSortOrder(SortOrder):
 
 
 OpinionSortOrder.DEFAULT = OpinionSortOrder.NEWEST
+
+
+# workaround for self type hints from https://peps.python.org/pep-0673/
+TypeCommentSortOrder = \
+    TypeVar("TypeCommentSortOrder", bound="CommentSortOrder")
 
 
 class CommentSortOrder(SortOrder):
@@ -284,21 +352,37 @@ class CommentSortOrder(SortOrder):
                  f'{DESC_LOOKUP}{Comment.STATUS_FIELD}__'
                  f'{Status.NAME_FIELD}')
 
-    @property
-    def is_date_order(self):
-        return self in [CommentSortOrder.NEWEST, CommentSortOrder.OLDEST]
+    @classmethod
+    def date_orders(cls) -> list[TypeCommentSortOrder]:
+        """ List of date-related sort orders """
+        return [CommentSortOrder.NEWEST, CommentSortOrder.OLDEST]
 
     @property
-    def is_author_order(self):
-        return self in [
-            CommentSortOrder.AUTHOR_AZ, CommentSortOrder.AUTHOR_ZA]
+    def is_date_order(self) -> bool:
+        """ Check if this object is a date-related sort order """
+        return self in self.date_orders()
+
+    @classmethod
+    def author_orders(cls) -> list[TypeCommentSortOrder]:
+        """ List of author-related sort orders """
+        return [CommentSortOrder.AUTHOR_AZ, CommentSortOrder.AUTHOR_ZA]
 
     @property
-    def is_status_order(self):
-        return self in [
-            CommentSortOrder.STATUS_AZ, CommentSortOrder.STATUS_ZA]
+    def is_author_order(self) -> bool:
+        """ Check if this object is an author-related sort order """
+        return self in self.author_orders()
 
-    def to_field(self):
+    @classmethod
+    def status_orders(cls) -> list[TypeCommentSortOrder]:
+        """ List of status-related sort orders """
+        return [CommentSortOrder.STATUS_AZ, CommentSortOrder.STATUS_ZA]
+
+    @property
+    def is_status_order(self) -> bool:
+        """ Check if this object is a status-related sort order """
+        return self in self.status_orders()
+
+    def to_field(self) -> str:
         """ Get Comment field used for sorting """
         return Comment.USER_FIELD if self.is_author_order else \
             Comment.STATUS_FIELD if self.is_status_order else \

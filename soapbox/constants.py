@@ -71,3 +71,5 @@ IMAGE_FILE_TYPES = DEV_IMAGE_FILE_TYPES.copy()
 IMAGE_FILE_TYPES.extend([
     "image/avif", "image/svg+xml"
 ])
+
+MIN_PASSWORD_LEN = 8

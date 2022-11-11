@@ -64,7 +64,7 @@ from opinions.models import (
     Opinion, Comment, AgreementStatus, HideStatus, PinStatus, Review,
     FollowStatus
 )
-from opinions.queries import content_status_check
+from opinions.queries import content_status_check, effective_content_status
 from opinions.reactions import (
     OPINION_REACTIONS, COMMENT_REACTIONS, get_reaction_status
 )
@@ -117,7 +117,8 @@ class OpinionDetail(LoginRequiredMixin, View):
         is_preview = opinion_obj.status.name == STATUS_PREVIEW
 
         # ok to view check
-        content_status = content_status_check(opinion_obj)
+        content_status = content_status_check(
+            opinion_obj, current_user=request.user)
         # users can always view their own opinions
         view_ok = is_own \
             if not content_status.view_ok else content_status.view_ok
@@ -126,7 +127,7 @@ class OpinionDetail(LoginRequiredMixin, View):
             READ_ONLY_CTX: read_only,
             VIEW_OK_CTX: view_ok,
             OPINION_CTX: opinion_obj,
-            STATUS_CTX: opinion_obj.status,
+            STATUS_CTX: effective_content_status(opinion_obj),
             IS_PREVIEW_CTX: is_preview,
         }
 
@@ -625,7 +626,7 @@ def react_response(
     # Note: if code is HTTPStatus.NO_CONTENT nothing is returned in response
     reaction_ctrls = get_reaction_status(request.user, content)
 
-    target_type = content.__class__._meta.model_name.lower()
+    target_type = content.model_name_lower()
 
     # TODO after follow/unfollow reflect status ia all elements by author
     # not just the one clicked

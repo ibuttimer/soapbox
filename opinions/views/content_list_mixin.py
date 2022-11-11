@@ -21,7 +21,7 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 from http import HTTPStatus
-from typing import Type, Callable
+from typing import Type, Callable, Tuple, Optional
 
 from django.core.paginator import Paginator
 from django.db.models.functions import Lower
@@ -34,6 +34,7 @@ from opinions.constants import (
 )
 from opinions.enums import SortOrder, QueryArg, PerPage
 from opinions.models import is_id_lookup
+from opinions.query_params import QuerySetParams
 from user.models import User
 from utils import Crud
 
@@ -56,20 +57,23 @@ class ContentListMixin(generic.ListView):
         """
         self.permission_check_func()(request, Crud.READ)
 
+        self.user = request.user
+
         # TODO currently '/"/= can't be used in content
         # as search depends on them
         query_params = self.req_query_args()(request)
-
-        self.user = request.user
 
         # set context extra content
         self.set_extra_context(query_params)
 
         # select sort order options to display
-        self.set_sort_order_options(request, query_params)
+        self.set_sort_order_options(query_params)
 
         # set queryset
-        self.set_queryset(query_params, request.user)
+        query_set_params, query_kwargs = \
+            self.set_queryset(query_params)
+        self.apply_queryset_param(
+            query_set_params, **query_kwargs if query_kwargs else {})
 
         # set ordering
         self.set_ordering(query_params)
@@ -109,22 +113,33 @@ class ContentListMixin(generic.ListView):
         raise NotImplementedError(
             "'set_extra_content' method must be overridden by sub classes")
 
-    def set_queryset(self, query_params: dict[str, QueryArg], user: User):
+    def set_queryset(
+        self, query_params: dict[str, QueryArg],
+        query_set_params: QuerySetParams = None
+    ) -> Tuple[QuerySetParams, Optional[dict]]:
         """
         Set the queryset to get the list of items for this view
         :param query_params: request query
-        :param user: current user
+        :param query_set_params: QuerySetParams to update; default None
+        :return: tuple of query set params and dict of kwargs to pass to
+                apply_queryset_param
         """
         raise NotImplementedError(
             "'set_queryset' method must be overridden by sub classes")
 
-    def set_sort_order_options(self, request: HttpRequest,
-                               query_params: dict[str, QueryArg]):
+    def apply_queryset_param(
+            self, query_set_params: QuerySetParams, **kwargs):
+        """
+        Apply `query_set_params` to set the queryset
+        :param query_set_params: QuerySetParams to apply
+        """
+        raise NotImplementedError(
+            "'apply_queryset_param' method must be overridden by sub classes")
+
+    def set_sort_order_options(self, query_params: dict[str, QueryArg]):
         """
         Set the sort order options for the response
-        :param request: http request
         :param query_params: request query
-        :return:
         """
         raise NotImplementedError(
             "'set_sort_order_options' method must be overridden by sub "

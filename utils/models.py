@@ -22,6 +22,10 @@
 #
 from datetime import datetime
 from base64 import urlsafe_b64encode
+from inspect import isclass
+from typing import Union
+from string import capwords
+
 from django.db.models import Model
 from django.utils.text import slugify
 from .misc import random_string_generator
@@ -111,3 +115,44 @@ class SlugMixin:
                 f"Unable to generate slug for '{title}', {max_random_len}")
 
         return slugified
+
+
+class ModelMixin:
+    """ Mixin with additional functionality for django.db.models.Model """
+
+    @staticmethod
+    def model_name_obj(obj: Union[object, Model]):
+        """
+        Get the model name of the specified model class/instance
+        :param obj: object to check
+        :return: model name
+        """
+        return obj._meta.model_name \
+            if isclass(obj) else obj.__class__._meta.model_name
+
+    @classmethod
+    def model_name(cls):
+        """
+        Get the model name of this model
+        :return: model name
+        """
+        return ModelMixin.model_name_obj(cls)
+
+    @classmethod
+    def model_name_caps(cls):
+        """
+        Get the model name of this model
+        :return: model name
+        """
+        return capwords(cls.model_name())
+
+    @classmethod
+    def model_name_lower(cls):
+        """
+        Get the model name of this model
+        :return: model name
+        """
+        return cls.model_name().lower()
+
+    def __repr__(self):
+        return f'{self.model_name()}[{self.id}]: {str(self)}'

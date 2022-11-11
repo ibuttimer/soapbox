@@ -36,12 +36,12 @@ from .constants import (
     OPINION_FOLLOW_ID_ROUTE_NAME, COMMENT_FOLLOW_ID_ROUTE_NAME
 )
 from .data_structures import (
-    Reaction, ReactionCtrl, HtmlTag, ContentStatus, UrlType
+    Reaction, ReactionCtrl, HtmlTag, UrlType
 )
 from .models import Opinion, Comment, AgreementStatus, PinStatus
 from .queries import (
     opinion_is_pinned, get_content_status, StatusCheck,
-    following_content_author, content_is_hidden
+    following_content_author, content_is_hidden, ContentStatus
 )
 from .templatetags.reaction_button_id import reaction_button_id
 from .enums import ReactionStatus
@@ -460,7 +460,9 @@ def get_reaction_status(
                 reported = False
                 if any_true(displayer, ReactionsList.REPORT_FIELD):
                     reported = get_content_status(
-                        entry, StatusCheck.REPORTED, user=user).reported
+                        entry, StatusCheck.REPORTED, user=user,
+                        current_user=user
+                    ).reported
 
                 control_param.extend([
                     # reaction, selected, visible

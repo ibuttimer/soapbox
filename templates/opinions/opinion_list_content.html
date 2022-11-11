@@ -1,27 +1,4 @@
-<!--
-  ~ MIT License
-  ~
-  ~ Copyright (c) 2022 Ian Buttimer
-  ~
-  ~ Permission is hereby granted, free of charge, to any person obtaining a copy
-  ~ of this software and associated documentation files (the "Software"), to
-  ~ deal in the Software without restriction, including without limitation the
-  ~ rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-  ~ sell copies of the Software, and to permit persons to whom the Software is
-  ~ furnished to do so, subject to the following conditions:
-  ~
-  ~ The above copyright notice and this permission notice shall be included in
-  ~ all copies or substantial portions of the Software.
-  ~
-  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  ~ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  ~ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-  ~ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  ~ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-  ~ FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-  ~ DEALINGS IN THE SOFTWARE.
-  ~
-  -->
+<!-- opinion_list_content.html start -->
 {% load i18n %}
 {% load static %}
 {% load humanize %}
@@ -54,15 +31,15 @@
                                             <a {% if status.view_ok %} href="{% url 'opinions:opinion_slug' opinion.slug %}" {% endif %}
                                                class="post-link">
                                                 <h4 id="id_title_{{ forloop.counter }}" class="card-title">
-                                                    {% if status.review_wip %}{{ under_review_title }}{% else %}{{ opinion.title }}{% endif %}
+                                                    {% if status.review_no_show %}{{ under_review_title }}{% else %}{{ opinion.title }}{% endif %}
                                                 </h4>
                                             </a>
                                             {# HACK display id for dev purposes #}
                                             <span class="badge rounded-pill text-bg-warning">{{ opinion.id }}</span>
                                         </div>
                                         <div id="categories_{{ forloop.counter }}" class="col-sm-3 mt-0 mb-0">
-                                            {% for category in opinion.categories.all %}
-                                            <span class="badge rounded-pill text-bg-info">{{ category.name }}</span>
+                                            {% for category in opinion.categories %}
+                                            <span class="badge rounded-pill text-bg-info">{{ category }}</span>
                                             {% endfor %}
                                         </div>
                                         <div id="pinned_{{ forloop.counter }}" class="col-sm-1 mt-0 mb-0">
@@ -76,7 +53,7 @@
                                             {% with reactions=opinion_reactions %}
                                                 {% with target_type="opinion" %}
                                                     {% with target_id=opinion.id %}
-                                                        {% with target_author=opinion.user.id %}
+                                                        {% with target_author=opinion.user_id %}
                                                             {% with target_slug=opinion.slug %}
                                                                 {% include "opinions/snippet/reactions.html" %}
                                                             {% endwith %}
@@ -89,7 +66,7 @@
                                     <div class="row">
                                         <!-- excerpt -->
                                         <p id="excerpt_{{ forloop.counter }}" class="card-text text-muted">
-                                            {% if status.review_wip %}{{ under_review_excerpt }}{% else %}{{ opinion.excerpt }}{% endif %}
+                                            {% if status.review_no_show %}{{ under_review_excerpt }}{% else %}{{ opinion.excerpt }}{% endif %}
                                         </p>
                                     </div>
                                     <hr />
@@ -108,10 +85,11 @@
                                         <div class="col-sm-6 mt-0 mb-0">
                                             <div class="row mt-0 mb-0">
                                                 <div class="col-md-6 mt-0 mb-0">
-                                                    <a href="{% url 'user:user_id' opinion.user.id %}">{{ opinion.user.username }}</a>
+                                                    <a href="{% url 'user:user_id' opinion.user_id %}">{{ opinion.username }}</a>
                                                 </div>
                                                 <div class="col-md-6 mt-0 mb-0">
-                                                    <span id="status_{{ forloop.counter }}" class="badge rounded-pill text-bg-light">{{ opinion.status.name }}</span>
+                                                    {% dict_value status_bg opinion.status as status_class %}
+                                                    <span id="status_{{ forloop.counter }}" class="badge rounded-pill {{ status_class }}">{{ opinion.status }}</span>
                                                 </div>
                                             </div>
                                             <p class="mt-0 mb-0">
@@ -190,4 +168,4 @@
         </div>
     {% endif %}
 {% endblock opinion_list_content %}
-
+<!-- opinion_list_content.html end -->

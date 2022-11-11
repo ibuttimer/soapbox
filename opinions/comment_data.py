@@ -35,7 +35,7 @@ from .constants import (
 )
 from .models import Comment, Opinion, AgreementStatus, HideStatus, PinStatus
 from .comment_utils import get_comment_queryset
-from opinions.views.utils import (
+from .views.utils import (
     DEFAULT_COMMENT_DEPTH, ensure_list, query_search_term
 )
 from .enums import QueryArg, PerPage
@@ -302,12 +302,12 @@ def get_comments_page(
     if add_more_placeholder:
         # set placeholder for more
         next_query_params = {}
-        for q, v in query_params.items():
-            if not isinstance(v, QueryArg):
-                next_query_params[q] = v
-            elif isinstance(v, QueryArg) and v.was_set:
+        for qry, val in query_params.items():
+            if not isinstance(val, QueryArg):
+                next_query_params[qry] = val
+            elif isinstance(val, QueryArg) and val.was_set:
                 # filter out unset query params
-                next_query_params[q] = v.value_arg_or_value
+                next_query_params[qry] = val.value_arg_or_value
 
         next_query_params[PAGE_QUERY] = page + 1
         next_query_params[PER_PAGE_QUERY] = per_page
@@ -323,12 +323,14 @@ def get_comments_page(
 
 def get_comments_review_status(
     comment_bundles: [Type[CommentData], List[Type[CommentData]]],
-    comments_review_status: Optional[dict] = None
+    comments_review_status: Optional[dict] = None,
+    current_user: User = None
 ):
     """
     Get the review status of content
     :param comment_bundles: CommentBundle(s) to get review statuses of
     :param comments_review_status: dict to add to; default None
+    :param current_user: user making request; default None
     :return: dict of the form {
                    key: comment id
                    value: ContentStatus
@@ -341,7 +343,7 @@ def get_comments_review_status(
     for comment in ensure_list(comment_bundles):
         comments_review_status.update({
             # key: comment id, value: ContentStatus
-            cmt.id: content_status_check(cmt)
+            cmt.id: content_status_check(cmt, current_user=current_user)
             for cmt in comment.comment_iterable()
         })
 

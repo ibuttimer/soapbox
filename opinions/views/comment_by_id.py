@@ -90,7 +90,8 @@ class CommentDetail(LoginRequiredMixin, View):
         published_check(request, comment_obj)
 
         # ok to view check
-        content_status = content_status_check(comment_obj)
+        content_status = content_status_check(
+            comment_obj, current_user=request.user)
         # users can always view their own comments
         view_ok = is_own \
             if not content_status.view_ok else content_status.view_ok

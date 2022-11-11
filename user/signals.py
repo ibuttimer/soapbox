@@ -29,6 +29,8 @@ from allauth.socialaccount.signals import (
     social_account_removed
 )
 
+from opinions.notifications import process_login_opinions
+from .models import User
 from .permissions import add_to_authors
 
 
@@ -36,10 +38,23 @@ from .permissions import add_to_authors
 def user_logged_in_callback(sender, **kwargs):
     print("user_logged_in!")
 
+    # by the time this signal is received the 'last_login' field in
+    # AbstractBaseUser has already been updated to the current login
+
+    user: User = kwargs.get('user', None)
+    if user:
+        process_login_opinions(kwargs.get('request', None), user)
+
 
 @receiver(user_logged_out)
 def user_logged_out_callback(sender, **kwargs):
     print("user_logged_out!")
+
+    user: User = kwargs.get('user', None)
+    if user:
+        # update previous login
+        user.previous_login = user.last_login
+        user.save(update_fields=[User.PREVIOUS_LOGIN_FIELD])
 
 
 @receiver(user_signed_up)

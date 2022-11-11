@@ -20,11 +20,14 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from typing import Callable, Any, Type
+from typing import Callable, Any, Type, TypeVar
 
 from django.db.models import Q, QuerySet, Model
 
 from opinions.enums import ChoiceArg
+
+# workaround for self type hints from https://peps.python.org/pep-0673/
+TypeQuerySetParams = TypeVar("TypeQuerySetParams", bound="QuerySetParams")
 
 
 class QuerySetParams:
@@ -41,6 +44,8 @@ class QuerySetParams:
     """
     All-inclusive query count e.g. all statuses require no actual query
     """
+    is_none: bool
+    """ Empty query set flag """
 
     def __init__(self):
         self.and_lookups = {}
@@ -48,6 +53,16 @@ class QuerySetParams:
         self.qs_funcs = []
         self.params = set()
         self.all_inclusive = 0
+        self.is_none = False
+
+    def clear(self):
+        """ Clear the query set params """
+        self.and_lookups.clear()
+        self.or_lookups.clear()
+        self.qs_funcs.clear()
+        self.params.clear()
+        self.all_inclusive = 0
+        self.is_none = False
 
     @property
     def and_count(self):
@@ -80,6 +95,28 @@ class QuerySetParams:
         self.and_lookups[lookup] = value
         self.params.add(key)
 
+    def add_and_lookups(self, key, lookups: dict[str, Any]):
+        """
+        Add an AND lookup
+        :param key: query key
+        :param lookups: dict with lookup term as key and lookup value
+        """
+        if isinstance(lookups, dict):
+            for lookup, value in lookups.items():
+                self.add_and_lookup(key, lookup, value)
+
+    def add(self, query_set_param: TypeQuerySetParams):
+        """
+        Add lookups from specified QuerySetParams object
+        :param query_set_param: object to add from
+        """
+        if isinstance(query_set_param, QuerySetParams):
+            self.and_lookups.update(query_set_param.and_lookups)
+            self.or_lookups.extend(query_set_param.or_lookups)
+            self.qs_funcs.extend(query_set_param.qs_funcs)
+            self.all_inclusive += query_set_param.all_inclusive
+            self.params.update(query_set_param.params)
+
     def add_or_lookup(self, key: str, value: Any):
         """
         Add an OR lookup
@@ -108,17 +145,28 @@ class QuerySetParams:
         self.all_inclusive += 1
         self.params.add(key)
 
+    def key_in_set(self, key):
+        """
+        Check if a query corresponding to the specified `key` has been added
+        :param key: query key
+        :return: True if added
+        """
+        return key in self.params
+
     def apply(self, query_set: QuerySet) -> QuerySet:
         """
         Apply the lookups and term
         :param query_set: query set to apply to
         :return: updated query set
         """
-        query_set = query_set.filter(
-            Q(_connector=Q.OR, *self.or_lookups),
-            **self.and_lookups)
-        for func in self.qs_funcs:
-            query_set = func(query_set)
+        if self.is_none:
+            query_set = query_set.none()
+        else:
+            query_set = query_set.filter(
+                Q(_connector=Q.OR, *self.or_lookups),
+                **self.and_lookups)
+            for func in self.qs_funcs:
+                query_set = func(query_set)
         return query_set
 
 

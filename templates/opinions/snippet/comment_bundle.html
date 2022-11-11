@@ -45,7 +45,7 @@
                         <div class="row">
                             <div class="col-sm-10 mt-0 mb-0">
                                 {% dict_value content_status bundle.comment.id as status %}
-                                {% if status.review_wip %}
+                                {% if status.review_no_show %}
                                     <em>{{ under_review_content }}</em>
                                 {% elif status.hidden %}
                                     <em>{{ hidden_content }}</em>
