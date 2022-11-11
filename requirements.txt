@@ -6,3 +6,7 @@ django-environ~=0.9.0
 dj3-cloudinary-storage~=0.0.6
 django-summernote~=0.8.20.0
 django-allauth~=0.51.0
+
+cloudinary~=1.30.0
+requests~=2.28.1
+beautifulsoup4~=4.11.1
