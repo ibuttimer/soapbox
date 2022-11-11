@@ -323,12 +323,14 @@ def get_comments_page(
 
 def get_comments_review_status(
     comment_bundles: [Type[CommentData], List[Type[CommentData]]],
-    comments_review_status: Optional[dict] = None
+    comments_review_status: Optional[dict] = None,
+    current_user: User = None
 ):
     """
     Get the review status of content
     :param comment_bundles: CommentBundle(s) to get review statuses of
     :param comments_review_status: dict to add to; default None
+    :param current_user: user making request; default None
     :return: dict of the form {
                    key: comment id
                    value: ContentStatus
@@ -341,7 +343,7 @@ def get_comments_review_status(
     for comment in ensure_list(comment_bundles):
         comments_review_status.update({
             # key: comment id, value: ContentStatus
-            cmt.id: content_status_check(cmt)
+            cmt.id: content_status_check(cmt, current_user=current_user)
             for cmt in comment.comment_iterable()
         })
 

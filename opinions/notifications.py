@@ -24,8 +24,12 @@ from django.contrib import messages
 from django.http import HttpRequest
 from django.template.defaultfilters import pluralize
 
-from opinions.queries import followed_author_publications
+from opinions.models import Opinion, Comment
+from opinions.queries import (
+    followed_author_publications, own_content_status_changes
+)
 from user.models import User
+from utils.models import ModelMixin
 
 
 def process_login_opinions(request: HttpRequest, user: User):
@@ -35,7 +39,7 @@ def process_login_opinions(request: HttpRequest, user: User):
     :param request: http request
     """
     if user:
-        query = followed_author_publications(user)
+        query = followed_author_publications(user, since=user.previous_login)
         count = query.count() if query else 0
         if count > 0:
             messages.info(
@@ -44,3 +48,16 @@ def process_login_opinions(request: HttpRequest, user: User):
                 f'{"has" if count == 1 else "have"} been published by '
                 f'authors you follow since you last logged in.'
             )
+
+        for model in [Opinion, Comment]:
+            query = own_content_status_changes(
+                user, model, since=user.previous_login)
+            count = query.count() if query else 0
+            if count > 0:
+                messages.info(
+                    request,
+                    f'{count} '
+                    f'{ModelMixin.model_name_obj(model)}{pluralize(count)} '
+                    f'{"has" if count == 1 else "have"} been updated since '
+                    f'you last logged in.'
+                )

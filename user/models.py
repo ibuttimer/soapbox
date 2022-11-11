@@ -30,7 +30,7 @@ from categories.models import Category
 from utils.models import ModelMixin
 
 from .constants import (
-    FIRST_NAME, LAST_NAME, BIO, AVATAR, CATEGORIES
+    FIRST_NAME, LAST_NAME, BIO, AVATAR, CATEGORIES, PREVIOUS_LOGIN
 )
 
 
@@ -49,6 +49,7 @@ class User(ModelMixin, AbstractUser):
     BIO_FIELD = BIO
     AVATAR_FIELD = AVATAR
     CATEGORIES_FIELD = CATEGORIES
+    PREVIOUS_LOGIN_FIELD = PREVIOUS_LOGIN
 
     AVATAR_BLANK = 'avatar_blank'
 
@@ -66,6 +67,11 @@ class User(ModelMixin, AbstractUser):
 
     bio = models.CharField(_('biography'), max_length=USER_ATTRIB_BIO_MAX_LEN,
                            blank=True)
+
+    # by the time the 'user_logged_in' signal is received the 'last_login'
+    # field in AbstractBaseUser has already been updated to the current login
+    previous_login = models.DateTimeField(
+        _("previous login"), blank=True, null=True)
 
     # ImageField for local dev, CloudinaryField for production
     # https://cloudinary.com/documentation/django_image_and_video_upload#django_forms_and_models

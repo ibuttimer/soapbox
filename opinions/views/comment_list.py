@@ -22,7 +22,7 @@
 #
 from enum import Enum
 from http import HTTPStatus
-from typing import Type, Callable
+from typing import Type, Callable, Tuple, Optional
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -48,12 +48,11 @@ from opinions.models import Comment
 from opinions.query_params import QuerySetParams
 from opinions.views.content_list_mixin import ContentListMixin
 from opinions.views.utils import (
-    comment_list_query_args, comment_permission_check,
-    comment_search_query_args, REORDER_REQ_QUERY_ARGS,
-    NON_REORDER_COMMENT_LIST_QUERY_ARGS, query_search_term
+    comment_permission_check, REORDER_REQ_QUERY_ARGS,
+    NON_REORDER_COMMENT_LIST_QUERY_ARGS, query_search_term, get_query_args,
+    COMMENT_LIST_QUERY_ARGS, COMMENT_SEARCH_QUERY_ARGS
 )
 from soapbox import OPINIONS_APP_NAME, GET
-from user.models import User
 from utils import Crud, app_template_path
 
 
@@ -103,31 +102,43 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
                 query_params, exclude_queries=REORDER_REQ_QUERY_ARGS)
         }
 
-    def set_queryset(self, query_params: dict[str, QueryArg], user: User):
+    def set_queryset(
+        self, query_params: dict[str, QueryArg],
+        query_set_params: QuerySetParams = None
+    ) -> Tuple[QuerySetParams, Optional[dict]]:
         """
         Set the queryset to get the list of items for this view
         :param query_params: request query
-        :param user: current user
+        :param query_set_params: QuerySetParams to update; default None
+        :return: tuple of query set params and dict of kwargs to pass to
+                apply_queryset_param
         """
-        query_set_params = QuerySetParams()
+        if query_set_params is None:
+            query_set_params = QuerySetParams()
 
         for query in NON_REORDER_COMMENT_LIST_QUERY_ARGS:
-            get_comment_lookup(query, query_params[query].value, user,
+            get_comment_lookup(query, query_params[query].value, self.user,
                                query_set_params=query_set_params)
 
+        return query_set_params, None
+
+    def apply_queryset_param(
+            self, query_set_params: QuerySetParams, **kwargs):
+        """
+        Apply `query_set_params` to set the queryset
+        :param query_set_params: QuerySetParams to apply
+        """
         self.queryset = query_set_params.apply(Comment.objects)
 
-    def set_sort_order_options(self, request: HttpRequest,
-                               query_params: dict[str, QueryArg]):
+    def set_sort_order_options(self, query_params: dict[str, QueryArg]):
         """
         Set the sort order options for the response
-        :param request: http request
         :param query_params: request query
         :return:
         """
         # select sort order options to display
         excludes = []
-        if query_params[AUTHOR_QUERY].was_set_to(request.user.username):
+        if query_params[AUTHOR_QUERY].was_set_to(self.user.username):
             # no need for sort by author if only one author
             excludes.extend([
                 CommentSortOrder.AUTHOR_AZ, CommentSortOrder.AUTHOR_ZA
@@ -175,7 +186,8 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
             CommentData(comment) for comment in context['object_list']
         ]
         # get review status of comments
-        comments_review_status = get_comments_review_status(comment_bundles)
+        comments_review_status = get_comments_review_status(
+            comment_bundles, current_user=self.user)
 
         self.context_std_elements(context)
 
@@ -205,7 +217,8 @@ class CommentSearch(CommentList):
         Get the request query args function
         :return: request query args function
         """
-        return comment_search_query_args
+        return \
+            lambda request: get_query_args(request, COMMENT_SEARCH_QUERY_ARGS)
 
     def set_extra_context(self, query_params: dict[str, QueryArg]):
         """
@@ -224,17 +237,23 @@ class CommentSearch(CommentList):
                 f'{query_params[SEARCH_QUERY].value}'
         }
 
-    def set_queryset(self, query_params: dict[str, QueryArg], user: User):
+    def set_queryset(
+        self, query_params: dict[str, QueryArg],
+        query_set_params: QuerySetParams = None
+    ) -> Tuple[QuerySetParams, Optional[dict]]:
         """
         Set the queryset to get the list of items for this view
         :param query_params: request query
-        :param user: current user
+        :param query_set_params: QuerySetParams to update; default None
+        :return: tuple of query set params and dict of kwargs to pass to
+                apply_queryset_param
         """
         # https://docs.djangoproject.com/en/4.1/ref/models/querysets/
         # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#id4
         # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#field-lookups
+        if query_set_params is None:
+            query_set_params = QuerySetParams()
 
-        query_set_params = QuerySetParams()
         query_entered = False  # query term entered flag
 
         for key in COMMENT_FILTERS_ORDER:
@@ -251,12 +270,26 @@ class CommentSearch(CommentList):
                     query_entered = was_set
 
                 get_comment_lookup(
-                    key, value, user, query_set_params=query_set_params)
+                    key, value, self.user, query_set_params=query_set_params)
 
                 if key == SEARCH_QUERY and not query_set_params.is_empty:
                     # search is a shortcut filter, if search is specified
                     # nothing else is checked after
                     break
+
+        return query_set_params, {
+            'query_entered': query_entered,
+            'query_params': query_params
+        }
+
+    def apply_queryset_param(
+            self, query_set_params: QuerySetParams, **kwargs):
+        """
+        Apply `query_set_params` to set the queryset
+        :param query_set_params: QuerySetParams to apply
+        """
+        query_entered = kwargs.get('query_entered', None)
+        query_params = kwargs.get('query_params', {})
 
         if not query_entered or not query_set_params.is_empty:
             # no query term entered => all comments,
@@ -268,7 +301,7 @@ class CommentSearch(CommentList):
 
                 value = query_params[key].value
                 if value:
-                    get_comment_lookup(key, value, user,
+                    get_comment_lookup(key, value, self.user,
                                        query_set_params=query_set_params)
 
             self.queryset = query_set_params.apply(Comment.objects)
@@ -299,3 +332,12 @@ def opinion_comments(request: HttpRequest) -> HttpResponse:
             context=context,
             request=request)
     }, status=HTTPStatus.OK)
+
+
+def comment_list_query_args(request: HttpRequest) -> dict[str, QueryArg]:
+    """
+    Get comment list query arguments from request query
+    :param request: http request
+    :return: dict of key query and value (QueryArg | int | str)
+    """
+    return get_query_args(request, COMMENT_LIST_QUERY_ARGS)

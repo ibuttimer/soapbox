@@ -173,7 +173,7 @@ class TestOpinionView(
                 self.assertEqual(response.status_code, HTTPStatus.OK)
                 self.assertTemplateUsed(response, OPINION_FORM_TEMPLATE)
                 TestOpinionView.verify_opinion_content(
-                    self, opinion, response)
+                    self, opinion, response, user=user)
 
     def test_get_own_opinion_by_id(self):
         """ Test page content for opinion by id of logged-in user """
@@ -236,7 +236,7 @@ class TestOpinionView(
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertTemplateUsed(response, OPINION_VIEW_TEMPLATE)
         TestOpinionView.verify_opinion_content(
-            self, opinion, response, is_readonly=True)
+            self, opinion, response, user=logged_in_user, is_readonly=True)
 
     def test_get_other_opinion_by_id(self):
         """ Test page content for opinion by id of not logged-in user """
@@ -320,8 +320,8 @@ class TestOpinionView(
                 self.assertEqual(response.status_code, HTTPStatus.OK)
                 self.assertTemplateUsed(response, OPINION_VIEW_TEMPLATE)
                 TestOpinionView.verify_opinion_content(
-                    self, opinion, response, is_readonly=True,
-                    is_preview=True)
+                    self, opinion, response, user=logged_in_user,
+                    is_readonly=True, is_preview=True)
 
     def test_get_other_opinion_preview(self):
         """
@@ -412,14 +412,15 @@ class TestOpinionView(
 
     @staticmethod
     def verify_opinion_content(
-                test_case: TestCase, opinion: Opinion, response: HttpResponse,
-                is_readonly: bool = False, is_preview: bool = False
-            ):
+            test_case: TestCase, opinion: Opinion, response: HttpResponse,
+            user: User = None, is_readonly: bool = False,
+            is_preview: bool = False):
         """
         Verify opinion page content for user
         :param test_case: TestCase instance
         :param opinion: expected opinion
         :param response: opinion response
+        :param user: current user; default None
         :param is_readonly: is readonly flag; default False
         :param is_preview: is preview flag; default False
         """
@@ -430,9 +431,12 @@ class TestOpinionView(
                 "utf-8", errors="ignore"), features="lxml"
         )
 
-        under_review = any(
-            map(lambda op: op.id == opinion.id, test_case.reported_opinions)
-        )
+        under_review = user and opinion.user != user
+        if under_review:
+            under_review = any(
+                map(lambda op: op.id == opinion.id,
+                    test_case.reported_opinions)
+            )
         if under_review:
             expected_title = UNDER_REVIEW_TITLE
             expected_content = UNDER_REVIEW_OPINION_CONTENT

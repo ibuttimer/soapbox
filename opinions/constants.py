@@ -50,6 +50,7 @@ OPINIONS_URL = ""
 OPINION_NEW_URL = append_slash("new")
 OPINION_SEARCH_URL = append_slash("search")
 OPINION_FOLLOWED_URL = append_slash("followed")
+OPINION_IN_REVIEW_URL = append_slash("in_review")
 OPINION_ID_URL = append_slash("<int:pk>")
 OPINION_SLUG_URL = append_slash("<slug:slug>")
 OPINION_PREVIEW_ID_URL = url_path(OPINION_ID_URL, "preview")
@@ -76,6 +77,7 @@ OPINIONS_ROUTE_NAME = "opinions"
 OPINION_NEW_ROUTE_NAME = "opinion_new"
 OPINION_SEARCH_ROUTE_NAME = "opinion_search"
 OPINION_FOLLOWED_ROUTE_NAME = "opinion_followed"
+OPINION_IN_REVIEW_ROUTE_NAME = "opinion_in_review"
 OPINION_ID_ROUTE_NAME = "opinion_id"
 OPINION_SLUG_ROUTE_NAME = "opinion_slug"
 OPINION_PREVIEW_ID_ROUTE_NAME = f"preview_{OPINION_ID_ROUTE_NAME}"
@@ -171,6 +173,9 @@ UNDER_REVIEW_TITLE_CTX = "under_review_title"
 UNDER_REVIEW_EXCERPT_CTX = "under_review_excerpt"
 UNDER_REVIEW_CONTENT_CTX = "under_review_content"
 HIDDEN_CONTENT_CTX = "hidden_content"
+POPULARITY_CTX = "popularity"
+OPINION_LIST_CTX = "opinion_list"
+STATUS_BG_CTX = "status_bg"
 
 # templates/opinions/snippet/comment_bundle.html
 # list of Reaction for comment

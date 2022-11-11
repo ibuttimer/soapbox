@@ -106,15 +106,20 @@
                                         <a class="dropdown-item" href="{% url 'opinions:opinions' %}?author={{ user.username }}&status=preview">Previews</a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item" href="{% url 'opinions:opinions' %}?author={{ user.username }}&status=all">Mine</a>
+                                        <a class="dropdown-item" href="{% url 'opinions:opinion_in_review' %}?author={{ user.username }}">Review in progress</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'opinions:opinions' %}?author={{ user.username }}&status=all">All mine</a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <a class="dropdown-item" href="{% url 'opinions:opinions' %}?pinned=yes">Pinned</a>
                                     </li>
+                                    {% if opinion_follow %}
                                     <li>
-                                        <a class="dropdown-item" href="{% url 'opinions:opinion_followed' %}">New followed</a>
+                                        <a class="dropdown-item" href="{% url 'opinions:opinion_followed' %}">New tagged author opinions</a>
                                     </li>
+                                    {% endif %}
                                     <li>
                                         <a class="dropdown-item" href="{% url 'opinions:opinions' %}">All</a>
                                     </li>

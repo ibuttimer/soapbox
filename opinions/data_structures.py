@@ -22,7 +22,11 @@
 #
 from copy import copy
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum, auto
+
+from opinions.models import Opinion
+from opinions.queries import effective_content_status, ContentStatus
 
 
 class HandleType(Enum):
@@ -254,18 +258,44 @@ class ReactionCtrl:
 
 
 @dataclass
-class ContentStatus:
-    """ Review status for Opinion/Comment """
+class OpinionData:
 
-    reported: bool      # was reported
-    viewable: bool      # ok to view (with respect to reporting)
-    review_wip: bool    # review in progress
-    hidden: bool        # was hidden (has precedence over viewable)
+    id: int
+    title: str
+    content: str
+    excerpt: str
 
-    @property
-    def view_ok(self):
-        return self.viewable and not self.hidden
+    user_id: int
+    username: str
 
+    categories: list[str]
 
-ContentStatus.VIEW_OK = ContentStatus(
-    reported=False, viewable=True, review_wip=False, hidden=False)
+    status: str
+
+    slug: str
+
+    created: datetime
+    updated: datetime
+    published: datetime
+
+    def __init__(self, **kwargs):
+        for key, val in kwargs.items():
+            setattr(self, key, val)
+
+    @classmethod
+    def from_model(cls, opinion: Opinion):
+        obj_kwargs = {
+            key: getattr(opinion, key) for key in [
+                Opinion.ID_FIELD, Opinion.TITLE_FIELD, Opinion.CONTENT_FIELD,
+                Opinion.EXCERPT_FIELD, Opinion.SLUG_FIELD,
+                Opinion.CREATED_FIELD, Opinion.UPDATED_FIELD,
+                Opinion.PUBLISHED_FIELD,
+            ]
+        }
+        obj_kwargs['user_id'] = opinion.user.id
+        obj_kwargs['username'] = opinion.user.username
+        obj_kwargs['categories'] = list(
+            map(lambda cat: cat.name, list(opinion.categories.all()))
+        )
+        obj_kwargs['status'] = effective_content_status(opinion)
+        return OpinionData(**obj_kwargs)

@@ -136,7 +136,7 @@ class TestCommentList(SoupMixin, CategoryMixin, BaseCommentTest):
                 self.assertEqual(response.status_code, HTTPStatus.OK)
                 self.assert_comment_list_templates(response)
                 verify_comment_list_content(
-                    self, expected, response, msg=order)
+                    self, expected, response, user=user, msg=order)
 
     def get_expected_list(self, order: CommentSortOrder, user: User,
                           per_page: [PerPage, None] = None,
@@ -181,20 +181,20 @@ class TestCommentList(SoupMixin, CategoryMixin, BaseCommentTest):
                     self.assertEqual(response.status_code, HTTPStatus.OK)
                     self.assert_comment_list_templates(response)
                     verify_comment_list_content(
-                        self, expected, response,
+                        self, expected, response, user=user,
                         pagination=num_pages > 1, msg=msg)
 
 
 def verify_comment_list_content(
-            test_case: BaseOpinionTest, expected: list[Comment],
-            response: HttpResponse, pagination: bool = False,
-            msg: str = ''
-        ):
+        test_case: BaseOpinionTest, expected: list[Comment],
+        response: HttpResponse, user: User = None, pagination: bool = False,
+        msg: str = ''):
     """
     Verify comment list page content
     :param test_case: opinion test object
     :param expected: expected comments
     :param response: comments response
+    :param user: current user; default None
     :param pagination: check for pagination flag
     :param msg: message
     """
@@ -217,7 +217,7 @@ def verify_comment_list_content(
         sub_msg = f'{msg} | index {index} comment "{comment.content}"'
         with test_case.subTest(sub_msg):
             TestCommentView.verify_comment_content(
-                test_case, comment, response)
+                test_case, comment, response, user=user)
 
     if pagination:
         SoupMixin.find_tag(

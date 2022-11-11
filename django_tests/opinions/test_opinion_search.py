@@ -117,7 +117,7 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
     def test_get_opinion_list(self):
         """ Test page content for opinion list """
         opinion = TestOpinionSearch.opinions[0]
-        user = self.login_user_by_id(opinion.user.id)
+        _ = self.login_user_by_id(opinion.user.id)
 
         response = self.get_opinion_list_by({
             TITLE_QUERY: 'informative'
@@ -128,7 +128,7 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
     def test_no_opinions_found(self):
         """ Test response for no opinions found """
         opinion = TestOpinionSearch.opinions[0]
-        user = self.login_user_by_id(opinion.user.id)
+        _ = self.login_user_by_id(opinion.user.id)
 
         title = 'there are no titles like this'
         for opinion in self.opinions:
@@ -187,14 +187,14 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
         opinion, user, queries = self.get_query_options()
         user = self.login_user_by_id(user.id)
 
-        for q, v in queries:
+        for qry, val in queries:
             for order in list(OpinionSortOrder):
                 # check contents of first page
                 query = {
-                    q: v
+                    qry: val
                 }
 
-                msg = f'{q}: {v}, order {order}'
+                msg = f'{qry}: {val}, order {order}'
                 expected = BaseOpinionTest.get_expected(
                     self, query, order, user, per_page=PerPage.DEFAULT)
                 msg = f'{msg}\n{expected}\n'
@@ -205,7 +205,7 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
                     self.assertTemplateUsed(
                         response, OPINION_LIST_SORT_TEMPLATE)
                     verify_opinion_list_content(
-                        self, expected, response, msg=msg)
+                        self, expected, response, user=user, msg=msg)
 
     def test_search_opinion_pagination(self):
         """
@@ -240,7 +240,7 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
                         self.assertTemplateUsed(
                             response, OPINION_LIST_SORT_TEMPLATE)
                         verify_opinion_list_content(
-                            self, expected, response,
+                            self, expected, response, user=user,
                             pagination=num_pages > 1, msg=msg)
 
     def test_opinion_search_multi_query(self):
@@ -252,15 +252,15 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
         user = self.login_user_by_id(user.id)
 
         for idx1 in range(len(queries)):
-            q1, v1 = queries[idx1]
+            qry1, val1 = queries[idx1]
             query = {
-                q1: v1
+                qry1: val1
             }
 
             for idx2 in range(idx1 + 1, len(queries)):
-                q2, v2 = queries[idx2]
+                qry2, val2 = queries[idx2]
                 query.update({
-                    q2: v2
+                    qry2: val2
                 })
 
                 msg = f'{query}'
@@ -275,4 +275,4 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
                     self.assertTemplateUsed(
                         response, OPINION_LIST_SORT_TEMPLATE)
                     verify_opinion_list_content(
-                        self, expected, response, msg=msg)
+                        self, expected, response, user=user, msg=msg)

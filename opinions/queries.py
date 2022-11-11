@@ -20,21 +20,24 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
+from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum, auto
-from typing import Optional, Union
+from typing import Optional, Union, Type
 
-from django.db.models import QuerySet
+from django.db import models
+from django.db.models import QuerySet, Q
 
 from categories import (
-    STATUS_PENDING_REVIEW, STATUS_UNDER_REVIEW, STATUS_WITHDRAWN,
-    STATUS_REJECTED, STATUS_PUBLISHED
+    STATUS_WITHDRAWN, STATUS_REJECTED, STATUS_PUBLISHED
 )
 from categories.models import Status
 from user.models import User
-from .data_structures import ContentStatus
+from .enums import QueryStatus
 from .models import (
     Opinion, PinStatus, Review, Comment, HideStatus, FollowStatus
 )
+from .query_params import QuerySetParams
 
 
 def opinion_is_pinned(opinion: Opinion, user: User = None) -> bool:
@@ -81,15 +84,65 @@ def following_content_author(
     return query.exists()
 
 
+def is_following(
+        user: User = None, as_params: bool = False) -> Union[QuerySet, dict]:
+    """
+    Get list of authors the specified user is following
+    :param user: user to check with; default None, i.e. any user
+    :param as_params: return dict of params flag: default False
+    :return: query set or query param dict
+    """
+    if user and not user.is_anonymous:
+        query_params = {
+            FollowStatus.USER_FIELD: user
+        }
+        query = query_params if as_params else \
+            FollowStatus.objects.filter(**query_params)
+    else:
+        query = FollowStatus.objects.none()
+
+    return query
+
+
+@dataclass
+class ContentStatus:
+    """ Review status for Opinion/Comment """
+
+    reported: bool      # was reported
+    viewable: bool      # ok to view (with respect to reporting)
+    review_wip: bool    # review in progress
+    hidden: bool        # was hidden (has precedence over viewable)
+    mine: bool          # current user's content (has precedence over hidden)
+
+    @property
+    def view_ok(self):
+        """ Ok to view """
+        return self.mine or (self.viewable and not self.hidden)
+
+    @property
+    def review_no_show(self):
+        """ Do not show as in review """
+        return self.review_wip and not self.mine
+
+
+ContentStatus.VIEW_OK = ContentStatus(
+    reported=False, viewable=True, review_wip=False, hidden=False,
+    mine=False
+)
+
+
 def content_status_check(
-        content: [Opinion, Comment], user: User = None) -> ContentStatus:
+        content: Union[Opinion, Comment], user: User = None,
+        current_user: User = None) -> ContentStatus:
     """
     Check the status of content
     :param content: content to check
     :param user: user to check with; default None, i.e. any user
+    :param current_user: user making request; default None
     :return: ContentStatus
     """
-    return get_content_status(content, StatusCheck.ALL, user=user)
+    return get_content_status(
+        content, StatusCheck.ALL, user=user, current_user=current_user)
 
 
 class StatusCheck(Enum):
@@ -101,14 +154,16 @@ class StatusCheck(Enum):
     HIDDEN = auto()
 
 
-def get_content_status(content: [Opinion, Comment], *args,
-                       user: User = None) -> ContentStatus:
+def get_content_status(
+        content: [Opinion, Comment], *args, user: User = None,
+        current_user: User = None) -> ContentStatus:
     """
     Get content status, i.e. reported, ok to view, review wip and hidden.
     If a user is specified, check it with respect to that user, otherwise
     any user.
     :param content: content to check
-    :param user: user to check with; default None, i.e. any user
+    :param user: user to check with respect to; default None, i.e. any user
+    :param current_user: user making request; default None
     :param args: list of StatusCheck to check
     :return: ContentStatus
     """
@@ -137,7 +192,9 @@ def get_content_status(content: [Opinion, Comment], *args,
             chk_args = query_args.copy()
             chk_args[
                 f'{Review.STATUS_FIELD}__{Status.NAME_FIELD}__in'
-            ] = [STATUS_PENDING_REVIEW, STATUS_UNDER_REVIEW]
+            ] = [
+                stat.display for stat in QueryStatus.review_wip_statuses()
+            ]
             query = Review.objects.filter(**chk_args)
             review_wip = query.exists()
             checked[StatusCheck.REVIEW_WIP] = True
@@ -168,18 +225,89 @@ def get_content_status(content: [Opinion, Comment], *args,
 
     return ContentStatus(
         reported=reported, viewable=viewable, review_wip=review_wip,
-        hidden=hidden)
+        hidden=hidden,
+        mine=content.user.id == current_user.id if current_user else False)
+
+
+def content_review_status(
+    content: [Opinion, Comment], query_args: dict = None
+) -> Optional[Status]:
+    """
+    Get the review status for the specified content
+    :param content: content to check
+    :param query_args: additional query params: default None
+    :return: status
+    """
+    if query_args is None:
+        query_args = {}
+
+    query_args[Review.content_field(content)] = content
+
+    review = Review.objects.filter(**query_args)\
+        .order_by(f'-{Review.UPDATED_FIELD}').first()
+    return review.status if review else None
+
+
+def content_is(
+        content: [Opinion, Comment], statuses: list[QueryStatus],
+        query_args: dict = None) -> Optional[QueryStatus]:
+    """
+    Get the review status for the specified content
+    :param content: content to check
+    :param query_args: additional query params: default None
+    :param statuses: list of QueryStatus to check
+    :return: status if review wip else None
+    """
+    status = content_review_status(content, query_args=query_args)
+    if status:
+        if QueryStatus.from_display(status.name) not in statuses:
+            status = None
+
+    return status
+
+
+def content_is_review_wip(
+    content: [Opinion, Comment], query_args: dict = None
+) -> Optional[QueryStatus]:
+    """
+    Get the review status for the specified content
+    :param content: content to check
+    :param query_args: additional query params: default None
+    :return: status if review wip else None
+    """
+    return content_is(content, QueryStatus.review_wip_statuses(),
+                      query_args=query_args)
+
+
+def effective_content_status(content: [Opinion, Comment]) -> str:
+    """
+    Get the effective status of the specified content
+    :param content: content to check
+    :return: status
+    """
+    status = content_review_status(content)
+    if status:
+        # has review history, so check review status
+        status = QueryStatus.from_display(status.name)
+        if status in QueryStatus.review_over_statuses():
+            status = None
+
+    if status is None:
+        # no reviews or review passed so use content status
+        status = QueryStatus.from_display(content.status.name)
+
+    return status.display
 
 
 def followed_author_publications(
-    user: User, new: bool = True, as_params: bool = False
-) -> Optional[Union[QuerySet, dict]]:
+    user: User, since: datetime = None, as_params: bool = False
+) -> Optional[Union[QuerySet, QuerySetParams]]:
     """
     Get the list of opinions of authors which the specified user is following
     :param user: user to check
-    :param new: only newly published flag: default True
+    :param since: updates since datetime: default None, i.e. all
     :param as_params: return dict of params flag: default False
-    :return: query set
+    :return: query set or query param dict
     """
     query = None
 
@@ -188,14 +316,95 @@ def followed_author_publications(
     }).values_list(FollowStatus.AUTHOR_FIELD, flat=True)
 
     if len(followed_ids) > 0:
-        query_params = {
-            f"{Opinion.USER_FIELD}__in": followed_ids,
-            f"{Opinion.STATUS_FIELD}__{Status.NAME_FIELD}": STATUS_PUBLISHED,
-        }
-        if new:
-            query_params[f"{Opinion.PUBLISHED_FIELD}__gte"] = user.last_login
+        query_set_params = QuerySetParams()
+        query_set_params.add_and_lookup(
+            Opinion.USER_FIELD, f"{Opinion.USER_FIELD}__in", followed_ids)
+        query_set_params.add_and_lookup(
+            Opinion.STATUS_FIELD,
+            f"{Opinion.STATUS_FIELD}__{Status.NAME_FIELD}", STATUS_PUBLISHED)
 
-        query = query_params if as_params else \
-            Opinion.objects.filter(**query_params)
+        if since:
+            query_set_params.add_and_lookup(
+                Opinion.PUBLISHED_FIELD,
+                f"{Opinion.PUBLISHED_FIELD}__gte", since)
+
+        query = query_set_params if as_params else \
+            query_set_params.apply(Opinion.objects)
 
     return query
+
+
+def basic_review_query_params(
+    user: User, model: Type[models.Model], since: datetime = None
+) -> QuerySetParams:
+    """
+    Get the basic params for a Review status query
+    :param user: user to check
+    :param model: model to check for
+    :param since: updates since datetime: default None, i.e. all
+    :return: query set params
+    """
+    query_set_params = QuerySetParams()
+    query_set_params.add_and_lookup(
+        model.USER_FIELD,
+        f"{Review.content_field(model)}__{model.USER_FIELD}", user)
+    if since:
+        query_set_params.add_and_lookup(
+            Review.UPDATED_FIELD, f"{Review.UPDATED_FIELD}__gte", since)
+
+    return query_set_params
+
+
+def own_content_status_changes(
+    user: User, model: Type[models.Model], since: datetime = None,
+    as_params: bool = False
+) -> Optional[Union[QuerySet, QuerySetParams]]:
+    """
+    Get the list of opinions for which the Review status has changed
+    :param user: user to check
+    :param model: model to check for
+    :param since: updates since datetime: default None, i.e. all
+    :param as_params: return dict of params flag: default False
+    :return: query set or query param dict
+    """
+    query_set_params = basic_review_query_params(user, model, since=since)
+
+    return query_set_params if as_params else \
+        query_set_params.apply(Review.objects)
+
+
+def in_review_content(
+    user: User, model: Type[models.Model], since: datetime = None,
+    as_params: bool = False
+) -> Optional[Union[QuerySet, dict]]:
+    """
+    Get the list of opinions which are in review
+    :param user: user to check
+    :param model: model to check for
+    :param since: updates since datetime: default None, i.e. all
+    :param as_params: return dict of params flag: default False
+    :return: query set or query param dict
+    """
+    query_set_params = basic_review_query_params(user, model, since=since)
+
+    query_set_params.add_or_lookup(
+        Review.STATUS_FIELD,
+        Q(_connector=Q.OR, *[
+            Q(**{f'{Review.STATUS_FIELD}__{Status.NAME_FIELD}': stat.display})
+            for stat in QueryStatus.review_wip_statuses()
+        ])
+    )
+
+    in_review = query_set_params.apply(
+        Review.objects).values_list(Review.OPINION_FIELD, flat=True)
+
+    query_set_params.clear()
+    if in_review:
+        query_set_params.add_and_lookup(
+            Review.OPINION_FIELD, f'{Opinion.ID_FIELD}__in', in_review
+        )
+    else:
+        query_set_params.is_none = True
+
+    return query_set_params if as_params else \
+        query_set_params.apply(Review.objects)

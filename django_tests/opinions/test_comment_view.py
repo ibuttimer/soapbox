@@ -158,7 +158,8 @@ class TestCommentView(SoupMixin, CategoryMixin, BaseCommentTest):
             Comment.OPINION_FIELD: comment.opinion,
             Comment.PARENT_FIELD: Comment.NO_PARENT
         })
-        TestCommentView.verify_comment_content(self, comments[0], response)
+        TestCommentView.verify_comment_content(
+            self, comments[0], response, user=logged_in_user)
 
         # TODO extend comment testing to comments on comments
 
@@ -172,12 +173,13 @@ class TestCommentView(SoupMixin, CategoryMixin, BaseCommentTest):
 
     @staticmethod
     def verify_comment_content(test_case: TestCase, comment: Comment,
-                               response: HttpResponse):
+                               response: HttpResponse, user: User = None):
         """
         Verify comment page content for user
         :param test_case: TestCase instance
         :param comment: expected comment
         :param response: opinion response
+        :param user: current user; default None
         """
         test_case.assertEqual(response.status_code, HTTPStatus.OK)
 
@@ -185,9 +187,13 @@ class TestCommentView(SoupMixin, CategoryMixin, BaseCommentTest):
             response.content.decode("utf-8", errors="ignore"), features="lxml"
         )
 
-        under_review = any(
-            map(lambda op: op.id == comment.id, test_case.reported_comments)
-        )
+        # comment author can always see their own
+        under_review = user and comment.user != user
+        if under_review:
+            under_review = any(
+                map(lambda op: op.id == comment.id,
+                    test_case.reported_comments)
+            )
         expected_content = UNDER_REVIEW_COMMENT_CONTENT \
             if under_review else comment.content
 

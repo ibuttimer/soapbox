@@ -48,7 +48,8 @@ from opinions.constants import (
     COMMENT_SLUG_ROUTE_NAME, OPINION_FOLLOW_ID_URL,
     OPINION_FOLLOW_ID_ROUTE_NAME, COMMENT_FOLLOW_ID_URL,
     COMMENT_FOLLOW_ID_ROUTE_NAME, OPINION_FOLLOWED_URL,
-    OPINION_FOLLOWED_ROUTE_NAME,
+    OPINION_FOLLOWED_ROUTE_NAME, OPINION_IN_REVIEW_URL,
+    OPINION_IN_REVIEW_ROUTE_NAME,
 )
 from opinions.views.comment_create import (
     OpinionCommentCreate, CommentCommentCreate
@@ -63,7 +64,7 @@ from opinions.views.opinion_by_id import (
     opinion_pin_patch, opinion_report_post, opinion_follow_patch
 )
 from opinions.views.opinion_list import (
-    OpinionList, OpinionSearch, OpinionFollowed
+    OpinionList, OpinionSearch, OpinionFollowed, OpinionInReview
 )
 from opinions.views.comment_by_id import (
     comment_like_patch, comment_report_post, comment_hide_patch,
@@ -82,6 +83,9 @@ urlpatterns = [
     # opinions by followed authors
     path(OPINION_FOLLOWED_URL, OpinionFollowed.as_view(),
          name=OPINION_FOLLOWED_ROUTE_NAME),
+    # opinions in review
+    path(OPINION_IN_REVIEW_URL, OpinionInReview.as_view(),
+         name=OPINION_IN_REVIEW_ROUTE_NAME),
     # create opinion
     path(OPINION_NEW_URL, OpinionCreate.as_view(),
          name=OPINION_NEW_ROUTE_NAME),

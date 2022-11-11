@@ -33,6 +33,7 @@ BIO = "bio"
 AVATAR = "avatar"
 CATEGORIES = 'categories'
 GROUPS = 'groups'
+PREVIOUS_LOGIN = 'previous_login'
 
 AUTHOR_GROUP = 'Author'
 MODERATOR_GROUP = 'Moderator'

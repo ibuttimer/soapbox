@@ -208,7 +208,27 @@ class Comment(ModelMixin, SlugMixin, models.Model):
         )
 
 
-class Review(ModelMixin, models.Model):
+class OpinionCommentMixin:
+    """ Mixin for models with both Comment and Opinion fields """
+
+    @classmethod
+    def content_field(
+        cls, model: Type[ModelMixin], opinion: str = OPINION_FIELD,
+        comment: str = COMMENT_FIELD
+    ) -> Optional[str]:
+        """
+        Return the name of the content field for the specified model
+        :param model: model to get field for
+        :param opinion: model field name for opinion
+        :param comment: model field name for comment
+        :return: field name or None
+        """
+        model_name = ModelMixin.model_name_obj(model)
+        return opinion if model_name == Opinion.model_name() else \
+            comment if model_name == Comment.model_name() else None
+
+
+class Review(OpinionCommentMixin, ModelMixin, models.Model):
     """ Reviews model """
 
     # field names
@@ -248,16 +268,6 @@ class Review(ModelMixin, models.Model):
     resolved = models.DateTimeField(
         default=datetime(MINYEAR, 1, 1, tzinfo=timezone.utc))
 
-    @classmethod
-    def content_field(cls, model: Type[models.Model]) -> Optional[str]:
-        """
-        Return the name of the content field for the specified model
-        :param model: model to get field for
-        :return: field name or None
-        """
-        return Review.OPINION_FIELD if isinstance(model, Opinion) else \
-            Review.COMMENT_FIELD if isinstance(model, Comment) else None
-
     class Meta:
         permissions = [
             (CLOSE_REVIEW_PERM,
@@ -270,7 +280,7 @@ class Review(ModelMixin, models.Model):
         return f'{self.opinion} - {self.status.short_name}'
 
 
-class AgreementStatus(ModelMixin, models.Model):
+class AgreementStatus(OpinionCommentMixin, ModelMixin, models.Model):
     """ AgreementStatus model """
 
     # field names
@@ -293,23 +303,12 @@ class AgreementStatus(ModelMixin, models.Model):
 
     updated = models.DateTimeField(auto_now=True)
 
-    @classmethod
-    def content_field(cls, model: Type[models.Model]) -> Optional[str]:
-        """
-        Return the name of the content field for the specified model
-        :param model: model to get field for
-        :return: field name or None
-        """
-        return AgreementStatus.OPINION_FIELD if isinstance(model, Opinion) \
-            else AgreementStatus.COMMENT_FIELD if isinstance(model, Comment) \
-            else None
-
     def __str__(self):
         return f'{self.opinion if self.opinion else self.comment} - ' \
                f'{self.status.short_name}'
 
 
-class HideStatus(ModelMixin, models.Model):
+class HideStatus(OpinionCommentMixin, ModelMixin, models.Model):
     """ HideStatus model """
 
     # field names
@@ -328,17 +327,6 @@ class HideStatus(ModelMixin, models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     updated = models.DateTimeField(auto_now=True)
-
-    @classmethod
-    def content_field(cls, model: Type[models.Model]) -> Optional[str]:
-        """
-        Return the name of the content field for the specified model
-        :param model: model to get field for
-        :return: field name or None
-        """
-        return HideStatus.OPINION_FIELD if isinstance(model, Opinion) \
-            else HideStatus.COMMENT_FIELD if isinstance(model, Comment) \
-            else None
 
     def __str__(self):
         return f'Hide {self.opinion if self.opinion else self.comment}'
