@@ -322,12 +322,15 @@ STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage' \
 # https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-STATICFILES_DIRS
 # Additional locations the staticfiles app will traverse for collectstatic
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'staticfiles')
+    # directories that will be found by staticfiles’s finders are by default,
+    # are 'static/' app sub-directories and any directories included in
+    # STATICFILES_DIRS
+    os.path.join(BASE_DIR, 'static')
 ]
 # absolute path to the directory where static files are collected for
 # deployment
 # https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-STATIC_ROOT
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 MEDIA_URL = 'media/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-MEDIA_ROOT
