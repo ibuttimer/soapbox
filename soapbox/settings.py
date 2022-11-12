@@ -162,6 +162,7 @@ FORM_RENDERER = 'django.forms.renderers.TemplatesSetting'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -316,10 +317,12 @@ USE_TZ = True
 STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#staticfiles-storage
 STATICFILES_STORAGE = \
-    'django.contrib.staticfiles.storage.StaticFilesStorage' \
-    if DEVELOPMENT else \
-    'cloudinary_storage.storage.StaticHashedCloudinaryStorage'
+    'django.contrib.staticfiles.storage.StaticFilesStorage'
+    #     \
+    # if DEVELOPMENT else \
+    # 'cloudinary_storage.storage.StaticHashedCloudinaryStorage'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-STATICFILES_DIRS
+# Additional locations the staticfiles app will traverse for collectstatic
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'staticfiles')
 ]
