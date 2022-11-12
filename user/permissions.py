@@ -222,7 +222,7 @@ def set_basic_permissions(group: [Group, str],
                     }
                 permissions = permission.objects.using(db_alias).\
                     filter(**filter_args)
-                assert permissions.exists()
+                assert permissions.exists(), f'{filter_args}'
                 set_permissions(group, perm_setting, permissions)
 
     else:   # called from the app
