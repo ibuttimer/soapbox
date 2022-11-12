@@ -162,7 +162,7 @@ FORM_RENDERER = 'django.forms.renderers.TemplatesSetting'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    "whitenoise.middleware.WhiteNoiseMiddleware",
+    # "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -316,9 +316,10 @@ USE_TZ = True
 # URL to use when referring to static files located in STATIC_ROOT
 STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#staticfiles-storage
-STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
-    # \
-    # if DEVELOPMENT else \
+STATICFILES_STORAGE = \
+    'django.contrib.staticfiles.storage.StaticFilesStorage' \
+    if DEVELOPMENT else \
+    'cloudinary_storage.storage.StaticHashedCloudinaryStorage'
     # 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-STATICFILES_DIRS
 # Additional locations the staticfiles app will traverse for collectstatic
@@ -339,10 +340,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, MEDIA_URL)
 
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-file-storage
 DEFAULT_FILE_STORAGE = \
-    'django.core.files.storage.FileSystemStorage'
-    #     \
-    # if DEVELOPMENT else \
-    # 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    'django.core.files.storage.FileSystemStorage' \
+    if DEVELOPMENT else \
+    'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
