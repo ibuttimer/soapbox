@@ -316,11 +316,9 @@ USE_TZ = True
 # URL to use when referring to static files located in STATIC_ROOT
 STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#staticfiles-storage
-STATICFILES_STORAGE = \
-    'django.contrib.staticfiles.storage.StaticFilesStorage'
-    #     \
-    # if DEVELOPMENT else \
-    # 'cloudinary_storage.storage.StaticHashedCloudinaryStorage'
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage' \
+    if DEVELOPMENT else \
+    'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-STATICFILES_DIRS
 # Additional locations the staticfiles app will traverse for collectstatic
 STATICFILES_DIRS = [
