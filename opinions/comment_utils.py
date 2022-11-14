@@ -58,11 +58,11 @@ FIELD_LOOKUPS = {
     SEARCH_QUERY: '',
     # TODO opinion
     # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#exact
-    ID_QUERY: f'{Comment.ID_FIELD}',
+    ID_QUERY: f'{Comment.id_field()}',
     STATUS_QUERY: f'{Comment.STATUS_FIELD}__{Status.NAME_FIELD}',
     CONTENT_QUERY: f'{Comment.CONTENT_FIELD}__icontains',
     AUTHOR_QUERY: f'{Comment.USER_FIELD}__{User.USERNAME_FIELD}__icontains',
-    OPINION_ID_QUERY: f'{Comment.OPINION_FIELD}__{Opinion.ID_FIELD}',
+    OPINION_ID_QUERY: f'{Comment.OPINION_FIELD}__{Opinion.id_field()}',
     PARENT_ID_QUERY: f'{Comment.PARENT_FIELD}',
     ON_OR_AFTER_QUERY: f'{Comment.SEARCH_DATE_FIELD}__date__gte',
     ON_OR_BEFORE_QUERY: f'{Comment.SEARCH_DATE_FIELD}__date__lte',

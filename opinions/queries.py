@@ -395,13 +395,14 @@ def in_review_content(
         ])
     )
 
+    content_field = Review.content_field(model)
     in_review = query_set_params.apply(
-        Review.objects).values_list(Review.OPINION_FIELD, flat=True)
+        Review.objects).values_list(content_field, flat=True)
 
     query_set_params.clear()
     if in_review:
         query_set_params.add_and_lookup(
-            Review.OPINION_FIELD, f'{Opinion.ID_FIELD}__in', in_review
+            content_field, f'{Review.id_field()}__in', in_review
         )
     else:
         query_set_params.is_none = True

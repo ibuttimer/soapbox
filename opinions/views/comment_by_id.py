@@ -136,7 +136,7 @@ class CommentDetail(LoginRequiredMixin, View):
         :return: opinion
         """
         query = {
-            Comment.ID_FIELD if isinstance(identifier, int)
+            Comment.id_field() if isinstance(identifier, int)
             else Comment.SLUG_FIELD: identifier
         }
         return get_object_or_404(Comment, **query)

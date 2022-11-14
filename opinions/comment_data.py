@@ -225,9 +225,9 @@ def get_comment_tree(
 
     sub_query_params = query_params.copy()
     if depth > 1:
-        if Comment.ID_FIELD in sub_query_params:
+        if Comment.id_field() in sub_query_params:
             # remove comment id if present
-            del sub_query_params[Comment.ID_FIELD]
+            del sub_query_params[Comment.id_field()]
 
         # get first page of comments on comments
         sub_query_params[PAGE_QUERY] = 1

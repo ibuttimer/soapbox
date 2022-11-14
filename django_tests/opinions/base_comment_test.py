@@ -24,9 +24,9 @@ from django.test import TestCase
 
 from categories.models import Status
 from opinions.constants import (
-    STATUS_QUERY, HIDDEN_QUERY, CONTENT_QUERY, AUTHOR_QUERY, DESC_LOOKUP,
-    DATE_NEWEST_LOOKUP
+    STATUS_QUERY, HIDDEN_QUERY, CONTENT_QUERY, AUTHOR_QUERY
 )
+from utils import DESC_LOOKUP, DATE_NEWEST_LOOKUP
 from opinions.models import Comment
 from opinions.views.utils import DATE_QUERIES
 from opinions.enums import PerPage, CommentSortOrder, QueryStatus, Hidden
@@ -191,7 +191,7 @@ def sort_expected(expected: list[Comment], order: CommentSortOrder,
     )
     sort_ctrl.append(
         SortCtrl(   # sort by id asc
-            Comment.UPDATED_FIELD, Comment.ID_FIELD, reverse=False)
+            Comment.UPDATED_FIELD, Comment.id_field(), reverse=False)
     )
 
     expected = multi_sort(expected.copy(), sort_ctrl)

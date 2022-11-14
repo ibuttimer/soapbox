@@ -36,7 +36,7 @@ from categories.models import Status
 from opinions.models import Opinion, Comment
 from user.models import User
 
-from .constants import DATE_NEWEST_LOOKUP, DATE_OLDEST_LOOKUP, DESC_LOOKUP
+from utils import DESC_LOOKUP, DATE_OLDEST_LOOKUP, DATE_NEWEST_LOOKUP
 
 
 class ChoiceArg(Enum):

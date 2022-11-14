@@ -30,15 +30,14 @@ from django.template.defaultfilters import truncatechars
 
 from user.models import User
 from categories.models import Category, Status
-from utils import SlugMixin
-from utils.models import ModelMixin
+from utils import SlugMixin, ModelMixin
 from .constants import (
     ID_FIELD, TITLE_FIELD, CONTENT_FIELD, EXCERPT_FIELD, CATEGORIES_FIELD,
     STATUS_FIELD, USER_FIELD, SLUG_FIELD, CREATED_FIELD, UPDATED_FIELD,
     PUBLISHED_FIELD, PARENT_FIELD, LEVEL_FIELD,
     OPINION_FIELD, REQUESTED_FIELD, REASON_FIELD,
     REVIEWER_FIELD, COMMENT_FIELD, RESOLVED_FIELD, CLOSE_REVIEW_PERM,
-    WITHDRAW_REVIEW_PERM, DESC_LOOKUP, AUTHOR_FIELD
+    WITHDRAW_REVIEW_PERM, AUTHOR_FIELD
 )
 
 
@@ -46,7 +45,6 @@ class Opinion(ModelMixin, SlugMixin, models.Model):
     """ Opinions model """
 
     # field names
-    ID_FIELD = ID_FIELD
     TITLE_FIELD = TITLE_FIELD
     CONTENT_FIELD = CONTENT_FIELD
     EXCERPT_FIELD = EXCERPT_FIELD
@@ -112,20 +110,13 @@ class Opinion(ModelMixin, SlugMixin, models.Model):
         self.slug = Opinion.generate_unique_slug(
             self, Opinion.OPINION_ATTRIB_SLUG_MAX_LEN, title)
 
-    @staticmethod
-    def is_date_field(field: str):
-        return field in Opinion.DATE_FIELDS
+    @classmethod
+    def date_fields(cls) -> list[str]:
+        """ Get the list of date fields """
+        return Opinion.DATE_FIELDS
 
-    @staticmethod
-    def is_date_lookup(lookup: str):
-        """
-        Check if the specified `lookup` represents a date Lookup
-        :param lookup: lookup string
-        :return: True if lookup contains a date field
-        """
-        return any(
-            map(lambda fld: fld in lookup, Opinion.DATE_FIELDS)
-        )
+
+assert Opinion.id_field() == ID_FIELD
 
 
 class Comment(ModelMixin, SlugMixin, models.Model):
@@ -135,7 +126,6 @@ class Comment(ModelMixin, SlugMixin, models.Model):
     """ Value representing no parent """
 
     # field names
-    ID_FIELD = ID_FIELD
     CONTENT_FIELD = CONTENT_FIELD
     OPINION_FIELD = OPINION_FIELD
     PARENT_FIELD = PARENT_FIELD
@@ -192,20 +182,13 @@ class Comment(ModelMixin, SlugMixin, models.Model):
         self.slug = Comment.generate_unique_slug(
             self, Comment.COMMENT_ATTRIB_SLUG_MAX_LEN, strip_tags(content))
 
-    @staticmethod
-    def is_date_field(field: str):
-        return field in Comment.DATE_FIELDS
+    @classmethod
+    def date_fields(cls) -> list[str]:
+        """ Get the list of date fields """
+        return Comment.DATE_FIELDS
 
-    @staticmethod
-    def is_date_lookup(lookup: str):
-        """
-        Check if the specified `lookup` represents a date Lookup
-        :param lookup: lookup string
-        :return: True if lookup contains a date field
-        """
-        return any(
-            map(lambda fld: fld in lookup, Comment.DATE_FIELDS)
-        )
+
+assert Comment.id_field() == ID_FIELD
 
 
 class OpinionCommentMixin:
@@ -232,7 +215,6 @@ class Review(OpinionCommentMixin, ModelMixin, models.Model):
     """ Reviews model """
 
     # field names
-    ID_FIELD = ID_FIELD
     OPINION_FIELD = OPINION_FIELD
     COMMENT_FIELD = COMMENT_FIELD
     REQUESTED_FIELD = REQUESTED_FIELD
@@ -284,7 +266,6 @@ class AgreementStatus(OpinionCommentMixin, ModelMixin, models.Model):
     """ AgreementStatus model """
 
     # field names
-    ID_FIELD = ID_FIELD
     OPINION_FIELD = OPINION_FIELD
     COMMENT_FIELD = COMMENT_FIELD
     USER_FIELD = USER_FIELD
@@ -312,7 +293,6 @@ class HideStatus(OpinionCommentMixin, ModelMixin, models.Model):
     """ HideStatus model """
 
     # field names
-    ID_FIELD = ID_FIELD
     OPINION_FIELD = OPINION_FIELD
     COMMENT_FIELD = COMMENT_FIELD
     USER_FIELD = USER_FIELD
@@ -336,7 +316,6 @@ class PinStatus(ModelMixin, models.Model):
     """ PinStatus model """
 
     # field names
-    ID_FIELD = ID_FIELD
     OPINION_FIELD = OPINION_FIELD
     USER_FIELD = USER_FIELD
     UPDATED_FIELD = UPDATED_FIELD
@@ -352,21 +331,10 @@ class PinStatus(ModelMixin, models.Model):
         return f'Pin {self.model_name()}[{self.id}]: {self.opinion}'
 
 
-def is_id_lookup(lookup: str):
-    """
-    Check if the specified `lookup` represents an id Lookup
-    :param lookup: lookup string
-    :return: True if lookup contains the field
-    """
-    lookup = lookup.lower()
-    return lookup == ID_FIELD or lookup == f'{DESC_LOOKUP}{ID_FIELD}'
-
-
 class FollowStatus(ModelMixin, models.Model):
     """ FollowStatus model """
 
     # field names
-    ID_FIELD = ID_FIELD
     AUTHOR_FIELD = AUTHOR_FIELD
     USER_FIELD = USER_FIELD
     UPDATED_FIELD = UPDATED_FIELD

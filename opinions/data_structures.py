@@ -286,10 +286,10 @@ class OpinionData:
     def from_model(cls, opinion: Opinion):
         obj_kwargs = {
             key: getattr(opinion, key) for key in [
-                Opinion.ID_FIELD, Opinion.TITLE_FIELD, Opinion.CONTENT_FIELD,
-                Opinion.EXCERPT_FIELD, Opinion.SLUG_FIELD,
-                Opinion.CREATED_FIELD, Opinion.UPDATED_FIELD,
-                Opinion.PUBLISHED_FIELD,
+                Opinion.id_field(), Opinion.TITLE_FIELD,
+                Opinion.CONTENT_FIELD, Opinion.EXCERPT_FIELD,
+                Opinion.SLUG_FIELD, Opinion.CREATED_FIELD,
+                Opinion.UPDATED_FIELD, Opinion.PUBLISHED_FIELD,
             ]
         }
         obj_kwargs['user_id'] = opinion.user.id

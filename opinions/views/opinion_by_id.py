@@ -177,7 +177,7 @@ class OpinionDetail(LoginRequiredMixin, View):
         :return: opinion
         """
         query = {
-            Opinion.ID_FIELD if isinstance(identifier, int)
+            Opinion.id_field() if isinstance(identifier, int)
             else Opinion.SLUG_FIELD: identifier
         }
         return get_object_or_404(Opinion, **query)

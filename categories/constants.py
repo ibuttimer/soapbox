@@ -22,7 +22,6 @@
 #
 
 # common field names
-ID_FIELD = "id"
 NAME_FIELD = "name"
 DESCRIPTION_FIELD = "description"
 

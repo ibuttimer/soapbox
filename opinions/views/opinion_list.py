@@ -22,7 +22,7 @@
 #
 from datetime import datetime
 from enum import Enum
-from typing import Any, Type, Callable, Tuple, Optional
+from typing import Any, Type, Callable, Tuple, Optional, Union
 from zoneinfo import ZoneInfo
 from string import capwords
 
@@ -36,7 +36,7 @@ from opinions.constants import (
     STATUS_QUERY, TITLE_QUERY,
     CONTENT_QUERY, CATEGORY_QUERY, AUTHOR_QUERY, ON_OR_AFTER_QUERY,
     ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY, EQUAL_QUERY,
-    SEARCH_QUERY, REORDER_QUERY, ID_FIELD, HIDDEN_QUERY, PINNED_QUERY,
+    SEARCH_QUERY, REORDER_QUERY, HIDDEN_QUERY, PINNED_QUERY,
     TEMPLATE_OPINION_REACTIONS,
     TEMPLATE_REACTION_CTRLS, UNDER_REVIEW_TITLE, UNDER_REVIEW_EXCERPT,
     UNDER_REVIEW_OPINION_CONTENT, UNDER_REVIEW_TITLE_CTX,
@@ -428,6 +428,8 @@ class OpinionFollowed(OpinionList):
     Followed authors opinion list response
     """
 
+    QS_PARAMS = 'qs_params'
+
     def req_query_args(self) -> Callable[[HttpRequest], dict[str, QueryArg]]:
         """
         Get the request query args function
@@ -443,10 +445,14 @@ class OpinionFollowed(OpinionList):
         """
         # build search term string from values that were set
         super().set_extra_context(query_params)
-        self.extra_context.update({
+        self.extra_context.update(self.get_title_heading())
+
+    def get_title_heading(self) -> dict:
+        """ Get the title and page heading for context """
+        return {
             TITLE_CTX: 'Followed new opinions',
             PAGE_HEADING_CTX: 'New Opinions By Tagged Authors',
-        })
+        }
 
     def set_queryset(
         self, query_params: dict[str, QueryArg],
@@ -466,12 +472,17 @@ class OpinionFollowed(OpinionList):
         if query_kwargs is None:
             query_kwargs = {}
 
-        qs_params = followed_author_publications(
-            self.user, since=self.user.previous_login, as_params=True)
-
-        query_kwargs['qs_params'] = qs_params
+        query_kwargs[OpinionFollowed.QS_PARAMS] = self.get_queryset_params()
 
         return query_set_params, query_kwargs
+
+    def get_queryset_params(self) -> Optional[Union[QuerySet, QuerySetParams]]:
+        """
+        Get the queryset to get the list of items for this view
+        :return: query set params
+        """
+        return followed_author_publications(
+            self.user, since=self.user.previous_login, as_params=True)
 
     def apply_queryset_param(
             self, query_set_params: QuerySetParams, **kwargs):
@@ -479,7 +490,7 @@ class OpinionFollowed(OpinionList):
         Apply `query_set_params` to set the queryset
         :param query_set_params: QuerySetParams to apply
         """
-        qs_params = kwargs.get('qs_params', None)
+        qs_params = kwargs.get(OpinionFollowed.QS_PARAMS, None)
 
         if qs_params:
             query_set_params.add(qs_params)
@@ -492,73 +503,25 @@ class OpinionFollowed(OpinionList):
             self.queryset = Opinion.objects.none()
 
 
-class OpinionInReview(OpinionList):
+class OpinionInReview(OpinionFollowed):
     """
     Opinions in review list response
     """
 
-    def req_query_args(self) -> Callable[[HttpRequest], dict[str, QueryArg]]:
-        """
-        Get the request query args function
-        :return: request query args function
-        """
-        # TODO probably should be a more restricted list of args
-        return super().req_query_args()
-
-    def set_extra_context(self, query_params: dict[str, QueryArg]):
-        """
-        Set the context extra content to be added to context
-        :param query_params: request query
-        """
-        # build search term string from values that were set
-        super().set_extra_context(query_params)
-        self.extra_context.update({
+    def get_title_heading(self) -> dict:
+        """ Get the title and page heading for context """
+        return {
             TITLE_CTX: 'Review Opinions',
             PAGE_HEADING_CTX: 'Opinions in Review',
-        })
+        }
 
-    def set_queryset(
-        self, query_params: dict[str, QueryArg],
-        query_set_params: QuerySetParams = None
-    ) -> Tuple[QuerySetParams, Optional[dict]]:
+    def get_queryset_params(self) -> Optional[Union[QuerySet, QuerySetParams]]:
         """
-        Set the queryset to get the list of items for this view
-        :param query_params: request query
-        :param query_set_params: QuerySetParams to update; default None
-        :return: tuple of query set params and dict of kwargs to pass to
-                apply_queryset_param
+        Get the queryset to get the list of items for this view
+        :return: query set params
         """
-        # https://docs.djangoproject.com/en/4.1/ref/models/querysets/
-        # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#id4
-        # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#field-lookups
-        query_set_params, query_kwargs = super().set_queryset(query_params)
-        if query_kwargs is None:
-            query_kwargs = {}
-
-        qs_params = in_review_content(
+        return in_review_content(
             self.user, Opinion, since=self.user.previous_login, as_params=True)
-
-        query_kwargs['qs_params'] = qs_params
-
-        return query_set_params, query_kwargs
-
-    def apply_queryset_param(
-            self, query_set_params: QuerySetParams, **kwargs):
-        """
-        Apply `query_set_params` to set the queryset
-        :param query_set_params: QuerySetParams to apply
-        """
-        qs_params = kwargs.get('qs_params', None)
-
-        if qs_params:
-            query_set_params.add(qs_params)
-
-            self.queryset = query_set_params.apply(
-                Opinion.objects.prefetch_related('categories')
-            )
-        else:
-            # not following anyone
-            self.queryset = Opinion.objects.none()
 
 
 def get_lookup(
@@ -694,11 +657,11 @@ def get_search_term(
             #   "WHERE ("title") LIKE '<term>'",
             #   "WHERE ("content") LIKE '<term>'"
             # ]
-            for q in to_query:
+            for qry in to_query:
                 query_set_params.add_or_lookup(
                     '-'.join(to_query),
                     Q(_connector=Q.OR, **{
-                        FIELD_LOOKUPS[q]: term for term in or_q[q]
+                        FIELD_LOOKUPS[qry]: term for term in or_q[qry]
                     })
                 )
 
@@ -707,8 +670,8 @@ def get_search_term(
 
 def get_yes_no_ignore_query(
             query_set_params: QuerySetParams, query: str,
-            yes: [ChoiceArg, list[ChoiceArg]],
-            no: [ChoiceArg, list[ChoiceArg]],
+            yes_choice: [ChoiceArg, list[ChoiceArg]],
+            no_choice: [ChoiceArg, list[ChoiceArg]],
             ignore: [ChoiceArg, list[ChoiceArg]],
             choice: ChoiceArg, clazz: Type[ChoiceArg],
             chosen_qs: QuerySet
@@ -717,8 +680,8 @@ def get_yes_no_ignore_query(
     Get a choice status query
     :param query_set_params: query params to update
     :param query: query term from request
-    :param yes: yes choice in ChoiceArg
-    :param no: no choice in ChoiceArg
+    :param yes_choice: yes_choice choice in ChoiceArg
+    :param no_choice: no choice in ChoiceArg
     :param ignore: ignore choice in ChoiceArg
     :param choice: choice from request
     :param clazz: ChoiceArg class
@@ -730,18 +693,18 @@ def get_yes_no_ignore_query(
     elif isinstance(choice, clazz):
         # get ids of opinions chosen by the user
         query_params = {
-            f'{ID_FIELD}__in': chosen_qs
+            f'{Opinion.id_field()}__in': chosen_qs
         }
 
-        if choice in ensure_list(no):
+        if choice in ensure_list(no_choice):
             # exclude chosen opinions
-            def qs_exclude(qs: QuerySet) -> QuerySet:
-                return qs.exclude(**query_params)
+            def qs_exclude(qry_set: QuerySet) -> QuerySet:
+                return qry_set.exclude(**query_params)
             query_set = qs_exclude
-        elif choice in ensure_list(yes):
+        elif choice in ensure_list(yes_choice):
             # only chosen opinions
-            def qs_filter(qs: QuerySet) -> QuerySet:
-                return qs.filter(**query_params)
+            def qs_filter(qry_set: QuerySet) -> QuerySet:
+                return qry_set.filter(**query_params)
             query_set = qs_filter
         else:
             query_set = None

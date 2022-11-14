@@ -22,10 +22,11 @@
 #
 from enum import Enum
 from http import HTTPStatus
-from typing import Type, Callable, Tuple, Optional
+from typing import Type, Callable, Tuple, Optional, Union
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import QuerySet
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_http_methods
@@ -40,11 +41,12 @@ from opinions.constants import (
     STATUS_QUERY, AUTHOR_QUERY, SEARCH_QUERY, REORDER_QUERY,
     CONTENT_STATUS_CTX, UNDER_REVIEW_CONTENT_CTX,
     UNDER_REVIEW_COMMENT_CONTENT, HIDDEN_CONTENT_CTX, HIDDEN_COMMENT_CONTENT,
-    REPEAT_SEARCH_TERM_CTX, PAGE_HEADING_CTX
+    REPEAT_SEARCH_TERM_CTX, PAGE_HEADING_CTX, TITLE_CTX
 )
 from opinions.contexts.comment import comments_list_context_for_opinion
 from opinions.enums import QueryArg, QueryStatus, CommentSortOrder, SortOrder
 from opinions.models import Comment
+from opinions.queries import in_review_content
 from opinions.query_params import QuerySetParams
 from opinions.views.content_list_mixin import ContentListMixin
 from opinions.views.utils import (
@@ -308,6 +310,86 @@ class CommentSearch(CommentList):
         else:
             # invalid query term entered
             self.queryset = Comment.objects.none()
+
+
+class CommentInReview(CommentList):
+    """
+    Comments in review list response
+    """
+
+    QS_PARAMS = 'qs_params'
+
+    def req_query_args(self) -> Callable[[HttpRequest], dict[str, QueryArg]]:
+        """
+        Get the request query args function
+        :return: request query args function
+        """
+        # TODO probably should be a more restricted list of args
+        return super().req_query_args()
+
+    def set_extra_context(self, query_params: dict[str, QueryArg]):
+        """
+        Set the context extra content to be added to context
+        :param query_params: request query
+        """
+        # build search term string from values that were set
+        super().set_extra_context(query_params)
+        self.extra_context.update(self.get_title_heading())
+
+    def get_title_heading(self) -> dict:
+        """ Get the title and page heading for context """
+        return {
+            TITLE_CTX: 'Review Comments',
+            PAGE_HEADING_CTX: 'Comments in Review',
+        }
+
+    def set_queryset(
+            self, query_params: dict[str, QueryArg],
+            query_set_params: QuerySetParams = None
+    ) -> Tuple[QuerySetParams, Optional[dict]]:
+        """
+        Set the queryset to get the list of items for this view
+        :param query_params: request query
+        :param query_set_params: QuerySetParams to update; default None
+        :return: tuple of query set params and dict of kwargs to pass to
+                apply_queryset_param
+        """
+        # https://docs.djangoproject.com/en/4.1/ref/models/querysets/
+        # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#id4
+        # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#field-lookups
+        query_set_params, query_kwargs = super().set_queryset(query_params)
+        if query_kwargs is None:
+            query_kwargs = {}
+
+        query_kwargs[CommentInReview.QS_PARAMS] = self.get_queryset_params()
+
+        return query_set_params, query_kwargs
+
+    def get_queryset_params(self) -> Optional[Union[QuerySet, QuerySetParams]]:
+        """
+        Get the queryset to get the list of items for this view
+        :return: query set params
+        """
+        return in_review_content(
+            self.user, Comment, since=self.user.previous_login,
+            as_params=True)
+
+    def apply_queryset_param(
+            self, query_set_params: QuerySetParams, **kwargs):
+        """
+        Apply `query_set_params` to set the queryset
+        :param query_set_params: QuerySetParams to apply
+        """
+        qs_params = kwargs.get(CommentInReview.QS_PARAMS, None)
+
+        if qs_params:
+            query_set_params.add(qs_params)
+
+            self.queryset = query_set_params.apply(Comment.objects)
+        else:
+            # not following anyone
+            self.queryset = Comment.objects.none()
+
 
 
 @login_required

@@ -31,8 +31,9 @@ from categories.models import Category, Status
 from opinions.constants import (
     STATUS_QUERY, HIDDEN_QUERY, TITLE_QUERY, CONTENT_QUERY, AUTHOR_QUERY,
     CATEGORY_QUERY, ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY,
-    BEFORE_QUERY, PUBLISHED_FIELD, DESC_LOOKUP, DATE_NEWEST_LOOKUP
+    BEFORE_QUERY, PUBLISHED_FIELD
 )
+from utils import DESC_LOOKUP, DATE_NEWEST_LOOKUP
 from opinions.models import Opinion, HideStatus
 from opinions.views.utils import DATE_QUERIES
 from opinions.enums import PerPage, OpinionSortOrder, QueryStatus, Hidden
@@ -219,7 +220,7 @@ def sort_expected(expected: list[Opinion], order: OpinionSortOrder,
     )
     sort_ctrl.append(
         SortCtrl(   # sort by id asc
-            Opinion.UPDATED_FIELD, Opinion.ID_FIELD, reverse=False)
+            Opinion.UPDATED_FIELD, Opinion.id_field(), reverse=False)
     )
 
     expected = multi_sort(expected.copy(), sort_ctrl)

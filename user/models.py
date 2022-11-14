@@ -27,7 +27,7 @@ from cloudinary.models import CloudinaryField
 
 from soapbox import AVATAR_FOLDER, DEVELOPMENT
 from categories.models import Category
-from utils.models import ModelMixin
+from utils import ModelMixin
 
 from .constants import (
     FIRST_NAME, LAST_NAME, BIO, AVATAR, CATEGORIES, PREVIOUS_LOGIN
