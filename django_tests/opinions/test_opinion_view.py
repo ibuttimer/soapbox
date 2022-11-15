@@ -458,6 +458,6 @@ def is_delete_button(tag: Tag):
     :param tag: tag to check
     :return: True is opinion submit button, otherwise False
     """
-    return tag.name == 'a' \
-        and SoupMixin.equal_tag_attr(tag, 'role', 'button') \
+    return tag.name == 'button' \
+        and SoupMixin.equal_tag_attr(tag, 'type', 'button') \
         and SoupMixin.in_tag_attr(tag, 'class', 'btn__submit-opinion')

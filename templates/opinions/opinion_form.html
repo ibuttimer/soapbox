@@ -123,10 +123,10 @@
                             <div class="row">
                                 <div class="col-sm-3">
                                     {% if opinion.id %}
-                                    <a id="id--btn-delete-opinion" class="btn__submit-opinion btn btn-outline-danger mb-1"
-                                       role="button" href="{% url 'opinions:opinion_id' opinion.id %}">
+                                    <button type="button" class="btn__submit-opinion btn btn-outline-danger mb-1"
+                                            data-bs-toggle="modal" data-bs-target="#id--opinion-delete-confirm-modal">
                                         {% trans "Delete" %}
-                                    </a>
+                                    </button>
                                     {% endif %}
                                 </div>
                                 <div class="col-sm-3">
@@ -187,6 +187,29 @@
     </div>
 </article>
 
+<!-- Confirm delete opinion modal -->
+<div id="id--opinion-delete-confirm-modal" class="modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Opinion Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this opinion?</p>
+                <p>The opinion and all related comments will be deleted.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button id="id--btn-opinion-delete-confirm" type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">
+                    {% trans "Delete" %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Opinion deleted modal -->
 <div id="id--opinion-delete-modal" class="modal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -242,12 +265,12 @@
             const REDIRECT_PROP = 'redirect';
             const ELEMENT_ID_PROP = 'element_id';
 
-            $("#id--btn-delete-opinion").on('click', function (event) {
-                const url = event.currentTarget.attributes['href'].textContent;
-
+            $("#id--btn-opinion-delete-confirm").on('click', function (event) {
+                // const url = event.currentTarget.attributes['href'].textContent;
+                {% if opinion.id %}
                 $.ajax({
                     method: 'delete',
-                    url: url,
+                    url: "{% url 'opinions:opinion_id' opinion.id %}",
                     headers: {
                         'X-CSRFTOKEN': '{{ csrf_token }}'
                     },
@@ -286,6 +309,7 @@
 
                 event.preventDefault();
                 event.stopPropagation();
+                {% endif %}
             });
         </script>
     {% endif %}
