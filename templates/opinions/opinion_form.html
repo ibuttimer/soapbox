@@ -121,19 +121,27 @@
                     {% if not read_only %}
                         <div class="col-sm-6">
                             <div class="row">
-                                <div class="col-sm-4">
-                                    <button type="submit" class="btn__submit-opinion btn btn-outline-warning mb-1"
-                                            formaction="{{ submit_url }}?status=preview">
-                                        {% trans "Save Preview" %}
-                                    </button>
+                                <div class="col-sm-3">
+                                    {% if opinion.id %}
+                                    <a id="id--btn-delete-opinion" class="btn__submit-opinion btn btn-outline-danger mb-1"
+                                       role="button" href="{% url 'opinions:opinion_id' opinion.id %}">
+                                        {% trans "Delete" %}
+                                    </a>
+                                    {% endif %}
                                 </div>
-                                <div class="col-sm-4">
+                                <div class="col-sm-3">
                                     <button type="submit" class="btn__submit-opinion btn btn-outline-primary mb-1"
                                             formaction="{{ submit_url }}?status=draft">
                                         {% trans "Save Draft" %}
                                     </button>
                                 </div>
-                                <div class="col-sm-4">
+                                <div class="col-sm-3">
+                                    <button type="submit" class="btn__submit-opinion btn btn-outline-warning mb-1"
+                                            formaction="{{ submit_url }}?status=preview">
+                                        {% trans "Save Preview" %}
+                                    </button>
+                                </div>
+                                <div class="col-sm-3">
                                     <button type="submit" class="btn__submit-opinion btn btn-outline-success">{% trans "Publish" %}</button>
                                 </div>
                             </div>
@@ -179,6 +187,23 @@
     </div>
 </article>
 
+<div id="id--opinion-delete-modal" class="modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Opinion Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div id="id--opinion-delete-modal-body" class="modal-body">
+                <p>The opinion was successfully deleted</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock content %}
 
 {% block extra_js_body %}
@@ -196,6 +221,71 @@
             $(document).ready(function() {
                 {% form_field opinion_form 'content' as content_field %}
                 $('#readonly_content').html('{{ content_field.initial | safe }}');
+            });
+        </script>
+    {% else %}
+        <script>
+            /**
+             * Handle the response to an opinion delete
+             * :param data: json data
+             */
+            function delete_response_handler(data) {
+                if (data !== undefined) {
+                    if (data.hasOwnProperty(REDIRECT_PROP)) {
+                        document.location.href = data.redirect;
+                    } else if (data.hasOwnProperty(ELEMENT_ID_PROP)) {
+                        $("#" + data[ELEMENT_ID_PROP]).replaceWith(data.html);
+                    }
+                }
+            }
+
+            const REDIRECT_PROP = 'redirect';
+            const ELEMENT_ID_PROP = 'element_id';
+
+            $("#id--btn-delete-opinion").on('click', function (event) {
+                const url = event.currentTarget.attributes['href'].textContent;
+
+                $.ajax({
+                    method: 'delete',
+                    url: url,
+                    headers: {
+                        'X-CSRFTOKEN': '{{ csrf_token }}'
+                    },
+                }).done(function(data) {
+                    // extract redirect
+                    const redirect = {}
+                    redirect[REDIRECT_PROP] = "/";
+                    if (data !== undefined) {
+                        if (data.hasOwnProperty(REDIRECT_PROP)) {
+                            redirect[REDIRECT_PROP] = data.redirect;
+                            delete data[REDIRECT_PROP];
+                        }
+                    }
+
+                    delete_response_handler(data);
+
+                    // show modal
+                    $("#id--opinion-delete-modal").modal('show');
+
+                    $("#id--opinion-delete-modal").off('hidden.bs.modal');
+                    $("#id--opinion-delete-modal").on('hidden.bs.modal', (event) => {
+                        delete_response_handler(redirect);
+                    });
+
+                }).fail(function(data) {
+                    // display reason
+                    $("#id--opinion-delete-modal-body").html(data.responseJSON.html);
+
+                    $("#id--opinion-delete-modal").off('hidden.bs.modal');
+                    $("#id--opinion-delete-modal").on('hidden.bs.modal', (event) => {
+
+                        delete_response_handler(data);
+                    });
+
+                });
+
+                event.preventDefault();
+                event.stopPropagation();
             });
         </script>
     {% endif %}

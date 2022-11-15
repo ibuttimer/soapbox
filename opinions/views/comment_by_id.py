@@ -40,7 +40,7 @@ from opinions.constants import (
     COMMENT_SLUG_ROUTE_NAME, OPINION_CTX, COMMENT_FORM_CTX, REPORT_FORM_CTX,
     UNDER_REVIEW_TITLE_CTX, UNDER_REVIEW_EXCERPT_CTX,
     UNDER_REVIEW_CONTENT_CTX, UNDER_REVIEW_TITLE, UNDER_REVIEW_EXCERPT,
-    UNDER_REVIEW_OPINION_CONTENT
+    UNDER_REVIEW_OPINION_CONTENT, ELEMENT_ID_CTX, HTML_CTX
 )
 from opinions.enums import ReactionStatus
 from opinions.forms import CommentForm, ReviewForm
@@ -305,8 +305,8 @@ def comment_hide_patch(request: HttpRequest, pk: int) -> HttpResponse:
             else 0
         )
         response = JsonResponse({
-            'element_id': f'id--comment-section-{pk}',
-            'html': render_to_string(
+            ELEMENT_ID_CTX: f'id--comment-section-{pk}',
+            HTML_CTX: render_to_string(
                 app_template_path(
                     OPINIONS_APP_NAME, "snippet", "comment_bundle.html"),
                 context=context,

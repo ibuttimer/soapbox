@@ -1,0 +1,17 @@
+<!-- content_delete.html start -->
+
+{% load i18n %}
+
+{# --- template variable defines for includes --- #}
+{# content delete template expects: 'status' as success/failure status #}
+
+<div class="row mt-1 mb-1">
+    <div class="text-center">
+        {% if status %}
+            <p>The opinion was successfully deleted.</p>
+        {% else %}
+            <p>There was an error deleting the opinion.</p>
+        {% endif %}
+    </div>
+</div>
+<!-- content_delete.html end -->

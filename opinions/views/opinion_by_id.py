@@ -57,7 +57,9 @@ from opinions.constants import (
     STATUS_CTX, OPINION_FORM_CTX, REPORT_FORM_CTX, IS_PREVIEW_CTX,
     ALL_FIELDS, VIEW_OK_CTX, UNDER_REVIEW_TITLE, UNDER_REVIEW_EXCERPT,
     UNDER_REVIEW_TITLE_CTX, UNDER_REVIEW_EXCERPT_CTX, UNDER_REVIEW_CONTENT_CTX,
-    UNDER_REVIEW_OPINION_CONTENT, TEMPLATE_TARGET_SLUG, TEMPLATE_TARGET_AUTHOR
+    UNDER_REVIEW_OPINION_CONTENT, TEMPLATE_TARGET_SLUG, TEMPLATE_TARGET_AUTHOR,
+    REDIRECT_CTX, ELEMENT_ID_CTX, HTML_CTX, OPINIONS_ROUTE_NAME, AUTHOR_QUERY,
+    STATUS_QUERY
 )
 from opinions.forms import OpinionForm, CommentForm, ReviewForm
 from opinions.models import (
@@ -246,6 +248,43 @@ class OpinionDetail(LoginRequiredMixin, View):
             request, success, success_route, *success_args,
             template_path=template_path, context=context)
 
+    def delete(self, request: HttpRequest,
+               identifier: [int, str], *args, **kwargs) -> HttpResponse:
+        """
+        DELETE method to delete Opinion
+        :param request: http request
+        :param identifier: id or slug of opinion to delete
+        :param args: additional arbitrary arguments
+        :param kwargs: additional keyword arguments
+        :return: http response
+        """
+        opinion_permission_check(request, Crud.DELETE)
+
+        opinion_obj = self._get_opinion(identifier)
+
+        # perform own opinion check
+        own_content_check(request, opinion_obj, raise_ex=True)
+
+        count, _ = opinion_obj.delete()
+
+        return JsonResponse({
+            ELEMENT_ID_CTX: "id--opinion-delete-modal-body",
+            HTML_CTX: render_to_string(
+                app_template_path(
+                    OPINIONS_APP_NAME, "snippet", "content_delete.html"),
+                context={
+                    # reactions template
+                    STATUS_CTX: count > 0,
+                },
+                request=request),
+            REDIRECT_CTX: reverse_q(
+                namespaced_url(
+                    OPINIONS_APP_NAME, OPINIONS_ROUTE_NAME), query_kwargs={
+                        AUTHOR_QUERY: request.user.username,
+                        STATUS_QUERY: QueryStatus.ALL.arg
+                    })
+        }, status=HTTPStatus.OK if count > 0 else HTTPStatus.BAD_REQUEST)
+
     def url(self, opinion_obj: Opinion) -> str:
         """
         Get url for opinion view/update
@@ -293,7 +332,7 @@ def _render_view(title: str, **kwargs) -> tuple[
 
 class OpinionDetailById(OpinionDetail):
     """
-    Class-based view for individual opinion view/update by id
+    Class-based view for individual opinion view/update/delete by id
     """
 
     def get(self, request: HttpRequest,
@@ -306,7 +345,7 @@ class OpinionDetailById(OpinionDetail):
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        return OpinionDetail.get(self, request, pk, *args, **kwargs)
+        return super().get(request, pk, *args, **kwargs)
 
     def post(self, request: HttpRequest,
              pk: int, *args, **kwargs) -> HttpResponse:
@@ -318,7 +357,19 @@ class OpinionDetailById(OpinionDetail):
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        return OpinionDetail.post(self, request, pk, *args, **kwargs)
+        return super().post(request, pk, *args, **kwargs)
+
+    def delete(self, request: HttpRequest,
+               pk: int, *args, **kwargs) -> HttpResponse:
+        """
+        DELETE method to delete Opinion
+        :param request: http request
+        :param pk: id of opinion to delete
+        :param args: additional arbitrary arguments
+        :param kwargs: additional keyword arguments
+        :return: http response
+        """
+        return super().delete(request, pk, *args, **kwargs)
 
     def url(self, opinion_obj: Opinion) -> str:
         """
@@ -352,7 +403,7 @@ class OpinionDetailPreviewById(OpinionDetail):
         preview_kwargs = kwargs.copy()
         preview_kwargs[READ_ONLY_CTX] = True
         preview_kwargs[OWN_ONLY] = True
-        return OpinionDetail.get(self, request, pk, *args, **preview_kwargs)
+        return super().get(request, pk, *args, **preview_kwargs)
 
     def post(self, request: HttpRequest,
              pk: int, *args, **kwargs) -> HttpResponse:
@@ -365,6 +416,19 @@ class OpinionDetailPreviewById(OpinionDetail):
         :return: http response
         """
         # POST not allowed for preview
+        return HttpResponseNotAllowed([GET])
+
+    def delete(self, request: HttpRequest,
+               pk: int, *args, **kwargs) -> HttpResponse:
+        """
+        DELETE method to delete Opinion
+        :param request: http request
+        :param pk: id of opinion to delete
+        :param args: additional arbitrary arguments
+        :param kwargs: additional keyword arguments
+        :return: http response
+        """
+        # DELETE not allowed for preview
         return HttpResponseNotAllowed([GET])
 
     def url(self, opinion_obj: Opinion) -> str:
@@ -380,7 +444,7 @@ class OpinionDetailPreviewById(OpinionDetail):
 
 class OpinionDetailBySlug(OpinionDetail):
     """
-    Class-based view for individual opinion view/update by slug
+    Class-based view for individual opinion view/update/delete by slug
     """
 
     def get(self, request: HttpRequest,
@@ -393,7 +457,7 @@ class OpinionDetailBySlug(OpinionDetail):
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        return OpinionDetail.get(self, request, slug, *args, **kwargs)
+        return super().get(request, slug, *args, **kwargs)
 
     def post(self, request: HttpRequest,
              slug: str, *args, **kwargs) -> HttpResponse:
@@ -405,7 +469,19 @@ class OpinionDetailBySlug(OpinionDetail):
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        return OpinionDetail.post(self, request, slug, *args, **kwargs)
+        return super().post(request, slug, *args, **kwargs)
+
+    def delete(self, request: HttpRequest,
+               slug: str, *args, **kwargs) -> HttpResponse:
+        """
+        DELETE method to delete Opinion
+        :param request: http request
+        :param slug: slug of opinion to delete
+        :param args: additional arbitrary arguments
+        :param kwargs: additional keyword arguments
+        :return: http response
+        """
+        return super().delete(request, slug, *args, **kwargs)
 
     def url(self, opinion_obj: Opinion) -> str:
         """
@@ -439,7 +515,7 @@ def opinion_status_patch(request: HttpRequest, pk: int) -> HttpResponse:
     opinion_obj.save()
 
     return redirect_response(HOME_URL, extra={
-        'status': opinion_obj.status.name
+        STATUS_CTX: opinion_obj.status.name
     })
 
 
@@ -453,7 +529,7 @@ def redirect_response(url: str, extra: Optional[dict] = None,
     :return: response
     """
     payload = {
-        'redirect': url
+        REDIRECT_CTX: url
     }
     if isinstance(extra, dict):
         payload.update(extra)
@@ -600,7 +676,7 @@ def report_post(
     else:
         # display form errors
         response = JsonResponse({
-            'html': render_to_string(
+            HTML_CTX: render_to_string(
                 app_template_path(
                     "snippet", "form_errors.html"),
                 context={
@@ -628,12 +704,12 @@ def react_response(
 
     target_type = content.model_name_lower()
 
-    # TODO after follow/unfollow reflect status ia all elements by author
+    # TODO after follow/unfollow reflect status in all elements by author
     # not just the one clicked
 
     return JsonResponse({
-        'element_id': reaction_ul_id(target_type, content.id),
-        'html': render_to_string(
+        ELEMENT_ID_CTX: reaction_ul_id(target_type, content.id),
+        HTML_CTX: render_to_string(
             app_template_path(
                 OPINIONS_APP_NAME, "snippet", "reactions.html"),
             context={

@@ -93,7 +93,10 @@
                 //                                                     "id--comment-card-{more}-<id>"
                 const lastCommentId = $(`${lastCommentSectionSelector} > div:first-child`).attr('id')
                 // last section in parent container is a 'more'
-                const lastIsMore = lastCommentId.includes('more');
+                let lastIsMore = false;
+                if (lastCommentId !== undefined) {
+                    lastIsMore = lastCommentId.includes('more');
+                }
 
                 if (lastIsMore) {
                     // insert new html before 'more' comment section, marking as for removal if 'more' requested

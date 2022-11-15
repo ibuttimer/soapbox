@@ -41,7 +41,7 @@ from opinions.constants import (
     STATUS_QUERY, AUTHOR_QUERY, SEARCH_QUERY, REORDER_QUERY,
     CONTENT_STATUS_CTX, UNDER_REVIEW_CONTENT_CTX,
     UNDER_REVIEW_COMMENT_CONTENT, HIDDEN_CONTENT_CTX, HIDDEN_COMMENT_CONTENT,
-    REPEAT_SEARCH_TERM_CTX, PAGE_HEADING_CTX, TITLE_CTX
+    REPEAT_SEARCH_TERM_CTX, PAGE_HEADING_CTX, TITLE_CTX, HTML_CTX
 )
 from opinions.contexts.comment import comments_list_context_for_opinion
 from opinions.enums import QueryArg, QueryStatus, CommentSortOrder, SortOrder
@@ -391,7 +391,6 @@ class CommentInReview(CommentList):
             self.queryset = Comment.objects.none()
 
 
-
 @login_required
 @require_http_methods([GET])
 def opinion_comments(request: HttpRequest) -> HttpResponse:
@@ -408,7 +407,7 @@ def opinion_comments(request: HttpRequest) -> HttpResponse:
     context = comments_list_context_for_opinion(query_params, request.user)
 
     return JsonResponse({
-        'html': render_to_string(
+        HTML_CTX: render_to_string(
             app_template_path(
                 OPINIONS_APP_NAME, "snippet", "view_comments.html"),
             context=context,

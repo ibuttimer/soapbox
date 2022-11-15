@@ -201,7 +201,8 @@ class ModelMixin:
         :return: True if lookup is an id lookup
         """
         lookup = lookup.lower()
-        return lookup == cls.id_field() or lookup == f'{DESC_LOOKUP}{cls.id_field()}'
+        return lookup == cls.id_field() or \
+            lookup == f'{DESC_LOOKUP}{cls.id_field()}'
 
     def __repr__(self):
         return f'{self.model_name()}[{self.id}]: {str(self)}'

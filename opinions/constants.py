@@ -187,6 +187,10 @@ TAGGED_COUNT_CTX = "tagged_count"
 TITLE_CTX = 'title'                             # page title
 PAGE_HEADING_CTX = 'page_heading'               # page heading display
 REPEAT_SEARCH_TERM_CTX = 'repeat_search_term'   # search term for query
+REDIRECT_CTX = "redirect"
+
+ELEMENT_ID_CTX = 'element_id'
+HTML_CTX = 'html'
 
 # miscellaneous
 ALL_FIELDS = 'all_fields'
