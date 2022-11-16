@@ -220,11 +220,11 @@ class ContentListMixin(generic.ListView):
             )[0],
             'per_page': list(PerPage),
             'selected_per_page': self.paginate_by,
-            'page_range': [{
+            'page_links': [{
                 'page_num': page,
                 'disabled': page == Paginator.ELLIPSIS,
                 'href':
-                    f"?page={page}" if page != Paginator.ELLIPSIS else '#',
+                    f"?page={page}" if page != Paginator.ELLIPSIS else '',
                 'label':
                     f"page {page}" if page != Paginator.ELLIPSIS else '',
                 'hidden': f'{bool(page != Paginator.ELLIPSIS)}',

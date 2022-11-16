@@ -26,14 +26,15 @@ from opinions.comment_data import (
     get_comment_tree, get_comments_review_status, get_comment_query_args
 )
 from opinions.constants import (
-    IS_PREVIEW_CTX, ALL_FIELDS, UNDER_REVIEW_CONTENT_CTX,
-    UNDER_REVIEW_COMMENT_CONTENT, HIDDEN_CONTENT_CTX, HIDDEN_COMMENT_CONTENT,
-    COMMENTS_CTX, CONTENT_STATUS_CTX, TEMPLATE_COMMENT_REACTIONS,
-    TEMPLATE_REACTION_CTRLS, TEMPLATE_COMMENT_BUNDLE
+    IS_PREVIEW_CTX, ALL_FIELDS, COMMENTS_CTX, CONTENT_STATUS_CTX,
+    TEMPLATE_COMMENT_REACTIONS, TEMPLATE_REACTION_CTRLS,
+    TEMPLATE_COMMENT_BUNDLE
 )
 from opinions.enums import QueryArg
 from opinions.reactions import get_reaction_status, COMMENT_REACTIONS
-from opinions.views.utils import DEFAULT_COMMENT_DEPTH
+from opinions.views.utils import (
+    DEFAULT_COMMENT_DEPTH, add_content_no_show_markers
+)
 from user.models import User
 
 
@@ -71,13 +72,12 @@ def comments_list_context_for_opinion(
 
     # visible opinion which may have not visible under review comments
     context.update({
-        UNDER_REVIEW_CONTENT_CTX: UNDER_REVIEW_COMMENT_CONTENT,
-        HIDDEN_CONTENT_CTX: HIDDEN_COMMENT_CONTENT,
         COMMENTS_CTX: comment_bundles,
         CONTENT_STATUS_CTX: comments_review_status,
         TEMPLATE_COMMENT_REACTIONS: COMMENT_REACTIONS,
         TEMPLATE_REACTION_CTRLS: reaction_ctrls,
     })
+    add_content_no_show_markers(context=context)
     return context
 
 

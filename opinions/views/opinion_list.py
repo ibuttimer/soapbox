@@ -38,10 +38,7 @@ from opinions.constants import (
     ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY, EQUAL_QUERY,
     SEARCH_QUERY, REORDER_QUERY, HIDDEN_QUERY, PINNED_QUERY,
     TEMPLATE_OPINION_REACTIONS,
-    TEMPLATE_REACTION_CTRLS, UNDER_REVIEW_TITLE, UNDER_REVIEW_EXCERPT,
-    UNDER_REVIEW_OPINION_CONTENT, UNDER_REVIEW_TITLE_CTX,
-    UNDER_REVIEW_EXCERPT_CTX, UNDER_REVIEW_CONTENT_CTX, CONTENT_STATUS_CTX,
-    HIDDEN_CONTENT_CTX, HIDDEN_COMMENT_CONTENT, REPEAT_SEARCH_TERM_CTX,
+    TEMPLATE_REACTION_CTRLS, CONTENT_STATUS_CTX, REPEAT_SEARCH_TERM_CTX,
     PAGE_HEADING_CTX, TITLE_CTX, POPULARITY_CTX, OPINION_LIST_CTX,
     STATUS_BG_CTX
 )
@@ -69,7 +66,7 @@ from opinions.views.utils import (
     opinion_permission_check, REORDER_REQ_QUERY_ARGS,
     NON_REORDER_OPINION_LIST_QUERY_ARGS, ensure_list, DATE_QUERIES,
     query_search_term, get_query_args, OPINION_LIST_QUERY_ARGS,
-    OPTION_SEARCH_QUERY_ARGS, STATUS_BADGES
+    OPTION_SEARCH_QUERY_ARGS, STATUS_BADGES, add_content_no_show_markers
 )
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
@@ -164,19 +161,31 @@ class OpinionList(LoginRequiredMixin, ContentListMixin):
         """
         # build search term string from values that were set
         # inherited from ContextMixin via ListView
+        self.extra_context = {
+            REPEAT_SEARCH_TERM_CTX: query_search_term(
+                query_params, exclude_queries=REORDER_REQ_QUERY_ARGS),
+        }
+        self.extra_context.update(
+            self.get_title_heading(query_params))
+
+    def get_title_heading(self, query_params: dict[str, QueryArg]) -> dict:
+        """
+        Get the title and page heading for context
+        :param query_params: request query
+        """
         if query_params.get(
             PINNED_QUERY, QueryArg(Pinned.IGNORE, False)
         ).value == Pinned.YES:
             # current users pinned opinions
             title = 'Pinned opinions'
         elif query_params.get(
-            AUTHOR_QUERY, QueryArg(None, False)
+                AUTHOR_QUERY, QueryArg(None, False)
         ).value == self.user.username:
             # current users opinions by status
             status = query_params.get(
                 STATUS_QUERY, QueryArg(QueryStatus.DEFAULT, False)).value
             if isinstance(status, QueryStatus):
-                title = f'All my opinions' \
+                title = 'All my opinions' \
                     if status.display == QueryStatus.ALL.display \
                     else f'My {status.display} opinions'
             else:
@@ -188,9 +197,7 @@ class OpinionList(LoginRequiredMixin, ContentListMixin):
         else:
             title = 'Opinions'
 
-        self.extra_context = {
-            REPEAT_SEARCH_TERM_CTX: query_search_term(
-                query_params, exclude_queries=REORDER_REQ_QUERY_ARGS),
+        return {
             TITLE_CTX: title,
             PAGE_HEADING_CTX: capwords(title)
         }
@@ -280,7 +287,9 @@ class OpinionList(LoginRequiredMixin, ContentListMixin):
             """ Check if opinion is pinned by current user """
             return opinion_is_pinned(opinion, self.user)
 
-        self.context_std_elements(context)
+        self.context_std_elements(
+            add_content_no_show_markers(context=context)
+        )
 
         context.update({
             POPULARITY_CTX: get_popularity_levels(context[OPINION_LIST_CTX]),
@@ -298,10 +307,6 @@ class OpinionList(LoginRequiredMixin, ContentListMixin):
                 content_status_check(opinion, current_user=self.user)
                 for opinion in context[OPINION_LIST_CTX]
             ],
-            UNDER_REVIEW_TITLE_CTX: UNDER_REVIEW_TITLE,
-            UNDER_REVIEW_EXCERPT_CTX: UNDER_REVIEW_EXCERPT,
-            UNDER_REVIEW_CONTENT_CTX: UNDER_REVIEW_OPINION_CONTENT,
-            HIDDEN_CONTENT_CTX: HIDDEN_COMMENT_CONTENT,
             STATUS_BG_CTX: STATUS_BADGES,
             OPINION_LIST_CTX: list(
                 map(OpinionData.from_model, context[OPINION_LIST_CTX])
@@ -345,7 +350,7 @@ class OpinionSearch(OpinionList):
             PAGE_HEADING_CTX: f"Results of {search_term}",
             REPEAT_SEARCH_TERM_CTX:
                 f'{SEARCH_QUERY}='
-                f'{query_params[SEARCH_QUERY].value}',
+                f'{query_params[SEARCH_QUERY].value}'
         }
 
     def set_queryset(
@@ -438,19 +443,13 @@ class OpinionFollowed(OpinionList):
         # TODO probably should be a more restricted list of args
         return super().req_query_args()
 
-    def set_extra_context(self, query_params: dict[str, QueryArg]):
+    def get_title_heading(self, query_params: dict[str, QueryArg]) -> dict:
         """
-        Set the context extra content to be added to context
+        Get the title and page heading for context
         :param query_params: request query
         """
-        # build search term string from values that were set
-        super().set_extra_context(query_params)
-        self.extra_context.update(self.get_title_heading())
-
-    def get_title_heading(self) -> dict:
-        """ Get the title and page heading for context """
         return {
-            TITLE_CTX: 'Followed new opinions',
+            TITLE_CTX: 'New tagged author opinions',
             PAGE_HEADING_CTX: 'New Opinions By Tagged Authors',
         }
 
@@ -492,7 +491,7 @@ class OpinionFollowed(OpinionList):
         """
         qs_params = kwargs.get(OpinionFollowed.QS_PARAMS, None)
 
-        if qs_params:
+        if qs_params and not qs_params.is_none:
             query_set_params.add(qs_params)
 
             self.queryset = query_set_params.apply(
@@ -508,8 +507,11 @@ class OpinionInReview(OpinionFollowed):
     Opinions in review list response
     """
 
-    def get_title_heading(self) -> dict:
-        """ Get the title and page heading for context """
+    def get_title_heading(self, query_params: dict[str, QueryArg]) -> dict:
+        """
+        Get the title and page heading for context
+        :param query_params: request query
+        """
         return {
             TITLE_CTX: 'Review Opinions',
             PAGE_HEADING_CTX: 'Opinions in Review',
@@ -520,6 +522,7 @@ class OpinionInReview(OpinionFollowed):
         Get the queryset to get the list of items for this view
         :return: query set params
         """
+        # TODO all in review and new in review
         return in_review_content(
             self.user, Opinion, since=self.user.previous_login, as_params=True)
 

@@ -29,7 +29,8 @@ from .views import redirect_on_success_or_render
 from .forms import update_field_widgets, error_messages, ErrorMsgs
 from .file import find_parent_of_folder
 from .models import (
-    SlugMixin, ModelMixin, DESC_LOOKUP, DATE_OLDEST_LOOKUP, DATE_NEWEST_LOOKUP
+    SlugMixin, ModelMixin, ModelFacadeMixin,
+    DESC_LOOKUP, DATE_OLDEST_LOOKUP, DATE_NEWEST_LOOKUP
 )
 
 
@@ -55,6 +56,7 @@ __all__ = [
 
     'SlugMixin',
     'ModelMixin',
+    'ModelFacadeMixin',
     'DESC_LOOKUP',
     'DATE_OLDEST_LOOKUP',
     'DATE_NEWEST_LOOKUP'

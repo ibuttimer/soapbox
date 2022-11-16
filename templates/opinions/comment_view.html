@@ -52,6 +52,7 @@
     </div>
 
     {% if view_ok %}
+        {% include "opinions/snippet/modal_common.html" %}
         <!-- Modal to create comments -->
         <div id="id--comment-modal-container">
             {% include "opinions/snippet/comment_modal.html" %}

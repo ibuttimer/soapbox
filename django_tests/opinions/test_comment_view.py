@@ -29,12 +29,11 @@ from django.test import TestCase
 from categories import (
     STATUS_PUBLISHED
 )
-from opinions import (
-    OPINION_ID_ROUTE_NAME
+from opinions.constants import (
+    UNDER_REVIEW_COMMENT_CONTENT, COMMENT_ID_ROUTE_NAME,
+    COMMENT_SLUG_ROUTE_NAME
 )
-from opinions.constants import UNDER_REVIEW_COMMENT_CONTENT, \
-    COMMENT_ID_ROUTE_NAME, COMMENT_SLUG_ROUTE_NAME
-from opinions.models import Opinion, Comment
+from opinions.models import Comment
 from soapbox import OPINIONS_APP_NAME, USER_APP_NAME
 from user import USER_ID_ROUTE_NAME
 from user.models import User

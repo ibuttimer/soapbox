@@ -55,9 +55,7 @@ from opinions.constants import (
     SUBMIT_URL_CTX,
     COMMENT_FORM_CTX, READ_ONLY_CTX, USER_CTX, OPINION_CTX,
     STATUS_CTX, OPINION_FORM_CTX, REPORT_FORM_CTX, IS_PREVIEW_CTX,
-    ALL_FIELDS, VIEW_OK_CTX, UNDER_REVIEW_TITLE, UNDER_REVIEW_EXCERPT,
-    UNDER_REVIEW_TITLE_CTX, UNDER_REVIEW_EXCERPT_CTX, UNDER_REVIEW_CONTENT_CTX,
-    UNDER_REVIEW_OPINION_CONTENT, TEMPLATE_TARGET_SLUG, TEMPLATE_TARGET_AUTHOR,
+    ALL_FIELDS, VIEW_OK_CTX, TEMPLATE_TARGET_SLUG, TEMPLATE_TARGET_AUTHOR,
     REDIRECT_CTX, ELEMENT_ID_CTX, HTML_CTX, OPINIONS_ROUTE_NAME, AUTHOR_QUERY,
     STATUS_QUERY
 )
@@ -75,7 +73,8 @@ from opinions.views.utils import (
     opinion_permission_check, opinion_save_query_args, timestamp_content,
     own_content_check, published_check, get_opinion_context,
     render_opinion_form, comment_permission_check, like_query_args,
-    hide_query_args, pin_query_args, generate_excerpt, follow_query_args
+    hide_query_args, pin_query_args, generate_excerpt, follow_query_args,
+    add_content_no_show_markers
 )
 from opinions.enums import QueryStatus, ReactionStatus
 
@@ -152,12 +151,10 @@ class OpinionDetail(LoginRequiredMixin, View):
                 # under review comments
                 COMMENT_FORM_CTX: CommentForm(),
                 REPORT_FORM_CTX: ReviewForm(),
-            } if view_ok else {
+            } if view_ok else
                 # not visible under review opinion
-                UNDER_REVIEW_TITLE_CTX: UNDER_REVIEW_TITLE,
-                UNDER_REVIEW_EXCERPT_CTX: UNDER_REVIEW_EXCERPT,
-                UNDER_REVIEW_CONTENT_CTX: UNDER_REVIEW_OPINION_CONTENT,
-            })
+                add_content_no_show_markers()
+            )
         else:
             # updating opinion
             renderer = render_opinion_form

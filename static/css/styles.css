@@ -12,3 +12,9 @@ body {
     font-family: var(--paragraph-font);
     font-weight: var(--paragraph-font-weight);
 }
+
+.disable-link {
+    pointer-events: none;
+    cursor: not-allowed;
+    display: block;
+}

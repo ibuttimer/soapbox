@@ -26,6 +26,7 @@ from zoneinfo import ZoneInfo
 from categories import (
     STATUS_DRAFT, STATUS_PREVIEW, STATUS_PUBLISHED, STATUS_PENDING_REVIEW
 )
+from categories.constants import STATUS_DELETED
 from categories.models import Category, Status
 from opinions.constants import (
     OPINION_PAGINATION_ON_EACH_SIDE, OPINION_PAGINATION_ON_ENDS
@@ -55,10 +56,13 @@ class ContentTestBase(BaseUserTest):
 
     opinions: list[Opinion]
     hidden_opinions: list[Opinion]
-    hidden_opinion_set: set           # set with ids of reported
+    hidden_opinion_set: set             # set with ids of hidden
     reported_opinions: list[Opinion]
     reported_opinion_set: set           # set with ids of reported
     comments: list[Comment]
+    # TODO test hidden comments
+    hidden_comments: list[Comment]
+    hidden_comment_set: set            # set with ids of hidden
     reported_comments: list[Comment]
     reported_comment_set: set           # set with ids of reported
 
@@ -173,6 +177,8 @@ class ContentTestBase(BaseUserTest):
         cls.reported_opinions = []
         cls.reported_opinion_set = set()
         cls.comments = []
+        cls.hidden_comments = []
+        cls.hidden_comment_set = set()
         cls.reported_comments = []
         cls.reported_comment_set = set()
         num_templates = len(ContentTestBase.OPINION_INFO)
@@ -388,6 +394,12 @@ class ContentTestBase(BaseUserTest):
 
     @classmethod
     def is_comment_deleted(cls, pk: int):
-        return not Comment.objects.filter(**{
+        deleted = not Comment.objects.filter(**{
             f'{Comment.id_field()}': pk
         }).exists()
+        if not deleted:
+            comment = Comment.objects.get(**{
+                f'{Comment.id_field()}': pk
+            })
+            deleted = comment.status.name == STATUS_DELETED
+        return deleted

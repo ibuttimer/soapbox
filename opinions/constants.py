@@ -129,6 +129,9 @@ OPINION_ID_QUERY: str = 'opinion_id'        # search opinion id
 PARENT_ID_QUERY: str = 'parent_id'          # search comment parent id
 COMMENT_DEPTH_QUERY: str = 'depth'          # comment level depth
 
+# general
+REFERENCE_QUERY: str = 'ref'                # reference
+
 OPINION_PAGINATION_ON_EACH_SIDE = 1
 OPINION_PAGINATION_ON_ENDS = 1
 
@@ -166,7 +169,9 @@ USER_CTX = 'user'
 CONTENT_STATUS_CTX = "content_status"
 UNDER_REVIEW_TITLE_CTX = "under_review_title"
 UNDER_REVIEW_EXCERPT_CTX = "under_review_excerpt"
-UNDER_REVIEW_CONTENT_CTX = "under_review_content"
+UNDER_REVIEW_OPINION_CTX = "under_review_opinion"
+UNDER_REVIEW_COMMENT_CTX = "under_review_comment"
+DELETED_CONTENT_CTX = "deleted_content"
 HIDDEN_CONTENT_CTX = "hidden_content"
 POPULARITY_CTX = "popularity"
 OPINION_LIST_CTX = "opinion_list"
@@ -192,6 +197,8 @@ REDIRECT_CTX = "redirect"
 ELEMENT_ID_CTX = 'element_id'
 HTML_CTX = 'html'
 
+COMMENT_DATA_CTX = "comment_data"
+
 # miscellaneous
 ALL_FIELDS = 'all_fields'
 
@@ -204,3 +211,4 @@ UNDER_REVIEW_COMMENT_CONTENT = \
     'The content of this comment is not currently available to view as it ' \
     'is under review.'
 HIDDEN_COMMENT_CONTENT = 'The content of this comment has been hidden.'
+DELETED_CONTENT = 'This content has been deleted.'

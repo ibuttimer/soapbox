@@ -35,6 +35,7 @@ STATUS_PENDING_REVIEW = 'Pending Review'    # pending review following request
 STATUS_UNDER_REVIEW = 'Under Review'        # under review
 STATUS_APPROVED = 'Approved'            # review approved, content needs work
 STATUS_REJECTED = 'Rejected'            # review rejected, content ok
+STATUS_DELETED = 'Deleted'              # content deleted
 
 CATEGORY_UNASSIGNED = 'Unassigned'
 
@@ -49,3 +50,5 @@ REACTION_FOLLOW = 'Follow'
 REACTION_UNFOLLOW = 'Unfollow'
 REACTION_SHARE = 'Share'
 REACTION_REPORT = 'Report'
+REACTION_COMMENT = 'Comment'
+REACTION_DELETE = 'Delete'

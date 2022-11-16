@@ -23,7 +23,7 @@
 from datetime import datetime
 from base64 import urlsafe_b64encode
 from inspect import isclass
-from typing import Union
+from typing import Union, Type
 from string import capwords
 
 from django.db.models import Model
@@ -206,3 +206,17 @@ class ModelMixin:
 
     def __repr__(self):
         return f'{self.model_name()}[{self.id}]: {str(self)}'
+
+
+class ModelFacadeMixin:
+    """
+    A facade allowing non-django.db.models.Models objects to appear as Models
+    """
+
+    @classmethod
+    def lookup_clazz(cls) -> Type[Model]:
+        """ Get the Model class """
+        if not issubclass(cls, Model):
+            raise NotImplementedError(
+                "Non-Model objects must override the 'lookup_clazz' method")
+        return cls

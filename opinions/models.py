@@ -30,7 +30,7 @@ from django.template.defaultfilters import truncatechars
 
 from user.models import User
 from categories.models import Category, Status
-from utils import SlugMixin, ModelMixin
+from utils import SlugMixin, ModelMixin, ModelFacadeMixin
 from .constants import (
     ID_FIELD, TITLE_FIELD, CONTENT_FIELD, EXCERPT_FIELD, CATEGORIES_FIELD,
     STATUS_FIELD, USER_FIELD, SLUG_FIELD, CREATED_FIELD, UPDATED_FIELD,
@@ -41,7 +41,7 @@ from .constants import (
 )
 
 
-class Opinion(ModelMixin, SlugMixin, models.Model):
+class Opinion(ModelFacadeMixin, ModelMixin, SlugMixin, models.Model):
     """ Opinions model """
 
     # field names
@@ -119,7 +119,7 @@ class Opinion(ModelMixin, SlugMixin, models.Model):
 assert Opinion.id_field() == ID_FIELD
 
 
-class Comment(ModelMixin, SlugMixin, models.Model):
+class Comment(ModelFacadeMixin, ModelMixin, SlugMixin, models.Model):
     """ Opinions model """
 
     NO_PARENT = 0

@@ -22,6 +22,7 @@
 #
 from enum import Enum
 from http import HTTPStatus
+from string import capwords
 from typing import Type, Callable, Tuple, Optional, Union
 
 from django.contrib.auth.decorators import login_required
@@ -39,20 +40,23 @@ from opinions.comment_utils import (
 )
 from opinions.constants import (
     STATUS_QUERY, AUTHOR_QUERY, SEARCH_QUERY, REORDER_QUERY,
-    CONTENT_STATUS_CTX, UNDER_REVIEW_CONTENT_CTX,
-    UNDER_REVIEW_COMMENT_CONTENT, HIDDEN_CONTENT_CTX, HIDDEN_COMMENT_CONTENT,
-    REPEAT_SEARCH_TERM_CTX, PAGE_HEADING_CTX, TITLE_CTX, HTML_CTX
+    CONTENT_STATUS_CTX, REPEAT_SEARCH_TERM_CTX, PAGE_HEADING_CTX, TITLE_CTX,
+    HTML_CTX, TEMPLATE_COMMENT_REACTIONS, TEMPLATE_REACTION_CTRLS
 )
 from opinions.contexts.comment import comments_list_context_for_opinion
 from opinions.enums import QueryArg, QueryStatus, CommentSortOrder, SortOrder
 from opinions.models import Comment
 from opinions.queries import in_review_content
 from opinions.query_params import QuerySetParams
+from opinions.reactions import (
+    COMMENT_REACTIONS, get_reaction_status, ReactionsList
+)
 from opinions.views.content_list_mixin import ContentListMixin
 from opinions.views.utils import (
     comment_permission_check, REORDER_REQ_QUERY_ARGS,
     NON_REORDER_COMMENT_LIST_QUERY_ARGS, query_search_term, get_query_args,
-    COMMENT_LIST_QUERY_ARGS, COMMENT_SEARCH_QUERY_ARGS
+    COMMENT_LIST_QUERY_ARGS, COMMENT_SEARCH_QUERY_ARGS,
+    add_content_no_show_markers
 )
 from soapbox import OPINIONS_APP_NAME, GET
 from utils import Crud, app_template_path
@@ -65,6 +69,11 @@ class ListTemplate(Enum):
     CONTENT_TEMPLATE = app_template_path(
         OPINIONS_APP_NAME, 'comment_list_content.html')
     """ List-only template for requery """
+
+
+COMMENT_LIST_REACTIONS = [
+    ReactionsList.SHARE_FIELD, ReactionsList.DELETE_FIELD
+]
 
 
 class CommentList(LoginRequiredMixin, ContentListMixin):
@@ -102,6 +111,37 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
         self.extra_context = {
             REPEAT_SEARCH_TERM_CTX: query_search_term(
                 query_params, exclude_queries=REORDER_REQ_QUERY_ARGS)
+        }
+        self.extra_context.update(
+            self.get_title_heading(query_params))
+
+    def get_title_heading(self, query_params: dict[str, QueryArg]) -> dict:
+        """
+        Get the title and page heading for context
+        :param query_params: request query
+        """
+        if query_params.get(
+                AUTHOR_QUERY, QueryArg(None, False)
+        ).value == self.user.username:
+            # current users comments by status
+            status = query_params.get(
+                STATUS_QUERY, QueryArg(QueryStatus.DEFAULT, False)).value
+            if isinstance(status, QueryStatus):
+                title = 'All my comments' \
+                    if status.display == QueryStatus.ALL.display \
+                    else f'My {status.display} comments'
+            else:
+                # list of multiple statuses
+                title = \
+                    f'My ' \
+                    f'{", ".join(map(lambda stat: stat.display, status))} ' \
+                    f'comments'
+        else:
+            title = 'Comments'
+
+        return {
+            TITLE_CTX: title,
+            PAGE_HEADING_CTX: capwords(title)
         }
 
     def set_queryset(
@@ -193,12 +233,19 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
 
         self.context_std_elements(context)
 
+        reaction_ctrls = get_reaction_status(
+            self.user, comment_bundles,
+            reactions=COMMENT_LIST_REACTIONS,
+            # no reactions for opinion preview
+            enablers={key: True for key in COMMENT_LIST_REACTIONS})
+
         context.update({
             'comment_list': comment_bundles,
             CONTENT_STATUS_CTX: comments_review_status,
-            UNDER_REVIEW_CONTENT_CTX: UNDER_REVIEW_COMMENT_CONTENT,
-            HIDDEN_CONTENT_CTX: HIDDEN_COMMENT_CONTENT,
+            TEMPLATE_COMMENT_REACTIONS: COMMENT_REACTIONS,
+            TEMPLATE_REACTION_CTRLS: reaction_ctrls,
         })
+        add_content_no_show_markers(context=context)
         return context
 
     def is_list_only_template(self) -> bool:
@@ -233,6 +280,7 @@ class CommentSearch(CommentList):
             for q, v in query_params.items() if v.was_set
         ])
         self.extra_context = {
+            TITLE_CTX: 'Comment search',
             PAGE_HEADING_CTX: f"Results of {search_term}",
             REPEAT_SEARCH_TERM_CTX:
                 f'{SEARCH_QUERY}='
@@ -327,17 +375,11 @@ class CommentInReview(CommentList):
         # TODO probably should be a more restricted list of args
         return super().req_query_args()
 
-    def set_extra_context(self, query_params: dict[str, QueryArg]):
+    def get_title_heading(self, query_params: dict[str, QueryArg]) -> dict:
         """
-        Set the context extra content to be added to context
+        Get the title and page heading for context
         :param query_params: request query
         """
-        # build search term string from values that were set
-        super().set_extra_context(query_params)
-        self.extra_context.update(self.get_title_heading())
-
-    def get_title_heading(self) -> dict:
-        """ Get the title and page heading for context """
         return {
             TITLE_CTX: 'Review Comments',
             PAGE_HEADING_CTX: 'Comments in Review',
@@ -370,6 +412,7 @@ class CommentInReview(CommentList):
         Get the queryset to get the list of items for this view
         :return: query set params
         """
+        # TODO all in review and new in review
         return in_review_content(
             self.user, Comment, since=self.user.previous_login,
             as_params=True)
@@ -382,7 +425,7 @@ class CommentInReview(CommentList):
         """
         qs_params = kwargs.get(CommentInReview.QS_PARAMS, None)
 
-        if qs_params:
+        if qs_params and not qs_params.is_none:
             query_set_params.add(qs_params)
 
             self.queryset = query_set_params.apply(Comment.objects)

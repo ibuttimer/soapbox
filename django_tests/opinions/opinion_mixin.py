@@ -28,6 +28,7 @@ from opinions import (
     OPINION_ID_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME,
     OPINION_PREVIEW_ID_ROUTE_NAME
 )
+from opinions.constants import COMMENT_ID_ROUTE_NAME, COMMENT_SLUG_ROUTE_NAME
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
@@ -128,6 +129,36 @@ class OpinionMixin(BaseUserTest):
         """
         route = OPINION_ID_ROUTE_NAME \
             if opinion_by == AccessBy.BY_ID else OPINION_SLUG_ROUTE_NAME
+        return self.client.delete(
+            reverse_q(
+                namespaced_url(OPINIONS_APP_NAME, route),
+                args=[identifier]))
+
+    def delete_comment_by_id(self, pk: int) -> HttpResponse:
+        """
+        Delete an comment
+        :param pk: id of comment
+        """
+        return self.delete_comment_by(pk, AccessBy.BY_ID)
+
+    def delete_comment_by_slug(self, slug: str) -> HttpResponse:
+        """
+        Delete an comment
+        :param slug: slug of comment
+        """
+        return self.delete_comment_by(slug, AccessBy.BY_SLUG)
+
+    def delete_comment_by(
+        self, identifier: [int, str], comment_by: AccessBy
+    ) -> HttpResponse:
+        """
+        Delete an comment
+        :param identifier: comment identifier
+        :param comment_by: method of accessing comment; one of AccessBy
+        :returns response
+        """
+        route = COMMENT_ID_ROUTE_NAME \
+            if comment_by == AccessBy.BY_ID else COMMENT_SLUG_ROUTE_NAME
         return self.client.delete(
             reverse_q(
                 namespaced_url(OPINIONS_APP_NAME, route),

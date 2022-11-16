@@ -21,6 +21,7 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 import json
+from enum import Enum
 from http import HTTPStatus
 
 from django.contrib.auth.decorators import login_required
@@ -30,17 +31,22 @@ from django.http import (
 )
 from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
+from django.urls import resolve
 from django.views import View
 from django.views.decorators.http import require_http_methods
 
-from opinions.comment_data import get_comment_query_args
+from categories.constants import STATUS_DELETED
+from categories.models import Status
+from opinions.comment_data import (
+    get_comment_query_args, CommentData, get_comments_review_status
+)
 from opinions.constants import (
     STATUS_CTX, VIEW_OK_CTX, COMMENT_CTX, TEMPLATE_REACTION_CTRLS, USER_CTX,
     TEMPLATE_COMMENT_REACTIONS, COMMENT_ID_ROUTE_NAME,
     COMMENT_SLUG_ROUTE_NAME, OPINION_CTX, COMMENT_FORM_CTX, REPORT_FORM_CTX,
-    UNDER_REVIEW_TITLE_CTX, UNDER_REVIEW_EXCERPT_CTX,
-    UNDER_REVIEW_CONTENT_CTX, UNDER_REVIEW_TITLE, UNDER_REVIEW_EXCERPT,
-    UNDER_REVIEW_OPINION_CONTENT, ELEMENT_ID_CTX, HTML_CTX
+    ELEMENT_ID_CTX, HTML_CTX, REFERENCE_QUERY, COMMENTS_ROUTE_NAME,
+    COMMENT_DATA_CTX, CONTENT_STATUS_CTX, OPINION_ID_ROUTE_NAME,
+    OPINION_SLUG_ROUTE_NAME,
 )
 from opinions.enums import ReactionStatus
 from opinions.forms import CommentForm, ReviewForm
@@ -55,12 +61,26 @@ from opinions.views.opinion_by_id import (
 )
 from opinions.views.utils import (
     opinion_permission_check, comment_permission_check, DEFAULT_COMMENT_DEPTH,
-    published_check, own_content_check
+    published_check, own_content_check, add_content_no_show_markers
 )
 from soapbox import PATCH, POST, OPINIONS_APP_NAME
 from utils import (
     Crud, app_template_path, reverse_q, namespaced_url
 )
+
+
+class CommentTemplate(Enum):
+    """ Enum representing possible response templates for comments """
+    OPINION_LIST_TEMPLATE = \
+        app_template_path(
+            OPINIONS_APP_NAME, "snippet", "comment_bundle.html"),
+    """ Template for individual comments in view opinion, comment list"""
+    COMMENT_LIST_TEMPLATE = app_template_path(
+        OPINIONS_APP_NAME, "snippet", "comment.html")
+    """ Template for individual comments in comment list"""
+
+
+CommentTemplate.DEFAULT = CommentTemplate.OPINION_LIST_TEMPLATE
 
 
 class CommentDetail(LoginRequiredMixin, View):
@@ -86,7 +106,7 @@ class CommentDetail(LoginRequiredMixin, View):
         is_own = own_content_check(request, comment_obj, raise_ex=False)
 
         # perform published check, other users don't have access to
-        # unpublished opinions
+        # unpublished comments
         published_check(request, comment_obj)
 
         # ok to view check
@@ -119,15 +139,52 @@ class CommentDetail(LoginRequiredMixin, View):
                # under review comments
                COMMENT_FORM_CTX: CommentForm(),
                REPORT_FORM_CTX: ReviewForm(),
-           } if view_ok else {
+           } if view_ok else
                 # not visible under review opinion
-                UNDER_REVIEW_TITLE_CTX: UNDER_REVIEW_TITLE,
-                UNDER_REVIEW_EXCERPT_CTX: UNDER_REVIEW_EXCERPT,
-                UNDER_REVIEW_CONTENT_CTX: UNDER_REVIEW_OPINION_CONTENT,
-            })
+                add_content_no_show_markers()
+        )
 
         template_path, context = _render_view(**render_args)
         return render(request, template_path, context=context)
+
+    def delete(self, request: HttpRequest,
+               identifier: [int, str], *args, **kwargs) -> HttpResponse:
+        """
+        DELETE method to erase Comment content
+        Note: just comment contents are erased, as totally removing a comment
+              from a comment tree is too problematic
+        :param request: http request
+        :param identifier: id or slug of comment to erase
+        :param args: additional arbitrary arguments
+        :param kwargs: additional keyword arguments
+        :return: http response
+        """
+        comment_permission_check(request, Crud.READ)
+
+        comment_obj = self._get_comment(identifier)
+
+        # perform own comment check
+        own_content_check(request, comment_obj, raise_ex=True)
+
+        template = CommentTemplate.DEFAULT
+        if REFERENCE_QUERY in request.GET:
+            ref = request.GET[REFERENCE_QUERY].lower()
+            called_by = resolve(ref)
+            if called_by.url_name == COMMENTS_ROUTE_NAME:
+                template = CommentTemplate.COMMENT_LIST_TEMPLATE
+            elif called_by.url_name == OPINION_ID_ROUTE_NAME or \
+                    called_by.url_name == OPINION_SLUG_ROUTE_NAME:
+                template = CommentTemplate.OPINION_LIST_TEMPLATE
+            else:
+                raise ValueError(
+                    f'Unknown {REFERENCE_QUERY} query value: {ref}')
+
+        comment_obj.content = ""
+        comment_obj.status = Status.objects.get(name=STATUS_DELETED)
+        comment_obj.save()
+
+        return get_render_comment_response(
+            request, comment_obj.id, template=template)
 
     def _get_comment(self, identifier: [int, str]) -> Comment:
         """
@@ -186,19 +243,21 @@ class CommentDetailById(CommentDetail):
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        return CommentDetail.get(self, request, pk, *args, **kwargs)
+        return super().get(request, pk, *args, **kwargs)
 
-    def post(self, request: HttpRequest,
-             pk: int, *args, **kwargs) -> HttpResponse:
+    def delete(self, request: HttpRequest, pk: int,
+               *args, **kwargs) -> HttpResponse:
         """
-        POST method to update Comment
+        DELETE method to erase Comment content
+        Note: just comment contents are erased, as totally removing a comment
+              from a comment tree is too problematic
         :param request: http request
-        :param pk: id of Comment to update
+        :param pk: id of comment to erase
         :param args: additional arbitrary arguments
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        return CommentDetail.post(self, request, pk, *args, **kwargs)
+        return super().delete(request, pk, *args, **kwargs)
 
     def url(self, opinion_obj: Comment) -> str:
         """
@@ -226,19 +285,21 @@ class CommentDetailBySlug(CommentDetail):
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        return CommentDetail.get(self, request, slug, *args, **kwargs)
+        return super().get(request, slug, *args, **kwargs)
 
-    def post(self, request: HttpRequest,
-             slug: str, *args, **kwargs) -> HttpResponse:
+    def delete(self, request: HttpRequest, slug: str,
+               *args, **kwargs) -> HttpResponse:
         """
-        POST method to update Comment
+        DELETE method to erase Comment content
+        Note: just comment contents are erased, as totally removing a comment
+              from a comment tree is too problematic
         :param request: http request
-        :param slug: slug of comment to update
+        :param slug: slug of comment to erase
         :param args: additional arbitrary arguments
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        return CommentDetail.post(self, request, slug, *args, **kwargs)
+        return super().delete(request, slug, *args, **kwargs)
 
     def url(self, opinion_obj: Comment) -> str:
         """
@@ -297,23 +358,54 @@ def comment_hide_patch(request: HttpRequest, pk: int) -> HttpResponse:
             json.loads(response.content)[STATUS_CTX]
         )
 
-        comment = get_object_or_404(Comment, pk=pk)
+        _ = get_object_or_404(Comment, pk=pk)
 
-        context = get_comment_bundle_context(
-            comment.id, request.user,
+        response = get_render_comment_response(
+            request, pk,
             depth=DEFAULT_COMMENT_DEPTH if status == ReactionStatus.SHOW
             else 0
         )
-        response = JsonResponse({
-            ELEMENT_ID_CTX: f'id--comment-section-{pk}',
-            HTML_CTX: render_to_string(
-                app_template_path(
-                    OPINIONS_APP_NAME, "snippet", "comment_bundle.html"),
-                context=context,
-                request=request)
-        }, status=HTTPStatus.OK)
 
     return response
+
+
+def get_render_comment_response(
+    request: HttpRequest, pk: int, depth: int = DEFAULT_COMMENT_DEPTH,
+    template: CommentTemplate = CommentTemplate.DEFAULT
+) -> JsonResponse:
+    """
+    Get a render response for the comment with the specified id
+    :param request: http request
+    :param pk: id of comment
+    :param depth: comment depth; default DEFAULT_COMMENT_DEPTH
+    :param template: template to use for comment html in response;
+            default CommentTemplate.DEFAULT
+    :return: response
+    """
+    if template == CommentTemplate.OPINION_LIST_TEMPLATE:
+        element_id = f'id--comment-section-{pk}'
+        context = get_comment_bundle_context(pk, request.user, depth=depth)
+    else:
+        element_id = f'id--comment-card-{pk}'
+        comment = Comment.objects.get(**{
+            f'{Comment.id_field()}': pk
+        })
+        comment_data = CommentData(comment)
+        # get review status of comments
+        comments_review_status = get_comments_review_status(
+            [comment_data], current_user=request.user)
+
+        context = {
+            COMMENT_DATA_CTX: comment_data,
+            CONTENT_STATUS_CTX: comments_review_status,
+        }
+        add_content_no_show_markers(context=context)
+
+    return JsonResponse({
+        ELEMENT_ID_CTX: element_id,
+        HTML_CTX: render_to_string(
+            template.value, context=context, request=request)
+    }, status=HTTPStatus.OK)
 
 
 @login_required
