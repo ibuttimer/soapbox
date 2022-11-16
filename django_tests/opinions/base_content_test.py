@@ -26,6 +26,7 @@ from zoneinfo import ZoneInfo
 from categories import (
     STATUS_DRAFT, STATUS_PREVIEW, STATUS_PUBLISHED, STATUS_PENDING_REVIEW
 )
+from categories.constants import STATUS_DELETED
 from categories.models import Category, Status
 from opinions.constants import (
     OPINION_PAGINATION_ON_EACH_SIDE, OPINION_PAGINATION_ON_ENDS
@@ -55,9 +56,15 @@ class ContentTestBase(BaseUserTest):
 
     opinions: list[Opinion]
     hidden_opinions: list[Opinion]
+    hidden_opinion_set: set             # set with ids of hidden
     reported_opinions: list[Opinion]
+    reported_opinion_set: set           # set with ids of reported
     comments: list[Comment]
+    # TODO test hidden comments
+    hidden_comments: list[Comment]
+    hidden_comment_set: set            # set with ids of hidden
     reported_comments: list[Comment]
+    reported_comment_set: set           # set with ids of reported
 
     @staticmethod
     def create_opinion(
@@ -138,6 +145,7 @@ class ContentTestBase(BaseUserTest):
                                    f"on '{opinion}'{title_addendum}",
             Comment.OPINION_FIELD: opinion,
             Comment.PARENT_FIELD: parent.id if parent else Comment.NO_PARENT,
+            Comment.LEVEL_FIELD: parent.level + 1 if parent else 0,
             Comment.USER_FIELD: user,
             Comment.STATUS_FIELD: status,
         }
@@ -165,9 +173,14 @@ class ContentTestBase(BaseUserTest):
 
         cls.opinions = []
         cls.hidden_opinions = []
+        cls.hidden_opinion_set = set()
         cls.reported_opinions = []
+        cls.reported_opinion_set = set()
         cls.comments = []
+        cls.hidden_comments = []
+        cls.hidden_comment_set = set()
         cls.reported_comments = []
+        cls.reported_comment_set = set()
         num_templates = len(ContentTestBase.OPINION_INFO)
 
         def get_categories(u_idx, idx):
@@ -204,22 +217,25 @@ class ContentTestBase(BaseUserTest):
             user, _ = ContentTestBase.get_user_by_index(user_idx)
 
             for index in range(num_templates):
-                for action in range(2):
+                for op_idx in range(2):
+                    reported = op_idx > 0
                     opinion = ContentTestBase.create_opinion(
                         (user_idx * num_templates) + index,
                         user, published,
                         get_categories(user_idx, index),
                         days=days,
-                        hidden=True if action else False,
-                        reported=False if action else True
+                        hidden=not reported,
+                        reported=reported
                     )
                     cls.opinions.append(opinion)
                     days += 1
 
-                    if action:
-                        cls.hidden_opinions.append(opinion)
-                    else:
+                    if reported:
                         cls.reported_opinions.append(opinion)
+                        cls.reported_opinion_set.add(opinion.id)
+                    else:
+                        cls.hidden_opinions.append(opinion)
+                        cls.hidden_opinion_set.add(opinion.id)
 
         # add enough published opinions to get pagination ellipsis
         num_pages = ((OPINION_PAGINATION_ON_ENDS + 1) * 2) + \
@@ -259,6 +275,7 @@ class ContentTestBase(BaseUserTest):
                         # report comment
                         ContentTestBase.report_content(comment, user)
                         cls.reported_comments.append(comment)
+                        cls.reported_comment_set.add(comment.id)
                     else:
                         # add comment on comment
                         comment = ContentTestBase.create_comment(
@@ -368,3 +385,21 @@ class ContentTestBase(BaseUserTest):
     def published_comments(cls) -> list[Comment]:
         """ All published opinions """
         return cls.all_comments_of_status(STATUS_PUBLISHED)
+
+    @classmethod
+    def is_opinion_deleted(cls, pk: int):
+        return not Opinion.objects.filter(**{
+            f'{Opinion.id_field()}': pk
+        }).exists()
+
+    @classmethod
+    def is_comment_deleted(cls, pk: int):
+        deleted = not Comment.objects.filter(**{
+            f'{Comment.id_field()}': pk
+        }).exists()
+        if not deleted:
+            comment = Comment.objects.get(**{
+                f'{Comment.id_field()}': pk
+            })
+            deleted = comment.status.name == STATUS_DELETED
+        return deleted

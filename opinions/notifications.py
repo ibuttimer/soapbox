@@ -22,14 +22,25 @@
 #
 from django.contrib import messages
 from django.http import HttpRequest
-from django.template.defaultfilters import pluralize
+from django.template.loader import render_to_string
 
+from opinions.constants import (
+    COUNT_CTX, OPINION_REVIEWS_CTX, COMMENT_REVIEWS_CTX, USER_CTX,
+    TAGGED_COUNT_CTX
+)
 from opinions.models import Opinion, Comment
 from opinions.queries import (
     followed_author_publications, own_content_status_changes
 )
+from soapbox import OPINIONS_APP_NAME
 from user.models import User
-from utils.models import ModelMixin
+from utils import app_template_path
+
+
+TAGGED_AUTHOR_TEMPLATE = app_template_path(
+    OPINIONS_APP_NAME, "snippet", "tagged_author_opinions.html")
+CONTENT_UPDATES_TEMPLATE = app_template_path(
+    OPINIONS_APP_NAME, "snippet", "content_updates_message.html")
 
 
 def process_login_opinions(request: HttpRequest, user: User):
@@ -39,25 +50,30 @@ def process_login_opinions(request: HttpRequest, user: User):
     :param request: http request
     """
     if user:
+        # tagged author new opinions
         query = followed_author_publications(user, since=user.previous_login)
-        count = query.count() if query else 0
-        if count > 0:
-            messages.info(
-                request,
-                f'{count} opinion{pluralize(count)} '
-                f'{"has" if count == 1 else "have"} been published by '
-                f'authors you follow since you last logged in.'
-            )
 
-        for model in [Opinion, Comment]:
+        context = {
+            USER_CTX: user,
+            TAGGED_COUNT_CTX: query.count() if query else 0
+        }
+
+        # content updates
+        for key, model in [
+            (OPINION_REVIEWS_CTX, Opinion), (COMMENT_REVIEWS_CTX, Comment)
+        ]:
             query = own_content_status_changes(
                 user, model, since=user.previous_login)
-            count = query.count() if query else 0
-            if count > 0:
+            context[key] = query.count() if query else 0
+
+        context[COUNT_CTX] = \
+            context[OPINION_REVIEWS_CTX] + context[COMMENT_REVIEWS_CTX]
+
+        for count, template in [
+            (TAGGED_COUNT_CTX, TAGGED_AUTHOR_TEMPLATE),
+            (COUNT_CTX, CONTENT_UPDATES_TEMPLATE),
+        ]:
+            if context[count]:
                 messages.info(
-                    request,
-                    f'{count} '
-                    f'{ModelMixin.model_name_obj(model)}{pluralize(count)} '
-                    f'{"has" if count == 1 else "have"} been updated since '
-                    f'you last logged in.'
+                    request, render_to_string(template, context=context)
                 )

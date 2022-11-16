@@ -21,6 +21,7 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 from collections import namedtuple
+from datetime import datetime
 from typing import Union, List, Optional, Type
 from itertools import chain
 
@@ -28,7 +29,7 @@ from categories import REACTION_AGREE, REACTION_DISAGREE
 from categories.models import Status
 from soapbox import AVATAR_BLANK_URL, OPINIONS_APP_NAME
 from user.models import User
-from utils import reverse_q, namespaced_url
+from utils import reverse_q, namespaced_url, ModelFacadeMixin
 from .constants import (
     PAGE_QUERY, PER_PAGE_QUERY, PARENT_ID_QUERY, COMMENT_DEPTH_QUERY,
     COMMENT_MORE_ROUTE_NAME, OPINION_ID_QUERY, ID_QUERY, OPINION_CTX
@@ -45,13 +46,17 @@ REPLY_CONTAINER_ID = 'id--comment-collapse'
 REPLY_MORE_CONTAINER_ID = f'{REPLY_CONTAINER_ID}-more'
 
 
-class CommentData:
+class CommentData(ModelFacadeMixin):
     """ Data class represent a comment """
     comment: Comment
     """ Comment """
 
     def __init__(self, comment: Comment):
         self.comment = comment
+
+    def lookup_clazz(self):
+        """ Get the Model class """
+        return Comment
 
     @property
     def avatar_url(self):
@@ -60,10 +65,63 @@ class CommentData:
             if User.AVATAR_BLANK in self.comment.user.avatar.url \
             else self.comment.user.avatar.url
 
+    # Properties allowing CommentData to appear like Comment
+    # TODO revisit CommentData there must be a better approach?
+
     @property
-    def id(self):
-        """ Get comment """
+    def id(self) -> int:
+        """ Get comment id """
         return self.comment.id
+
+    @property
+    def content(self) -> str:
+        """ Get comment content """
+        return self.comment.content
+
+    @property
+    def opinion(self) -> Opinion:
+        """ Get comment opinion """
+        return self.comment.opinion
+
+    @property
+    def parent(self) -> int:
+        """ Get comment parent """
+        return self.comment.parent
+
+    @property
+    def level(self) -> int:
+        """ Get comment level """
+        return self.comment.level
+
+    @property
+    def user(self) -> int:
+        """ Get comment author """
+        return self.comment.user
+
+    @property
+    def status(self) -> Status:
+        """ Get comment author """
+        return self.comment.status
+
+    @property
+    def slug(self) -> str:
+        """ Get comment slug """
+        return self.comment.slug
+
+    @property
+    def created(self) -> datetime:
+        """ Get comment created """
+        return self.comment.created
+
+    @property
+    def updated(self) -> datetime:
+        """ Get comment updated """
+        return self.comment.updated
+
+    @property
+    def published(self) -> datetime:
+        """ Get comment published """
+        return self.comment.published
 
     def comment_iterable(self) -> chain[Comment]:
         """
@@ -225,9 +283,9 @@ def get_comment_tree(
 
     sub_query_params = query_params.copy()
     if depth > 1:
-        if Comment.ID_FIELD in sub_query_params:
+        if Comment.id_field() in sub_query_params:
             # remove comment id if present
-            del sub_query_params[Comment.ID_FIELD]
+            del sub_query_params[Comment.id_field()]
 
         # get first page of comments on comments
         sub_query_params[PAGE_QUERY] = 1

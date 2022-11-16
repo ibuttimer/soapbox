@@ -49,13 +49,14 @@ from opinions.constants import (
     OPINION_FOLLOW_ID_ROUTE_NAME, COMMENT_FOLLOW_ID_URL,
     COMMENT_FOLLOW_ID_ROUTE_NAME, OPINION_FOLLOWED_URL,
     OPINION_FOLLOWED_ROUTE_NAME, OPINION_IN_REVIEW_URL,
-    OPINION_IN_REVIEW_ROUTE_NAME,
+    OPINION_IN_REVIEW_ROUTE_NAME, COMMENT_IN_REVIEW_URL,
+    COMMENT_IN_REVIEW_ROUTE_NAME,
 )
 from opinions.views.comment_create import (
     OpinionCommentCreate, CommentCommentCreate
 )
 from opinions.views.comment_list import (
-    CommentList, CommentSearch, opinion_comments
+    CommentList, CommentSearch, opinion_comments, CommentInReview
 )
 from opinions.views.opinion_create import OpinionCreate
 from opinions.views.opinion_by_id import (
@@ -121,6 +122,9 @@ urlpatterns = [
     # list comments
     path(COMMENTS_URL, CommentList.as_view(),
          name=COMMENTS_ROUTE_NAME),
+    # comments in review
+    path(COMMENT_IN_REVIEW_URL, CommentInReview.as_view(),
+         name=COMMENT_IN_REVIEW_ROUTE_NAME),
 
     # get comment by id
     path(COMMENT_ID_URL, CommentDetailById.as_view(),

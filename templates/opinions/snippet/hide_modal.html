@@ -30,6 +30,10 @@
 </div>
 
 <script>
+    const hideModalSelector = "#id--hide-modal";
+    const hideSubmitUrlSelector = "#id--hide-submit-url";
+    const hideSubmitOptionSelector = "#id--hide-submit-option";
+
     $(document).ready(function () {
 
         /* Submit handler for comment modal */
@@ -37,8 +41,8 @@
 
             $("#" + event.currentTarget.id).tooltip("hide");
 
-            const url = $("#id--hide-submit-url").text();
-            const option = $("#id--hide-submit-option").text();
+            const url = $(hideSubmitUrlSelector).text();
+            const option = $(hideSubmitOptionSelector).text();
 
             $.ajax({
                 url: url + "?status=" + option,
@@ -47,16 +51,14 @@
                     'X-CSRFTOKEN': '{{ csrf_token }}'
                 }
             }).done(function(data) {
-                // document.location.href = data.redirect;
                 react_response_handler(data);
 
                 // close modal
-                $("#id--hide-modal").modal('hide');
+                $(hideModalSelector).modal('hide');
 
                 // set click handlers for reactions
                 setReactionHandlers();
                 enableTooltips();
-
             });
         });
     });

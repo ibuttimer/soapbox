@@ -20,11 +20,12 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from typing import Callable, Any, Type, TypeVar
+from typing import Callable, Any, Type, TypeVar, Union
 
 from django.db.models import Q, QuerySet, Model
 
 from opinions.enums import ChoiceArg
+from utils import ModelMixin
 
 # workaround for self type hints from https://peps.python.org/pep-0673/
 TypeQuerySetParams = TypeVar("TypeQuerySetParams", bound="QuerySetParams")
@@ -171,11 +172,11 @@ class QuerySetParams:
 
 
 def choice_arg_query(
-            query_set_params: QuerySetParams, name: str,
-            choice_arg: Type[ChoiceArg], all_options: ChoiceArg,
-            model: Type[Model], search_field: str, query: str,
-            and_lookup: str
-        ):
+    query_set_params: QuerySetParams, name: str,
+    choice_arg: Type[ChoiceArg], all_options: ChoiceArg,
+    model: Type[Union[Model, ModelMixin]], search_field: str,
+    query: str, and_lookup: str
+):
     """
     Process a ChoiceArg query
     :param query_set_params: query set params
@@ -219,7 +220,7 @@ def choice_arg_query(
             query_set_params.add_or_lookup(
                 f'{query}-{name}',
                 Q(_connector=Q.OR, **{
-                    f'{model.ID_FIELD}':
+                    f'{model.id_field()}':
                         stat.id for stat in status_qs.all()
                 })
             )

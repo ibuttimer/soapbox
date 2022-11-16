@@ -32,12 +32,16 @@
 {% load form_field %}
 {% load dict_value %}
 
+{% block head_title %}SoapBox - {{ title }}{% endblock %}
+
 {% block extra_js_head %}
 <script src="https://code.jquery.com/jquery-3.6.1.min.js" integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous"></script>
 <script>window.jQuery || document.write('<script type="text/javascript" src="{% static 'jquery/jquery-3.6.1.min.js' %}"><\/script>')</script>
 {% endblock extra_js_head %}
 
-{% block head_title %}SoapBox - {{ title }}{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/styles-opinion.css' %}" rel="stylesheet">
+{% endblock extra_css %}
 
 {% block content %}
 {% if page_heading %}
@@ -71,6 +75,16 @@
     {% include "opinions/comment_list_content.html" %}
 </article>
 
+{% include "opinions/snippet/modal_common.html" %}
+<!-- Modal to share opinion/comment -->
+<div id="id--share-modal-container">
+    {% include "opinions/snippet/share_modal.html" %}
+</div>
+<!-- Modal to delete comment -->
+<div id="id--delete-modal-container">
+    {% include "opinions/snippet/comment_delete_modal.html" %}
+</div>
+
 {% endblock content %}
 
 {% block extra_js_body %}
@@ -101,6 +115,9 @@
                 url: page + "&" + query_args.join("&")
             }).done(function(data) {
                 $('#article-content').html(data);
+
+                enableTooltips();
+                setReactionHandlers();
 
                 $('#per-page-select').ready(function(event) {
                     add_page_content_handlers();
@@ -158,4 +175,6 @@
             add_page_content_handlers();
         });
     </script>
+
+    {% include "opinions/snippet/reactions_js.html" %}
 {% endblock extra_js_body %}

@@ -1,0 +1,28 @@
+<!-- content_updates_message.html start -->
+
+{% load i18n %}
+
+{# --- template variable defines for includes --- #}
+{# comment template expects: 'count' as total number of changes #}
+{#                           'opinion_reviews' as total number of review-related changes to opinions #}
+{#                           'comment_reviews' as total number of review-related changes to comments #}
+{#                           'user' as current user #}
+
+<div>
+    <p>The following change{{ count|pluralize }} ha{{ count|pluralize:"s,ve" }} occurred to your content since your last login:</p>
+    <ul class="list-group">
+        {% if opinion_reviews %}
+            <li class="list-group-item">
+                {{ opinion_reviews }} opinion{{ opinion_reviews|pluralize:"'s,s'" }}
+                <a class="link-primary" href="{% url 'opinions:opinion_in_review' %}?author={{ user.username }}">review status</a>
+            </li>
+        {% endif %}
+        {% if comment_reviews %}
+            <li class="list-group-item">
+                {{ comment_reviews }} comment{{ comment_reviews|pluralize:"'s,s'" }}
+                <a class="link-primary" href="{% url 'opinions:comment_in_review' %}?author={{ user.username }}">review status</a>
+            </li>
+        {% endif %}
+    </ul>
+</div>
+<!-- content_updates_message.html end -->

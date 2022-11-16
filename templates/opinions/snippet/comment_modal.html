@@ -51,33 +51,27 @@
 </div>
 
 <script>
+    const commentModalSelector = "#id--comment-modal";
+    {% form_field comment_form 'content' as content_field %}
+    const commentContentSelector = "#{{ content_field.auto_id }}";
+    const commentFormErrorsSelector = "#id--comment-form-errors-container";
+    const commentSubmitUrlSelector = "#id--comment-submit-url";
+
     $(document).ready(function () {
 
-        /* Due to how HTML5 defines its semantics, the autofocus HTML attribute has no effect in Bootstrap modals.
-           To achieve the same effect, use some custom JavaScript
-           https://getbootstrap.com/docs/5.2/components/modal/#how-it-works
-         */
-        {% form_field comment_form 'content' as content_field %}
-        $("#id--comment-modal").on('shown.bs.modal', (event) => {
-            $("#{{ content_field.auto_id }}").focus();
-        });
+        // set focus
+        modalFocus(commentModalSelector, commentContentSelector);
 
-        /* Clear form errors and entered data when modal hidden */
-        $("#id--comment-modal").on('hidden.bs.modal', (event) => {
-            $("#id--comment-form-errors-container").html("");
-            /* TODO find method of clearing editor content and remove all stored history
-                suggested method (https://summernote.org/deep-dive/#reset) doesn't work (maybe because in iframe?)
-                Can clear input element using $("#{{ content_field.auto_id }}").val("") but editor content is still displayed
-             */
-        });
+        // clear form errors and entered data when modal hidden
+        resetModalForm(commentModalSelector, commentFormErrorsSelector, commentContentSelector, true);
 
         /* Submit handler for comment modal */
         $("form[id^='id--comment-modal']").submit(function (event) {
             const formData = {
-                content: $("#{{ content_field.auto_id }}").val(),
+                content: $(commentContentSelector).val(),
             };
 
-            const url = $("#id--comment-submit-url").text();
+            const url = $(commentSubmitUrlSelector).text();
 
             $.ajax({
                 method: 'post',
@@ -93,7 +87,10 @@
                 //                                                     "id--comment-card-{more}-<id>"
                 const lastCommentId = $(`${lastCommentSectionSelector} > div:first-child`).attr('id')
                 // last section in parent container is a 'more'
-                const lastIsMore = lastCommentId.includes('more');
+                let lastIsMore = false;
+                if (lastCommentId !== undefined) {
+                    lastIsMore = lastCommentId.includes('more');
+                }
 
                 if (lastIsMore) {
                     // insert new html before 'more' comment section, marking as for removal if 'more' requested
@@ -117,14 +114,14 @@
                     bsCollapse.show();
                 }
                 // close modal
-                $("#id--comment-modal").modal('hide');
+                $(commentModalSelector).modal('hide');
 
                 // set click handlers for reactions
                 setReactionHandlers();
 
             }).fail(function(data) {
                 // redisplay modal
-                $("#id--comment-form-errors-container").html(data.responseJSON.html);
+                $(commentFormErrorsSelector).html(data.responseJSON.html);
             });
 
             event.preventDefault();

@@ -31,8 +31,10 @@ from django.db.models import QuerySet, Q
 from categories import (
     STATUS_WITHDRAWN, STATUS_REJECTED, STATUS_PUBLISHED
 )
+from categories.constants import STATUS_DELETED
 from categories.models import Status
 from user.models import User
+from utils import ModelFacadeMixin
 from .enums import QueryStatus
 from .models import (
     Opinion, PinStatus, Review, Comment, HideStatus, FollowStatus
@@ -113,6 +115,7 @@ class ContentStatus:
     review_wip: bool    # review in progress
     hidden: bool        # was hidden (has precedence over viewable)
     mine: bool          # current user's content (has precedence over hidden)
+    deleted: bool       # content was deleted
 
     @property
     def view_ok(self):
@@ -127,7 +130,7 @@ class ContentStatus:
 
 ContentStatus.VIEW_OK = ContentStatus(
     reported=False, viewable=True, review_wip=False, hidden=False,
-    mine=False
+    mine=False, deleted=False
 )
 
 
@@ -152,6 +155,7 @@ class StatusCheck(Enum):
     VIEWABLE = auto()
     REVIEW_WIP = auto()
     HIDDEN = auto()
+    DELETED = auto()
 
 
 def get_content_status(
@@ -174,6 +178,7 @@ def get_content_status(
     review_wip = StatusCheck.ALL in args or StatusCheck.REVIEW_WIP in args
     viewable = StatusCheck.ALL in args or StatusCheck.VIEWABLE in args
     hidden = StatusCheck.ALL in args or StatusCheck.HIDDEN in args
+    deleted = StatusCheck.ALL in args or StatusCheck.DELETED in args
 
     if reported or review_wip or viewable:
         # check if reported
@@ -223,10 +228,16 @@ def get_content_status(
         query = HideStatus.objects.filter(**query_args)
         hidden = query.exists()
 
+    if deleted:
+        # check if deleted
+        deleted = is_content_deleted(content.__class__, content.id)
+
     return ContentStatus(
         reported=reported, viewable=viewable, review_wip=review_wip,
         hidden=hidden,
-        mine=content.user.id == current_user.id if current_user else False)
+        mine=content.user.id == current_user.id if current_user else False,
+        deleted=deleted
+    )
 
 
 def content_review_status(
@@ -395,16 +406,31 @@ def in_review_content(
         ])
     )
 
+    content_field = Review.content_field(model)
     in_review = query_set_params.apply(
-        Review.objects).values_list(Review.OPINION_FIELD, flat=True)
+        Review.objects).values_list(content_field, flat=True)
 
     query_set_params.clear()
     if in_review:
         query_set_params.add_and_lookup(
-            Review.OPINION_FIELD, f'{Opinion.ID_FIELD}__in', in_review
+            content_field, f'{Review.id_field()}__in', in_review
         )
     else:
         query_set_params.is_none = True
 
     return query_set_params if as_params else \
         query_set_params.apply(Review.objects)
+
+
+def is_content_deleted(model: Type[ModelFacadeMixin], pk: int):
+    """
+    Check if content has been deleted
+    :param model: model of content
+    :param pk: id of content
+    :return: True if doesn't exist or status is deleted
+    """
+    content = model.lookup_clazz().objects.get(**{
+        f'{model.id_field()}': pk
+    })
+    return \
+        content.status.name == STATUS_DELETED if content else True
