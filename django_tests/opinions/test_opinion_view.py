@@ -23,7 +23,7 @@
 import json
 import re
 from http import HTTPStatus
-from typing import Optional, Callable
+from typing import Optional, Callable, Any
 
 from bs4 import BeautifulSoup, Tag
 from django.http import HttpResponse
@@ -38,7 +38,7 @@ from opinions.constants import (
     STATUS_QUERY, UNDER_REVIEW_TITLE, UNDER_REVIEW_OPINION_CONTENT
 )
 from opinions.models import Opinion
-from opinions.enums import QueryStatus
+from opinions.enums import QueryStatus, ViewMode
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
@@ -89,19 +89,28 @@ class TestOpinionView(
         user = self.login_user_by_id(opinion.user.id)
 
         for status in [STATUS_DRAFT, STATUS_PREVIEW, STATUS_PUBLISHED]:
-            with self.subTest(f'{opinion_by} - status {status}'):
-                # get list of own opinions
-                opinions = self.get_own_opinions(user, status)
-                opinion = opinions[0]
+            for mode in ViewMode:
+                msg = f'{opinion_by} - status {status} - mode {mode}'
+                with self.subTest(msg):
+                    # get list of own opinions
+                    opinions = self.get_own_opinions(user, status)
+                    opinion = opinions[0]
 
-                response = self.get_opinion_by(
-                    opinion.id if opinion_by == AccessBy.BY_ID
-                    else opinion.slug,
-                    opinion_by)
-                self.assertEqual(response.status_code, HTTPStatus.OK)
-                self.assertTemplateUsed(response, OPINION_FORM_TEMPLATE)
-                TestOpinionView.verify_opinion_content(
-                    self, opinion, response, user=user)
+                    response = self.get_opinion_by(
+                        opinion_by.identifier(opinion), opinion_by, mode=mode)
+                    self.assertEqual(response.status_code, HTTPStatus.OK)
+                    self.assert_template(response, mode)
+                    TestOpinionView.verify_opinion_content(
+                        self, opinion, response, user=user, mode=mode)
+
+    def assert_template(
+            self, response: Any = None, mode: ViewMode = ViewMode.DEFAULT,
+            msg_prefix: str = "", count: Any = None):
+        """ Check the template used """
+        self.assertTemplateUsed(
+            response=response, template_name=OPINION_FORM_TEMPLATE
+            if mode == ViewMode.EDIT else OPINION_VIEW_TEMPLATE,
+            msg_prefix=msg_prefix, count=count)
 
     def test_get_own_opinion_by_id(self):
         """ Test page content for opinion by id of logged-in user """
@@ -147,8 +156,10 @@ class TestOpinionView(
             len(opinions), 1, msg=f'No opinions with {status} status')
         return opinions
 
-    def check_get_other_opinion(self, opinion_by: AccessBy,
-                                find_func: Optional[Callable] = None):
+    def check_get_other_opinion(
+        self, opinion_by: AccessBy, find_func: Optional[Callable] = None,
+        mode: ViewMode = ViewMode.READ_ONLY
+    ):
         """ Test page content for opinion of not logged-in user """
         _, key = TestOpinionView.get_user_by_index(0)
         logged_in_user = self.login_user_by_key(key)
@@ -160,12 +171,11 @@ class TestOpinionView(
 
         self.assertNotEqual(logged_in_user, opinion.user)
         response = self.get_opinion_by(
-            opinion.id if opinion_by == AccessBy.BY_ID else opinion.slug,
-            opinion_by)
+            opinion_by.identifier(opinion), opinion_by)
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertTemplateUsed(response, OPINION_VIEW_TEMPLATE)
+        self.assert_template(response, ViewMode.READ_ONLY)
         TestOpinionView.verify_opinion_content(
-            self, opinion, response, user=logged_in_user, is_readonly=True)
+            self, opinion, response, user=logged_in_user, mode=mode)
 
     def test_get_other_opinion_by_id(self):
         """ Test page content for opinion by id of not logged-in user """
@@ -198,10 +208,12 @@ class TestOpinionView(
         )
         return list(filter(lambda op: op.id in ids, opinions))
 
-    def check_other_opinion_access(self, opinion_by: str):
+    def check_other_opinion_access(self, opinion_by: AccessBy,
+                                   mode: ViewMode = ViewMode.READ_ONLY):
         """
-        Test access to unpublished opinions by id of not logged-in user
+        Test access to unpublished opinions of not logged-in user
         :param opinion_by: method of accessing opinion; one of AccessBy
+        :param mode: view mode: default ViewMode.READ_ONLY
         """
         _, key = TestOpinionView.get_user_by_index(0)
         logged_in_user = self.login_user_by_key(key)
@@ -214,22 +226,24 @@ class TestOpinionView(
                 opinion = opinions[0]
 
                 self.assertNotEqual(logged_in_user, opinion.user)
-                response = self.get_opinion_by_id(opinion.id) \
-                    if opinion_by == AccessBy.BY_ID else \
-                    self.get_opinion_by_slug(opinion.slug)
+                response = self.get_opinion_by(
+                    opinion_by.identifier(opinion), opinion_by,
+                    mode=mode)
                 self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
-    def test_get_other_opinion_access_by_id(self):
+    def test_get_other_wip_opinion_access_by_id(self):
         """
         Test access to unpublished opinions by id of not logged-in user
         """
-        self.check_other_opinion_access(AccessBy.BY_ID)
+        for mode in ViewMode:
+            self.check_other_opinion_access(AccessBy.BY_ID, mode=mode)
 
-    def test_get_other_opinion_access_by_slug(self):
+    def test_get_other_wip_opinion_access_by_slug(self):
         """
         Test access to unpublished opinions by slug of not logged-in user
         """
-        self.check_other_opinion_access(AccessBy.BY_SLUG)
+        for mode in ViewMode:
+            self.check_other_opinion_access(AccessBy.BY_SLUG, mode=mode)
 
     def test_get_own_opinion_preview(self):
         """
@@ -247,10 +261,10 @@ class TestOpinionView(
                 self.assertEqual(logged_in_user, opinion.user)
                 response = self.get_opinion_preview(opinion.id)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
-                self.assertTemplateUsed(response, OPINION_VIEW_TEMPLATE)
+                self.assert_template(response, ViewMode.PREVIEW)
                 TestOpinionView.verify_opinion_content(
                     self, opinion, response, user=logged_in_user,
-                    is_readonly=True, is_preview=True)
+                    mode=ViewMode.PREVIEW)
 
     def test_get_other_opinion_preview(self):
         """
@@ -342,17 +356,18 @@ class TestOpinionView(
     @staticmethod
     def verify_opinion_content(
             test_case: TestCase, opinion: Opinion, response: HttpResponse,
-            user: User = None, is_readonly: bool = False,
-            is_preview: bool = False):
+            user: User = None, mode: ViewMode = ViewMode.DEFAULT):
         """
         Verify opinion page content for user
         :param test_case: TestCase instance
         :param opinion: expected opinion
         :param response: opinion response
         :param user: current user; default None
-        :param is_readonly: is readonly flag; default False
-        :param is_preview: is preview flag; default False
+        :param mode: one of ViewMode; default ViewMode.DEFAULT
         """
+        is_readonly = mode in [ViewMode.READ_ONLY, ViewMode.PREVIEW]
+        is_preview = mode == ViewMode.PREVIEW
+
         test_case.assertEqual(response.status_code, HTTPStatus.OK)
 
         soup = BeautifulSoup(

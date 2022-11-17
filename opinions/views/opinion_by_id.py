@@ -57,7 +57,7 @@ from opinions.constants import (
     STATUS_CTX, OPINION_FORM_CTX, REPORT_FORM_CTX, IS_PREVIEW_CTX,
     ALL_FIELDS, VIEW_OK_CTX, TEMPLATE_TARGET_SLUG, TEMPLATE_TARGET_AUTHOR,
     REDIRECT_CTX, ELEMENT_ID_CTX, HTML_CTX, OPINIONS_ROUTE_NAME, AUTHOR_QUERY,
-    STATUS_QUERY
+    STATUS_QUERY, MODE_QUERY
 )
 from opinions.forms import OpinionForm, CommentForm, ReviewForm
 from opinions.models import (
@@ -74,9 +74,10 @@ from opinions.views.utils import (
     own_content_check, published_check, get_opinion_context,
     render_opinion_form, comment_permission_check, like_query_args,
     hide_query_args, pin_query_args, generate_excerpt, follow_query_args,
-    add_content_no_show_markers, review_permission_check
+    add_content_no_show_markers, review_permission_check, QueryOption,
+    get_query_args
 )
-from opinions.enums import QueryStatus, ReactionStatus
+from opinions.enums import QueryStatus, ReactionStatus, ViewMode
 
 TITLE_NEW = "Creation"
 TITLE_UPDATE = "Update"
@@ -104,18 +105,26 @@ class OpinionDetail(LoginRequiredMixin, View):
 
         opinion_obj = self._get_opinion(identifier)
 
+        # get query params
+        query_params = get_query_args(
+            request, QueryOption(MODE_QUERY, ViewMode, ViewMode.DEFAULT))
+        mode = query_params.get(MODE_QUERY).value
+
         # perform own opinion check
         is_own = own_content_check(
-            request, opinion_obj, raise_ex=kwargs.get(OWN_ONLY, False))
+            request, opinion_obj,
+            raise_ex=mode == ViewMode.EDIT or kwargs.get(OWN_ONLY, False))
 
         # perform published check, other users don't have access to
         # unpublished opinions
         published_check(request, opinion_obj)
 
-        # read only if not current user's opinion
-        read_only = not is_own \
-            if READ_ONLY_CTX not in kwargs else kwargs[READ_ONLY_CTX]
-        is_preview = opinion_obj.status.name == STATUS_PREVIEW
+        # read only if specifically requested, or not current user's opinion
+        read_only = True if mode in [
+            ViewMode.READ_ONLY, ViewMode.PREVIEW
+        ] else kwargs.get(READ_ONLY_CTX, not is_own)
+        is_preview = opinion_obj.status.name == STATUS_PREVIEW or \
+            mode == ViewMode.PREVIEW
 
         # ok to view check
         content_status = content_status_check(

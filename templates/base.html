@@ -82,6 +82,7 @@
                             <a class="nav-link active" aria-current="page" href="/">Home</a>
                         </li>
                         {% if user.is_authenticated %}
+                            {# --- opinion menu --- #}
                             <li class="nav-item dropdown">
                                 <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
                                    {% if opinion_create or opinion_read %}
@@ -126,6 +127,7 @@
                                     {% endif %}
                                 </ul>
                             </li>
+                            {# --- comment menu --- #}
                             <li class="nav-item dropdown">
                                 <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
                                    {% if comment_read %}
@@ -157,6 +159,7 @@
                                     {% endif %}
                                 </ul>
                             </li>
+                            {# --- category menu --- #}
                             <li class="nav-item">
                                 <a
                                    {% if category_create or category_read %}
@@ -168,6 +171,40 @@
                                     Category
                                 </a>
                             </li>
+                            {# --- moderator menu --- #}
+                            {% if is_moderator %}
+                                <li class="nav-item dropdown">
+                                    <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
+                                       {% if comment_read %}
+                                       class="nav-link dropdown-toggle"
+                                       {% else %}
+                                       class="nav-link dropdown-toggle disabled"
+                                       {% endif %}
+                                    >
+                                        Moderate
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        {% if comment_read %}
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'opinions:comments' %}?author={{ user.username }}&status=draft">Drafts</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'opinions:comments' %}?author={{ user.username }}&status=preview">Previews</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'opinions:comment_in_review' %}?author={{ user.username }}">Review in progress</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'opinions:comments' %}?author={{ user.username }}&status=all">Mine</a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'opinions:comments' %}">All</a>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </li>
+                            {% endif %}
                         {% endif %}
                     </ul>
                     <form class="d-flex" role="search" method="get" action="{% url 'opinions:opinion_search' %}">

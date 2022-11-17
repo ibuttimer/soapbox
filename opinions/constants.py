@@ -131,6 +131,7 @@ COMMENT_DEPTH_QUERY: str = 'depth'          # comment level depth
 
 # general
 REFERENCE_QUERY: str = 'ref'                # reference
+MODE_QUERY: str = 'mode'                    # mode
 
 OPINION_PAGINATION_ON_EACH_SIDE = 1
 OPINION_PAGINATION_ON_ENDS = 1

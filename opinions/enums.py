@@ -441,3 +441,13 @@ class Report(ChoiceArg):
 
 
 Report.DEFAULT = Report.REPORT
+
+
+class ViewMode(ChoiceArg):
+    """ Enum representing view mode opinions """
+    READ_ONLY = ('Read only', 'read-only')
+    EDIT = ('Edit', 'edit')
+    PREVIEW = ('Preview', 'preview')
+
+
+ViewMode.DEFAULT = ViewMode.READ_ONLY

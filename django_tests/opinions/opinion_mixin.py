@@ -21,6 +21,7 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 from enum import Enum, auto
+from typing import Union
 
 from django.http import HttpResponse
 
@@ -28,7 +29,11 @@ from opinions import (
     OPINION_ID_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME,
     OPINION_PREVIEW_ID_ROUTE_NAME
 )
-from opinions.constants import COMMENT_ID_ROUTE_NAME, COMMENT_SLUG_ROUTE_NAME
+from opinions.constants import (
+    COMMENT_ID_ROUTE_NAME, COMMENT_SLUG_ROUTE_NAME, MODE_QUERY
+)
+from opinions.enums import ViewMode
+from opinions.models import Opinion, Comment
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
@@ -39,6 +44,14 @@ class AccessBy(Enum):
     """ Access route class """
     BY_ID = auto()
     BY_SLUG = auto()
+
+    def identifier(self, content: Union[Opinion, Comment]) -> Union[int, str]:
+        """
+        Get the identifier from `content` as specified by this access
+        :param content: content to get identifier for
+        :return: identifier
+        """
+        return content.id if self == AccessBy.BY_ID else content.slug
 
 
 class OpinionMixin(BaseUserTest):
@@ -63,35 +76,44 @@ class OpinionMixin(BaseUserTest):
         """
         return BaseUserTest.login_user_by_id(self, pk)
 
-    def get_opinion_by_id(self, pk: int) -> HttpResponse:
+    def get_opinion_by_id(
+            self, pk: int, mode: ViewMode = None) -> HttpResponse:
         """
         Get the opinion page
         :param pk: id of opinion
+        :param mode: view mode; default None
         """
-        return self.get_opinion_by(pk, AccessBy.BY_ID)
+        return self.get_opinion_by(pk, AccessBy.BY_ID, mode=mode)
 
-    def get_opinion_by_slug(self, slug: str) -> HttpResponse:
+    def get_opinion_by_slug(
+            self, slug: str, mode: ViewMode = None) -> HttpResponse:
         """
         Get the opinion page
         :param slug: slug of opinion
+        :param mode: view mode; default None
         """
-        return self.get_opinion_by(slug, AccessBy.BY_SLUG)
+        return self.get_opinion_by(slug, AccessBy.BY_SLUG, mode=mode)
 
     def get_opinion_by(
-        self, identifier: [int, str], opinion_by: AccessBy
+        self, identifier: [int, str], opinion_by: AccessBy,
+        mode: ViewMode = None
     ) -> HttpResponse:
         """
         Get the opinion page
         :param identifier: opinion identifier
         :param opinion_by: method of accessing opinion; one of AccessBy
+        :param mode: view mode; default None
         :returns response
         """
+        query_kwargs = {
+            MODE_QUERY: mode.arg
+        } if isinstance(mode, ViewMode) else {}
         route = OPINION_ID_ROUTE_NAME \
             if opinion_by == AccessBy.BY_ID else OPINION_SLUG_ROUTE_NAME
         return self.client.get(
             reverse_q(
                 namespaced_url(OPINIONS_APP_NAME, route),
-                args=[identifier]))
+                args=[identifier], query_kwargs=query_kwargs))
 
     def get_opinion_preview(self, pk: int) -> HttpResponse:
         """

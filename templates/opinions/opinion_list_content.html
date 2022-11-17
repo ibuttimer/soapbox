@@ -1,4 +1,10 @@
 <!-- opinion_list_content.html start -->
+{# --- template variable defines for includes --- #}
+{# opinion list content template expects: 'paginator' as a Paginator #}
+{#                                        'opinion_list' as a list of OpinionData #}
+{#                                        'content_status' as a list of ContentStatus in order corresponding to opinion_list #}
+{#                                        'popularity' as a dict with 'opinion_<id>' as the key and PopularityLevel value #}
+
 {% load i18n %}
 {% load static %}
 {% load humanize %}
@@ -28,7 +34,7 @@
                                     <div class="row">
                                         <div class="col-sm-8 mt-0 mb-0">
                                             <!-- title -->
-                                            <a {% if status.view_ok %} href="{% url 'opinions:opinion_slug' opinion.slug %}" {% endif %}
+                                            <a {% if status.view_ok %} href="{% url 'opinions:opinion_slug' opinion.slug %}?mode=read-only" {% endif %}
                                                class="post-link">
                                                 <h4 id="id_title_{{ forloop.counter }}" class="card-title">
                                                     {% if status.review_no_show %}{{ under_review_title }}{% else %}{{ opinion.title }}{% endif %}
@@ -74,13 +80,18 @@
                                         <div class="col-sm-3 mt-0 mb-0">
                                             <a
                                                 {% if status.view_ok %}
-                                                class="btn btn-primary" href="{% url 'opinions:opinion_slug' opinion.slug %}" alt="read {{ opinion.title }}"
+                                                class="btn btn-primary" href="{% url 'opinions:opinion_slug' opinion.slug %}?mode=read-only" alt="read {{ opinion.title }}"
                                                 {% else %}}
                                                 class="btn btn-primary disabled" alt="Not available for reading" aria-disabled="true"
                                                 {% endif %}
                                             >
                                                 Read
                                             </a>
+                                            {% if status.mine %}
+                                            <a class="btn btn-warning mt-2" href="{% url 'opinions:opinion_slug' opinion.slug %}?mode=edit" alt="edit {{ opinion.title }}">
+                                                Edit
+                                            </a>
+                                            {% endif %}
                                         </div>
                                         <div class="col-sm-6 mt-0 mb-0">
                                             <div class="row mt-0 mb-0">
