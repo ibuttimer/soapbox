@@ -262,9 +262,9 @@ DATABASES = {
     # The db() method is an alias for db_url().
     'default': env.db(),
 
-    # read os.environ['HEROKU_DATABASE_URL']
-    'heroku': env.db_url(
-        'HEROKU_DATABASE_URL',
+    # read os.environ['REMOTE_DATABASE_URL']
+    'remote': env.db_url(
+        'REMOTE_DATABASE_URL',
         default='sqlite:////tmp/my-tmp-sqlite.db'
     ),
 
