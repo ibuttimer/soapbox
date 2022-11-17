@@ -55,7 +55,7 @@ from opinions.enums import (
     ChoiceArg, QueryArg, QueryStatus, ReactionStatus, OpinionSortOrder,
     CommentSortOrder, PerPage, Hidden, Pinned, Report
 )
-from opinions.models import Opinion, Comment
+from opinions.models import Opinion, Comment, Review
 from opinions.forms import OpinionForm
 
 DEFAULT_COMMENT_DEPTH = 2
@@ -378,51 +378,91 @@ def get_query_args(
     return params
 
 
-def opinion_permissions(request: HttpRequest) -> dict:
+def opinion_permissions(request: HttpRequest, context: dict = None) -> dict:
     """
     Get the current user's permissions for Opinions
     :param request: current request
-    :return: dict of permissions
+    :param context: context to update; default None
+    :return: dict of permissions with
+            `<model_name>_<crud_op>` as key and boolean value
     """
-    permissions = {}
-    opinion_model_name = Opinion.model_name().lower()
+    if context is None:
+        context = {}
+    # permissions for opinion and comment
     for model, check_func in [
-        (opinion_model_name, opinion_permission_check),
-        (Comment.model_name().lower(), comment_permission_check)
+        (Opinion, opinion_permission_check),
+        (Comment, comment_permission_check),
+        (Review, review_permission_check),
     ]:
-        permissions.update({
-            f'{model}_{op.name.lower()}':
-                check_func(request, op, raise_ex=False)
-            for op in Crud
+        context.update({
+            f'{model.model_name().lower()}_{crud_op.name.lower()}':
+                check_func(request, crud_op, raise_ex=False)
+            for crud_op in Crud
         })
-    permissions.update({
+        for perm, _ in model._meta.permissions:
+            context.update({
+                f'{perm}': check_func(request, perm, raise_ex=False)
+            })
+
+    return context
+
+
+def add_opinion_context(request: HttpRequest, context: dict = None) -> dict:
+    """
+    Add opinion-specific context entries
+    :param request: current request
+    :param context: context to update; default None
+    :return: updated context
+    """
+    if context is None:
+        context = {}
+    opinion_model_name = Opinion.model_name().lower()
+    context.update({
         f'{opinion_model_name}_follow': is_following(request.user).exists()
     })
-    return permissions
+    return context
 
 
-def opinion_permission_check(request: HttpRequest, op: Crud,
-                             raise_ex: bool = True) -> bool:
+def opinion_permission_check(
+        request: HttpRequest,
+        perm_op: Union[Union[Crud, str], List[Union[Crud, str]]],
+        raise_ex: bool = True) -> bool:
     """
     Check request user has specified opinion permission
     :param request: http request
-    :param op: Crud operation to check
+    :param perm_op: Crud operation or permission name to check
     :param raise_ex: raise exception; default True
     """
-    return permission_check(request, Opinion, op, app_label=OPINIONS_APP_NAME,
-                            raise_ex=raise_ex)
+    return permission_check(request, Opinion, perm_op,
+                            app_label=OPINIONS_APP_NAME, raise_ex=raise_ex)
 
 
-def comment_permission_check(request: HttpRequest, op: Crud,
-                             raise_ex: bool = True) -> bool:
+def comment_permission_check(
+        request: HttpRequest,
+        perm_op: Union[Union[Crud, str], List[Union[Crud, str]]],
+        raise_ex: bool = True) -> bool:
     """
     Check request user has specified comment permission
     :param request: http request
-    :param op: Crud operation to check
+    :param perm_op: Crud operation or permission name to check
     :param raise_ex: raise exception; default True
     """
-    return permission_check(request, Comment, op, app_label=OPINIONS_APP_NAME,
-                            raise_ex=raise_ex)
+    return permission_check(request, Comment, perm_op,
+                            app_label=OPINIONS_APP_NAME, raise_ex=raise_ex)
+
+
+def review_permission_check(
+        request: HttpRequest,
+        perm_op: Union[Union[Crud, str], List[Union[Crud, str]]],
+        raise_ex: bool = True) -> bool:
+    """
+    Check request user has specified review permission
+    :param request: http request
+    :param perm_op: Crud operation or permission name to check
+    :param raise_ex: raise exception; default True
+    """
+    return permission_check(request, Review, perm_op,
+                            app_label=OPINIONS_APP_NAME, raise_ex=raise_ex)
 
 
 def own_content_check(
@@ -491,15 +531,6 @@ def generate_excerpt(content: str):
     soup = BeautifulSoup(content, features="lxml")
     return truncatechars(
         soup.get_text(), Opinion.OPINION_ATTRIB_EXCERPT_MAX_LEN)
-
-
-def ensure_list(item: Any) -> list[Any]:
-    """
-    Ensure argument is returned as a list
-    :param item: item(s) to return as list
-    :return: list
-    """
-    return item if isinstance(item, list) else [item]
 
 
 def query_search_term(

@@ -64,13 +64,13 @@ from opinions.search import (
 from opinions.views.content_list_mixin import ContentListMixin
 from opinions.views.utils import (
     opinion_permission_check, REORDER_REQ_QUERY_ARGS,
-    NON_REORDER_OPINION_LIST_QUERY_ARGS, ensure_list, DATE_QUERIES,
+    NON_REORDER_OPINION_LIST_QUERY_ARGS, DATE_QUERIES,
     query_search_term, get_query_args, OPINION_LIST_QUERY_ARGS,
     OPTION_SEARCH_QUERY_ARGS, STATUS_BADGES, add_content_no_show_markers
 )
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
-from utils import Crud, app_template_path
+from utils import Crud, app_template_path, ensure_list
 
 NON_DATE_QUERIES = [
     TITLE_QUERY, CONTENT_QUERY, AUTHOR_QUERY, CATEGORY_QUERY, STATUS_QUERY,

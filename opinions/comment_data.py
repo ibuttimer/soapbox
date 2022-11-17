@@ -29,7 +29,7 @@ from categories import REACTION_AGREE, REACTION_DISAGREE
 from categories.models import Status
 from soapbox import AVATAR_BLANK_URL, OPINIONS_APP_NAME
 from user.models import User
-from utils import reverse_q, namespaced_url, ModelFacadeMixin
+from utils import reverse_q, namespaced_url, ModelFacadeMixin, ensure_list
 from .constants import (
     PAGE_QUERY, PER_PAGE_QUERY, PARENT_ID_QUERY, COMMENT_DEPTH_QUERY,
     COMMENT_MORE_ROUTE_NAME, OPINION_ID_QUERY, ID_QUERY, OPINION_CTX
@@ -37,7 +37,7 @@ from .constants import (
 from .models import Comment, Opinion, AgreementStatus, HideStatus, PinStatus
 from .comment_utils import get_comment_queryset
 from .views.utils import (
-    DEFAULT_COMMENT_DEPTH, ensure_list, query_search_term
+    DEFAULT_COMMENT_DEPTH, query_search_term
 )
 from .enums import QueryArg, PerPage
 from .queries import content_status_check

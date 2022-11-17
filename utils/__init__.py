@@ -23,7 +23,7 @@
 from .misc import (
     append_slash, namespaced_url, app_template_path, url_path, reverse_q,
     random_string_generator, is_boolean_true, Crud, permission_name,
-    permission_check
+    permission_check, ensure_list
 )
 from .views import redirect_on_success_or_render
 from .forms import update_field_widgets, error_messages, ErrorMsgs
@@ -45,6 +45,7 @@ __all__ = [
     'Crud',
     'permission_name',
     'permission_check',
+    'ensure_list',
 
     'redirect_on_success_or_render',
 

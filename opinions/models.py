@@ -251,6 +251,9 @@ class Review(OpinionCommentMixin, ModelMixin, models.Model):
         default=datetime(MINYEAR, 1, 1, tzinfo=timezone.utc))
 
     class Meta:
+        # https://docs.djangoproject.com/en/4.1/ref/models/options/#permissions
+        # list or tuple of 2-tuples in the format
+        # (permission_code, human_readable_permission_name)
         permissions = [
             (CLOSE_REVIEW_PERM,
              "Can close a review by setting its status to resolved"),

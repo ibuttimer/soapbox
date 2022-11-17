@@ -74,7 +74,7 @@ from opinions.views.utils import (
     own_content_check, published_check, get_opinion_context,
     render_opinion_form, comment_permission_check, like_query_args,
     hide_query_args, pin_query_args, generate_excerpt, follow_query_args,
-    add_content_no_show_markers
+    add_content_no_show_markers, review_permission_check
 )
 from opinions.enums import QueryStatus, ReactionStatus
 
@@ -652,6 +652,8 @@ def report_post(
     :param pk:      id of opinion
     :return: http response
     """
+    review_permission_check(request, Crud.CREATE)
+
     content = get_object_or_404(model, pk=pk)
 
     form = ReviewForm(data=request.POST)

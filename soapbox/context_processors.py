@@ -26,7 +26,7 @@ from collections import namedtuple
 from django.http import HttpRequest
 
 from user.constants import MODERATOR_GROUP, AUTHOR_GROUP
-from opinions.views.utils import opinion_permissions
+from opinions.views.utils import opinion_permissions, add_opinion_context
 from categories.views import category_permissions
 from .constants import COPYRIGHT_YEAR, COPYRIGHT
 
@@ -56,6 +56,9 @@ def footer_context(request: HttpRequest) -> dict:
         "is_author": request.user.groups.filter(
             name=AUTHOR_GROUP).exists(),
     }
-    context.update(opinion_permissions(request))
-    context.update(category_permissions(request))
+    # add content permissions; key `<model_name>_<crud_op>` with boolean value
+    opinion_permissions(request, context=context)
+    category_permissions(request, context=context)
+    # add general context updates
+    add_opinion_context(request, context=context)
     return context

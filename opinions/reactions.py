@@ -24,7 +24,7 @@ from typing import Callable, Union, Any
 
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
-from utils import namespaced_url
+from utils import namespaced_url, ensure_list
 from .comment_data import CommentBundle, CommentData
 from .constants import (
     OPINION_LIKE_ID_ROUTE_NAME,
@@ -47,7 +47,6 @@ from .queries import (
 )
 from .templatetags.reaction_button_id import reaction_button_id
 from .enums import ReactionStatus
-from opinions.views.utils import ensure_list
 
 
 class ReactionsList:

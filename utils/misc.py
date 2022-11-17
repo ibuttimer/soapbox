@@ -22,6 +22,8 @@
 #
 import random
 import string
+from typing import Union, List, Any
+
 import environ
 from enum import Enum
 
@@ -80,7 +82,7 @@ def reverse_q(viewname, urlconf=None, args=None, kwargs=None,
               current_app=None, query_kwargs: dict = None) -> str:
     """
     Wrapper to add query argument support to django's standard `reverse`
-    :param viewname:  URL pattern name or the callable view object
+    :param viewname: URL pattern name or the callable view object
     :param urlconf:
             URLconf module containing the URL patterns to use for reversing
     :param args: arguments for url
@@ -128,42 +130,62 @@ class Crud(Enum):
 
 
 def permission_name(
-        model: [str, models.Model], op: Crud, app_label: str = None) -> str:
+    model: [str, models.Model], perm_op: Union[Crud, str],
+    app_label: str = None
+) -> str:
     """
     Generate a permission name.
     See
     https://docs.djangoproject.com/en/4.1/topics/auth/default/#default-permissions
     :param model: model or model name
-    :param op: CRUD operation
+    :param perm_op: Crud operation or permission name to check
     :param app_label:
         app label for models defined outside of an application in
         INSTALLED_APPS, default none
-    :return: permission string
+    :return: permission string;
+            `{<app_label>.}[add|change|delete|view]_<model>`
     """
     perm = f'{app_label}.' if app_label else ''
     if not isinstance(model, str):
         model = model._meta.model_name
-    return f'{perm}{op.value}_{model}'
+    permission_code = f'{perm_op.value}_{model}' \
+        if isinstance(perm_op, Crud) else perm_op
+    return f'{perm}{permission_code}'
 
 
 def permission_check(
-        request: HttpRequest, model: [str, models.Model], op: Crud,
+        request: HttpRequest, model: [str, models.Model],
+        perm_op: Union[Union[Crud, str], List[Union[Crud, str]]],
         app_label: str = None, raise_ex: bool = False) -> bool:
     """
     Check request user has specified permission
     :param request: http request
     :param model: model or model name
-    :param op: Crud operation to check
+    :param perm_op: Crud operation or permission name to check
     :param app_label:
         app label for models defined outside of an application in
         INSTALLED_APPS, default none
     :param raise_ex: raise exception; default False
-    :return: True is has permission
+    :return: True if has permission
     :raises PermissionDenied if does not have permission and `raise_ex` is
             True
     """
-    has_perm = request.user.has_perm(
-        permission_name(model, op, app_label=app_label))
+    has_perm = False
+    for chk_perm in ensure_list(perm_op):
+        has_perm = request.user.has_perm(
+            permission_name(model, chk_perm, app_label=app_label))
+        if not has_perm:
+            break
+
     if not has_perm and raise_ex:
         raise PermissionDenied("Insufficient permissions")
     return has_perm
+
+
+def ensure_list(item: Any) -> list[Any]:
+    """
+    Ensure argument is returned as a list
+    :param item: item(s) to return as list
+    :return: list
+    """
+    return item if isinstance(item, list) else [item]
