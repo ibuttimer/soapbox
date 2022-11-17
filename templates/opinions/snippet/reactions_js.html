@@ -95,16 +95,19 @@
         }
     }
 
+    const REDIRECT_PROP = 'redirect';
+    const ELEMENT_ID_PROP = 'element_id';
+
     /**
      * Handle the response to a reaction
      * :param data: json data
      */
     function react_response_handler(data) {
         if (data !== undefined) {
-            if (data.hasOwnProperty('redirect')) {
-                document.location.href = data.redirect;
-            } else if (data.hasOwnProperty('element_id')) {
-                $("#" + data.element_id).replaceWith(data.html);
+            if (data.hasOwnProperty(REDIRECT_PROP)) {
+                document.location.href = data[REDIRECT_PROP];
+            } else if (data.hasOwnProperty(ELEMENT_ID_PROP)) {
+                $("#" + data[ELEMENT_ID_PROP]).replaceWith(data.html);
             }
         }
     }
@@ -143,7 +146,9 @@
     // Reaction buttons for report are named 'id--react-report-....'
     const reportReactionsSelector = "button[id^='id--react-report']";
     // Reaction buttons for share are named 'id--react-share-....'
-    const reportShareSelector = "button[id^='id--react-share']";
+    const shareReactionsSelector = "button[id^='id--react-share']";
+    // Reaction buttons for delete are named 'id--react-delete-....'
+    const deleteReactionsSelector = "button[id^='id--react-delete']";
 
     /* Set the click handlers to set the submit url for comments */
     function setReactionHandlers() {
@@ -155,7 +160,7 @@
                 hideReactionsSelector, showReactionsSelector,
                 pinReactionsSelector, unpinReactionsSelector,
                 followReactionsSelector, unfollowReactionsSelector,
-                reportReactionsSelector, reportShareSelector
+                reportReactionsSelector, shareReactionsSelector
         ]) {
             $(selector).off();
         }
@@ -170,10 +175,19 @@
         $(reportReactionsSelector).on('click', (event) => {
             // set the submit url for reports
             set_react_info_vars(event, {
-                url: "#id--report-submit-url"
+                url: reportSubmitUrlSelector
             });
         });
-        $(reportShareSelector).on('click', (event) => {
+        $(deleteReactionsSelector).on('click', (event) => {
+            // set the delete url for comments
+            set_react_info_vars(event, {
+                url: commentDeleteUrlSelector
+            });
+
+            // display confirmation modal
+            $(commentDeleteConfirmModalSelector).modal('show');
+        });
+        $(shareReactionsSelector).on('click', (event) => {
             // set the share url for share
             const baseUrl = window.location.href.slice(0, window.location.href.indexOf(window.location.pathname))
             set_react_info_vars(event, {
@@ -198,8 +212,8 @@
                 // set the submit url/option/title for hide/show
                 set_react_info_vars(event, {
                     // keys are value names, values are ids of tags to update
-                    url: "#id--hide-submit-url",
-                    option: "#id--hide-submit-option",
+                    url: hideSubmitUrlSelector,
+                    option: hideSubmitOptionSelector,
                     title: "#id--hide-modal-heading",
                     type: "#id--hide-modal-element",
                     action: "#id--hide-modal-action",

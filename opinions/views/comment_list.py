@@ -22,10 +22,12 @@
 #
 from enum import Enum
 from http import HTTPStatus
-from typing import Type, Callable, Tuple, Optional
+from string import capwords
+from typing import Type, Callable, Tuple, Optional, Union
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import QuerySet
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_http_methods
@@ -38,19 +40,23 @@ from opinions.comment_utils import (
 )
 from opinions.constants import (
     STATUS_QUERY, AUTHOR_QUERY, SEARCH_QUERY, REORDER_QUERY,
-    CONTENT_STATUS_CTX, UNDER_REVIEW_CONTENT_CTX,
-    UNDER_REVIEW_COMMENT_CONTENT, HIDDEN_CONTENT_CTX, HIDDEN_COMMENT_CONTENT,
-    REPEAT_SEARCH_TERM_CTX, PAGE_HEADING_CTX
+    CONTENT_STATUS_CTX, REPEAT_SEARCH_TERM_CTX, PAGE_HEADING_CTX, TITLE_CTX,
+    HTML_CTX, TEMPLATE_COMMENT_REACTIONS, TEMPLATE_REACTION_CTRLS
 )
 from opinions.contexts.comment import comments_list_context_for_opinion
 from opinions.enums import QueryArg, QueryStatus, CommentSortOrder, SortOrder
 from opinions.models import Comment
+from opinions.queries import in_review_content
 from opinions.query_params import QuerySetParams
+from opinions.reactions import (
+    COMMENT_REACTIONS, get_reaction_status, ReactionsList
+)
 from opinions.views.content_list_mixin import ContentListMixin
 from opinions.views.utils import (
     comment_permission_check, REORDER_REQ_QUERY_ARGS,
     NON_REORDER_COMMENT_LIST_QUERY_ARGS, query_search_term, get_query_args,
-    COMMENT_LIST_QUERY_ARGS, COMMENT_SEARCH_QUERY_ARGS
+    COMMENT_LIST_QUERY_ARGS, COMMENT_SEARCH_QUERY_ARGS,
+    add_content_no_show_markers
 )
 from soapbox import OPINIONS_APP_NAME, GET
 from utils import Crud, app_template_path
@@ -63,6 +69,11 @@ class ListTemplate(Enum):
     CONTENT_TEMPLATE = app_template_path(
         OPINIONS_APP_NAME, 'comment_list_content.html')
     """ List-only template for requery """
+
+
+COMMENT_LIST_REACTIONS = [
+    ReactionsList.SHARE_FIELD, ReactionsList.DELETE_FIELD
+]
 
 
 class CommentList(LoginRequiredMixin, ContentListMixin):
@@ -100,6 +111,37 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
         self.extra_context = {
             REPEAT_SEARCH_TERM_CTX: query_search_term(
                 query_params, exclude_queries=REORDER_REQ_QUERY_ARGS)
+        }
+        self.extra_context.update(
+            self.get_title_heading(query_params))
+
+    def get_title_heading(self, query_params: dict[str, QueryArg]) -> dict:
+        """
+        Get the title and page heading for context
+        :param query_params: request query
+        """
+        if query_params.get(
+                AUTHOR_QUERY, QueryArg(None, False)
+        ).value == self.user.username:
+            # current users comments by status
+            status = query_params.get(
+                STATUS_QUERY, QueryArg(QueryStatus.DEFAULT, False)).value
+            if isinstance(status, QueryStatus):
+                title = 'All my comments' \
+                    if status.display == QueryStatus.ALL.display \
+                    else f'My {status.display} comments'
+            else:
+                # list of multiple statuses
+                title = \
+                    f'My ' \
+                    f'{", ".join(map(lambda stat: stat.display, status))} ' \
+                    f'comments'
+        else:
+            title = 'Comments'
+
+        return {
+            TITLE_CTX: title,
+            PAGE_HEADING_CTX: capwords(title)
         }
 
     def set_queryset(
@@ -191,12 +233,19 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
 
         self.context_std_elements(context)
 
+        reaction_ctrls = get_reaction_status(
+            self.user, comment_bundles,
+            reactions=COMMENT_LIST_REACTIONS,
+            # no reactions for opinion preview
+            enablers={key: True for key in COMMENT_LIST_REACTIONS})
+
         context.update({
             'comment_list': comment_bundles,
             CONTENT_STATUS_CTX: comments_review_status,
-            UNDER_REVIEW_CONTENT_CTX: UNDER_REVIEW_COMMENT_CONTENT,
-            HIDDEN_CONTENT_CTX: HIDDEN_COMMENT_CONTENT,
+            TEMPLATE_COMMENT_REACTIONS: COMMENT_REACTIONS,
+            TEMPLATE_REACTION_CTRLS: reaction_ctrls,
         })
+        add_content_no_show_markers(context=context)
         return context
 
     def is_list_only_template(self) -> bool:
@@ -231,6 +280,7 @@ class CommentSearch(CommentList):
             for q, v in query_params.items() if v.was_set
         ])
         self.extra_context = {
+            TITLE_CTX: 'Comment search',
             PAGE_HEADING_CTX: f"Results of {search_term}",
             REPEAT_SEARCH_TERM_CTX:
                 f'{SEARCH_QUERY}='
@@ -310,6 +360,80 @@ class CommentSearch(CommentList):
             self.queryset = Comment.objects.none()
 
 
+class CommentInReview(CommentList):
+    """
+    Comments in review list response
+    """
+
+    QS_PARAMS = 'qs_params'
+
+    def req_query_args(self) -> Callable[[HttpRequest], dict[str, QueryArg]]:
+        """
+        Get the request query args function
+        :return: request query args function
+        """
+        # TODO probably should be a more restricted list of args
+        return super().req_query_args()
+
+    def get_title_heading(self, query_params: dict[str, QueryArg]) -> dict:
+        """
+        Get the title and page heading for context
+        :param query_params: request query
+        """
+        return {
+            TITLE_CTX: 'Review Comments',
+            PAGE_HEADING_CTX: 'Comments in Review',
+        }
+
+    def set_queryset(
+            self, query_params: dict[str, QueryArg],
+            query_set_params: QuerySetParams = None
+    ) -> Tuple[QuerySetParams, Optional[dict]]:
+        """
+        Set the queryset to get the list of items for this view
+        :param query_params: request query
+        :param query_set_params: QuerySetParams to update; default None
+        :return: tuple of query set params and dict of kwargs to pass to
+                apply_queryset_param
+        """
+        # https://docs.djangoproject.com/en/4.1/ref/models/querysets/
+        # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#id4
+        # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#field-lookups
+        query_set_params, query_kwargs = super().set_queryset(query_params)
+        if query_kwargs is None:
+            query_kwargs = {}
+
+        query_kwargs[CommentInReview.QS_PARAMS] = self.get_queryset_params()
+
+        return query_set_params, query_kwargs
+
+    def get_queryset_params(self) -> Optional[Union[QuerySet, QuerySetParams]]:
+        """
+        Get the queryset to get the list of items for this view
+        :return: query set params
+        """
+        # TODO all in review and new in review
+        return in_review_content(
+            self.user, Comment, since=self.user.previous_login,
+            as_params=True)
+
+    def apply_queryset_param(
+            self, query_set_params: QuerySetParams, **kwargs):
+        """
+        Apply `query_set_params` to set the queryset
+        :param query_set_params: QuerySetParams to apply
+        """
+        qs_params = kwargs.get(CommentInReview.QS_PARAMS, None)
+
+        if qs_params and not qs_params.is_none:
+            query_set_params.add(qs_params)
+
+            self.queryset = query_set_params.apply(Comment.objects)
+        else:
+            # not following anyone
+            self.queryset = Comment.objects.none()
+
+
 @login_required
 @require_http_methods([GET])
 def opinion_comments(request: HttpRequest) -> HttpResponse:
@@ -326,7 +450,7 @@ def opinion_comments(request: HttpRequest) -> HttpResponse:
     context = comments_list_context_for_opinion(query_params, request.user)
 
     return JsonResponse({
-        'html': render_to_string(
+        HTML_CTX: render_to_string(
             app_template_path(
                 OPINIONS_APP_NAME, "snippet", "view_comments.html"),
             context=context,

@@ -32,6 +32,7 @@ from django.views import View
 
 from categories import STATUS_PUBLISHED
 from categories.models import Status
+from opinions.constants import HTML_CTX
 from opinions.contexts.comment import get_comment_bundle_context
 from soapbox import (
     OPINIONS_APP_NAME
@@ -95,7 +96,7 @@ class CommentCreate(LoginRequiredMixin, View):
             )
 
             response = JsonResponse({
-                'html': render_to_string(
+                HTML_CTX: render_to_string(
                     app_template_path(
                         OPINIONS_APP_NAME, "snippet", "comment_bundle.html"),
                     context=context,
@@ -106,7 +107,7 @@ class CommentCreate(LoginRequiredMixin, View):
         else:
             # display form errors
             response = JsonResponse({
-                'html': render_to_string(
+                HTML_CTX: render_to_string(
                     app_template_path(
                         "snippet", "form_errors.html"),
                     context={

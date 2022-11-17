@@ -44,7 +44,12 @@ from opinions.constants import (
     EQUAL_QUERY, REORDER_QUERY, OPINION_ID_QUERY, PARENT_ID_QUERY,
     COMMENT_DEPTH_QUERY, HIDDEN_QUERY, PINNED_QUERY,
     SUBMIT_URL_CTX, READ_ONLY_CTX, STATUS_CTX, OPINION_CTX, OPINION_FORM_CTX,
-    ID_QUERY, STATUS_BG_CTX
+    ID_QUERY, STATUS_BG_CTX, DELETED_CONTENT_CTX, HIDDEN_CONTENT_CTX,
+    DELETED_CONTENT, HIDDEN_COMMENT_CONTENT,
+    UNDER_REVIEW_COMMENT_CONTENT, UNDER_REVIEW_TITLE_CTX,
+    UNDER_REVIEW_EXCERPT_CTX, UNDER_REVIEW_TITLE, UNDER_REVIEW_EXCERPT,
+    UNDER_REVIEW_OPINION_CONTENT, UNDER_REVIEW_COMMENT_CTX,
+    UNDER_REVIEW_OPINION_CTX
 )
 from opinions.enums import (
     ChoiceArg, QueryArg, QueryStatus, ReactionStatus, OpinionSortOrder,
@@ -516,3 +521,22 @@ def query_search_term(
         for q, v in query_params.items()
         if q not in exclude_queries and
         (v.was_set if isinstance(v, QueryArg) else True)])
+
+
+def add_content_no_show_markers(context: dict = None) -> dict:
+    """
+    Add the common content can't be shown explanations used in templates
+    :param context: context dict to update: default None
+    :return: updated/new context dict
+    """
+    if context is None:
+        context = {}
+    context.update({
+        UNDER_REVIEW_TITLE_CTX: UNDER_REVIEW_TITLE,
+        UNDER_REVIEW_EXCERPT_CTX: UNDER_REVIEW_EXCERPT,
+        UNDER_REVIEW_COMMENT_CTX: UNDER_REVIEW_COMMENT_CONTENT,
+        UNDER_REVIEW_OPINION_CTX: UNDER_REVIEW_OPINION_CONTENT,
+        DELETED_CONTENT_CTX: DELETED_CONTENT,
+        HIDDEN_CONTENT_CTX: HIDDEN_COMMENT_CONTENT,
+    })
+    return context

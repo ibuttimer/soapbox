@@ -20,12 +20,12 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from typing import Callable
+from typing import Callable, Union, Any
 
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from utils import namespaced_url
-from .comment_data import CommentBundle
+from .comment_data import CommentBundle, CommentData
 from .constants import (
     OPINION_LIKE_ID_ROUTE_NAME,
     OPINION_HIDE_ID_ROUTE_NAME, OPINION_COMMENT_ID_ROUTE_NAME,
@@ -33,7 +33,8 @@ from .constants import (
     COMMENT_HIDE_ID_ROUTE_NAME, OPINION_PIN_ID_ROUTE_NAME, ALL_FIELDS,
     COMMENT_REPORT_ID_ROUTE_NAME, OPINION_REPORT_ID_ROUTE_NAME,
     OPINION_SLUG_ROUTE_NAME, COMMENT_SLUG_ROUTE_NAME,
-    OPINION_FOLLOW_ID_ROUTE_NAME, COMMENT_FOLLOW_ID_ROUTE_NAME
+    OPINION_FOLLOW_ID_ROUTE_NAME, COMMENT_FOLLOW_ID_ROUTE_NAME,
+    COMMENT_ID_ROUTE_NAME
 )
 from .data_structures import (
     Reaction, ReactionCtrl, HtmlTag, UrlType
@@ -41,14 +42,12 @@ from .data_structures import (
 from .models import Opinion, Comment, AgreementStatus, PinStatus
 from .queries import (
     opinion_is_pinned, get_content_status, StatusCheck,
-    following_content_author, content_is_hidden, ContentStatus
+    following_content_author, content_is_hidden, ContentStatus,
+    is_content_deleted
 )
 from .templatetags.reaction_button_id import reaction_button_id
 from .enums import ReactionStatus
 from opinions.views.utils import ensure_list
-
-MODAL = "modal"
-AJAX = "ajax"
 
 
 class ReactionsList:
@@ -67,15 +66,17 @@ class ReactionsList:
 
     AGREE_FIELD = ReactionStatus.AGREE.arg
     DISAGREE_FIELD = ReactionStatus.DISAGREE.arg
-    COMMENT_FIELD = "comment"
+    COMMENT_FIELD = ReactionStatus.COMMENT.arg
     FOLLOW_FIELD = ReactionStatus.FOLLOW.arg
     UNFOLLOW_FIELD = ReactionStatus.UNFOLLOW.arg
-    SHARE_FIELD = "share"
+    SHARE_FIELD = ReactionStatus.SHARE.arg
     HIDE_FIELD = ReactionStatus.HIDE.arg
     SHOW_FIELD = ReactionStatus.SHOW.arg
     PIN_FIELD = ReactionStatus.PIN.arg
     UNPIN_FIELD = ReactionStatus.UNPIN.arg
-    REPORT_FIELD = "report"
+    REPORT_FIELD = ReactionStatus.REPORT.arg
+    DELETE_FIELD = ReactionStatus.DELETE.arg
+
     AGREE_FIELDS = [AGREE_FIELD, DISAGREE_FIELD]
     FOLLOW_FIELDS = [FOLLOW_FIELD, UNFOLLOW_FIELD]
     HIDE_FIELDS = [HIDE_FIELD, SHOW_FIELD]
@@ -83,7 +84,7 @@ class ReactionsList:
     ALL_FIELDS = [
         AGREE_FIELD, DISAGREE_FIELD, COMMENT_FIELD, FOLLOW_FIELD,
         UNFOLLOW_FIELD, SHARE_FIELD, HIDE_FIELD, SHOW_FIELD, PIN_FIELD,
-        UNPIN_FIELD, REPORT_FIELD
+        UNPIN_FIELD, REPORT_FIELD, DELETE_FIELD
     ]
 
     def __init__(self, **kwargs):
@@ -96,7 +97,6 @@ COMMENT_MODAL_ID = 'id--comment-modal'
 REPORT_MODAL_ID = 'id--report-modal'
 HIDE_MODAL_ID = 'id--hide-modal'
 SHARE_MODAL_ID = 'id--share-modal'
-COMMENT_REACTION_ID = 'comment'     # used to id comment modal button in js
 
 
 AGREE_TEMPLATE = Reaction.ajax_of(
@@ -156,7 +156,7 @@ OPINION_REACTIONS_LIST = ReactionsList(
         aria="Disagree with opinion",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_LIKE_ID_ROUTE_NAME)),
     comment=COMMENT_TEMPLATE.copy(
-        identifier=f"{COMMENT_REACTION_ID}-opinion",
+        identifier=f"{ReactionStatus.COMMENT.arg}-opinion",
         aria="Comment on opinion",
         url=namespaced_url(OPINIONS_APP_NAME, OPINION_COMMENT_ID_ROUTE_NAME)),
     follow=FOLLOW_TEMPLATE.copy(
@@ -227,7 +227,7 @@ COMMENT_REACTIONS_LIST = ReactionsList(
         aria="Disagree with comment",
         url=namespaced_url(OPINIONS_APP_NAME, COMMENT_LIKE_ID_ROUTE_NAME)),
     comment=COMMENT_TEMPLATE.copy(
-        identifier=f"{COMMENT_REACTION_ID}-comment",
+        identifier=f"{ReactionStatus.COMMENT.arg}-comment",
         aria="Comment on comment",
         url=namespaced_url(OPINIONS_APP_NAME, COMMENT_COMMENT_ID_ROUTE_NAME)),
     follow=FOLLOW_TEMPLATE.copy(
@@ -257,7 +257,14 @@ COMMENT_REACTIONS_LIST = ReactionsList(
         name="Report comment",
         identifier=f"{ReactionStatus.REPORT.arg}-comment",
         aria="Report comment",
-        url=namespaced_url(OPINIONS_APP_NAME, COMMENT_REPORT_ID_ROUTE_NAME))
+        url=namespaced_url(OPINIONS_APP_NAME, COMMENT_REPORT_ID_ROUTE_NAME)),
+    delete=Reaction.ajax_of(
+        name="Delete comment",
+        identifier=f"{ReactionStatus.DELETE.arg}-comment",
+        icon="", aria="Delete comment", url_type=UrlType.ID,
+        url=namespaced_url(OPINIONS_APP_NAME, COMMENT_ID_ROUTE_NAME),
+        option=ReactionStatus.DELETE.arg, field=ReactionsList.DELETE_FIELD
+    ).set_icon(HtmlTag.i(clazz="fa-solid fa-trash-can")),
 )
 
 # list of comment reaction fields in display order
@@ -266,7 +273,7 @@ COMMENT_REACTION_FIELDS = [
     ReactionsList.COMMENT_FIELD, ReactionsList.FOLLOW_FIELD,
     ReactionsList.UNFOLLOW_FIELD, ReactionsList.SHARE_FIELD,
     ReactionsList.HIDE_FIELD, ReactionsList.SHOW_FIELD,
-    ReactionsList.REPORT_FIELD
+    ReactionsList.REPORT_FIELD, ReactionsList.DELETE_FIELD
 ]
 # list of comment reactions in display order
 COMMENT_REACTIONS = [
@@ -274,13 +281,20 @@ COMMENT_REACTIONS = [
     for field in COMMENT_REACTION_FIELDS
 ]
 
+# always available reactions
 ALWAYS_AVAILABLE = [
     ReactionsList.COMMENT_FIELD, ReactionsList.SHARE_FIELD
 ]
+# reactions which don't reflect selected status
+NON_SELECTABLE = ALWAYS_AVAILABLE.copy()
+NON_SELECTABLE.extend([
+    ReactionsList.DELETE_FIELD
+])
 
 
 def get_reaction_status(
-    user: User, content: [Opinion, Comment, CommentBundle, list],
+    user: User,
+    content: Union[Opinion, Comment, CommentData, CommentBundle, list],
     statuses: dict = None, reactions: list[str] = None,
     enablers: dict = None, visibility: dict = None,
     status_by_id: dict[int, ContentStatus] = None
@@ -288,14 +302,17 @@ def get_reaction_status(
     """
     Get the reaction status for the specified content
     :param user: current user
-    :param content: opinion/comment/comment bundle or list thereof
+    :param content: opinion/comment/comment bundle/comment data or
+                list thereof
     :param statuses: statuses dict to update; default None
     :param reactions: list of reactions to retrieve; default all otherwise
-                    list of ReactionsList.xxx_FIELD
-    :param enablers: dict of enable conditions for reactions
-    :param visibility: dict of visible conditions for reactions; value can
-                be a boolean or a function accepting an Opinion/Comment and
-                returning a boolean
+                list of ReactionsList.xxx_FIELD
+    :param enablers: dict of enable conditions for reactions with
+                ReactionsList.xxx_FIELD as key
+    :param visibility: dict of visible conditions for reactions  with
+                ReactionsList.xxx_FIELD as key; value can be a boolean or
+                a function accepting an Opinion/Comment and returning a
+                boolean
     :param status_by_id: dict of ContentStatus values with
                 Opinion/Comment id as key
     :return: statuses dict
@@ -318,7 +335,8 @@ def get_reaction_status(
                 for cmt in entry.comment_iterable():
                     get_reaction_status(user, cmt, **reaction_kwargs)
             else:
-                if isinstance(entry, Opinion):
+                entry_is_opinion = isinstance(entry, Opinion)
+                if entry_is_opinion:
                     # get status for opinion
                     content_field = AgreementStatus.OPINION_FIELD
                     reaction_fields = OPINION_REACTION_FIELDS
@@ -345,6 +363,7 @@ def get_reaction_status(
                 # set enabled and visibility conditions for reactions
                 enabled = {}
                 displayer = {}
+                deleted = is_content_deleted(entry.lookup_clazz(), entry.id)
 
                 def two_icon_single_display(
                     ctrl_param: list[tuple[ReactionsList, bool, bool]],
@@ -379,11 +398,23 @@ def get_reaction_status(
                         # False if pin field not in reactions_list
                         enabled[field] = False
                         displayer[field] = False
+                    elif field in ALWAYS_AVAILABLE:
+                        enabled[field] = not deleted
+                        displayer[field] = True
+                    elif field == ReactionsList.DELETE_FIELD:
+                        # delete comment via reactions only available to
+                        # comment author
+                        enabled[field] = \
+                            False if entry_is_opinion or deleted else \
+                            entry.user == user
+                        displayer[field] = enabled[field]
                     else:
+                        # False if deleted or,
                         # ContentStatus.view_ok if specified or,
                         # enabler if specified or, True for ALWAYS_AVAILABLE
                         # or disabled for users' own stuff
                         enabled[field] = \
+                            False if deleted else \
                             field_check(
                                 status_by_id, entry, entry.id,
                                 default=ContentStatus.VIEW_OK).view_ok \
@@ -400,8 +431,8 @@ def get_reaction_status(
 
                 control_param = [
                     # reaction, selected, visible
-                    (getattr(reactions_list, field), False, True)
-                    for field in ALWAYS_AVAILABLE if field in reactions
+                    (getattr(reactions_list, field), False, displayer[field])
+                    for field in NON_SELECTABLE if field in reactions
                 ]
 
                 # get agree & disagree statuses for comment/opinion
@@ -498,8 +529,8 @@ def any_true(dictionary: dict, keys: [str, list[str]]):
     return any(truths)
 
 
-def field_check(dictionary: dict, content: [Opinion, Comment],
-                field: str, default: bool = False) -> bool:
+def field_check(dictionary: dict, content: Union[Opinion, Comment],
+                field: Union[str, int], default: Any = False) -> Any:
     """
     Check the enabled value for a field in the specified dictionary.
     :param dictionary: dict to check

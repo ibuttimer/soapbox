@@ -51,30 +51,27 @@
 </div>
 
 <script>
+    const reportModalSelector = "#id--report-modal";
+    {% form_field report_form 'reason' as reason_field %}
+    const reasonFieldSelector = "#{{ reason_field.auto_id }}";
+    const reportFormErrorsSelector = "#id--report-form-errors-container";
+    const reportSubmitUrlSelector = "#id--report-submit-url";
+
     $(document).ready(function () {
 
-        /* Due to how HTML5 defines its semantics, the autofocus HTML attribute has no effect in Bootstrap modals.
-           To achieve the same effect, use some custom JavaScript
-           https://getbootstrap.com/docs/5.2/components/modal/#how-it-works
-         */
-        {% form_field report_form 'reason' as reason_field %}
-        $("#id--report-modal").on('shown.bs.modal', (event) => {
-            $("#{{ reason_field.auto_id }}").focus();
-        });
+        // set focus
+        modalFocus(reportModalSelector, reasonFieldSelector);
 
-        /* Clear form errors and entered data when modal hidden */
-        $("#id--report-modal").on('hidden.bs.modal', (event) => {
-            $("#id--report-form-errors-container").html("");
-            $("#{{ reason_field.auto_id }}").val("")
-        });
+        // clear form errors and entered data when modal hidden
+        resetModalForm(reportModalSelector, reportFormErrorsSelector, reasonFieldSelector, false);
 
         /* Submit handler for comment modal */
         $("form[id^='id--report-modal']").submit(function (event) {
             const formData = {
-                reason: $("#{{ reason_field.auto_id }}").val(),
+                reason: $(reasonFieldSelector).val(),
             };
 
-            const url = $("#id--report-submit-url").text();
+            const url = $(reportSubmitUrlSelector).text();
 
             $.ajax({
                 method: 'post',
@@ -84,18 +81,18 @@
                 },
                 data: formData,
             }).done(function(data) {
-                //
-                $("#" + data.element_id).replaceWith(data.html);
+                // update html
+                $("#" + data[ELEMENT_ID_PROP]).replaceWith(data.html);
 
                 // close modal
-                $("#id--report-modal").modal('hide');
+                $(reportModalSelector).modal('hide');
 
                 // set click handlers for reactions
                 setReactionHandlers();
                 enableTooltips();
             }).fail(function(data) {
                 // redisplay modal
-                $("#id--report-form-errors-container").html(data.responseJSON.html);
+                $(reportFormErrorsSelector).html(data.responseJSON.html);
             });
 
             event.preventDefault();

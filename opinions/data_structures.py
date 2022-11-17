@@ -24,6 +24,7 @@ from copy import copy
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum, auto
+from typing import TypeVar
 
 from opinions.models import Opinion
 from opinions.queries import effective_content_status, ContentStatus
@@ -109,6 +110,9 @@ class HtmlTag:
                f'</{self.tag}>'
 
 
+TypeReaction = TypeVar("TypeReaction", bound="Reaction")
+
+
 class Reaction:
     """ Class representing a reaction element """
     name: str           # reaction name
@@ -128,7 +132,7 @@ class Reaction:
             setattr(self, key.lower(), val)
 
     @classmethod
-    def ajax_of(cls, **kwargs) -> object:
+    def ajax_of(cls, **kwargs) -> TypeReaction:
         """
         Create ajax Reaction, allowed keywords are
         :name: reaction name
@@ -144,7 +148,7 @@ class Reaction:
         return Reaction(**reaction_kwargs)
 
     @classmethod
-    def modal_of(cls, **kwargs) -> object:
+    def modal_of(cls, **kwargs) -> TypeReaction:
         """
         Create modal Reaction, allowed keywords are
         :name: reaction name
@@ -164,7 +168,7 @@ class Reaction:
         return Reaction(**reaction_kwargs)
 
     @classmethod
-    def empty(cls) -> object:
+    def empty(cls) -> TypeReaction:
         """
         Create empty Reaction
         :return: Reaction instance
@@ -176,7 +180,7 @@ class Reaction:
             'group': ''
         })
 
-    def set_icon(self, icon: HtmlTag):
+    def set_icon(self, icon: HtmlTag) -> TypeReaction:
         """
         Set the icon from a fontawesome `i` tag
         :param icon: html `i` tag
@@ -204,7 +208,7 @@ class Reaction:
 
         return self
 
-    def copy(self, **kwargs):
+    def copy(self, **kwargs) -> TypeReaction:
         """
         Get an updated copy of this object
         :param kwargs: updates to apply to new object
@@ -216,32 +220,32 @@ class Reaction:
         return new_copy
 
     @property
-    def is_ajax(self):
+    def is_ajax(self) -> bool:
         """ Is AJAX type """
         return self.handle_type == HandleType.AJAX
 
     @property
-    def is_modal(self):
+    def is_modal(self) -> bool:
         """ Is MODAL type """
         return self.handle_type == HandleType.MODAL
 
     @property
-    def is_empty(self):
+    def is_empty(self) -> bool:
         """ Is NONE type """
         return self.handle_type == HandleType.NONE
 
     @property
-    def is_id_url(self):
+    def is_id_url(self) -> bool:
         """ Is ID type """
         return self.url_type == UrlType.ID
 
     @property
-    def is_slug_url(self):
+    def is_slug_url(self) -> bool:
         """ Is SLUG type """
         return self.url_type == UrlType.SLUG
 
     @property
-    def is_no_url(self):
+    def is_no_url(self) -> bool:
         """ Is NONE type """
         return self.url_type == UrlType.NONE
 
@@ -286,10 +290,10 @@ class OpinionData:
     def from_model(cls, opinion: Opinion):
         obj_kwargs = {
             key: getattr(opinion, key) for key in [
-                Opinion.ID_FIELD, Opinion.TITLE_FIELD, Opinion.CONTENT_FIELD,
-                Opinion.EXCERPT_FIELD, Opinion.SLUG_FIELD,
-                Opinion.CREATED_FIELD, Opinion.UPDATED_FIELD,
-                Opinion.PUBLISHED_FIELD,
+                Opinion.id_field(), Opinion.TITLE_FIELD,
+                Opinion.CONTENT_FIELD, Opinion.EXCERPT_FIELD,
+                Opinion.SLUG_FIELD, Opinion.CREATED_FIELD,
+                Opinion.UPDATED_FIELD, Opinion.PUBLISHED_FIELD,
             ]
         }
         obj_kwargs['user_id'] = opinion.user.id

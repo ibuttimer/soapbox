@@ -1,0 +1,85 @@
+<!-- comment_delete_modal.html start -->
+{% load i18n %}
+{% load form_field %}
+{# comment modal template expects: 'report_form' as ReviewForm #}
+
+<!-- Confirm delete comment modal -->
+<div id="id--comment-delete-confirm-modal" class="modal fade" tabindex="-1" aria-labelledby="Comment Delete Confirm" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <var id="id--comment-delete-url" hidden>
+                {# content replaced by click event handler for button #}
+            </var>
+
+            <div class="modal-header">
+                <h5 class="modal-title">Comment Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this comment?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button id="id--btn-opinion-delete-confirm" type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">
+                    {% trans "Delete" %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Comment deleted modal -->
+<div id="id--comment-delete-modal" class="modal fade" tabindex="-1" aria-labelledby="Comment Deleted" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Comment Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div id="id--comment-delete-modal-body" class="modal-body">
+                <p>The comment was successfully deleted</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const commentDeleteConfirmModalSelector = "#id--comment-delete-confirm-modal";
+    const commentDeleteModalSelector = "#id--comment-delete-modal";
+    const commentDeleteModalBodySelector = "#id--comment-delete-modal-body";
+    const commentDeleteUrlSelector = "#id--comment-delete-url";
+
+    $(document).ready(function () {
+
+        $("#id--btn-opinion-delete-confirm").on('click', function (event) {
+
+            const url = $(commentDeleteUrlSelector).text();
+
+            $.ajax({
+                method: 'delete',
+                url: `${url}?ref=${window.location.pathname}`,
+                headers: {
+                    'X-CSRFTOKEN': '{{ csrf_token }}'
+            },
+            }).done(function(data) {
+
+                react_response_handler(data);
+
+                // show modal
+                $(commentDeleteModalSelector).modal('show');
+
+            }).fail(function(data) {
+                // display reason
+                $(commentDeleteModalBodySelector).html(data.responseJSON.html);
+            });
+
+            event.preventDefault();
+            event.stopPropagation();
+        });
+    });
+</script>
+<!-- comment_delete_modal.html end -->

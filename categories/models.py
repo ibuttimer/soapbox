@@ -23,17 +23,14 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from utils.models import ModelMixin
-from .constants import (
-    ID_FIELD, NAME_FIELD, DESCRIPTION_FIELD
-)
+from utils import ModelMixin
+from .constants import NAME_FIELD, DESCRIPTION_FIELD
 
 
 class Category(ModelMixin, models.Model):
     """ Categories model """
 
     # field names
-    ID_FIELD = ID_FIELD
     NAME_FIELD = NAME_FIELD
     DESCRIPTION_FIELD = DESCRIPTION_FIELD
 
@@ -58,7 +55,6 @@ class Status(ModelMixin, models.Model):
     """ Statuses model """
 
     # field names
-    ID_FIELD = ID_FIELD
     NAME_FIELD = NAME_FIELD
 
     STATUS_ATTRIB_NAME_MAX_LEN: int = 40

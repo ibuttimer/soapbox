@@ -106,7 +106,7 @@
                 {% if view_ok %}
                     {{ opinion.content | safe }}
                 {% else %}
-                    <em>{{ under_review_content }}</em>
+                    <em>{{ under_review_opinion }}</em>
                 {% endif %}
             </div>
         </div>
@@ -148,6 +148,7 @@
     </div>
 
     {% if view_ok %}
+        {% include "opinions/snippet/modal_common.html" %}
         <!-- Modal to create comments -->
         <div id="id--comment-modal-container">
             {% include "opinions/snippet/comment_modal.html" %}
@@ -163,6 +164,10 @@
         <!-- Modal to share opinion/comment -->
         <div id="id--share-modal-container">
             {% include "opinions/snippet/share_modal.html" %}
+        </div>
+        <!-- Modal to delete comment -->
+        <div id="id--delete-modal-container">
+            {% include "opinions/snippet/comment_delete_modal.html" %}
         </div>
     {% endif %}
 </article>

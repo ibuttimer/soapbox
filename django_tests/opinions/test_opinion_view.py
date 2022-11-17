@@ -25,7 +25,7 @@ import re
 from http import HTTPStatus
 from typing import Optional, Callable
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from django.http import HttpResponse
 from django.test import TestCase
 
@@ -33,10 +33,7 @@ from categories import (
     STATUS_DRAFT, STATUS_PREVIEW, STATUS_PUBLISHED
 )
 from categories.models import Status
-from opinions import (
-    OPINION_ID_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME,
-    OPINION_PREVIEW_ID_ROUTE_NAME, OPINION_STATUS_ID_ROUTE_NAME
-)
+from opinions import OPINION_STATUS_ID_ROUTE_NAME
 from opinions.constants import (
     STATUS_QUERY, UNDER_REVIEW_TITLE, UNDER_REVIEW_OPINION_CONTENT
 )
@@ -46,10 +43,10 @@ from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
 from .base_opinion_test import BaseOpinionTest
+from .opinion_mixin import OpinionMixin, AccessBy
 from .test_opinion_create import is_submit_button, OPINION_FORM_TEMPLATE
 from ..category_mixin import CategoryMixin
 from ..soup_mixin import SoupMixin, MatchTest
-from ..user.base_user_test import BaseUserTest
 
 OPINION_VIEW_TEMPLATE = f'{OPINIONS_APP_NAME}/opinion_view.html'
 
@@ -59,75 +56,6 @@ QUERY_PARAMS = {
     STATUS_PREVIEW: QueryStatus.PREVIEW,
     STATUS_PUBLISHED: QueryStatus.PUBLISH,
 }
-
-BY_ID = 'id'
-BY_SLUG = 'slug'
-
-
-class OpinionMixin(BaseUserTest):
-    """
-    Test opinion page view
-    https://docs.djangoproject.com/en/4.1/topics/testing/tools/
-    """
-
-    def login_user_by_key(self, name: str | None = None) -> User:
-        """
-        Login user
-        :param name: name of user to login; default first user in list
-        :returns logged-in user
-        """
-        return BaseUserTest.login_user_by_key(self, name)
-
-    def login_user_by_id(self, pk: int) -> User:
-        """
-        Login user
-        :param pk: id of user to login
-        :returns logged-in user
-        """
-        return BaseUserTest.login_user_by_id(self, pk)
-
-    def get_opinion_by_id(self, pk: int) -> HttpResponse:
-        """
-        Get the opinion page
-        :param pk: id of opinion
-        """
-        return self.client.get(
-            reverse_q(
-                namespaced_url(OPINIONS_APP_NAME, OPINION_ID_ROUTE_NAME),
-                args=[pk]))
-
-    def get_opinion_by_slug(self, slug: str) -> HttpResponse:
-        """
-        Get the opinion page
-        :param slug: slug of opinion
-        """
-        return self.client.get(
-            reverse_q(
-                namespaced_url(OPINIONS_APP_NAME, OPINION_SLUG_ROUTE_NAME),
-                args=[slug]))
-
-    def get_opinion_by(
-            self, identifier: [int, str], opinion_by: str) -> HttpResponse:
-        """
-        Get the opinion page
-        :param identifier: opinion identifier
-        :param opinion_by: method of accessing opinion; 'id' or 'slug'
-        :returns response
-        """
-        get_by = self.get_opinion_by_id \
-            if opinion_by == BY_ID else self.get_opinion_by_slug
-        return get_by(identifier)
-
-    def get_opinion_preview(self, pk: int) -> HttpResponse:
-        """
-        Get the opinion preview page
-        :param pk: id of opinion
-        """
-        return self.client.get(
-            reverse_q(
-                namespaced_url(
-                    OPINIONS_APP_NAME, OPINION_PREVIEW_ID_ROUTE_NAME),
-                args=[pk]))
 
 
 class TestOpinionView(
@@ -144,19 +72,18 @@ class TestOpinionView(
 
     def test_not_logged_in_access_by_id(self):
         """ Test must be logged in to access opinion by id """
-        response = self.get_opinion_by(TestOpinionView.opinions[0].id, BY_ID)
+        response = self.get_opinion_by_id(TestOpinionView.opinions[0].id)
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
     def test_not_logged_in_access_by_slug(self):
         """ Test must be logged in to access opinion by slug """
-        response = self.get_opinion_by(
-            TestOpinionView.opinions[0].slug, BY_SLUG)
+        response = self.get_opinion_by_slug(TestOpinionView.opinions[0].slug)
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
-    def check_get_own_opinion(self, opinion_by: str):
+    def check_get_own_opinion(self, opinion_by: AccessBy):
         """
         Test access to own opinions
-        :param opinion_by: method of accessing opinion; 'id' or 'slug'
+        :param opinion_by: method of accessing opinion; one of AccessBy
         """
         opinion = TestOpinionView.opinions[0]
         user = self.login_user_by_id(opinion.user.id)
@@ -168,7 +95,8 @@ class TestOpinionView(
                 opinion = opinions[0]
 
                 response = self.get_opinion_by(
-                    opinion.id if opinion_by == BY_ID else opinion.slug,
+                    opinion.id if opinion_by == AccessBy.BY_ID
+                    else opinion.slug,
                     opinion_by)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
                 self.assertTemplateUsed(response, OPINION_FORM_TEMPLATE)
@@ -177,23 +105,23 @@ class TestOpinionView(
 
     def test_get_own_opinion_by_id(self):
         """ Test page content for opinion by id of logged-in user """
-        self.check_get_own_opinion(BY_ID)
+        self.check_get_own_opinion(AccessBy.BY_ID)
 
     def test_get_own_opinion_by_slug(self):
         """ Test page content for opinion by slug of logged-in user """
-        self.check_get_own_opinion(BY_SLUG)
+        self.check_get_own_opinion(AccessBy.BY_SLUG)
 
     def get_own_opinions(
-            self, me: User, status: str) -> list[Opinion]:
+            self, user: User, status: str) -> list[Opinion]:
         """
         Get a list of users' opinions with the specified status
-        :param me: user to
+        :param user: user to
         :param status: required status
         :return: list of opinions
         """
         # get list of users' published opinions
         opinions = list(
-            filter(lambda op: op.user.id == me.id
+            filter(lambda op: op.user.id == user.id
                    and op.status.name == status,
                    TestOpinionView.opinions)
         )
@@ -219,7 +147,7 @@ class TestOpinionView(
             len(opinions), 1, msg=f'No opinions with {status} status')
         return opinions
 
-    def check_get_other_opinion(self, opinion_by: str,
+    def check_get_other_opinion(self, opinion_by: AccessBy,
                                 find_func: Optional[Callable] = None):
         """ Test page content for opinion of not logged-in user """
         _, key = TestOpinionView.get_user_by_index(0)
@@ -232,7 +160,8 @@ class TestOpinionView(
 
         self.assertNotEqual(logged_in_user, opinion.user)
         response = self.get_opinion_by(
-            opinion.id if opinion_by == BY_ID else opinion.slug, opinion_by)
+            opinion.id if opinion_by == AccessBy.BY_ID else opinion.slug,
+            opinion_by)
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertTemplateUsed(response, OPINION_VIEW_TEMPLATE)
         TestOpinionView.verify_opinion_content(
@@ -240,11 +169,11 @@ class TestOpinionView(
 
     def test_get_other_opinion_by_id(self):
         """ Test page content for opinion by id of not logged-in user """
-        self.check_get_other_opinion(BY_ID)
+        self.check_get_other_opinion(AccessBy.BY_ID)
 
     def test_get_other_opinion_by_slug(self):
         """ Test page content for opinion by slug of not logged-in user """
-        self.check_get_other_opinion(BY_SLUG)
+        self.check_get_other_opinion(AccessBy.BY_SLUG)
 
     def test_get_under_review_opinion_by_id(self):
         """
@@ -252,7 +181,7 @@ class TestOpinionView(
         """
         def find_func(opinions):
             return self.find_under_review(opinions)[0]
-        self.check_get_other_opinion(BY_ID, find_func=find_func)
+        self.check_get_other_opinion(AccessBy.BY_ID, find_func=find_func)
 
     def test_get_under_review_opinion_by_slug(self):
         """
@@ -261,7 +190,7 @@ class TestOpinionView(
         """
         def find_func(opinions):
             return self.find_under_review(opinions)[0]
-        self.check_get_other_opinion(BY_SLUG, find_func=find_func)
+        self.check_get_other_opinion(AccessBy.BY_SLUG, find_func=find_func)
 
     def find_under_review(self, opinions: list[Opinion]) -> list[Opinion]:
         ids = list(
@@ -272,7 +201,7 @@ class TestOpinionView(
     def check_other_opinion_access(self, opinion_by: str):
         """
         Test access to unpublished opinions by id of not logged-in user
-        :param opinion_by: method of accessing opinion; 'id' or 'slug'
+        :param opinion_by: method of accessing opinion; one of AccessBy
         """
         _, key = TestOpinionView.get_user_by_index(0)
         logged_in_user = self.login_user_by_key(key)
@@ -286,7 +215,7 @@ class TestOpinionView(
 
                 self.assertNotEqual(logged_in_user, opinion.user)
                 response = self.get_opinion_by_id(opinion.id) \
-                    if opinion_by == BY_ID else \
+                    if opinion_by == AccessBy.BY_ID else \
                     self.get_opinion_by_slug(opinion.slug)
                 self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
 
@@ -294,13 +223,13 @@ class TestOpinionView(
         """
         Test access to unpublished opinions by id of not logged-in user
         """
-        self.check_other_opinion_access(BY_ID)
+        self.check_other_opinion_access(AccessBy.BY_ID)
 
     def test_get_other_opinion_access_by_slug(self):
         """
         Test access to unpublished opinions by slug of not logged-in user
         """
-        self.check_other_opinion_access(BY_SLUG)
+        self.check_other_opinion_access(AccessBy.BY_SLUG)
 
     def test_get_own_opinion_preview(self):
         """
@@ -507,9 +436,28 @@ class TestOpinionView(
                                    lambda tag: STATUS_PREVIEW in tag.text,
                                    match=MatchTest.GT_EQ)
 
-        # check submit button only displayed in not read only mode
+        # check submit buttons only displayed in not read only mode
         tags = soup.find_all(is_submit_button)
         if is_readonly:
             test_case.assertEqual(len(tags), 0)
         else:
+            # save draft/preview/publish
             test_case.assertEqual(len(tags), 3)
+
+        # check delete button only displayed in not read only mode
+        tags = soup.find_all(is_delete_button)
+        if is_readonly:
+            test_case.assertEqual(len(tags), 0)
+        else:
+            test_case.assertEqual(len(tags), 1)
+
+
+def is_delete_button(tag: Tag):
+    """
+    Check `tag` is an opinion delete button
+    :param tag: tag to check
+    :return: True is opinion submit button, otherwise False
+    """
+    return tag.name == 'button' \
+        and SoupMixin.equal_tag_attr(tag, 'type', 'button') \
+        and SoupMixin.in_tag_attr(tag, 'class', 'btn__submit-opinion')

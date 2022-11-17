@@ -65,6 +65,7 @@ OPINION_FOLLOW_ID_URL = url_path(OPINION_ID_URL, "follow")
 COMMENTS_URL = append_slash("comments")
 COMMENT_SEARCH_URL = url_path(COMMENTS_URL, "search")
 COMMENT_MORE_URL = url_path(COMMENTS_URL, "more")
+COMMENT_IN_REVIEW_URL = url_path(COMMENTS_URL, "in_review")
 COMMENT_ID_URL = url_path(COMMENTS_URL, "<int:pk>")
 COMMENT_SLUG_URL = url_path(COMMENTS_URL, "<slug:slug>")
 COMMENT_LIKE_ID_URL = url_path(COMMENT_ID_URL, "like")
@@ -94,6 +95,7 @@ COMMENT_ID_ROUTE_NAME = "comment_id"
 COMMENT_SLUG_ROUTE_NAME = "comment_slug"
 COMMENT_SEARCH_ROUTE_NAME = "comment_search"
 COMMENT_MORE_ROUTE_NAME = "comment_more"
+COMMENT_IN_REVIEW_ROUTE_NAME = "comment_in_review"
 COMMENT_LIKE_ID_ROUTE_NAME = f"like_{COMMENT_ID_ROUTE_NAME}"
 COMMENT_HIDE_ID_ROUTE_NAME = f"hide_{COMMENT_ID_ROUTE_NAME}"
 COMMENT_REPORT_ID_ROUTE_NAME = f"report_{COMMENT_ID_ROUTE_NAME}"
@@ -127,6 +129,9 @@ OPINION_ID_QUERY: str = 'opinion_id'        # search opinion id
 PARENT_ID_QUERY: str = 'parent_id'          # search comment parent id
 COMMENT_DEPTH_QUERY: str = 'depth'          # comment level depth
 
+# general
+REFERENCE_QUERY: str = 'ref'                # reference
+
 OPINION_PAGINATION_ON_EACH_SIDE = 1
 OPINION_PAGINATION_ON_ENDS = 1
 
@@ -134,13 +139,6 @@ OPINION_PAGINATION_ON_ENDS = 1
 CLOSE_REVIEW_PERM = "close_review"
 WITHDRAW_REVIEW_PERM = "withdraw_review"
 
-# sorting related
-DESC_LOOKUP = '-'
-""" Lookup order for descending sort """
-DATE_OLDEST_LOOKUP = ''
-""" Lookup order for ascending date, i.e. oldest first """
-DATE_NEWEST_LOOKUP = DESC_LOOKUP
-""" Lookup order for descending date, i.e. newest first """
 
 # templates related
 # templates/opinions/snippet/reactions.html
@@ -171,7 +169,9 @@ USER_CTX = 'user'
 CONTENT_STATUS_CTX = "content_status"
 UNDER_REVIEW_TITLE_CTX = "under_review_title"
 UNDER_REVIEW_EXCERPT_CTX = "under_review_excerpt"
-UNDER_REVIEW_CONTENT_CTX = "under_review_content"
+UNDER_REVIEW_OPINION_CTX = "under_review_opinion"
+UNDER_REVIEW_COMMENT_CTX = "under_review_comment"
+DELETED_CONTENT_CTX = "deleted_content"
 HIDDEN_CONTENT_CTX = "hidden_content"
 POPULARITY_CTX = "popularity"
 OPINION_LIST_CTX = "opinion_list"
@@ -181,9 +181,23 @@ STATUS_BG_CTX = "status_bg"
 # list of Reaction for comment
 TEMPLATE_COMMENT_REACTIONS = 'comment_reactions'
 
+# templates/opinions/snippet/content_updates_message.html
+COUNT_CTX = "count"
+OPINION_REVIEWS_CTX = "opinion_reviews"
+COMMENT_REVIEWS_CTX = "comment_reviews"
+# templates/opinions/snippet/tagged_author_opinions.html
+TAGGED_COUNT_CTX = "tagged_count"
+
+# general
 TITLE_CTX = 'title'                             # page title
 PAGE_HEADING_CTX = 'page_heading'               # page heading display
 REPEAT_SEARCH_TERM_CTX = 'repeat_search_term'   # search term for query
+REDIRECT_CTX = "redirect"
+
+ELEMENT_ID_CTX = 'element_id'
+HTML_CTX = 'html'
+
+COMMENT_DATA_CTX = "comment_data"
 
 # miscellaneous
 ALL_FIELDS = 'all_fields'
@@ -197,3 +211,4 @@ UNDER_REVIEW_COMMENT_CONTENT = \
     'The content of this comment is not currently available to view as it ' \
     'is under review.'
 HIDDEN_COMMENT_CONTENT = 'The content of this comment has been hidden.'
+DELETED_CONTENT = 'This content has been deleted.'

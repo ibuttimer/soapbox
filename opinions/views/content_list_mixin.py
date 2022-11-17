@@ -29,14 +29,13 @@ from django.http import HttpRequest, HttpResponse
 from django.views import generic
 
 from opinions.constants import (
-    ORDER_QUERY, ID_FIELD, UPDATED_FIELD, DATE_NEWEST_LOOKUP, PER_PAGE_QUERY,
-    DESC_LOOKUP, OPINION_PAGINATION_ON_EACH_SIDE, OPINION_PAGINATION_ON_ENDS
+    ORDER_QUERY, UPDATED_FIELD, PER_PAGE_QUERY,
+    OPINION_PAGINATION_ON_EACH_SIDE, OPINION_PAGINATION_ON_ENDS
 )
 from opinions.enums import SortOrder, QueryArg, PerPage
-from opinions.models import is_id_lookup
 from opinions.query_params import QuerySetParams
 from user.models import User
-from utils import Crud
+from utils import Crud, DESC_LOOKUP, DATE_NEWEST_LOOKUP
 
 
 class ContentListMixin(generic.ListView):
@@ -161,7 +160,7 @@ class ContentListMixin(generic.ListView):
         # published date is only set once comment is published so apply an
         # additional orderings: by updated and id
         ordering.append(f'{DATE_NEWEST_LOOKUP}{UPDATED_FIELD}')
-        ordering.append(f'{ID_FIELD}')
+        ordering.append(f'{self.model.id_field()}')
         # inherited from MultipleObjectMixin via ListView
         self.ordering = tuple(ordering)
 
@@ -192,7 +191,7 @@ class ContentListMixin(generic.ListView):
             def insensitive_order(order: str):
                 """ Make text orderings case-insensitive """
                 non_text = self.model.is_date_lookup(order) or \
-                    is_id_lookup(order)
+                    self.model.is_id_lookup(order)
                 return \
                     order if non_text else \
                     Lower(order[1:]).desc() \
@@ -221,11 +220,11 @@ class ContentListMixin(generic.ListView):
             )[0],
             'per_page': list(PerPage),
             'selected_per_page': self.paginate_by,
-            'page_range': [{
+            'page_links': [{
                 'page_num': page,
                 'disabled': page == Paginator.ELLIPSIS,
                 'href':
-                    f"?page={page}" if page != Paginator.ELLIPSIS else '#',
+                    f"?page={page}" if page != Paginator.ELLIPSIS else '',
                 'label':
                     f"page {page}" if page != Paginator.ELLIPSIS else '',
                 'hidden': f'{bool(page != Paginator.ELLIPSIS)}',

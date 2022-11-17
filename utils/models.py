@@ -23,12 +23,21 @@
 from datetime import datetime
 from base64 import urlsafe_b64encode
 from inspect import isclass
-from typing import Union
+from typing import Union, Type
 from string import capwords
 
 from django.db.models import Model
 from django.utils.text import slugify
+
 from .misc import random_string_generator
+
+# sorting related
+DESC_LOOKUP = '-'
+""" Lookup order for descending sort """
+DATE_OLDEST_LOOKUP = ''
+""" Lookup order for ascending date, i.e. oldest first """
+DATE_NEWEST_LOOKUP = DESC_LOOKUP
+""" Lookup order for descending date, i.e. newest first """
 
 
 class SlugMixin:
@@ -131,6 +140,11 @@ class ModelMixin:
             if isclass(obj) else obj.__class__._meta.model_name
 
     @classmethod
+    def id_field(cls):
+        """ The id (primary key) field name """
+        return cls._meta.pk.name
+
+    @classmethod
     def model_name(cls):
         """
         Get the model name of this model
@@ -154,5 +168,55 @@ class ModelMixin:
         """
         return cls.model_name().lower()
 
+    @classmethod
+    def date_fields(cls) -> list[str]:
+        """ Get the list of date fields """
+        return []
+
+    @classmethod
+    def is_date_field(cls, field: str):
+        """
+        Check if the specified `field` is a date field
+        :param field: field
+        :return: True if `field` contains a date field
+        """
+        return field in cls.date_fields()
+
+    @classmethod
+    def is_date_lookup(cls, lookup: str):
+        """
+        Check if the specified `lookup` represents a date Lookup
+        :param lookup: lookup string
+        :return: True if lookup is a date Lookup
+        """
+        return any(
+            map(lambda fld: fld in lookup, cls.date_fields())
+        )
+
+    @classmethod
+    def is_id_lookup(cls, lookup: str):
+        """
+        Check if the specified `lookup` represents an id Lookup
+        :param lookup: lookup string
+        :return: True if lookup is an id lookup
+        """
+        lookup = lookup.lower()
+        return lookup == cls.id_field() or \
+            lookup == f'{DESC_LOOKUP}{cls.id_field()}'
+
     def __repr__(self):
         return f'{self.model_name()}[{self.id}]: {str(self)}'
+
+
+class ModelFacadeMixin:
+    """
+    A facade allowing non-django.db.models.Models objects to appear as Models
+    """
+
+    @classmethod
+    def lookup_clazz(cls) -> Type[Model]:
+        """ Get the Model class """
+        if not issubclass(cls, Model):
+            raise NotImplementedError(
+                "Non-Model objects must override the 'lookup_clazz' method")
+        return cls

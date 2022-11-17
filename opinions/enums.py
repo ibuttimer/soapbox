@@ -31,12 +31,14 @@ from categories import (
     REACTION_PIN, REACTION_UNPIN, REACTION_FOLLOW, REACTION_UNFOLLOW,
     REACTION_REPORT
 )
-from categories.constants import STATUS_ALL, REACTION_SHARE
+from categories.constants import (
+    STATUS_ALL, REACTION_SHARE, REACTION_COMMENT, REACTION_DELETE
+)
 from categories.models import Status
 from opinions.models import Opinion, Comment
 from user.models import User
 
-from .constants import DATE_NEWEST_LOOKUP, DATE_OLDEST_LOOKUP, DESC_LOOKUP
+from utils import DESC_LOOKUP, DATE_OLDEST_LOOKUP, DATE_NEWEST_LOOKUP
 
 
 class ChoiceArg(Enum):
@@ -241,6 +243,8 @@ class ReactionStatus(ChoiceArg):
     UNFOLLOW = (REACTION_UNFOLLOW, 'unfollow')
     SHARE = (REACTION_SHARE, 'share')
     REPORT = (REACTION_REPORT, 'report')
+    COMMENT = (REACTION_COMMENT, 'comment')
+    DELETE = (REACTION_DELETE, 'delete')
 
     def __init__(self, display: str, arg: str):
         super().__init__(display, arg)

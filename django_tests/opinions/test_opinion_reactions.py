@@ -35,7 +35,7 @@ from categories import (
 from categories.models import Status
 from opinions.constants import (
     STATUS_QUERY, OPINION_LIKE_ID_ROUTE_NAME, OPINION_PIN_ID_ROUTE_NAME,
-    OPINION_FOLLOW_ID_ROUTE_NAME
+    OPINION_FOLLOW_ID_ROUTE_NAME, ELEMENT_ID_CTX
 )
 from opinions.data_structures import Reaction
 from opinions.models import Opinion
@@ -46,7 +46,7 @@ from opinions.enums import ReactionStatus
 from soapbox import OPINIONS_APP_NAME
 from utils import reverse_q, namespaced_url
 from .base_opinion_test import BaseOpinionTest
-from .test_opinion_view import OpinionMixin
+from .opinion_mixin import OpinionMixin
 from ..soup_mixin import SoupMixin
 
 LIKE_REACTIONS = [REACTION_AGREE, REACTION_DISAGREE]
@@ -250,7 +250,7 @@ class TestOpinionReaction(SoupMixin, OpinionMixin, BaseOpinionTest):
         self.assertEqual(response.status_code, code)
         if code != HTTPStatus.NO_CONTENT:
             result = json.loads(response.content)
-            self.assertEqual(result['element_id'],
+            self.assertEqual(result[ELEMENT_ID_CTX],
                              reaction_ul_id('opinion', opinion.id))
 
             soup = BeautifulSoup(result['html'], features="lxml")
