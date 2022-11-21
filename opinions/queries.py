@@ -28,18 +28,26 @@ from typing import Optional, Union, Type
 from django.db import models
 from django.db.models import QuerySet, Q
 
-from categories import (
-    STATUS_WITHDRAWN, STATUS_REJECTED, STATUS_PUBLISHED
-)
+from categories import STATUS_PUBLISHED
 from categories.constants import STATUS_DELETED
 from categories.models import Status
+from user.queries import is_moderator
 from user.models import User
-from utils import ModelFacadeMixin
+from utils import ModelFacadeMixin, ensure_list
 from .enums import QueryStatus
 from .models import (
     Opinion, PinStatus, Review, Comment, HideStatus, FollowStatus
 )
 from .query_params import QuerySetParams
+
+
+REVIEW_WIP_STATUSES = [
+    stat.display for stat in QueryStatus.review_wip_statuses()
+]
+REVIEW_WIP_STATUSES.append(QueryStatus.APPROVED.display)
+REVIEW_OVER_STATUSES = [
+    stat.display for stat in QueryStatus.review_over_statuses()
+]
 
 
 def opinion_is_pinned(opinion: Opinion, user: User = None) -> bool:
@@ -115,6 +123,7 @@ class ContentStatus:
     review_wip: bool    # review in progress
     hidden: bool        # was hidden (has precedence over viewable)
     mine: bool          # current user's content (has precedence over hidden)
+    mod_view: bool      # moderator view (has precedence over review_wip)
     deleted: bool       # content was deleted
 
     @property
@@ -125,12 +134,12 @@ class ContentStatus:
     @property
     def review_no_show(self):
         """ Do not show as in review """
-        return self.review_wip and not self.mine
+        return self.review_wip and not self.mine and not self.mod_view
 
 
 ContentStatus.VIEW_OK = ContentStatus(
     reported=False, viewable=True, review_wip=False, hidden=False,
-    mine=False, deleted=False
+    mine=False, mod_view=False, deleted=False
 )
 
 
@@ -194,12 +203,11 @@ def get_content_status(
         if review_wip:
             # review process under way if:
             # - status is review pending or under review
+            # - status is review approved, i.e. complaint upheld
             chk_args = query_args.copy()
             chk_args[
                 f'{Review.STATUS_FIELD}__{Status.NAME_FIELD}__in'
-            ] = [
-                stat.display for stat in QueryStatus.review_wip_statuses()
-            ]
+            ] = REVIEW_WIP_STATUSES
             query = Review.objects.filter(**chk_args)
             review_wip = query.exists()
             checked[StatusCheck.REVIEW_WIP] = True
@@ -207,13 +215,14 @@ def get_content_status(
         if viewable:
             # ok to view if:
             # - not reported
+            # - current user is a moderator
             # - status is review withdrawn or review rejected
-            viewable = not reported
+            viewable = not reported or is_moderator(current_user)
             if not viewable:
                 chk_args = query_args.copy()
                 chk_args[
                     f'{Review.STATUS_FIELD}__{Status.NAME_FIELD}__in'
-                ] = [STATUS_WITHDRAWN, STATUS_REJECTED]
+                ] = REVIEW_OVER_STATUSES
                 query = Review.objects.filter(**chk_args)
                 viewable = query.exists()
             checked[StatusCheck.VIEWABLE] = True
@@ -236,6 +245,7 @@ def get_content_status(
         reported=reported, viewable=viewable, review_wip=review_wip,
         hidden=hidden,
         mine=content.user.id == current_user.id if current_user else False,
+        mod_view=is_moderator(current_user),
         deleted=deleted
     )
 
@@ -346,19 +356,20 @@ def followed_author_publications(
 
 
 def basic_review_query_params(
-    user: User, model: Type[models.Model], since: datetime = None
+    model: Type[models.Model], user: User = None, since: datetime = None
 ) -> QuerySetParams:
     """
     Get the basic params for a Review status query
-    :param user: user to check
     :param model: model to check for
-    :param since: updates since datetime: default None, i.e. all
+    :param user: user to check; default None, i.e. all
+    :param since: updates since datetime; default None, i.e. all
     :return: query set params
     """
     query_set_params = QuerySetParams()
-    query_set_params.add_and_lookup(
-        model.USER_FIELD,
-        f"{Review.content_field(model)}__{model.USER_FIELD}", user)
+    if user:
+        query_set_params.add_and_lookup(
+            model.USER_FIELD,
+            f"{Review.content_field(model)}__{model.USER_FIELD}", user)
     if since:
         query_set_params.add_and_lookup(
             Review.UPDATED_FIELD, f"{Review.UPDATED_FIELD}__gte", since)
@@ -367,7 +378,7 @@ def basic_review_query_params(
 
 
 def own_content_status_changes(
-    user: User, model: Type[models.Model], since: datetime = None,
+    model: Type[models.Model], user: User = None, since: datetime = None,
     as_params: bool = False
 ) -> Optional[Union[QuerySet, QuerySetParams]]:
     """
@@ -378,48 +389,53 @@ def own_content_status_changes(
     :param as_params: return dict of params flag: default False
     :return: query set or query param dict
     """
-    query_set_params = basic_review_query_params(user, model, since=since)
+    query_set_params = basic_review_query_params(
+        model, user=user, since=since)
 
     return query_set_params if as_params else \
         query_set_params.apply(Review.objects)
 
 
-def in_review_content(
-    user: User, model: Type[models.Model], since: datetime = None,
-    as_params: bool = False
+def review_content_by_status(
+    model: Type[models.Model], statuses: list[QueryStatus], user: User = None,
+    since: datetime = None, as_params: bool = False
 ) -> Optional[Union[QuerySet, dict]]:
     """
     Get the list of opinions which are in review
-    :param user: user to check
     :param model: model to check for
+    :param statuses: QueryStatus' to look for
+    :param user: user to check: default None, i.e. all
     :param since: updates since datetime: default None, i.e. all
     :param as_params: return dict of params flag: default False
     :return: query set or query param dict
     """
-    query_set_params = basic_review_query_params(user, model, since=since)
+    query_set_params = basic_review_query_params(
+        model, user=user, since=since)
 
     query_set_params.add_or_lookup(
         Review.STATUS_FIELD,
         Q(_connector=Q.OR, *[
             Q(**{f'{Review.STATUS_FIELD}__{Status.NAME_FIELD}': stat.display})
-            for stat in QueryStatus.review_wip_statuses()
+            for stat in ensure_list(statuses)
         ])
     )
 
+    # get list of ids of content in required statuses
     content_field = Review.content_field(model)
     in_review = query_set_params.apply(
-        Review.objects).values_list(content_field, flat=True)
+        Review.objects.exclude(**{f'{content_field}': None})
+    ).values_list(content_field, flat=True)
 
     query_set_params.clear()
     if in_review:
         query_set_params.add_and_lookup(
-            content_field, f'{Review.id_field()}__in', in_review
+            model.model_name(), f'{model.id_field()}__in', in_review
         )
     else:
         query_set_params.is_none = True
 
     return query_set_params if as_params else \
-        query_set_params.apply(Review.objects)
+        query_set_params.apply(model.objects)
 
 
 def is_content_deleted(model: Type[ModelFacadeMixin], pk: int):

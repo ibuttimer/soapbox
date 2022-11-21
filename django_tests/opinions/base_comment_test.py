@@ -33,7 +33,7 @@ from opinions.enums import PerPage, CommentSortOrder, QueryStatus, Hidden
 from user.models import User
 from .base_content_test import ContentTestBase
 from .base_opinion_test import (
-    SortCtrl, text_in_field, date_check, multi_sort
+    SortCtrl, text_in_field, date_check, multi_sort, partial_status_search
 )
 
 
@@ -66,7 +66,7 @@ class BaseCommentTest(ContentTestBase):
         if status is None and STATUS_QUERY in query:
             # try partial match
             status = query.get(STATUS_QUERY)
-            status = list(filter(lambda qs: status in qs.arg, QueryStatus))
+            status = partial_status_search(status)
             if len(status) == 1:
                 status = status[0]
 
@@ -90,23 +90,22 @@ class BaseCommentTest(ContentTestBase):
         #         expected
         #     ))
 
-        for k, v in query.items():
-            if v is None:
+        for k, val in query.items():
+            if val is None:
                 continue
             filter_func = None
             if k in [CONTENT_QUERY]:
-                filter_func = text_in_field(Comment.CONTENT_FIELD, v)
+                filter_func = text_in_field(Comment.CONTENT_FIELD, val)
             elif k == AUTHOR_QUERY:
                 filter_func = text_in_field([
                     Comment.USER_FIELD,
                     User.USERNAME_FIELD
-                ], v)
+                ], val)
             elif k == STATUS_QUERY:
                 if status != QueryStatus.ALL:
-                    query_status = \
-                        list(filter(lambda qs: v in qs.arg, QueryStatus))
+                    query_status = partial_status_search(val)
                     test_case.assertEqual(len(query_status), 1,
-                                          f'QueryStatus {v} not found')
+                                          f'QueryStatus {val} not found')
 
                     filter_func = text_in_field([
                         Comment.STATUS_FIELD,
@@ -139,7 +138,7 @@ class BaseCommentTest(ContentTestBase):
                 #         raise NotImplementedError(f'{hidden_status}')
                 # else hidden status ignored so no need for filtering
             elif k in DATE_QUERIES:
-                filter_func = date_check(v, k)
+                filter_func = date_check(val, k)
 
             expected = list(
                 filter(

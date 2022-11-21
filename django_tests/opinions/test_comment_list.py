@@ -56,7 +56,7 @@ class TestCommentList(SoupMixin, CategoryMixin, BaseCommentTest):
     @classmethod
     def setUpTestData(cls):
         """ Set up data for the whole TestCase """
-        super(TestCommentList, TestCommentList).setUpTestData()
+        super(TestCommentList, cls).setUpTestData()
 
     def login_user_by_key(self, name: str | None = None) -> User:
         """

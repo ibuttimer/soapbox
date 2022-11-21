@@ -50,7 +50,7 @@ class TestOpinionCreate(SoupMixin, BaseUserTest):
     @classmethod
     def setUpTestData(cls):
         """ Set up data for the whole TestCase """
-        super(TestOpinionCreate, TestOpinionCreate).setUpTestData()
+        super(TestOpinionCreate, cls).setUpTestData()
 
     def login_user_by_key(self, name: str | None = None) -> User:
         """

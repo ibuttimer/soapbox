@@ -63,7 +63,7 @@ def process_login_opinions(request: HttpRequest, user: User):
             (OPINION_REVIEWS_CTX, Opinion), (COMMENT_REVIEWS_CTX, Comment)
         ]:
             query = own_content_status_changes(
-                user, model, since=user.previous_login)
+                model, user=user, since=user.previous_login)
             context[key] = query.count() if query else 0
 
         context[COUNT_CTX] = \

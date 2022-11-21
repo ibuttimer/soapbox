@@ -20,46 +20,25 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from .misc import (
-    append_slash, namespaced_url, app_template_path, url_path, reverse_q,
-    random_string_generator, is_boolean_true, Crud, permission_name,
-    permission_check, ensure_list, find_index
-)
-from .views import redirect_on_success_or_render
-from .forms import update_field_widgets, error_messages, ErrorMsgs
-from .file import find_parent_of_folder
-from .models import (
-    SlugMixin, ModelMixin, ModelFacadeMixin,
-    DESC_LOOKUP, DATE_OLDEST_LOOKUP, DATE_NEWEST_LOOKUP
-)
+from .constants import MODERATOR_GROUP, AUTHOR_GROUP
+from .models import User
 
 
-__all__ = [
-    'append_slash',
-    'namespaced_url',
-    'app_template_path',
-    'url_path',
-    'reverse_q',
-    'random_string_generator',
-    'is_boolean_true',
-    'Crud',
-    'permission_name',
-    'permission_check',
-    'ensure_list',
-    'find_index',
+def is_moderator(user: User) -> bool:
+    """
+    Check if user is a moderator
+    :param user: user to check
+    :return: True if moderator
+    """
+    return user.groups.filter(name=MODERATOR_GROUP).exists() \
+        if user else False
 
-    'redirect_on_success_or_render',
 
-    'update_field_widgets',
-    'error_messages',
-    'ErrorMsgs',
-
-    'find_parent_of_folder',
-
-    'SlugMixin',
-    'ModelMixin',
-    'ModelFacadeMixin',
-    'DESC_LOOKUP',
-    'DATE_OLDEST_LOOKUP',
-    'DATE_NEWEST_LOOKUP'
-]
+def is_author(user: User) -> bool:
+    """
+    Check if user is an author
+    :param user: user to check
+    :return: True if author
+    """
+    return user.groups.filter(name=AUTHOR_GROUP).exists() \
+        if user else False

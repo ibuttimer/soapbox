@@ -32,7 +32,8 @@ from categories import (
     REACTION_REPORT
 )
 from categories.constants import (
-    STATUS_ALL, REACTION_SHARE, REACTION_COMMENT, REACTION_DELETE
+    STATUS_ALL, REACTION_SHARE, REACTION_COMMENT, REACTION_DELETE,
+    STATUS_PRE_PUBLISH, STATUS_REVIEW_WIP, STATUS_REVIEW, STATUS_REVIEW_OVER
 )
 from categories.models import Status
 from opinions.models import Opinion, Comment
@@ -188,7 +189,7 @@ TypeQueryStatus = TypeVar("TypeQueryStatus", bound="QueryStatus")
 
 class QueryStatus(ChoiceArg):
     """ Enum representing status query params """
-    ALL = (STATUS_ALL, 'all')
+    # statuses corresponding to statues in the database
     DRAFT = (STATUS_DRAFT, 'draft')
     PUBLISH = (STATUS_PUBLISHED, 'publish')
     PREVIEW = (STATUS_PREVIEW, 'preview')
@@ -196,9 +197,33 @@ class QueryStatus(ChoiceArg):
     PENDING_REVIEW = (STATUS_PENDING_REVIEW, 'pending-review')
     UNDER_REVIEW = (STATUS_UNDER_REVIEW, 'under-review')
     APPROVED = (STATUS_APPROVED, 'approved')
+    # TODO probably should be 'upheld'
     """ Review approved, content needs work """
     REJECTED = (STATUS_REJECTED, 'rejected')
     """ Review rejected, content ok """
+
+    # statuses corresponding to combinations of multiple database statuses
+    ALL = (STATUS_ALL, 'all')
+    PRE_PUBLISH = (STATUS_PRE_PUBLISH, 'prepublish')
+    REVIEW_WIP = (STATUS_REVIEW_WIP, 'review-wip')
+    REVIEW = (STATUS_REVIEW, 'review')
+    REVIEW_OVER = (STATUS_REVIEW_OVER, 'review-over')
+
+    @classmethod
+    def combination_statuses(cls) -> list[TypeQueryStatus]:
+        """ List of combination statuses """
+        return [
+            QueryStatus.ALL, QueryStatus.PRE_PUBLISH, QueryStatus.REVIEW_WIP,
+            QueryStatus.REVIEW, QueryStatus.REVIEW_OVER
+        ]
+
+    @classmethod
+    def non_combination_statuses(cls) -> list[TypeQueryStatus]:
+        """ List of non-combination statuses """
+        return [
+            qry for qry in QueryStatus
+            if qry not in QueryStatus.combination_statuses()
+        ]
 
     @classmethod
     def pre_publish_statuses(cls) -> list[TypeQueryStatus]:
@@ -213,9 +238,8 @@ class QueryStatus(ChoiceArg):
     @classmethod
     def review_statuses(cls) -> list[TypeQueryStatus]:
         """ List of review statuses """
-        statuses = [
-            QueryStatus.WITHDRAWN, QueryStatus.APPROVED, QueryStatus.REJECTED
-        ]
+        statuses = [QueryStatus.APPROVED]
+        statuses.extend(cls.review_over_statuses())
         statuses.extend(cls.review_wip_statuses())
         return statuses
 
@@ -224,11 +248,33 @@ class QueryStatus(ChoiceArg):
         """ List of review over (i.e. ok to view) statuses """
         return [QueryStatus.WITHDRAWN, QueryStatus.REJECTED]
 
+    def listing(self) -> list[TypeQueryStatus]:
+        """
+        Get the list of statuses this status corresponds to
+        :return: list of statuses
+        """
+        if self == QueryStatus.ALL:
+            statuses = [QueryStatus.PUBLISH]
+            statuses.extend(self.pre_publish_statuses())
+            statuses.extend(self.review_statuses())
+        elif self == QueryStatus.PRE_PUBLISH:
+            statuses = self.pre_publish_statuses()
+        elif self == QueryStatus.REVIEW_WIP:
+            statuses = self.review_wip_statuses()
+        elif self == QueryStatus.REVIEW:
+            statuses = self.review_statuses()
+        elif self == QueryStatus.REVIEW_OVER:
+            statuses = self.review_over_statuses()
+        else:
+            statuses = [self]
+        return statuses
+
     def __init__(self, display: str, arg: str):
         super().__init__(display, arg)
 
 
 QueryStatus.DEFAULT = QueryStatus.PUBLISH
+QueryStatus.REVIEW_DEFAULT = QueryStatus.REVIEW_WIP
 
 
 class ReactionStatus(ChoiceArg):
@@ -451,3 +497,12 @@ class ViewMode(ChoiceArg):
 
 
 ViewMode.DEFAULT = ViewMode.READ_ONLY
+
+
+class FilterMode(ChoiceArg):
+    """ Enum representing view mode opinions """
+    NEW = ('New', 'new')
+    ALL = ('All', 'all')
+
+
+FilterMode.DEFAULT = FilterMode.ALL

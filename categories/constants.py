@@ -26,7 +26,6 @@ NAME_FIELD = "name"
 DESCRIPTION_FIELD = "description"
 
 # status display names
-STATUS_ALL = 'All'
 STATUS_DRAFT = 'Draft'
 STATUS_PUBLISHED = 'Published'
 STATUS_PREVIEW = 'Preview'
@@ -36,6 +35,12 @@ STATUS_UNDER_REVIEW = 'Under Review'        # under review
 STATUS_APPROVED = 'Approved'            # review approved, content needs work
 STATUS_REJECTED = 'Rejected'            # review rejected, content ok
 STATUS_DELETED = 'Deleted'              # content deleted
+# status combinations display names
+STATUS_ALL = 'All'
+STATUS_PRE_PUBLISH = 'Prepublish'           # draft or preview
+STATUS_REVIEW_WIP = 'Review In Progress'    # pending review or under review
+STATUS_REVIEW = 'Review'                    # all review-related statuses
+STATUS_REVIEW_OVER = 'Review Complete'      # review approved or rejected
 
 CATEGORY_UNASSIGNED = 'Unassigned'
 

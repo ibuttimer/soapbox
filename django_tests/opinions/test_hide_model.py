@@ -35,11 +35,11 @@ class TestHideModel(BaseOpinionTest):
     @classmethod
     def setUpTestData(cls):
         """ Set up data for the whole TestCase """
-        super(TestHideModel, TestHideModel).setUpTestData()
+        super(TestHideModel, cls).setUpTestData()
 
     def test_review_defaults(self):
-        opinion = TestHideModel.opinions[0]
-        user = TestHideModel.get_other_user(opinion.user)
+        opinion = self.opinions[0]
+        user = self.get_other_user(opinion.user)
 
         kwargs = {
             HideStatus.OPINION_FIELD: opinion,
@@ -51,8 +51,8 @@ class TestHideModel(BaseOpinionTest):
         self.assertIsNone(hidden.comment)
         self.assertLessEqual(hidden.updated, datetime.now(tz=timezone.utc))
 
-        comment = TestHideModel.comments[0]
-        user = TestHideModel.get_other_user(comment.user)
+        comment = self.comments[0]
+        user = self.get_other_user(comment.user)
 
         kwargs = {
             HideStatus.COMMENT_FIELD: comment,

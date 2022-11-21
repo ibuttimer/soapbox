@@ -44,7 +44,7 @@ class TestProfileView(SoupMixin, CategoryMixin, BaseUserTest):
     @classmethod
     def setUpTestData(cls):
         """ Set up data for the whole TestCase """
-        super(TestProfileView, TestProfileView).setUpTestData()
+        super(TestProfileView, cls).setUpTestData()
         # assign categories to users
         category_list = list(Category.objects.all())
         mod_num = 2

@@ -68,7 +68,7 @@ class TestOpinionView(
     @classmethod
     def setUpTestData(cls):
         """ Set up data for the whole TestCase """
-        super(TestOpinionView, TestOpinionView).setUpTestData()
+        super(TestOpinionView, cls).setUpTestData()
 
     def test_not_logged_in_access_by_id(self):
         """ Test must be logged in to access opinion by id """

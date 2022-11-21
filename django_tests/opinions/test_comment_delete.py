@@ -40,7 +40,7 @@ class TestCommentDelete(
     @classmethod
     def setUpTestData(cls):
         """ Set up data for the whole TestCase """
-        super(TestCommentDelete, TestCommentDelete).setUpTestData()
+        super(TestCommentDelete, cls).setUpTestData()
 
     def test_not_logged_in_access_by_id(self):
         """ Test must be logged in to access comment by id """

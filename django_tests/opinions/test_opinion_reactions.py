@@ -75,7 +75,7 @@ class TestOpinionReaction(SoupMixin, OpinionMixin, BaseOpinionTest):
     @classmethod
     def setUpTestData(cls):
         """ Set up data for the whole TestCase """
-        super(TestOpinionReaction, TestOpinionReaction).setUpTestData()
+        super(TestOpinionReaction, cls).setUpTestData()
 
     def test_not_logged_in_access(self):
         """ Test must be logged in to set opinion reaction """

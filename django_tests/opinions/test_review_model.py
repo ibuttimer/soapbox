@@ -37,7 +37,7 @@ class TestReviewModel(BaseOpinionTest):
     @classmethod
     def setUpTestData(cls):
         """ Set up data for the whole TestCase """
-        super(TestReviewModel, TestReviewModel).setUpTestData()
+        super(TestReviewModel, cls).setUpTestData()
 
     def test_review_defaults(self):
         requested, _ = TestReviewModel.get_user_by_index(0)

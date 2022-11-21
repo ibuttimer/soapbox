@@ -22,7 +22,7 @@
 #
 import random
 import string
-from typing import Union, List, Any
+from typing import Union, List, Any, Callable
 
 import environ
 from enum import Enum
@@ -189,3 +189,40 @@ def ensure_list(item: Any) -> list[Any]:
     :return: list
     """
     return item if isinstance(item, list) else [item]
+
+
+def find_index(
+    search: List[Any], sought: Any, start: int = None, end: int = None,
+    mapper: Callable[[Any], Any] = None, replace: Any = None
+) -> int:
+    """
+    Find the index of the first occurrence of `sought` in `search`
+    (at or after index `start` and before index `end`)
+    :param search: list to search
+    :param sought: entry to search for
+    :param start: index to begin search at; default start of `search`
+    :param end: index to stop search before; default end of `search`
+    :param mapper: func to map `search` entries before comparison;
+                default None
+    :param replace: value to replace entry with if found; default None
+    :return: index of `sought`
+    """
+    if mapper is None:
+        def pass_thru(entry):
+            return entry
+        mapper = pass_thru
+    if start is None:
+        start = 0
+    if end is None:
+        end = len(search)
+
+    to_search = list(
+        map(mapper, search)
+    ) if mapper is not None else search
+
+    index = to_search.index(sought, start, end)
+
+    if index >= 0 and replace is not None:
+        search[index] = replace
+
+    return index

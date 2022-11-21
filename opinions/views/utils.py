@@ -32,7 +32,7 @@ from bs4 import BeautifulSoup
 
 from opinions.queries import is_following
 from soapbox import OPINIONS_APP_NAME
-from utils import Crud, app_template_path, permission_check
+from utils import Crud, app_template_path, permission_check, find_index
 from categories import (
     STATUS_DRAFT, STATUS_PUBLISHED, CATEGORY_UNASSIGNED
 )
@@ -49,11 +49,11 @@ from opinions.constants import (
     UNDER_REVIEW_COMMENT_CONTENT, UNDER_REVIEW_TITLE_CTX,
     UNDER_REVIEW_EXCERPT_CTX, UNDER_REVIEW_TITLE, UNDER_REVIEW_EXCERPT,
     UNDER_REVIEW_OPINION_CONTENT, UNDER_REVIEW_COMMENT_CTX,
-    UNDER_REVIEW_OPINION_CTX
+    UNDER_REVIEW_OPINION_CTX, FILTER_QUERY, REVIEW_QUERY
 )
 from opinions.enums import (
     ChoiceArg, QueryArg, QueryStatus, ReactionStatus, OpinionSortOrder,
-    CommentSortOrder, PerPage, Hidden, Pinned, Report
+    CommentSortOrder, PerPage, Hidden, Pinned, Report, FilterMode
 )
 from opinions.models import Opinion, Comment, Review
 from opinions.forms import OpinionForm
@@ -123,9 +123,23 @@ OPINION_LIST_QUERY_ARGS = OPINION_REORDER_QUERY_ARGS.copy()
 OPINION_LIST_QUERY_ARGS.extend([
     # non-reorder query args
     QueryOption.of_no_cls_dflt(AUTHOR_QUERY),
-    QueryOption(PINNED_QUERY, Pinned, Pinned.IGNORE),
+    QueryOption(PINNED_QUERY, Pinned, Pinned.DEFAULT),
 ])
 OPINION_LIST_QUERY_ARGS.extend(APPLIED_DEFAULTS_QUERY_ARGS)
+# request arguments for a followed authors list request
+# (replace pinned with filter)
+FOLLOWED_OPINION_LIST_QUERY_ARGS = OPINION_LIST_QUERY_ARGS.copy()
+find_index(
+    FOLLOWED_OPINION_LIST_QUERY_ARGS, PINNED_QUERY,
+    mapper=lambda item: item.query,
+    replace=QueryOption(FILTER_QUERY, FilterMode, FilterMode.DEFAULT)
+)
+# request arguments for a review opinions list request
+REVIEW_OPINION_LIST_QUERY_ARGS = FOLLOWED_OPINION_LIST_QUERY_ARGS.copy()
+REVIEW_OPINION_LIST_QUERY_ARGS.extend([
+    # non-reorder query args
+    QueryOption(REVIEW_QUERY, QueryStatus, QueryStatus.REVIEW_DEFAULT),
+])
 
 # args for a comment reorder/next page/etc. request
 COMMENT_REORDER_QUERY_ARGS = [
@@ -148,13 +162,17 @@ COMMENT_LIST_QUERY_ARGS.extend([
     QueryOption.of_no_cls_dflt(ID_QUERY),
 ])
 COMMENT_LIST_QUERY_ARGS.extend(APPLIED_DEFAULTS_QUERY_ARGS)
+# request arguments for a review comments list request
+REVIEW_COMMENT_LIST_QUERY_ARGS = COMMENT_LIST_QUERY_ARGS.copy()
+REVIEW_COMMENT_LIST_QUERY_ARGS.extend([
+    # non-reorder query args
+    QueryOption.of_no_cls_dflt(AUTHOR_QUERY),
+    QueryOption(FILTER_QUERY, FilterMode, FilterMode.DEFAULT),
+    QueryOption(REVIEW_QUERY, QueryStatus, QueryStatus.REVIEW_DEFAULT),
+])
 
 # query args sent for list request which are not always sent with
 # a reorder request
-NON_REORDER_OPINION_LIST_QUERY_ARGS = [
-    a.query for a in OPINION_LIST_QUERY_ARGS
-    if a.query not in REORDER_REQ_QUERY_ARGS
-]
 NON_REORDER_COMMENT_LIST_QUERY_ARGS = [
     a.query for a in COMMENT_LIST_QUERY_ARGS
     if a.query not in REORDER_REQ_QUERY_ARGS

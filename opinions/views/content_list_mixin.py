@@ -20,8 +20,9 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
+from datetime import datetime
 from http import HTTPStatus
-from typing import Type, Callable, Tuple, Optional
+from typing import Type, Callable, Tuple, Optional, List
 
 from django.core.paginator import Paginator
 from django.db.models.functions import Lower
@@ -30,21 +31,40 @@ from django.views import generic
 
 from opinions.constants import (
     ORDER_QUERY, UPDATED_FIELD, PER_PAGE_QUERY,
-    OPINION_PAGINATION_ON_EACH_SIDE, OPINION_PAGINATION_ON_ENDS
+    OPINION_PAGINATION_ON_EACH_SIDE, OPINION_PAGINATION_ON_ENDS, AUTHOR_QUERY,
+    FILTER_QUERY
 )
-from opinions.enums import SortOrder, QueryArg, PerPage
+from opinions.enums import SortOrder, QueryArg, PerPage, FilterMode
 from opinions.query_params import QuerySetParams
-from user.models import User
+from opinions.views.utils import (
+    get_query_args, QueryOption, REORDER_REQ_QUERY_ARGS
+)
 from utils import Crud, DESC_LOOKUP, DATE_NEWEST_LOOKUP
 
 
 class ContentListMixin(generic.ListView):
+    """ Mixin for content list views """
 
-    sort_order: list[Type[SortOrder]]
-    """ Sort order options to display """
+    def __init__(self):
+        # sort order options to display
+        self.sort_order = None
+        # user which initiated request
+        self.user = None
+        # query args sent for list request which are not always sent with
+        # a reorder request
+        self.non_reorder_query_args = None
 
-    user: User
-    """ User which initiated request """
+    def initialise(self, non_reorder_args: List[str] = None):
+        """
+        Initialise this instance
+        (The method resolution order is too extended to use a simple
+         super().__init__(). See
+         https://docs.python.org/3.10/library/functions.html#super)
+        """
+        self.non_reorder_query_args = [
+            a.query for a in self.valid_req_query_args()
+            if a.query not in REORDER_REQ_QUERY_ARGS
+        ] if non_reorder_args is None else non_reorder_args
 
     def get(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """
@@ -101,8 +121,23 @@ class ContentListMixin(generic.ListView):
         Get the request query args function
         :return: request query args function
         """
+        return lambda request: get_query_args(
+            request, self.valid_req_query_args())
+
+    def valid_req_query_args(self) -> List[QueryOption]:
+        """
+        Get the valid request query args
+        :return: dict of query args
+        """
         raise NotImplementedError(
-            "'list_query_args' method must be overridden by sub classes")
+            "'valid_req_query_args' method must be overridden by sub classes")
+
+    def valid_req_non_reorder_query_args(self) -> List[str]:
+        """
+        Get the valid request query args
+        :return: dict of query args
+        """
+        return self.non_reorder_query_args
 
     def set_extra_context(self, query_params: dict[str, QueryArg]):
         """
@@ -265,3 +300,23 @@ class ContentListMixin(generic.ListView):
         raise NotImplementedError(
             "'is_list_only_template' method must be overridden by sub "
             "classes")
+
+    def is_query_own(self, query_params: dict[str, QueryArg]) -> bool:
+        """
+        Check if query is for rhe current user
+        :param query_params: query params
+        :return: True is current user is author in query
+        """
+        author = query_params.get(AUTHOR_QUERY, None)
+        return author is not None and author.value == self.user.username
+
+    def get_since(
+            self, query_params: dict[str, QueryArg]) -> Optional[datetime]:
+        """
+        Get the query since date
+        :param query_params: request query
+        :return: since date or None
+        """
+        return None if \
+            query_params.get(FILTER_QUERY, FilterMode.DEFAULT).value == \
+            FilterMode.ALL else self.user.previous_login

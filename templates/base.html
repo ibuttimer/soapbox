@@ -118,7 +118,10 @@
                                     </li>
                                     {% if opinion_follow %}
                                     <li>
-                                        <a class="dropdown-item" href="{% url 'opinions:opinion_followed' %}">New tagged author opinions</a>
+                                        <a class="dropdown-item" tabindex="-1" href="{% url 'opinions:opinion_followed' %}?filter=new">New tagged author opinions</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" tabindex="-1" href="{% url 'opinions:opinion_followed' %}?filter=all">All tagged author opinions</a>
                                     </li>
                                     {% endif %}
                                     <li>
@@ -184,22 +187,15 @@
                                         Moderate
                                     </a>
                                     <ul class="dropdown-menu">
-                                        {% if comment_read %}
+                                        {% if review_read %}
                                         <li>
-                                            <a class="dropdown-item" href="{% url 'opinions:comments' %}?author={{ user.username }}&status=draft">Drafts</a>
+                                            <a class="dropdown-item" href="{% url 'opinions:opinion_in_review' %}?review=pending-review">Opinion review pending</a>
                                         </li>
                                         <li>
-                                            <a class="dropdown-item" href="{% url 'opinions:comments' %}?author={{ user.username }}&status=preview">Previews</a>
+                                            <a class="dropdown-item" href="{% url 'opinions:opinion_in_review' %}?review=under-review">Opinion review in progress</a>
                                         </li>
                                         <li>
-                                            <a class="dropdown-item" href="{% url 'opinions:comment_in_review' %}?author={{ user.username }}">Review in progress</a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item" href="{% url 'opinions:comments' %}?author={{ user.username }}&status=all">Mine</a>
-                                        </li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li>
-                                            <a class="dropdown-item" href="{% url 'opinions:comments' %}">All</a>
+                                            <a class="dropdown-item" href="{% url 'opinions:opinion_in_review' %}?review=approved">Opinion review approved</a>
                                         </li>
                                         {% endif %}
                                     </ul>

@@ -26,7 +26,8 @@ from zoneinfo import ZoneInfo
 from categories import (
     STATUS_DRAFT, STATUS_PREVIEW, STATUS_PUBLISHED, STATUS_PENDING_REVIEW
 )
-from categories.constants import STATUS_DELETED
+from categories.constants import STATUS_DELETED, STATUS_UNDER_REVIEW, \
+    STATUS_APPROVED
 from categories.models import Category, Status
 from opinions.constants import (
     OPINION_PAGINATION_ON_EACH_SIDE, OPINION_PAGINATION_ON_ENDS
@@ -35,6 +36,7 @@ from opinions.models import Opinion, Comment, HideStatus, Review
 from opinions.views.utils import generate_excerpt
 from opinions.enums import PerPage
 from user.models import User
+from user.queries import is_moderator
 from ..user.base_user_test import BaseUserTest
 
 
@@ -58,6 +60,7 @@ class ContentTestBase(BaseUserTest):
     hidden_opinions: list[Opinion]
     hidden_opinion_set: set             # set with ids of hidden
     reported_opinions: list[Opinion]
+    reported_status_opinions: dict[str, list[Opinion]]
     reported_opinion_set: set           # set with ids of reported
     comments: list[Comment]
     # TODO test hidden comments
@@ -66,20 +69,22 @@ class ContentTestBase(BaseUserTest):
     reported_comments: list[Comment]
     reported_comment_set: set           # set with ids of reported
 
-    @staticmethod
+    @classmethod
     def create_opinion(
-        index: int, user: User, status: Status, categories: list[Category],
-        days: int = 0, hidden: bool = False, reported: bool = False
+        cls, index: int, user: User, status: Status,
+        categories: list[Category], days: int = 0,
+        hidden: bool = False, reported: str = None
     ) -> Opinion:
         """ Create an opinion """
         other_user = None
         title_addendum = ''
         if hidden or reported:
-            other_user = ContentTestBase.get_other_user(user)
+            other_user = cls.get_other_user(user)
         if hidden:
             title_addendum = f'{title_addendum} hidden[{other_user.username}]'
         if reported:
-            title_addendum = f'{title_addendum} report[{other_user.username}]'
+            title_addendum = f'{title_addendum} ' \
+                             f'[{other_user.username}:{reported}]'
 
         kwargs = ContentTestBase.OPINION_INFO[
             index % len(ContentTestBase.OPINION_INFO)].copy()
@@ -108,37 +113,41 @@ class ContentTestBase(BaseUserTest):
             HideStatus.objects.create(**kwargs)
 
         if reported:
-            ContentTestBase.report_content(opinion, other_user)
+            ContentTestBase.report_content(
+                opinion, other_user, status=reported)
 
         return opinion
 
     @staticmethod
-    def report_content(content: [Opinion, Comment], reporter: User):
+    def report_content(
+            content: [Opinion, Comment], reporter: User,
+            status: str = STATUS_PENDING_REVIEW):
         """ Report content """
         kwargs = {
             Review.content_field(content): content,
             Review.REQUESTED_FIELD: reporter,
             Review.REASON_FIELD: f'{reporter} is offended',
             Review.STATUS_FIELD:
-                Status.objects.get(name=STATUS_PENDING_REVIEW),
+                Status.objects.get(name=status),
         }
         Review.objects.create(**kwargs)
 
-    @staticmethod
+    @classmethod
     def create_comment(
-        index: int, user: User, opinion: Opinion, status: Status,
+        cls, index: int, user: User, opinion: Opinion, status: Status,
         days: int, parent: Comment = None,
-        hidden: bool = False, reported: bool = False
+        hidden: bool = False, reported: str = None
     ) -> Comment:
         """ Create a comment """
         other_user = None
         title_addendum = ''
         if hidden or reported:
-            other_user = ContentTestBase.get_other_user(user)
+            other_user = cls.get_other_user(user)
         if hidden:
             title_addendum = f'{title_addendum} hidden[{other_user.username}]'
         if reported:
-            title_addendum = f'{title_addendum} report[{other_user.username}]'
+            title_addendum = f'{title_addendum} ' \
+                             f'[{other_user.username}:{reported}]'
 
         kwargs = {
             Comment.CONTENT_FIELD: f"Comment {index} from {user.username} "
@@ -160,14 +169,15 @@ class ContentTestBase(BaseUserTest):
 
         if reported:
             # report comment
-            ContentTestBase.report_content(comment, other_user)
+            ContentTestBase.report_content(
+                comment, other_user, status=reported)
 
         return comment
 
     @classmethod
     def setUpTestData(cls):
         """ Set up data for the whole TestCase """
-        super(ContentTestBase, ContentTestBase).setUpTestData()
+        super(ContentTestBase, cls).setUpTestData()
         # create opinions
         category_list = list(Category.objects.all())
 
@@ -176,6 +186,7 @@ class ContentTestBase(BaseUserTest):
         cls.hidden_opinion_set = set()
         cls.reported_opinions = []
         cls.reported_opinion_set = set()
+        cls.reported_status_opinions = {}
         cls.comments = []
         cls.hidden_comments = []
         cls.hidden_comment_set = set()
@@ -195,44 +206,52 @@ class ContentTestBase(BaseUserTest):
         days = 0
 
         # add a draft/preview/published opinion for each user
-        for user_idx in range(ContentTestBase.num_users()):
-            user, _ = ContentTestBase.get_user_by_index(user_idx)
+        for user_idx in range(cls.num_users()):
+            user, _ = cls.get_user_by_index(user_idx)
+            if is_moderator(user):
+                continue    # moderators don't author in tests
 
             for index in range(num_templates):
                 opinion = ContentTestBase.create_opinion(
-                    (user_idx * num_templates) + index,
-                    user,
+                    (user_idx * num_templates) + index, user,
                     Status.objects.get(
                         name=ContentTestBase.STATUSES[
                             index % len(ContentTestBase.STATUSES)]),
-                    get_categories(user_idx, index),
-                    days=days
-                )
+                    get_categories(user_idx, index), days=days)
                 cls.opinions.append(opinion)
                 days += 1
 
         # add hidden/reported opinions for each user
+        report_statuses = [
+            None, STATUS_PENDING_REVIEW, STATUS_UNDER_REVIEW,
+            STATUS_APPROVED
+        ]
         published = Status.objects.get(name=STATUS_PUBLISHED)
-        for user_idx in range(ContentTestBase.num_users()):
-            user, _ = ContentTestBase.get_user_by_index(user_idx)
+        for user_idx in range(cls.num_users()):
+            user, _ = cls.get_user_by_index(user_idx)
+            if is_moderator(user):
+                continue    # moderators don't author in tests
 
             for index in range(num_templates):
-                for op_idx in range(2):
-                    reported = op_idx > 0
-                    opinion = ContentTestBase.create_opinion(
-                        (user_idx * num_templates) + index,
-                        user, published,
-                        get_categories(user_idx, index),
-                        days=days,
-                        hidden=not reported,
-                        reported=reported
-                    )
+                for reported in report_statuses:
+                    opinion = cls.create_opinion(
+                        (user_idx * num_templates) + index, user, published,
+                        get_categories(user_idx, index), days=days,
+                        hidden=not reported, reported=reported)
                     cls.opinions.append(opinion)
                     days += 1
 
                     if reported:
                         cls.reported_opinions.append(opinion)
                         cls.reported_opinion_set.add(opinion.id)
+
+                        if reported not in cls.reported_status_opinions:
+                            cls.reported_status_opinions[reported] = [
+                                opinion.id
+                            ]
+                        else:
+                            cls.reported_status_opinions[reported].append(
+                                opinion.id)
                     else:
                         cls.hidden_opinions.append(opinion)
                         cls.hidden_opinion_set.add(opinion.id)
@@ -240,51 +259,58 @@ class ContentTestBase(BaseUserTest):
         # add enough published opinions to get pagination ellipsis
         num_pages = ((OPINION_PAGINATION_ON_ENDS + 1) * 2) + \
                     (OPINION_PAGINATION_ON_EACH_SIDE * 2) + 1
-        start = num_templates * ContentTestBase.num_users()
+        start = num_templates * cls.num_authors()
+
         for index in range(
                 start,
                 start + (num_pages * PerPage.FIFTEEN.arg)):
-            opinion = ContentTestBase.create_opinion(
-                index,
-                user,
-                published,
-                get_categories(user_idx, index),
-                days=days
-            )
+            user = None
+            user_idx = 0
+            while user_idx < cls.num_users():
+                user, _ = cls.get_user_by_index(user_idx)
+                if is_moderator(user):
+                    continue    # moderators don't author in tests
+                break
+            else:
+                raise ValueError("User not found")
+
+            opinion = cls.create_opinion(
+                index, user, published, get_categories(user_idx, index),
+                days=days)
             cls.opinions.append(opinion)
             days += 1
 
         # add normal/reported comments on published opinions
+        reported_cnt = 0
         for index, opinion in enumerate(cls.opinions):
             if opinion.status == published:
                 user = cls.get_other_user(opinion.user)
 
-                for cmt_idx in range(2):
-                    # only report comments on odd numbered opinions
-                    reported = index % 2 == 1 and cmt_idx == 1
+                reported = report_statuses[index % len(report_statuses)]
 
-                    comment = ContentTestBase.create_comment(
-                        index, user, opinion, published,
-                        days=days, reported=reported
+                comment = cls.create_comment(
+                    index, user, opinion, published,
+                    days=days, reported=reported
+                )
+                cls.comments.append(comment)
+                days += 1
+
+                if reported:
+                    # report comment
+                    cls.reported_comments.append(comment)
+                    cls.reported_comment_set.add(comment.id)
+                    reported_cnt += 1
+                else:
+                    # add comment on comment
+                    comment = cls.create_comment(
+                        index + 1000, user, opinion, published,
+                        days=days, parent=comment
                     )
-
                     cls.comments.append(comment)
                     days += 1
 
-                    if reported:
-                        # report comment
-                        ContentTestBase.report_content(comment, user)
-                        cls.reported_comments.append(comment)
-                        cls.reported_comment_set.add(comment.id)
-                    else:
-                        # add comment on comment
-                        comment = ContentTestBase.create_comment(
-                            index + 1000, user, opinion, published,
-                            days=days, parent=comment
-                        )
-
-                        cls.comments.append(comment)
-                        days += 1
+        if reported_cnt == 0:
+            raise ValueError("No reported comments")
 
     @classmethod
     def all_opinions_of_status(cls, name: str) -> list[Opinion]:

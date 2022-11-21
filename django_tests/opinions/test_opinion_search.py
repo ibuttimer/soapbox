@@ -59,7 +59,7 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
     @classmethod
     def setUpTestData(cls):
         """ Set up data for the whole TestCase """
-        super(TestOpinionSearch, TestOpinionSearch).setUpTestData()
+        super(TestOpinionSearch, cls).setUpTestData()
 
     def login_user_by_key(self, name: str | None = None) -> User:
         """
@@ -215,9 +215,9 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
         opinion, user, queries = self.get_query_options()
         user = self.login_user_by_id(user.id)
 
-        for q, v in queries:
+        for qry, val in queries:
             query = {
-                q: v
+                qry: val
             }
             expected = BaseOpinionTest.get_expected(
                 self, query, OpinionSortOrder.DEFAULT, user)
