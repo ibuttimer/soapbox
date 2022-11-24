@@ -200,7 +200,7 @@ class CommentDetail(LoginRequiredMixin, View):
 
     def url(self, comment_obj: Comment) -> str:
         """
-        Get url for comment view/update
+        Get url for comment view/update/delete
         :param comment_obj: opinion
         :return: url
         """
@@ -230,7 +230,7 @@ def _render_view(**kwargs):
 
 class CommentDetailById(CommentDetail):
     """
-    Class-based view for individual comment view/update by id
+    Class-based view for individual comment view/update/delete by id
     """
 
     def get(self, request: HttpRequest,
@@ -259,20 +259,20 @@ class CommentDetailById(CommentDetail):
         """
         return super().delete(request, pk, *args, **kwargs)
 
-    def url(self, opinion_obj: Comment) -> str:
+    def url(self, comment_obj: Comment) -> str:
         """
-        Get url for opinion view/update
-        :param opinion_obj: opinion
+        Get url for comment view/update/delete
+        :param comment_obj: comment
         :return: url
         """
         return reverse_q(
             namespaced_url(OPINIONS_APP_NAME, COMMENT_ID_ROUTE_NAME),
-            args=[opinion_obj.id])
+            args=[comment_obj.id])
 
 
 class CommentDetailBySlug(CommentDetail):
     """
-    Class-based view for individual comment view/update by slug
+    Class-based view for individual comment view/update/delete by slug
     """
 
     def get(self, request: HttpRequest,
@@ -301,15 +301,15 @@ class CommentDetailBySlug(CommentDetail):
         """
         return super().delete(request, slug, *args, **kwargs)
 
-    def url(self, opinion_obj: Comment) -> str:
+    def url(self, comment_obj: Comment) -> str:
         """
-        Get url for opinion view/update
-        :param opinion_obj: opinion
+        Get url for comment view/update/delete
+        :param comment_obj: comment
         :return: url
         """
         return reverse_q(
             namespaced_url(OPINIONS_APP_NAME, COMMENT_SLUG_ROUTE_NAME),
-            args=[opinion_obj.slug])
+            args=[comment_obj.slug])
 
 
 @login_required

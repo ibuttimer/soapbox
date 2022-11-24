@@ -81,7 +81,7 @@ from opinions.views.utils import (
     render_opinion_form, comment_permission_check, like_query_args,
     hide_query_args, pin_query_args, generate_excerpt, follow_query_args,
     add_content_no_show_markers, review_permission_check, QueryOption,
-    get_query_args, STATUS_BADGES, REVIEW_STATUS_BUTTONS
+    get_query_args, STATUS_BADGES, REVIEW_STATUS_BUTTONS, form_errors_response
 )
 from opinions.enums import QueryStatus, ReactionStatus, ViewMode
 
@@ -315,7 +315,7 @@ class OpinionDetail(LoginRequiredMixin, View):
 
     def url(self, opinion_obj: Opinion) -> str:
         """
-        Get url for opinion view/update
+        Get url for opinion view/update/delete
         :param opinion_obj: opinion
         :return: url
         """
@@ -401,7 +401,7 @@ class OpinionDetailById(OpinionDetail):
 
     def url(self, opinion_obj: Opinion) -> str:
         """
-        Get url for opinion view/update
+        Get url for opinion view/update/delete
         :param opinion_obj: opinion
         :return: url
         """
@@ -705,15 +705,7 @@ def report_post(
 
     else:
         # display form errors
-        response = JsonResponse({
-            HTML_CTX: render_to_string(
-                app_template_path(
-                    "snippet", "form_errors.html"),
-                context={
-                    'form': form,
-                },
-                request=request),
-        }, status=HTTPStatus.BAD_REQUEST)
+        response = form_errors_response(form, request=request)
 
     return response
 
@@ -899,15 +891,7 @@ def review_decision_post(
 
     else:
         # display form errors
-        response = JsonResponse({
-            HTML_CTX: render_to_string(
-                app_template_path(
-                    "snippet", "form_errors.html"),
-                context={
-                    'form': form,
-                },
-                request=request),
-        }, status=HTTPStatus.BAD_REQUEST)
+        response = form_errors_response(form, request=request)
 
     return response
 

@@ -22,12 +22,15 @@
 #
 from dataclasses import dataclass
 from datetime import datetime
+from http import HTTPStatus
 from typing import Any, Type, Union, List, Optional, TypeVar
 from zoneinfo import ZoneInfo
 
+from django import forms
 from django.core.exceptions import PermissionDenied
-from django.http import HttpRequest
+from django.http import HttpRequest, JsonResponse
 from django.template.defaultfilters import truncatechars
+from django.template.loader import render_to_string
 from bs4 import BeautifulSoup
 
 from opinions.queries import is_following
@@ -49,7 +52,7 @@ from opinions.constants import (
     UNDER_REVIEW_COMMENT_CONTENT, UNDER_REVIEW_TITLE_CTX,
     UNDER_REVIEW_EXCERPT_CTX, UNDER_REVIEW_TITLE, UNDER_REVIEW_EXCERPT,
     UNDER_REVIEW_OPINION_CONTENT, UNDER_REVIEW_COMMENT_CTX,
-    UNDER_REVIEW_OPINION_CTX, FILTER_QUERY, REVIEW_QUERY
+    UNDER_REVIEW_OPINION_CTX, FILTER_QUERY, REVIEW_QUERY, HTML_CTX
 )
 from opinions.enums import (
     ChoiceArg, QueryArg, QueryStatus, ReactionStatus, OpinionSortOrder,
@@ -594,3 +597,22 @@ def add_content_no_show_markers(context: dict = None) -> dict:
         HIDDEN_CONTENT_CTX: HIDDEN_COMMENT_CONTENT,
     })
     return context
+
+
+def form_errors_response(
+        form: forms.ModelForm, request: HttpRequest = None) -> JsonResponse:
+    """
+    Get a form errors response
+    :param form: processed form
+    :param request: request from client; default None
+    :return: response
+    """
+    return JsonResponse({
+        HTML_CTX: render_to_string(
+            app_template_path(
+                "snippet", "form_errors.html"),
+            context={
+                'form': form,
+            },
+            request=request),
+    }, status=HTTPStatus.BAD_REQUEST)
