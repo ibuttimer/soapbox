@@ -26,8 +26,8 @@ from typing import Optional
 from opinions.models import Opinion, Comment
 from user.models import User
 from .base_opinion_test import BaseOpinionTest
-from .opinion_mixin import OpinionMixin, AccessBy
-from ..category_mixin import CategoryMixin
+from .opinion_mixin_test import OpinionMixin, AccessBy
+from ..category_mixin_test import CategoryMixin
 from ..soup_mixin import SoupMixin
 
 

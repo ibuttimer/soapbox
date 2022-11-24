@@ -40,7 +40,7 @@ from opinions.constants import (
     TEMPLATE_OPINION_REACTIONS,
     TEMPLATE_REACTION_CTRLS, CONTENT_STATUS_CTX, REPEAT_SEARCH_TERM_CTX,
     PAGE_HEADING_CTX, TITLE_CTX, POPULARITY_CTX, OPINION_LIST_CTX,
-    STATUS_BG_CTX, FILTER_QUERY, REVIEW_QUERY
+    STATUS_BG_CTX, FILTER_QUERY, REVIEW_QUERY, IS_REVIEW_CTX
 )
 from opinions.data_structures import OpinionData
 from opinions.enums import (
@@ -532,13 +532,21 @@ class OpinionInReview(OpinionFollowed):
         """
         return REVIEW_OPINION_LIST_QUERY_ARGS
 
+    def set_extra_context(self, query_params: dict[str, QueryArg]):
+        """
+        Set the context extra content to be added to context
+        :param query_params: request query
+        """
+        super().set_extra_context(query_params)
+        self.extra_context[IS_REVIEW_CTX] = True
+
     def get_title_heading(self, query_params: dict[str, QueryArg]) -> dict:
         """
         Get the title and page heading for context
         :param query_params: request query
         """
         status = query_params.get(
-            REVIEW_QUERY, QueryStatus.REVIEW_DEFAULT).value
+            REVIEW_QUERY, QueryStatus.REVIEW_QUERY_DEFAULT).value
         is_own = self.is_query_own(query_params)
         if self.get_since(query_params) is None:
             title = f'{status.display} opinions'
@@ -563,7 +571,7 @@ class OpinionInReview(OpinionFollowed):
         since = self.get_since(query_params)
 
         statuses = query_params.get(
-            REVIEW_QUERY, QueryStatus.REVIEW_DEFAULT).value.listing()
+            REVIEW_QUERY, QueryStatus.REVIEW_QUERY_DEFAULT).value.listing()
 
         return review_content_by_status(Opinion, statuses, since=since,
                                         as_params=True)

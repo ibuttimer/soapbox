@@ -31,7 +31,7 @@ from utils import reverse_q, namespaced_url
 from user import USER_ID_ROUTE_NAME
 from user.models import User
 from .base_user_test import BaseUserTest
-from ..category_mixin import CategoryMixin
+from ..category_mixin_test import CategoryMixin
 from ..soup_mixin import SoupMixin
 
 

@@ -47,7 +47,7 @@ from .test_comment_list import (
     COMMENT_LIST_TEMPLATE, COMMENT_LIST_CONTENT_TEMPLATE,
     verify_comment_list_content
 )
-from ..category_mixin import CategoryMixin
+from ..category_mixin_test import CategoryMixin
 from ..soup_mixin import SoupMixin
 from ..user.base_user_test import BaseUserTest
 

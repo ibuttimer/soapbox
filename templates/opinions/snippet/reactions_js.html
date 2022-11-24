@@ -95,29 +95,12 @@
         }
     }
 
-    const REDIRECT_PROP = 'redirect';
-    const ELEMENT_ID_PROP = 'element_id';
-
-    /**
-     * Handle the response to a reaction
-     * :param data: json data
-     */
-    function react_response_handler(data) {
-        if (data !== undefined) {
-            if (data.hasOwnProperty(REDIRECT_PROP)) {
-                document.location.href = data[REDIRECT_PROP];
-            } else if (data.hasOwnProperty(ELEMENT_ID_PROP)) {
-                $("#" + data[ELEMENT_ID_PROP]).replaceWith(data.html);
-            }
-        }
-    }
-
     /**
      * Update like/unlike status of current opinion
      * :param event: click event
      */
     function updateOnOffReaction(event) {
-        updateReactStatus(event, react_response_handler);
+        updateReactStatus(event, redirect_rewrite_response_handler);
     }
 
     // Reaction buttons have the general form: "id--react-<action>-<type>-<id>"

@@ -45,7 +45,7 @@ from .test_opinion_list import (
     OPINION_LIST_TEMPLATE, OPINION_LIST_SORT_TEMPLATE,
     verify_opinion_list_content
 )
-from ..category_mixin import CategoryMixin
+from ..category_mixin_test import CategoryMixin
 from ..soup_mixin import SoupMixin
 from ..user.base_user_test import BaseUserTest
 

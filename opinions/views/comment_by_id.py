@@ -49,7 +49,7 @@ from opinions.constants import (
     OPINION_SLUG_ROUTE_NAME,
 )
 from opinions.enums import ReactionStatus
-from opinions.forms import CommentForm, ReviewForm
+from opinions.forms import CommentForm, ReportForm
 from opinions.models import Comment
 from opinions.contexts.comment import (
     get_comment_bundle_context, comments_list_context_for_opinion
@@ -122,7 +122,7 @@ class CommentDetail(LoginRequiredMixin, View):
             OPINION_CTX: comment_obj.opinion,
             STATUS_CTX: comment_obj.status,
             COMMENT_FORM_CTX: CommentForm(),
-            REPORT_FORM_CTX: ReviewForm(),
+            REPORT_FORM_CTX: ReportForm(),
         }
 
         # get first page comments
@@ -138,7 +138,7 @@ class CommentDetail(LoginRequiredMixin, View):
                # visible opinion which may have not visible
                # under review comments
                COMMENT_FORM_CTX: CommentForm(),
-               REPORT_FORM_CTX: ReviewForm(),
+               REPORT_FORM_CTX: ReportForm(),
            } if view_ok else
                 # not visible under review opinion
                 add_content_no_show_markers()

@@ -20,7 +20,7 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from typing import Union
+from typing import Union, Any
 
 from django import template
 
@@ -30,5 +30,30 @@ register = template.Library()
 
 
 @register.simple_tag
-def array_value(array: Union[list, tuple], index: int):
-    return array[index]
+def calc(
+    a: Union[int, str, list, tuple], op: str, b: Union[int, str, list, tuple]
+) -> Union[int, float]:
+    """
+    Perform simple calculations. If an operation is a list or tuple, its
+    length is used in the calculation.
+    :param a: first operand
+    :param op: operation; '/', '*' etc.
+    :param b: second operand
+    :return: int/float result
+    """
+    a = _convert(a)
+    b = _convert(b)
+    result = eval(f'{a}{op}{b}')
+    return int(result) if result == int(result) else result
+
+
+def _convert(a: Union[int, str, list, tuple]) -> Any:
+    """ Convert operand """
+    if isinstance(a, list) or isinstance(a, tuple):
+        a = len(a)
+    elif isinstance(a, str):
+        if a.isdecimal():
+            a = int(a)
+        elif a.isnumeric():
+            a = float(a)
+    return a

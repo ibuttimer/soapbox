@@ -67,8 +67,13 @@ STATUS_BADGES = {
     QueryStatus.PENDING_REVIEW.display: "bg-warning text-dark",
     QueryStatus.UNDER_REVIEW.display: "bg-warning text-dark",
     QueryStatus.REJECTED.display: "bg-danger text-white",
+    QueryStatus.APPROVED.display: "bg-danger text-white",
+    QueryStatus.WITHDRAWN.display: "bg-danger text-white",
 }
-
+REVIEW_STATUS_BUTTONS = {
+    QueryStatus.REJECTED.display: "btn btn-outline-success",
+    QueryStatus.APPROVED.display: "btn btn-outline-danger",
+}
 
 # workaround for self type hints from https://peps.python.org/pep-0673/
 TypeQueryOption = TypeVar("TypeQueryOption", bound="QueryOption")
@@ -138,7 +143,7 @@ find_index(
 REVIEW_OPINION_LIST_QUERY_ARGS = FOLLOWED_OPINION_LIST_QUERY_ARGS.copy()
 REVIEW_OPINION_LIST_QUERY_ARGS.extend([
     # non-reorder query args
-    QueryOption(REVIEW_QUERY, QueryStatus, QueryStatus.REVIEW_DEFAULT),
+    QueryOption(REVIEW_QUERY, QueryStatus, QueryStatus.REVIEW_QUERY_DEFAULT),
 ])
 
 # args for a comment reorder/next page/etc. request
@@ -168,7 +173,7 @@ REVIEW_COMMENT_LIST_QUERY_ARGS.extend([
     # non-reorder query args
     QueryOption.of_no_cls_dflt(AUTHOR_QUERY),
     QueryOption(FILTER_QUERY, FilterMode, FilterMode.DEFAULT),
-    QueryOption(REVIEW_QUERY, QueryStatus, QueryStatus.REVIEW_DEFAULT),
+    QueryOption(REVIEW_QUERY, QueryStatus, QueryStatus.REVIEW_QUERY_DEFAULT),
 ])
 
 # query args sent for list request which are not always sent with

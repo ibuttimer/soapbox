@@ -36,7 +36,7 @@ from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
 from .base_opinion_test import BaseOpinionTest
-from ..category_mixin import CategoryMixin
+from ..category_mixin_test import CategoryMixin
 from ..soup_mixin import SoupMixin
 from ..user.base_user_test import BaseUserTest
 

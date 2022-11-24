@@ -382,7 +382,7 @@ class CommentInReview(CommentList):
         :param query_params: request query
         """
         status = query_params.get(
-            REVIEW_QUERY, QueryStatus.REVIEW_DEFAULT).value
+            REVIEW_QUERY, QueryStatus.REVIEW_QUERY_DEFAULT).value
         is_own = self.is_query_own(query_params)
         if self.get_since(query_params) is None:
             title = f'{status.display} comments'
@@ -430,7 +430,7 @@ class CommentInReview(CommentList):
         since = self.get_since(query_params)
 
         statuses = query_params.get(
-            REVIEW_QUERY, QueryStatus.REVIEW_DEFAULT).value.listing()
+            REVIEW_QUERY, QueryStatus.REVIEW_QUERY_DEFAULT).value.listing()
 
         return review_content_by_status(Comment, statuses, since=since,
                                         as_params=True)

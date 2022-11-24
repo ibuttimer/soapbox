@@ -50,7 +50,9 @@ from opinions.constants import (
     COMMENT_FOLLOW_ID_ROUTE_NAME, OPINION_FOLLOWED_URL,
     OPINION_FOLLOWED_ROUTE_NAME, OPINION_IN_REVIEW_URL,
     OPINION_IN_REVIEW_ROUTE_NAME, COMMENT_IN_REVIEW_URL,
-    COMMENT_IN_REVIEW_ROUTE_NAME,
+    COMMENT_IN_REVIEW_ROUTE_NAME, OPINION_REVIEW_STATUS_ID_URL,
+    OPINION_REVIEW_STATUS_ID_ROUTE_NAME, OPINION_REVIEW_DECISION_ID_URL,
+    OPINION_REVIEW_DECISION_ID_ROUTE_NAME,
 )
 from opinions.views.comment_create import (
     OpinionCommentCreate, CommentCommentCreate
@@ -62,7 +64,8 @@ from opinions.views.opinion_create import OpinionCreate
 from opinions.views.opinion_by_id import (
     OpinionDetailById, OpinionDetailBySlug, OpinionDetailPreviewById,
     opinion_status_patch, opinion_like_patch, opinion_hide_patch,
-    opinion_pin_patch, opinion_report_post, opinion_follow_patch
+    opinion_pin_patch, opinion_report_post, opinion_follow_patch,
+    opinion_review_status_patch, opinion_review_decision_post
 )
 from opinions.views.opinion_list import (
     OpinionList, OpinionSearch, OpinionFollowed, OpinionInReview
@@ -114,6 +117,12 @@ urlpatterns = [
     # post opinion report by id
     path(OPINION_REPORT_ID_URL, opinion_report_post,
          name=OPINION_REPORT_ID_ROUTE_NAME),
+    # patch review status by id
+    path(OPINION_REVIEW_STATUS_ID_URL, opinion_review_status_patch,
+         name=OPINION_REVIEW_STATUS_ID_ROUTE_NAME),
+    # post review decision by id
+    path(OPINION_REVIEW_DECISION_ID_URL, opinion_review_decision_post,
+         name=OPINION_REVIEW_DECISION_ID_ROUTE_NAME),
 
     # create comment for opinion by id
     path(OPINION_COMMENT_ID_URL, OpinionCommentCreate.as_view(),

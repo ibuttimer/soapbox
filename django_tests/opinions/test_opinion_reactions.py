@@ -46,7 +46,7 @@ from opinions.enums import ReactionStatus
 from soapbox import OPINIONS_APP_NAME
 from utils import reverse_q, namespaced_url
 from .base_opinion_test import BaseOpinionTest
-from .opinion_mixin import OpinionMixin
+from .opinion_mixin_test import OpinionMixin
 from ..soup_mixin import SoupMixin
 
 LIKE_REACTIONS = [REACTION_AGREE, REACTION_DISAGREE]

@@ -43,9 +43,9 @@ from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
 from .base_opinion_test import BaseOpinionTest
-from .opinion_mixin import OpinionMixin, AccessBy
+from .opinion_mixin_test import OpinionMixin, AccessBy
 from .test_opinion_create import is_submit_button, OPINION_FORM_TEMPLATE
-from ..category_mixin import CategoryMixin
+from ..category_mixin_test import CategoryMixin
 from ..soup_mixin import SoupMixin, MatchTest
 
 OPINION_VIEW_TEMPLATE = f'{OPINIONS_APP_NAME}/opinion_view.html'
@@ -365,7 +365,7 @@ class TestOpinionView(
         :param user: current user; default None
         :param mode: one of ViewMode; default ViewMode.DEFAULT
         """
-        is_readonly = mode in [ViewMode.READ_ONLY, ViewMode.PREVIEW]
+        is_readonly = mode.is_non_edit_mode
         is_preview = mode == ViewMode.PREVIEW
 
         test_case.assertEqual(response.status_code, HTTPStatus.OK)

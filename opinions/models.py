@@ -34,7 +34,7 @@ from utils import SlugMixin, ModelMixin, ModelFacadeMixin
 from .constants import (
     ID_FIELD, TITLE_FIELD, CONTENT_FIELD, EXCERPT_FIELD, CATEGORIES_FIELD,
     STATUS_FIELD, USER_FIELD, SLUG_FIELD, CREATED_FIELD, UPDATED_FIELD,
-    PUBLISHED_FIELD, PARENT_FIELD, LEVEL_FIELD,
+    PUBLISHED_FIELD, PARENT_FIELD, LEVEL_FIELD, IS_CURRENT_FIELD,
     OPINION_FIELD, REQUESTED_FIELD, REASON_FIELD,
     REVIEWER_FIELD, COMMENT_FIELD, RESOLVED_FIELD, CLOSE_REVIEW_PERM,
     WITHDRAW_REVIEW_PERM, AUTHOR_FIELD
@@ -221,6 +221,7 @@ class Review(OpinionCommentMixin, ModelMixin, models.Model):
     REASON_FIELD = REASON_FIELD
     REVIEWER_FIELD = REVIEWER_FIELD
     STATUS_FIELD = STATUS_FIELD
+    IS_CURRENT_FIELD = IS_CURRENT_FIELD
     CREATED_FIELD = CREATED_FIELD
     UPDATED_FIELD = UPDATED_FIELD
     RESOLVED_FIELD = RESOLVED_FIELD
@@ -244,6 +245,13 @@ class Review(OpinionCommentMixin, ModelMixin, models.Model):
         related_name='reviewed_by')
 
     status = models.ForeignKey(Status, on_delete=models.CASCADE)
+
+    is_current = models.BooleanField(
+        _("is current record"), default=True, help_text=_(
+             "Designates that this record represents the current review "
+             "status."
+         )
+    )
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)

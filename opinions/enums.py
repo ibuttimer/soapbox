@@ -21,7 +21,7 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 from enum import Enum
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, TypeVar, Optional
 
 from categories import (
     STATUS_DRAFT, STATUS_PUBLISHED, STATUS_PREVIEW, STATUS_WITHDRAWN,
@@ -40,6 +40,16 @@ from opinions.models import Opinion, Comment
 from user.models import User
 
 from utils import DESC_LOOKUP, DATE_OLDEST_LOOKUP, DATE_NEWEST_LOOKUP
+
+
+# workaround for self type hints from https://peps.python.org/pep-0673/
+TypeChoiceArg = TypeVar("TypeChoiceArg", bound="ChoiceArg")
+TypeQueryStatus = TypeVar("TypeQueryStatus", bound="QueryStatus")
+TypeOpinionSortOrder = \
+    TypeVar("TypeOpinionSortOrder", bound="OpinionSortOrder")
+TypeCommentSortOrder = \
+    TypeVar("TypeCommentSortOrder", bound="CommentSortOrder")
+TypeViewMode = TypeVar("ViewMode", bound="ViewMode")
 
 
 class ChoiceArg(Enum):
@@ -64,7 +74,8 @@ class ChoiceArg(Enum):
         return val
 
     @classmethod
-    def _find_value(cls, arg: Any, func: Callable = None):
+    def _find_value(
+            cls, arg: Any, func: Callable = None) -> Optional[TypeChoiceArg]:
         """
         Get value matching specified arg
         :param arg: arg to find
@@ -84,7 +95,8 @@ class ChoiceArg(Enum):
         return matches[0] if len(matches) == 1 else None
 
     @classmethod
-    def from_arg(cls, arg: Any, func: Callable = None):
+    def from_arg(
+            cls, arg: Any, func: Callable = None) -> Optional[TypeChoiceArg]:
         """
         Get value matching specified arg
         :param arg: arg to find
@@ -100,7 +112,9 @@ class ChoiceArg(Enum):
         return cls._find_value(arg, func=func)
 
     @classmethod
-    def from_display(cls, display: str, func: Callable = None):
+    def from_display(
+        cls, display: str, func: Callable = None
+    ) -> Optional[TypeChoiceArg]:
         """
         Get value matching specified display string
         :param display: display string to find
@@ -183,10 +197,6 @@ class QueryArg:
         return f'{self.value}, was_set {self.was_set}'
 
 
-# workaround for self type hints from https://peps.python.org/pep-0673/
-TypeQueryStatus = TypeVar("TypeQueryStatus", bound="QueryStatus")
-
-
 class QueryStatus(ChoiceArg):
     """ Enum representing status query params """
     # statuses corresponding to statues in the database
@@ -226,8 +236,8 @@ class QueryStatus(ChoiceArg):
         ]
 
     @classmethod
-    def pre_publish_statuses(cls) -> list[TypeQueryStatus]:
-        """ List of pre-publish statuses """
+    def prepublish_statuses(cls) -> list[TypeQueryStatus]:
+        """ List of prepublish statuses """
         return [QueryStatus.DRAFT, QueryStatus.PREVIEW]
 
     @classmethod
@@ -248,6 +258,11 @@ class QueryStatus(ChoiceArg):
         """ List of review over (i.e. ok to view) statuses """
         return [QueryStatus.WITHDRAWN, QueryStatus.REJECTED]
 
+    @classmethod
+    def review_result_statuses(cls) -> list[TypeQueryStatus]:
+        """ List of review result (i.e. review decision) statuses """
+        return [QueryStatus.APPROVED, QueryStatus.REJECTED]
+
     def listing(self) -> list[TypeQueryStatus]:
         """
         Get the list of statuses this status corresponds to
@@ -255,10 +270,10 @@ class QueryStatus(ChoiceArg):
         """
         if self == QueryStatus.ALL:
             statuses = [QueryStatus.PUBLISH]
-            statuses.extend(self.pre_publish_statuses())
+            statuses.extend(self.prepublish_statuses())
             statuses.extend(self.review_statuses())
         elif self == QueryStatus.PRE_PUBLISH:
-            statuses = self.pre_publish_statuses()
+            statuses = self.prepublish_statuses()
         elif self == QueryStatus.REVIEW_WIP:
             statuses = self.review_wip_statuses()
         elif self == QueryStatus.REVIEW:
@@ -269,12 +284,61 @@ class QueryStatus(ChoiceArg):
             statuses = [self]
         return statuses
 
+    @property
+    def is_prepublish_status(self):
+        """ Is a prepublish status """
+        return self in QueryStatus.prepublish_statuses()
+
+    @property
+    def is_review_wip_status(self):
+        """ Is a review wip status """
+        return self in QueryStatus.review_wip_statuses()
+
+    @property
+    def is_review_status(self):
+        """ Is a review status """
+        return self in QueryStatus.review_statuses()
+
+    @property
+    def is_review_over_status(self):
+        """ Is a review over status """
+        return self in QueryStatus.review_over_statuses()
+
+    @property
+    def is_review_result_status(self):
+        """ Is a review result status """
+        return self in QueryStatus.review_result_statuses()
+
+    @classmethod
+    def ordinal_list(cls) -> list[TypeQueryStatus]:
+        """
+        Ordinal list representing the status priority order in ascending
+        order
+        """
+        return [
+            QueryStatus.DRAFT, QueryStatus.PREVIEW, QueryStatus.PUBLISH,
+            QueryStatus.PENDING_REVIEW, QueryStatus.UNDER_REVIEW,
+            QueryStatus.WITHDRAWN, QueryStatus.REJECTED, QueryStatus.APPROVED
+        ]
+
+    def ordinal(self):
+        """
+        Get the status priority order ordinal for this object
+        :return: -1 if no ordinal value
+        """
+        try:
+            result = self.ordinal_list().index(self)
+        except ValueError:
+            result = -1
+        return result
+
     def __init__(self, display: str, arg: str):
         super().__init__(display, arg)
 
 
 QueryStatus.DEFAULT = QueryStatus.PUBLISH
-QueryStatus.REVIEW_DEFAULT = QueryStatus.REVIEW_WIP
+QueryStatus.REVIEW_QUERY_DEFAULT = QueryStatus.REVIEW_WIP
+QueryStatus.REVIEW_SET_DEFAULT = QueryStatus.PENDING_REVIEW
 
 
 class ReactionStatus(ChoiceArg):
@@ -302,11 +366,6 @@ class SortOrder(ChoiceArg):
     def __init__(self, display: str, arg: str, order: str):
         super().__init__(display, arg)
         self.order = order
-
-
-# workaround for self type hints from https://peps.python.org/pep-0673/
-TypeOpinionSortOrder = \
-    TypeVar("TypeOpinionSortOrder", bound="OpinionSortOrder")
 
 
 class OpinionSortOrder(SortOrder):
@@ -378,11 +437,6 @@ class OpinionSortOrder(SortOrder):
 
 
 OpinionSortOrder.DEFAULT = OpinionSortOrder.NEWEST
-
-
-# workaround for self type hints from https://peps.python.org/pep-0673/
-TypeCommentSortOrder = \
-    TypeVar("TypeCommentSortOrder", bound="CommentSortOrder")
 
 
 class CommentSortOrder(SortOrder):
@@ -494,6 +548,26 @@ class ViewMode(ChoiceArg):
     READ_ONLY = ('Read only', 'read-only')
     EDIT = ('Edit', 'edit')
     PREVIEW = ('Preview', 'preview')
+    REVIEW = ('Review', 'review')
+
+    @classmethod
+    def non_edit_mode(cls, mode: TypeViewMode) -> bool:
+        """
+        Check if `mode` is a non-edit mode
+        :param mode: view mode to check
+        :return: True if non-edit
+        """
+        return mode in [
+            ViewMode.READ_ONLY, ViewMode.PREVIEW, ViewMode.REVIEW
+        ]
+
+    @property
+    def is_non_edit_mode(self) -> bool:
+        """
+        Object is a non-edit mode
+        :return: True if non-edit
+        """
+        return self.non_edit_mode(self)
 
 
 ViewMode.DEFAULT = ViewMode.READ_ONLY

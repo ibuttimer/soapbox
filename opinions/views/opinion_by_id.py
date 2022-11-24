@@ -21,13 +21,14 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 from http import HTTPStatus
-from typing import Optional, Union, Type
+from typing import Optional, Union, Type, List
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
 from django.db.models import Model
 from django.http import (
-    HttpRequest, HttpResponse, HttpResponseNotAllowed, JsonResponse
+    HttpRequest, HttpResponse, HttpResponseNotAllowed, JsonResponse, Http404
 )
 from django.shortcuts import render, get_object_or_404
 from django.template.loader import render_to_string
@@ -45,7 +46,7 @@ from soapbox import (
 )
 from utils import (
     app_template_path, redirect_on_success_or_render, Crud, reverse_q,
-    namespaced_url
+    namespaced_url, ensure_list
 )
 from opinions.constants import (
     OPINION_ID_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME,
@@ -57,14 +58,19 @@ from opinions.constants import (
     STATUS_CTX, OPINION_FORM_CTX, REPORT_FORM_CTX, IS_PREVIEW_CTX,
     ALL_FIELDS, VIEW_OK_CTX, TEMPLATE_TARGET_SLUG, TEMPLATE_TARGET_AUTHOR,
     REDIRECT_CTX, ELEMENT_ID_CTX, HTML_CTX, OPINIONS_ROUTE_NAME, AUTHOR_QUERY,
-    STATUS_QUERY, MODE_QUERY
+    STATUS_QUERY, MODE_QUERY, IS_REVIEW_CTX, IS_ASSIGNED_CTX,
+    REVIEW_RECORD_CTX, REVIEW_FORM_CTX, REWRITES_PROP_CTX, STATUS_BG_CTX,
+    REVIEW_BUTTON_CTX
 )
-from opinions.forms import OpinionForm, CommentForm, ReviewForm
+from opinions.forms import OpinionForm, CommentForm, ReportForm, ReviewForm
 from opinions.models import (
     Opinion, Comment, AgreementStatus, HideStatus, PinStatus, Review,
     FollowStatus
 )
-from opinions.queries import content_status_check, effective_content_status
+from opinions.queries import (
+    content_status_check, effective_content_status, content_review_record,
+    content_review_history, content_review_records_list
+)
 from opinions.reactions import (
     OPINION_REACTIONS, COMMENT_REACTIONS, get_reaction_status
 )
@@ -75,7 +81,7 @@ from opinions.views.utils import (
     render_opinion_form, comment_permission_check, like_query_args,
     hide_query_args, pin_query_args, generate_excerpt, follow_query_args,
     add_content_no_show_markers, review_permission_check, QueryOption,
-    get_query_args
+    get_query_args, STATUS_BADGES, REVIEW_STATUS_BUTTONS
 )
 from opinions.enums import QueryStatus, ReactionStatus, ViewMode
 
@@ -84,6 +90,9 @@ TITLE_UPDATE = "Update"
 TITLE_OPINION = "Opinion"
 
 OWN_ONLY = 'own_only'       # access to own opinions only
+
+REVIEW_HEADER_ID = "id--div-review-request-header"
+REVIEW_FORM_CONTAINER_ID = "id--review-form-container"
 
 
 class OpinionDetail(LoginRequiredMixin, View):
@@ -120,11 +129,11 @@ class OpinionDetail(LoginRequiredMixin, View):
         published_check(request, opinion_obj)
 
         # read only if specifically requested, or not current user's opinion
-        read_only = True if mode in [
-            ViewMode.READ_ONLY, ViewMode.PREVIEW
-        ] else kwargs.get(READ_ONLY_CTX, not is_own)
+        read_only = True if mode.is_non_edit_mode else \
+            kwargs.get(READ_ONLY_CTX, not is_own)
         is_preview = opinion_obj.status.name == STATUS_PREVIEW or \
             mode == ViewMode.PREVIEW
+        is_review = mode == ViewMode.REVIEW
 
         # ok to view check
         content_status = content_status_check(
@@ -132,14 +141,27 @@ class OpinionDetail(LoginRequiredMixin, View):
         # users can always view their own opinions
         view_ok = is_own \
             if not content_status.view_ok else content_status.view_ok
+        effective_status = effective_content_status(opinion_obj)
 
         render_args = {
             READ_ONLY_CTX: read_only,
             VIEW_OK_CTX: view_ok,
             OPINION_CTX: opinion_obj,
-            STATUS_CTX: effective_content_status(opinion_obj),
+            STATUS_CTX: effective_status.display,
             IS_PREVIEW_CTX: is_preview,
+            IS_REVIEW_CTX: is_review,
         }
+        if is_review:
+            is_assigned = content_status.assigned_view
+            render_args.update({
+                IS_ASSIGNED_CTX: is_assigned,
+                REVIEW_RECORD_CTX: content_review_records_list(opinion_obj),
+                REVIEW_FORM_CTX:
+                    ReviewForm() if effective_status.is_review_wip_status
+                    else None,
+                STATUS_BG_CTX: STATUS_BADGES,
+                REVIEW_BUTTON_CTX: REVIEW_STATUS_BUTTONS,
+            })
 
         if view_ok and comment_permission_check(
                 request, Crud.READ, raise_ex=False):
@@ -159,7 +181,7 @@ class OpinionDetail(LoginRequiredMixin, View):
                 # visible opinion which may have not visible
                 # under review comments
                 COMMENT_FORM_CTX: CommentForm(),
-                REPORT_FORM_CTX: ReviewForm(),
+                REPORT_FORM_CTX: ReportForm(),
             } if view_ok else
                 # not visible under review opinion
                 add_content_no_show_markers()
@@ -665,7 +687,7 @@ def report_post(
 
     content = get_object_or_404(model, pk=pk)
 
-    form = ReviewForm(data=request.POST)
+    form = ReportForm(data=request.POST)
 
     if form.is_valid():
         # save new object
@@ -694,6 +716,221 @@ def report_post(
         }, status=HTTPStatus.BAD_REQUEST)
 
     return response
+
+
+@login_required
+@require_http_methods([PATCH])
+def opinion_review_status_patch(
+        request: HttpRequest, pk: int) -> JsonResponse:
+    """
+    View function to update opinion review status.
+    :param request: http request
+    :param pk:      id of opinion
+    :return: http response
+    """
+    opinion_permission_check(request, Crud.UPDATE)
+
+    return review_status_patch(request, Opinion, pk)
+
+
+REVIEW_UPDATE_COPY_FIELDS = [
+    Review.OPINION_FIELD, Review.COMMENT_FIELD,
+    Review.REASON_FIELD, Review.REQUESTED_FIELD
+]
+
+
+def review_status_patch(
+        request: HttpRequest, model: Type[Model], pk: int) -> JsonResponse:
+    """
+    View function to update content review status.
+    :param request: http request
+    :param model:   content model class
+    :param pk:      id of opinion
+    :return: http response
+    """
+    review_permission_check(request, Crud.UPDATE)
+
+    content = get_object_or_404(model, pk=pk)
+
+    query_params = get_query_args(request, [
+        QueryOption(STATUS_QUERY, QueryStatus, QueryStatus.REVIEW_SET_DEFAULT)
+    ])
+
+    current_reviews = content_review_records_list(content)
+    if not current_reviews:
+        raise Http404(f"{content.model_name_caps()} is not in review.")
+
+    params = {
+        Review.STATUS_FIELD: Status.objects.get(**{
+            f'{Status.NAME_FIELD}':
+                query_params.get(STATUS_QUERY).value.display
+        }),
+        Review.REVIEWER_FIELD: request.user
+    }
+
+    # create new review record for each of current_reviews
+    new_records = get_new_review_records(
+        current_reviews, params, REVIEW_UPDATE_COPY_FIELDS
+    )
+
+    save_new_review_status_post(content, new_records)
+
+    is_assigned = True
+
+    return JsonResponse({
+        REWRITES_PROP_CTX: [{
+            ELEMENT_ID_CTX: REVIEW_HEADER_ID,
+            HTML_CTX: render_to_string(
+                app_template_path(
+                    OPINIONS_APP_NAME,
+                    "snippet", "review_request_header.html"),
+                context={
+                    # review request header template
+                    IS_ASSIGNED_CTX: is_assigned,
+                    OPINION_CTX: content,
+                    STATUS_BG_CTX: STATUS_BADGES,
+                    REVIEW_RECORD_CTX: new_records
+                },
+                request=request)
+            }, {
+            ELEMENT_ID_CTX: REVIEW_FORM_CONTAINER_ID,
+            HTML_CTX: render_to_string(
+                app_template_path(
+                    OPINIONS_APP_NAME, "snippet", "review_form.html"),
+                context={
+                    # review form template
+                    IS_ASSIGNED_CTX: is_assigned,
+                    REVIEW_FORM_CTX: ReviewForm(),
+                    OPINION_CTX: content,
+                    IS_REVIEW_CTX: True,
+                    REVIEW_BUTTON_CTX: REVIEW_STATUS_BUTTONS,
+                },
+                request=request)
+            }
+        ]
+    }, status=HTTPStatus.OK if is_assigned else HTTPStatus.BAD_REQUEST)
+
+
+def get_new_review_records(
+    current_reviews: List[Review], template: dict, copy_fields: List[str]
+) -> List[Review]:
+    """
+    Get a list of new Review instances derived the values of `copy_fields`
+    in `current_reviews` entries and `template`
+    :param current_reviews: list of reviews to copy from
+    :param template: basic template with common properties for new reviews
+    :param copy_fields: list of fields to copy from entries in
+                `current_reviews`
+    :return: list of new reviews
+    """
+    if template is None:
+        template = {}
+    if copy_fields is None:
+        copy_fields = Review._meta.get_fields()
+
+    # create new review record for each of current_reviews
+    new_records = []
+    for review in current_reviews:
+        params = template.copy()
+        for key in copy_fields:
+            params[key] = getattr(review, key)
+
+        new_records.append(Review(**params))
+
+    return new_records
+
+
+@login_required
+@require_http_methods([POST])
+def opinion_review_decision_post(
+        request: HttpRequest, pk: int) -> JsonResponse:
+    """
+    View function to update opinion review status.
+    :param request: http request
+    :param pk:      id of opinion
+    :return: http response
+    """
+    opinion_permission_check(request, Crud.UPDATE)
+
+    return review_decision_post(request, Opinion, pk)
+
+
+def review_decision_post(
+        request: HttpRequest, model: Type[Model], pk: int) -> JsonResponse:
+    """
+    View function to update content review status.
+    :param request: http request
+    :param model:   content model class
+    :param pk:      id of opinion
+    :return: http response
+    """
+    review_permission_check(request, Crud.CREATE)
+
+    content = get_object_or_404(model, pk=pk)
+
+    current_reviews = content_review_records_list(content)
+    if not current_reviews:
+        raise Http404(f"{content.model_name_caps()} is not in review.")
+
+    form = ReviewForm(data=request.POST)
+
+    if form.is_valid():
+        query_status = QueryStatus.from_arg(
+            form.data[ReviewForm.REVIEW_RESULT_FF])
+        new_status = Status.objects.get(**{
+            f'{Status.NAME_FIELD}': query_status.display
+        })
+        params = {
+            Review.STATUS_FIELD: new_status,
+            Review.REVIEWER_FIELD: request.user,
+            Review.IS_CURRENT_FIELD: not query_status.is_review_over_status
+        }
+
+        # create new review record for each of current_reviews
+        new_records = get_new_review_records(
+            current_reviews, params, REVIEW_UPDATE_COPY_FIELDS
+        )
+
+        save_new_review_status_post(content, new_records)
+        # django autocommits changes
+        # https://docs.djangoproject.com/en/4.1/topics/db/transactions/#autocommit
+
+        response = redirect_response(HOME_URL)
+
+    else:
+        # display form errors
+        response = JsonResponse({
+            HTML_CTX: render_to_string(
+                app_template_path(
+                    "snippet", "form_errors.html"),
+                context={
+                    'form': form,
+                },
+                request=request),
+        }, status=HTTPStatus.BAD_REQUEST)
+
+    return response
+
+
+def save_new_review_status_post(
+        content: Union[Opinion, Comment],
+        review: Union[Union[Review, ReviewForm],
+                      List[Union[Review, ReviewForm]]]):
+    """
+    Save a new review status for `content`.
+    :param content: content to save status for
+    :param review: review(s) to save
+    """
+    with transaction.atomic():
+        # mark current review record for this content as historical
+        content_review_history(content).filter(**{
+            f'{Review.IS_CURRENT_FIELD}': True
+        }).update(**{
+            f'{Review.IS_CURRENT_FIELD}': False
+        })
+        # add new record(s)
+        for record in ensure_list(review):
+            record.save()
 
 
 def react_response(

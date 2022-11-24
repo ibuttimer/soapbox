@@ -37,7 +37,7 @@ from utils import reverse_q, namespaced_url
 from .base_comment_test import BaseCommentTest
 from .base_opinion_test import BaseOpinionTest
 from .test_comment_view import TestCommentView
-from ..category_mixin import CategoryMixin
+from ..category_mixin_test import CategoryMixin
 from ..soup_mixin import SoupMixin
 from ..user.base_user_test import BaseUserTest
 
