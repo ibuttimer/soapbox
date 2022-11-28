@@ -30,7 +30,7 @@
 
 {% if paginator.count > 0 %}
     <div class="row">
-        <div class="col-2 offset-10 mt-2">
+        <div class="col-lg-2 offset-lg-10 col-md-4 offset-md-8 col-sm-6 offset-sm-6 col-auto mt-2">
             <!-- sort order selection -->
             <select id="sort-order-select" class="form-select" aria-label="Sort by">
                 {% for sort_opt in sort_order %}
@@ -47,7 +47,7 @@
     </div>
 {% endif %}
 
-<article id="article-content" class="row">
+<article id="article-content" class="row d-flex justify-content-center">
     {% include "opinions/opinion_list_content.html" %}
 </article>
 
@@ -61,7 +61,7 @@
          */
         function update_content(order, per_page, page) {
 
-            if (page == undefined) {
+            if (page === undefined) {
                 page = "?page=1"
             }
 
@@ -69,10 +69,10 @@
             $('#per-page-select').off();
             $('.page-item').off();
 
-            repeat_search = $('#var__repeat_search_term').text().trim()
-            query_args = [
+            const repeat_search = $('#var__repeat_search_term').text().trim();
+            const query_args = [
                 "order=" + order, "per-page=" + per_page, "reorder=1"
-            ]
+            ];
             if (repeat_search.length > 0) {
                 query_args.push(repeat_search)
             }
@@ -86,23 +86,23 @@
                     add_page_content_handlers();
                 });
             });
-        };
+        }
 
         /** Get current per page value */
         function get_per_page() {
             return $('#per-page-select').find(":selected").val();
-        };
+        }
 
         /** Get current order value */
         function get_order() {
             return $('#sort-order-select').find(":selected").val()
-        };
+        }
 
         /** Get current page value */
         function get_page() {
-            page = $('#current-page').find("a")
+            const page = $('#current-page').find("a");
             return page.length ? "?page=" + page.text().trim() : undefined
-        };
+        }
 
         /**
          * Add change handler for per page selector and pages
