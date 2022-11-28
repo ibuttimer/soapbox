@@ -42,7 +42,7 @@ from opinions.constants import (
     STATUS_QUERY, AUTHOR_QUERY, SEARCH_QUERY, REORDER_QUERY,
     CONTENT_STATUS_CTX, REPEAT_SEARCH_TERM_CTX, PAGE_HEADING_CTX, TITLE_CTX,
     HTML_CTX, TEMPLATE_COMMENT_REACTIONS, TEMPLATE_REACTION_CTRLS,
-    REVIEW_QUERY
+    REVIEW_QUERY, IS_REVIEW_CTX
 )
 from opinions.contexts.comment import comments_list_context_for_opinion
 from opinions.enums import QueryArg, QueryStatus, CommentSortOrder, SortOrder
@@ -375,6 +375,14 @@ class CommentInReview(CommentList):
         :return: dict of query args
         """
         return REVIEW_COMMENT_LIST_QUERY_ARGS
+
+    def set_extra_context(self, query_params: dict[str, QueryArg]):
+        """
+        Set the context extra content to be added to context
+        :param query_params: request query
+        """
+        super().set_extra_context(query_params)
+        self.extra_context[IS_REVIEW_CTX] = True
 
     def get_title_heading(self, query_params: dict[str, QueryArg]) -> dict:
         """

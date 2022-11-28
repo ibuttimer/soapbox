@@ -36,7 +36,7 @@
                                             <!-- title -->
                                             <a {% if status.view_ok %} href="{% url 'opinions:opinion_slug' opinion.slug %}?mode=read-only" {% endif %}
                                                class="post-link">
-                                                <h4 id="id_title_{{ forloop.counter }}" class="card-title">
+                                                <h4 id="id--title-{{ forloop.counter }}" class="card-title">
                                                     {% if status.review_no_show %}{{ under_review_title }}{% else %}{{ opinion.title }}{% endif %}
                                                 </h4>
                                             </a>

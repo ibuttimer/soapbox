@@ -219,7 +219,7 @@ def get_comment_query_args(
     :param depth: comment depth; default DEFAULT_COMMENT_DEPTH
     :param page: 1-based page number to get; default 1
     :param per_page: options per page; default PerPage.DEFAULT
-    :return: list of comments (including a 'more' element if necessary)
+    :return: query args for list of comments
     """
     arg_list = [
         (PAGE_QUERY, page),

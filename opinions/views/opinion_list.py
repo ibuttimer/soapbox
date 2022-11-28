@@ -128,8 +128,8 @@ class ListTemplate(Enum):
     """ Enum representing possible response template """
     FULL_TEMPLATE = app_template_path(OPINIONS_APP_NAME, 'opinion_list.html')
     """ Whole page template """
-    CONTENT_TEMPLATE = app_template_path(OPINIONS_APP_NAME,
-                                         'opinion_list_content.html')
+    CONTENT_TEMPLATE = app_template_path(
+        OPINIONS_APP_NAME, 'opinion_list_content.html')
     """ List-only template for requery """
 
 

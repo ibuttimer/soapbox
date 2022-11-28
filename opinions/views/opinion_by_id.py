@@ -60,7 +60,8 @@ from opinions.constants import (
     REDIRECT_CTX, ELEMENT_ID_CTX, HTML_CTX, OPINIONS_ROUTE_NAME, AUTHOR_QUERY,
     STATUS_QUERY, MODE_QUERY, IS_REVIEW_CTX, IS_ASSIGNED_CTX,
     REVIEW_RECORD_CTX, REVIEW_FORM_CTX, REWRITES_PROP_CTX, STATUS_BG_CTX,
-    REVIEW_BUTTON_CTX
+    REVIEW_BUTTON_CTX, ACTION_URL_CTX, OPINION_REVIEW_DECISION_ID_ROUTE_NAME,
+    COMMENT_REVIEW_DECISION_ID_ROUTE_NAME, REVIEW_BUTTON_TIPS_CTX
 )
 from opinions.forms import OpinionForm, CommentForm, ReportForm, ReviewForm
 from opinions.models import (
@@ -81,7 +82,8 @@ from opinions.views.utils import (
     render_opinion_form, comment_permission_check, like_query_args,
     hide_query_args, pin_query_args, generate_excerpt, follow_query_args,
     add_content_no_show_markers, review_permission_check, QueryOption,
-    get_query_args, STATUS_BADGES, REVIEW_STATUS_BUTTONS, form_errors_response
+    get_query_args, STATUS_BADGES, REVIEW_STATUS_BUTTONS, form_errors_response,
+    REVIEW_STATUS_BUTTON_TOOLTIPS, add_review_form_context
 )
 from opinions.enums import QueryStatus, ReactionStatus, ViewMode
 
@@ -153,14 +155,12 @@ class OpinionDetail(LoginRequiredMixin, View):
         }
         if is_review:
             is_assigned = content_status.assigned_view
+            add_review_form_context(
+                mode, effective_status, context=render_args)
             render_args.update({
                 IS_ASSIGNED_CTX: is_assigned,
                 REVIEW_RECORD_CTX: content_review_records_list(opinion_obj),
-                REVIEW_FORM_CTX:
-                    ReviewForm() if effective_status.is_review_wip_status
-                    else None,
                 STATUS_BG_CTX: STATUS_BADGES,
-                REVIEW_BUTTON_CTX: REVIEW_STATUS_BUTTONS,
             })
 
         if view_ok and comment_permission_check(
@@ -752,10 +752,10 @@ def review_status_patch(
     if not current_reviews:
         raise Http404(f"{content.model_name_caps()} is not in review.")
 
+    effective_status = query_params.get(STATUS_QUERY).value
     params = {
         Review.STATUS_FIELD: Status.objects.get(**{
-            f'{Status.NAME_FIELD}':
-                query_params.get(STATUS_QUERY).value.display
+            f'{Status.NAME_FIELD}': effective_status.display
         }),
         Review.REVIEWER_FIELD: request.user
     }
@@ -768,6 +768,26 @@ def review_status_patch(
     save_new_review_status_post(content, new_records)
 
     is_assigned = True
+    # TODO add a route name generator to replace this sort of code
+    route = COMMENT_REVIEW_DECISION_ID_ROUTE_NAME if model != Opinion else \
+        OPINION_REVIEW_DECISION_ID_ROUTE_NAME
+
+    header_context = {
+        # review request header template
+        IS_ASSIGNED_CTX: is_assigned,
+        OPINION_CTX: content,
+        STATUS_BG_CTX: STATUS_BADGES,
+        REVIEW_RECORD_CTX: new_records
+    }
+    review_form_context = add_review_form_context(
+        ViewMode.REVIEW, effective_status)
+    review_form_context.update({
+        # review form template
+        IS_ASSIGNED_CTX: is_assigned,
+        ACTION_URL_CTX: reverse_q(
+            namespaced_url(OPINIONS_APP_NAME, route),
+            args=[content.id]),
+    })
 
     return JsonResponse({
         REWRITES_PROP_CTX: [{
@@ -776,27 +796,14 @@ def review_status_patch(
                 app_template_path(
                     OPINIONS_APP_NAME,
                     "snippet", "review_request_header.html"),
-                context={
-                    # review request header template
-                    IS_ASSIGNED_CTX: is_assigned,
-                    OPINION_CTX: content,
-                    STATUS_BG_CTX: STATUS_BADGES,
-                    REVIEW_RECORD_CTX: new_records
-                },
+                context=header_context,
                 request=request)
             }, {
             ELEMENT_ID_CTX: REVIEW_FORM_CONTAINER_ID,
             HTML_CTX: render_to_string(
                 app_template_path(
                     OPINIONS_APP_NAME, "snippet", "review_form.html"),
-                context={
-                    # review form template
-                    IS_ASSIGNED_CTX: is_assigned,
-                    REVIEW_FORM_CTX: ReviewForm(),
-                    OPINION_CTX: content,
-                    IS_REVIEW_CTX: True,
-                    REVIEW_BUTTON_CTX: REVIEW_STATUS_BUTTONS,
-                },
+                context=review_form_context,
                 request=request)
             }
         ]
@@ -837,7 +844,7 @@ def get_new_review_records(
 def opinion_review_decision_post(
         request: HttpRequest, pk: int) -> JsonResponse:
     """
-    View function to update opinion review status.
+    View function to update opinion review decision status.
     :param request: http request
     :param pk:      id of opinion
     :return: http response
@@ -850,7 +857,7 @@ def opinion_review_decision_post(
 def review_decision_post(
         request: HttpRequest, model: Type[Model], pk: int) -> JsonResponse:
     """
-    View function to update content review status.
+    View function to update content review decision status.
     :param request: http request
     :param model:   content model class
     :param pk:      id of opinion

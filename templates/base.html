@@ -197,6 +197,15 @@
                                         <li>
                                             <a class="dropdown-item" href="{% url 'opinions:opinion_in_review' %}?review=approved">Opinion review approved</a>
                                         </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'opinions:comment_in_review' %}?review=pending-review">Comment review pending</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'opinions:comment_in_review' %}?review=under-review">Comment review in progress</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'opinions:comment_in_review' %}?review=approved">Comment review approved</a>
+                                        </li>
                                         {% endif %}
                                     </ul>
                                 </li>

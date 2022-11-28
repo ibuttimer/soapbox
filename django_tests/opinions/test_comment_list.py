@@ -21,22 +21,23 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 from http import HTTPStatus
-from unittest import skip
+from unittest import skip, TestCase
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from django.http import HttpResponse
 
 from opinions.constants import (
     COMMENTS_ROUTE_NAME, ORDER_QUERY, PAGE_QUERY, PER_PAGE_QUERY,
+    UNDER_REVIEW_COMMENT_CONTENT,
 )
 from opinions.models import Comment
 from opinions.enums import CommentSortOrder, PerPage
-from soapbox import OPINIONS_APP_NAME
+from soapbox import OPINIONS_APP_NAME, USER_APP_NAME
+from user import USER_ID_ROUTE_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
 from .base_comment_test import BaseCommentTest
 from .base_opinion_test import BaseOpinionTest
-from .test_comment_view import TestCommentView
 from ..category_mixin_test import CategoryMixin
 from ..soup_mixin import SoupMixin
 from ..user.base_user_test import BaseUserTest
@@ -216,7 +217,7 @@ def verify_comment_list_content(
     for index, comment in enumerate(expected):
         sub_msg = f'{msg} | index {index} comment "{comment.content}"'
         with test_case.subTest(sub_msg):
-            TestCommentView.verify_comment_content(
+            verify_comment_content(
                 test_case, comment, response, user=user)
 
     if pagination:
@@ -229,3 +230,55 @@ def verify_comment_list_content(
             test_case, soup.find_all('li'),
             lambda tag:
             SoupMixin.equal_tag_attr(tag, 'id', 'current-page'))
+
+
+def verify_comment_content(test_case: TestCase, comment: Comment,
+                           response: HttpResponse, user: User = None):
+    """
+    Verify comment page content for user
+    :param test_case: TestCase instance
+    :param comment: expected comment
+    :param response: opinion response
+    :param user: current user; default None
+    """
+    test_case.assertEqual(response.status_code, HTTPStatus.OK)
+
+    soup = BeautifulSoup(
+        response.content.decode("utf-8", errors="ignore"), features="lxml"
+    )
+
+    # comment author can always see their own
+    under_review = user and comment.user != user
+    if under_review:
+        under_review = any(
+            map(lambda op: op.id == comment.id,
+                test_case.reported_comments)
+        )
+    expected_content = UNDER_REVIEW_COMMENT_CONTENT \
+        if under_review else comment.content
+
+    # check comment card
+    cards = soup.find_all(id=f'id--comment-card-{comment.id}')
+    test_case.assertEqual(len(cards), 1)
+    for child in cards[0].descendants:
+        if isinstance(child, Tag):
+            if child.name == 'img':
+                # author avatar
+                test_case.assertTrue(
+                    SoupMixin.in_tag_attr(
+                        child, 'alt', comment.user.username))
+            elif child.name == 'a' and \
+                    child.get('id') == \
+                    f'id--comment-avatar-link-{comment.id}':
+                # user link
+                test_case.assertTrue(
+                    SoupMixin.in_tag_attr(
+                        child, 'href', reverse_q(
+                            namespaced_url(
+                                USER_APP_NAME, USER_ID_ROUTE_NAME),
+                            args=[comment.user.id])))
+                test_case.assertIn(comment.user.username, child.text)
+            elif child.get('id') == f'id--comment-content-{comment.id}':
+                # comment content
+                test_case.assertEqual(
+                    child.text.strip(), expected_content)

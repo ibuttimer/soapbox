@@ -1,0 +1,21 @@
+<!-- view_js.html start -->
+<script>
+    /**
+     * Update status of content
+     * :param patchUrl: base url to call
+     * :param new_status: new status, one of QueryStatus args
+     */
+    function updateStatusPatch(patchUrl, new_status) {
+        $.ajax({
+            url: `${patchUrl}?status=${new_status}`,
+            method: 'patch',
+            headers: {
+                'X-CSRFTOKEN': '{{ csrf_token }}'
+            }
+        }).done(function(data) {
+            redirect_rewrite_response_handler(data);
+            enableTooltips();
+        });
+    }
+</script>
+<!-- view_js.html end -->

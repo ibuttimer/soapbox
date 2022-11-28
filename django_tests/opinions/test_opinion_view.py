@@ -367,6 +367,7 @@ class TestOpinionView(
         """
         is_readonly = mode.is_non_edit_mode
         is_preview = mode == ViewMode.PREVIEW
+        is_edit = mode == ViewMode.EDIT
 
         test_case.assertEqual(response.status_code, HTTPStatus.OK)
 
@@ -389,7 +390,8 @@ class TestOpinionView(
             expected_content = opinion.excerpt
 
         # check tag for title
-        inputs = soup.find_all(id='id_title')
+        # (in edit mode id is the auto id of the form field)
+        inputs = soup.find_all(id='id_title' if is_edit else 'id--title')
         test_case.assertEqual(len(inputs), 1)
         title = inputs[0].text.strip() if is_readonly \
             else inputs[0].get('value')

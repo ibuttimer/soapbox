@@ -18,9 +18,9 @@
                 <img src="{{ comment_data.avatar_url }}" width="40px" height="40px" alt="{{ comment_data.user.username }} image"
                      id="id--comment-avatar-{{ comment_data.id }}">
                 <p class="mt-0 mb-0">
-                    <a id="id--comment-avatar-link-{{ comment_data.id }}"
-                       href="{% url 'user:user_id' comment_data.user.id %}">{{ comment_data.user.username }}
-                       aria-label="view author's profile"
+                    <a id="id--comment-avatar-link-{{ comment_data.id }}" aria-label="view author's profile"
+                       href="{% url 'user:user_id' comment_data.user.id %}">
+                        {{ comment_data.user.username }}
                     </a>
                 </p>
             </div>
@@ -45,12 +45,22 @@
                     </div>
                 </div>
                 <div class="row">
+                    <!-- review info -->
+                    <div class="col-sm-2 mt-0 mb-0">
+                        {% if is_review %}
+                            <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Review">
+                                <a class="btn btn-info mt-2" href="{% url 'opinions:comment_id' comment_data.id %}?mode=review" aria-label="review comment">
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                </a>
+                            </span>
+                        {% endif %}
+                    </div>
                     <!-- comment updated info -->
-                    <div class="col-sm-6 mt-0 mb-0">
+                    <div class="col-sm-5 mt-0 mb-0">
                         {{ comment_data.updated | localtime | naturaltime }}
                     </div>
                     <!-- comment reactions -->
-                    <div class="col-sm-6 mt-0 mb-0 justify-content-start">
+                    <div class="col-sm-5 mt-0 mb-0 justify-content-start">
 
                         {# --- template variable defines for includes --- #}
                         {# reactions template expects: 'target_id' as id of target opinion/comment #}

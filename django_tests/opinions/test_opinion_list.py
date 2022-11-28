@@ -226,7 +226,7 @@ def verify_opinion_list_content(
         with test_case.subTest(sub_msg):
 
             # check title
-            titles = soup.find_all(id=f'id_title_{index + 1}')
+            titles = soup.find_all(id=f'id--title-{index + 1}')
             test_case.assertEqual(len(titles), 1)
             test_case.assertEqual(
                 titles[0].text.strip(), expected_title, dbg_msg)

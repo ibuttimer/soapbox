@@ -74,7 +74,7 @@
         {% endif %}
 
         <div class="row mb-3">
-            <h1 id="id_title">
+            <h1 id="id--title">
                 {% if view_ok %}{{ opinion.title }}{% else %}{{ under_review_title }}{% endif %}
             </h1>
         </div>
@@ -183,48 +183,37 @@
         </div>
     {% endif %}
 
-    {% include "opinions/snippet/review_form.html" %}
+    {% url 'opinions:review_decision_opinion_id' opinion.id as action %}
+    {% with action_url=action %}
+        {% include "opinions/snippet/review_form.html" %}
+    {% endwith %}
 </article>
 
 {% endblock content %}
 
 {% block extra_js_body %}
+    {% include "opinions/snippet/view_js.html" %}
     <script>
         /**
          * Update status of current opinion
          * :param new_status: new status, one of 'publish', 'preview' or 'draft'
          */
         function updateStatus(new_status) {
-            $.ajax({
-                url: `{% url 'opinions:status_opinion_id' opinion.id %}?status=${new_status}`,
-                method: 'patch',
-                headers: {
-                    'X-CSRFTOKEN': '{{ csrf_token }}'
-                }
-            }).done(function(data) {
-                redirect_rewrite_response_handler(data);
-            });
+            updateStatusPatch("{% url 'opinions:status_opinion_id' opinion.id %}", new_status);
         }
-
-        {% if is_review %}
+    </script>
+    {% if is_review %}
+        <script>
             /**
             * Update review status of current opinion
             * :param new_status: new status, one of 'withdrawn, 'pending-review',
             *                    'under-review', 'approved' or 'rejected'
             */
             function updateReviewStatus(new_status) {
-                $.ajax({
-                    url: "{% url 'opinions:review_status_opinion_id' opinion.id %}?status=" + new_status,
-                    method: 'patch',
-                    headers: {
-                        'X-CSRFTOKEN': '{{ csrf_token }}'
-                    }
-                }).done(function(data) {
-                    redirect_rewrite_response_handler(data);
-                });
+                updateStatusPatch("{% url 'opinions:review_status_opinion_id' opinion.id %}", new_status);
             }
-        {% endif %}
-    </script>
+        </script>
+    {% endif %}
 
     {% if not is_review %}
         {# no comments or reactions in review mode #}

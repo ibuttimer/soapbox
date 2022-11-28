@@ -7,7 +7,8 @@
     {% for bundle in comments %}
 
       {# --- template variable defines for includes --- #}
-      {# comment template expects: 'bundle' as CommentBundle #}
+      {# comment bundle template expects: 'bundle' as CommentBundle #}
+      {#                                  'content_status' as dict with key: comment id, value: ContentStatus #}
 
       {% include "opinions/snippet/comment_bundle.html" %}
 

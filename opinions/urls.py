@@ -52,7 +52,9 @@ from opinions.constants import (
     OPINION_IN_REVIEW_ROUTE_NAME, COMMENT_IN_REVIEW_URL,
     COMMENT_IN_REVIEW_ROUTE_NAME, OPINION_REVIEW_STATUS_ID_URL,
     OPINION_REVIEW_STATUS_ID_ROUTE_NAME, OPINION_REVIEW_DECISION_ID_URL,
-    OPINION_REVIEW_DECISION_ID_ROUTE_NAME,
+    OPINION_REVIEW_DECISION_ID_ROUTE_NAME, COMMENT_REVIEW_STATUS_ID_URL,
+    COMMENT_REVIEW_STATUS_ID_ROUTE_NAME, COMMENT_REVIEW_DECISION_ID_URL,
+    COMMENT_REVIEW_DECISION_ID_ROUTE_NAME,
 )
 from opinions.views.comment_create import (
     OpinionCommentCreate, CommentCommentCreate
@@ -72,7 +74,8 @@ from opinions.views.opinion_list import (
 )
 from opinions.views.comment_by_id import (
     comment_like_patch, comment_report_post, comment_hide_patch,
-    CommentDetailById, CommentDetailBySlug, comment_follow_patch
+    CommentDetailById, CommentDetailBySlug, comment_follow_patch,
+    comment_review_status_patch, comment_review_decision_post
 )
 
 # https://docs.djangoproject.com/en/4.1/topics/http/urls/#url-namespaces-and-included-urlconfs
@@ -117,10 +120,10 @@ urlpatterns = [
     # post opinion report by id
     path(OPINION_REPORT_ID_URL, opinion_report_post,
          name=OPINION_REPORT_ID_ROUTE_NAME),
-    # patch review status by id
+    # patch opinion review status by id
     path(OPINION_REVIEW_STATUS_ID_URL, opinion_review_status_patch,
          name=OPINION_REVIEW_STATUS_ID_ROUTE_NAME),
-    # post review decision by id
+    # post opinion review decision by id
     path(OPINION_REVIEW_DECISION_ID_URL, opinion_review_decision_post,
          name=OPINION_REVIEW_DECISION_ID_ROUTE_NAME),
 
@@ -151,6 +154,12 @@ urlpatterns = [
     # post comment report by id
     path(COMMENT_REPORT_ID_URL, comment_report_post,
          name=COMMENT_REPORT_ID_ROUTE_NAME),
+    # patch comment review status by id
+    path(COMMENT_REVIEW_STATUS_ID_URL, comment_review_status_patch,
+         name=COMMENT_REVIEW_STATUS_ID_ROUTE_NAME),
+    # post comment review decision by id
+    path(COMMENT_REVIEW_DECISION_ID_URL, comment_review_decision_post,
+         name=COMMENT_REVIEW_DECISION_ID_ROUTE_NAME),
 
     # search comments
     path(COMMENT_SEARCH_URL, CommentSearch.as_view(),

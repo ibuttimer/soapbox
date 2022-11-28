@@ -52,14 +52,15 @@ from opinions.constants import (
     UNDER_REVIEW_COMMENT_CONTENT, UNDER_REVIEW_TITLE_CTX,
     UNDER_REVIEW_EXCERPT_CTX, UNDER_REVIEW_TITLE, UNDER_REVIEW_EXCERPT,
     UNDER_REVIEW_OPINION_CONTENT, UNDER_REVIEW_COMMENT_CTX,
-    UNDER_REVIEW_OPINION_CTX, FILTER_QUERY, REVIEW_QUERY, HTML_CTX
+    UNDER_REVIEW_OPINION_CTX, FILTER_QUERY, REVIEW_QUERY, HTML_CTX, TITLE_CTX,
+    REVIEW_FORM_CTX, IS_REVIEW_CTX, REVIEW_BUTTON_CTX, REVIEW_BUTTON_TIPS_CTX
 )
 from opinions.enums import (
     ChoiceArg, QueryArg, QueryStatus, ReactionStatus, OpinionSortOrder,
-    CommentSortOrder, PerPage, Hidden, Pinned, Report, FilterMode
+    CommentSortOrder, PerPage, Hidden, Pinned, Report, FilterMode, ViewMode
 )
 from opinions.models import Opinion, Comment, Review
-from opinions.forms import OpinionForm
+from opinions.forms import OpinionForm, ReviewForm
 
 DEFAULT_COMMENT_DEPTH = 2
 
@@ -76,6 +77,11 @@ STATUS_BADGES = {
 REVIEW_STATUS_BUTTONS = {
     QueryStatus.REJECTED.display: "btn btn-outline-success",
     QueryStatus.APPROVED.display: "btn btn-outline-danger",
+}
+REVIEW_STATUS_BUTTON_TOOLTIPS = {
+    QueryStatus.REJECTED.display: "Reject the report, content acceptable.",
+    QueryStatus.APPROVED.display:
+        "Approve the report, content needs amending.",
 }
 
 # workaround for self type hints from https://peps.python.org/pep-0673/
@@ -232,12 +238,53 @@ def get_opinion_context(title: str, **kwargs) -> dict:
         status = STATUS_DRAFT
 
     context = {
-        'title': title,
+        TITLE_CTX: title,
         READ_ONLY_CTX: kwargs.get(READ_ONLY_CTX, False),
         STATUS_CTX: status,
         STATUS_BG_CTX: STATUS_BADGES.get(status),
     }
 
+    opinion_form = kwargs.get(OPINION_FORM_CTX, None)
+    if opinion_form is not None:
+        context[OPINION_FORM_CTX] = opinion_form
+        context[SUBMIT_URL_CTX] = kwargs.get(SUBMIT_URL_CTX, None)
+
+    for key, value in kwargs.items():
+        if key not in [
+            READ_ONLY_CTX, STATUS_CTX, OPINION_FORM_CTX, SUBMIT_URL_CTX
+        ]:
+            value = kwargs.get(key, None)
+            if value is not None:
+                context[key] = value
+
+    return context
+
+
+def get_comment_context(title: str, **kwargs) -> dict:
+    """
+    Generate the context for the comment template
+    :param title: title
+    :param kwargs: context keyword values
+        comment_submit_url: form commit url, default None
+        comment_form: form to display, default None
+        opinion: opinion object, default None
+        comments: details of comments
+        read_only: read only flag, default False
+        status: status, default None
+    :return: tuple of template path and context
+    """
+    status = kwargs.get(STATUS_CTX, None)
+    if status is None:
+        status = STATUS_DRAFT
+
+    context = {
+        TITLE_CTX: title,
+        READ_ONLY_CTX: kwargs.get(READ_ONLY_CTX, False),
+        STATUS_CTX: status,
+        STATUS_BG_CTX: STATUS_BADGES.get(status),
+    }
+
+    # TODO ???
     opinion_form = kwargs.get(OPINION_FORM_CTX, None)
     if opinion_form is not None:
         context[OPINION_FORM_CTX] = opinion_form
@@ -616,3 +663,29 @@ def form_errors_response(
             },
             request=request),
     }, status=HTTPStatus.BAD_REQUEST)
+
+
+def add_review_form_context(mode: ViewMode, effective_status: QueryStatus,
+                            context: dict = None) -> dict:
+    """
+    Add the review form context to the specified context.
+    :param mode: view mode
+    :param effective_status: effective status of content
+    :param context: context to update; default None
+    :return: updated context
+    """
+    if context is None:
+        context = {}
+
+    is_review = mode == ViewMode.REVIEW
+    context[IS_REVIEW_CTX] = is_review
+    if is_review:
+        context.update({
+            REVIEW_FORM_CTX:
+                ReviewForm() if effective_status.is_review_wip_status
+                else None,
+            REVIEW_BUTTON_CTX: REVIEW_STATUS_BUTTONS,
+            REVIEW_BUTTON_TIPS_CTX: REVIEW_STATUS_BUTTON_TOOLTIPS,
+        })
+
+    return context
