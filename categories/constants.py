@@ -33,14 +33,18 @@ STATUS_WITHDRAWN = 'Withdrawn'              # review request withdrawn
 STATUS_PENDING_REVIEW = 'Pending Review'    # pending review following request
 STATUS_UNDER_REVIEW = 'Under Review'        # under review
 STATUS_APPROVED = 'Approved'            # review approved, content needs work
+""" STATUS_APPROVED is deprecated use STATUS_UNACCEPTABLE instead """
 STATUS_REJECTED = 'Rejected'            # review rejected, content ok
+""" STATUS_REJECTED is deprecated use STATUS_ACCEPTABLE instead """
+STATUS_UNACCEPTABLE = 'Unacceptable'    # review, content needs work
+STATUS_ACCEPTABLE = 'Acceptable'        # review, content ok
 STATUS_DELETED = 'Deleted'              # content deleted
 # status combinations display names
 STATUS_ALL = 'All'
 STATUS_PRE_PUBLISH = 'Prepublish'           # draft or preview
 STATUS_REVIEW_WIP = 'Review In Progress'    # pending review or under review
 STATUS_REVIEW = 'Review'                    # all review-related statuses
-STATUS_REVIEW_OVER = 'Review Complete'      # review approved or rejected
+STATUS_REVIEW_OVER = 'Review Complete'      # review acceptable/unacceptable
 
 CATEGORY_UNASSIGNED = 'Unassigned'
 

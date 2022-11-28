@@ -23,17 +23,14 @@
 from enum import Enum
 from typing import Any, Callable, TypeVar, Optional
 
-from categories import (
-    STATUS_DRAFT, STATUS_PUBLISHED, STATUS_PREVIEW, STATUS_WITHDRAWN,
-    STATUS_PENDING_REVIEW, STATUS_UNDER_REVIEW, STATUS_APPROVED,
-    STATUS_REJECTED,
+from categories.constants import (
+    STATUS_ALL, STATUS_DRAFT, STATUS_PUBLISHED, STATUS_PREVIEW,
+    STATUS_WITHDRAWN, STATUS_PENDING_REVIEW, STATUS_UNDER_REVIEW,
+    STATUS_PRE_PUBLISH, STATUS_REVIEW_WIP, STATUS_REVIEW, STATUS_REVIEW_OVER,
+    STATUS_UNACCEPTABLE, STATUS_ACCEPTABLE,
     REACTION_AGREE, REACTION_DISAGREE, REACTION_HIDE, REACTION_SHOW,
     REACTION_PIN, REACTION_UNPIN, REACTION_FOLLOW, REACTION_UNFOLLOW,
-    REACTION_REPORT
-)
-from categories.constants import (
-    STATUS_ALL, REACTION_SHARE, REACTION_COMMENT, REACTION_DELETE,
-    STATUS_PRE_PUBLISH, STATUS_REVIEW_WIP, STATUS_REVIEW, STATUS_REVIEW_OVER
+    REACTION_REPORT, REACTION_SHARE, REACTION_COMMENT, REACTION_DELETE,
 )
 from categories.models import Status
 from opinions.models import Opinion, Comment
@@ -206,10 +203,9 @@ class QueryStatus(ChoiceArg):
     WITHDRAWN = (STATUS_WITHDRAWN, 'withdrawn')
     PENDING_REVIEW = (STATUS_PENDING_REVIEW, 'pending-review')
     UNDER_REVIEW = (STATUS_UNDER_REVIEW, 'under-review')
-    APPROVED = (STATUS_APPROVED, 'approved')
-    # TODO probably should be 'upheld'
+    UNACCEPTABLE = (STATUS_UNACCEPTABLE, 'unacceptable')
     """ Review approved, content needs work """
-    REJECTED = (STATUS_REJECTED, 'rejected')
+    ACCEPTABLE = (STATUS_ACCEPTABLE, 'acceptable')
     """ Review rejected, content ok """
 
     # statuses corresponding to combinations of multiple database statuses
@@ -248,7 +244,7 @@ class QueryStatus(ChoiceArg):
     @classmethod
     def review_statuses(cls) -> list[TypeQueryStatus]:
         """ List of review statuses """
-        statuses = [QueryStatus.APPROVED]
+        statuses = [QueryStatus.UNACCEPTABLE]
         statuses.extend(cls.review_over_statuses())
         statuses.extend(cls.review_wip_statuses())
         return statuses
@@ -256,12 +252,12 @@ class QueryStatus(ChoiceArg):
     @classmethod
     def review_over_statuses(cls) -> list[TypeQueryStatus]:
         """ List of review over (i.e. ok to view) statuses """
-        return [QueryStatus.WITHDRAWN, QueryStatus.REJECTED]
+        return [QueryStatus.WITHDRAWN, QueryStatus.ACCEPTABLE]
 
     @classmethod
     def review_result_statuses(cls) -> list[TypeQueryStatus]:
         """ List of review result (i.e. review decision) statuses """
-        return [QueryStatus.APPROVED, QueryStatus.REJECTED]
+        return [QueryStatus.UNACCEPTABLE, QueryStatus.ACCEPTABLE]
 
     def listing(self) -> list[TypeQueryStatus]:
         """
@@ -318,7 +314,8 @@ class QueryStatus(ChoiceArg):
         return [
             QueryStatus.DRAFT, QueryStatus.PREVIEW, QueryStatus.PUBLISH,
             QueryStatus.PENDING_REVIEW, QueryStatus.UNDER_REVIEW,
-            QueryStatus.WITHDRAWN, QueryStatus.REJECTED, QueryStatus.APPROVED
+            QueryStatus.WITHDRAWN, QueryStatus.ACCEPTABLE,
+            QueryStatus.UNACCEPTABLE
         ]
 
     def ordinal(self):
@@ -337,7 +334,7 @@ class QueryStatus(ChoiceArg):
 
 
 QueryStatus.DEFAULT = QueryStatus.PUBLISH
-QueryStatus.REVIEW_QUERY_DEFAULT = QueryStatus.REVIEW_WIP
+QueryStatus.REVIEW_QUERY_DEFAULT = QueryStatus.REVIEW
 QueryStatus.REVIEW_SET_DEFAULT = QueryStatus.PENDING_REVIEW
 
 

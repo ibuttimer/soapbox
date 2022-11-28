@@ -100,7 +100,7 @@
                                                 </a>
                                             </span>
                                             {% endif %}
-                                            {% if is_review %}
+                                            {% if is_review and is_moderator %}
                                             <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Review">
                                                 <a class="btn btn-info mt-2" href="{% url 'opinions:opinion_slug' opinion.slug %}?mode=review" aria-label="review {{ opinion.title }}">
                                                     <i class="fa-solid fa-magnifying-glass"></i>

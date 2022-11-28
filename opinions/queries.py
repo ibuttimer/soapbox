@@ -44,7 +44,7 @@ from .query_params import QuerySetParams
 IN_REVIEW_STATUSES = [
     stat.display for stat in QueryStatus.review_wip_statuses()
 ]
-IN_REVIEW_STATUSES.append(QueryStatus.APPROVED.display)
+IN_REVIEW_STATUSES.append(QueryStatus.UNACCEPTABLE.display)
 REVIEW_OVER_STATUSES = [
     stat.display for stat in QueryStatus.review_over_statuses()
 ]
@@ -203,7 +203,7 @@ def get_content_status(
         if review_wip:
             # review process under way if:
             # - status is review pending or under review
-            # - status is review approved, i.e. complaint upheld
+            # - status is review unacceptable, i.e. complaint upheld
             review_wip = False if review_record is None else \
                 review_record.status.name in IN_REVIEW_STATUSES
             checked[StatusCheck.REVIEW_WIP] = True
@@ -212,7 +212,7 @@ def get_content_status(
             # ok to view if:
             # - not reported
             # - current user is a moderator
-            # - status is review withdrawn or review rejected
+            # - status is review withdrawn or review acceptable
             viewable = not reported or is_moderator(current_user)
             if not viewable:
                 viewable = False if review_record is None else \
@@ -402,13 +402,15 @@ def followed_author_publications(
 
 
 def basic_review_query_params(
-    model: Type[models.Model], user: User = None, since: datetime = None
+    model: Type[models.Model], user: User = None, since: datetime = None,
+    history: bool = False
 ) -> QuerySetParams:
     """
     Get the basic params for a Review status query
     :param model: model to check for
     :param user: user to check; default None, i.e. all
     :param since: updates since datetime; default None, i.e. all
+    :param history: include history flag: default False
     :return: query set params
     """
     query_set_params = QuerySetParams()
@@ -419,6 +421,9 @@ def basic_review_query_params(
     if since:
         query_set_params.add_and_lookup(
             Review.UPDATED_FIELD, f"{Review.UPDATED_FIELD}__gte", since)
+    if not history:
+        query_set_params.add_and_lookup(
+            Review.IS_CURRENT_FIELD, Review.IS_CURRENT_FIELD, True)
 
     return query_set_params
 

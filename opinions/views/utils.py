@@ -70,18 +70,17 @@ STATUS_BADGES = {
     QueryStatus.PREVIEW.display: "bg-secondary text-white",
     QueryStatus.PENDING_REVIEW.display: "bg-warning text-dark",
     QueryStatus.UNDER_REVIEW.display: "bg-warning text-dark",
-    QueryStatus.REJECTED.display: "bg-danger text-white",
-    QueryStatus.APPROVED.display: "bg-danger text-white",
+    QueryStatus.ACCEPTABLE.display: "bg-danger text-white",
+    QueryStatus.UNACCEPTABLE.display: "bg-danger text-white",
     QueryStatus.WITHDRAWN.display: "bg-danger text-white",
 }
 REVIEW_STATUS_BUTTONS = {
-    QueryStatus.REJECTED.display: "btn btn-outline-success",
-    QueryStatus.APPROVED.display: "btn btn-outline-danger",
+    QueryStatus.ACCEPTABLE.display: "btn btn-outline-success",
+    QueryStatus.UNACCEPTABLE.display: "btn btn-outline-danger",
 }
 REVIEW_STATUS_BUTTON_TOOLTIPS = {
-    QueryStatus.REJECTED.display: "Reject the report, content acceptable.",
-    QueryStatus.APPROVED.display:
-        "Approve the report, content needs amending.",
+    QueryStatus.ACCEPTABLE.display: "Content acceptable",
+    QueryStatus.UNACCEPTABLE.display: "Content needs amending",
 }
 
 # workaround for self type hints from https://peps.python.org/pep-0673/

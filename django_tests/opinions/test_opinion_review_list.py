@@ -124,7 +124,7 @@ class TestOpinionReviewList(SoupMixin, CategoryMixin, BaseOpinionTest):
         # check contents of first page
         for status in [
             QueryStatus.PENDING_REVIEW, QueryStatus.UNDER_REVIEW,
-            QueryStatus.APPROVED
+            QueryStatus.UNACCEPTABLE
         ]:
             msg = f'{status.display}'
 
@@ -154,7 +154,7 @@ class TestOpinionReviewList(SoupMixin, CategoryMixin, BaseOpinionTest):
             # check contents of first page
             for status in [
                 QueryStatus.PENDING_REVIEW, QueryStatus.UNDER_REVIEW,
-                QueryStatus.APPROVED
+                QueryStatus.UNACCEPTABLE
             ]:
                 msg = f'{status.display}/{order}'
 

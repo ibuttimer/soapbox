@@ -26,8 +26,9 @@ from zoneinfo import ZoneInfo
 from categories import (
     STATUS_DRAFT, STATUS_PREVIEW, STATUS_PUBLISHED, STATUS_PENDING_REVIEW
 )
-from categories.constants import STATUS_DELETED, STATUS_UNDER_REVIEW, \
-    STATUS_APPROVED
+from categories.constants import (
+    STATUS_DELETED, STATUS_UNDER_REVIEW, STATUS_UNACCEPTABLE
+)
 from categories.models import Category, Status
 from opinions.constants import (
     OPINION_PAGINATION_ON_EACH_SIDE, OPINION_PAGINATION_ON_ENDS
@@ -224,7 +225,7 @@ class ContentTestBase(BaseUserTest):
         # add hidden/reported opinions for each user
         report_statuses = [
             None, STATUS_PENDING_REVIEW, STATUS_UNDER_REVIEW,
-            STATUS_APPROVED
+            STATUS_UNACCEPTABLE
         ]
         published = Status.objects.get(name=STATUS_PUBLISHED)
         for user_idx in range(cls.num_users()):

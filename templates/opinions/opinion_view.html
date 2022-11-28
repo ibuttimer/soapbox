@@ -207,7 +207,7 @@
             /**
             * Update review status of current opinion
             * :param new_status: new status, one of 'withdrawn, 'pending-review',
-            *                    'under-review', 'approved' or 'rejected'
+            *                    'under-review', 'unacceptable' or 'acceptable'
             */
             function updateReviewStatus(new_status) {
                 updateStatusPatch("{% url 'opinions:review_status_opinion_id' opinion.id %}", new_status);
