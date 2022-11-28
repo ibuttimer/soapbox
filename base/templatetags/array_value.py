@@ -20,6 +20,7 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
+from typing import Union
 
 from django import template
 
@@ -29,5 +30,5 @@ register = template.Library()
 
 
 @register.simple_tag
-def array_value(array: list, index: int):
+def array_value(array: Union[list, tuple], index: int):
     return array[index]

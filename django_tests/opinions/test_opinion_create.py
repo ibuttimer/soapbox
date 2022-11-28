@@ -50,7 +50,7 @@ class TestOpinionCreate(SoupMixin, BaseUserTest):
     @classmethod
     def setUpTestData(cls):
         """ Set up data for the whole TestCase """
-        super(TestOpinionCreate, TestOpinionCreate).setUpTestData()
+        super(TestOpinionCreate, cls).setUpTestData()
 
     def login_user_by_key(self, name: str | None = None) -> User:
         """
@@ -111,6 +111,7 @@ class TestOpinionCreate(SoupMixin, BaseUserTest):
             response.content.decode("utf-8", errors="ignore"), features="lxml"
         )
         # check input tag for title
+        # (in edit mode id is the auto id of the form field)
         inputs = soup.find_all(id='id_title')
         self.assertEqual(len(inputs), 1)
 

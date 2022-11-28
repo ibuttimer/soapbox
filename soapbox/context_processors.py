@@ -25,8 +25,8 @@ from collections import namedtuple
 
 from django.http import HttpRequest
 
-from user.constants import MODERATOR_GROUP, AUTHOR_GROUP
-from opinions.views.utils import opinion_permissions
+from user.queries import is_moderator, is_author
+from opinions.views.utils import opinion_permissions, add_opinion_context
 from categories.views import category_permissions
 from .constants import COPYRIGHT_YEAR, COPYRIGHT
 
@@ -51,11 +51,12 @@ def footer_context(request: HttpRequest) -> dict:
                    "https://instagram.com"),
         ],
         "is_super": request.user.is_superuser,
-        "is_moderator": request.user.groups.filter(
-            name=MODERATOR_GROUP).exists(),
-        "is_author": request.user.groups.filter(
-            name=AUTHOR_GROUP).exists(),
+        "is_moderator": is_moderator(request.user),
+        "is_author": is_author(request.user),
     }
-    context.update(opinion_permissions(request))
-    context.update(category_permissions(request))
+    # add content permissions; key `<model_name>_<crud_op>` with boolean value
+    opinion_permissions(request, context=context)
+    category_permissions(request, context=context)
+    # add general context updates
+    add_opinion_context(request, context=context)
     return context

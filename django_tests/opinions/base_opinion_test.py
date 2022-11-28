@@ -22,6 +22,7 @@
 #
 from collections import namedtuple
 from datetime import datetime, date
+from typing import List
 from zoneinfo import ZoneInfo
 
 from django.test import TestCase
@@ -31,10 +32,10 @@ from categories.models import Category, Status
 from opinions.constants import (
     STATUS_QUERY, HIDDEN_QUERY, TITLE_QUERY, CONTENT_QUERY, AUTHOR_QUERY,
     CATEGORY_QUERY, ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY,
-    BEFORE_QUERY, PUBLISHED_FIELD
+    BEFORE_QUERY, PUBLISHED_FIELD, REVIEW_QUERY
 )
 from utils import DESC_LOOKUP, DATE_NEWEST_LOOKUP
-from opinions.models import Opinion, HideStatus
+from opinions.models import Opinion, HideStatus, Review
 from opinions.views.utils import DATE_QUERIES
 from opinions.enums import PerPage, OpinionSortOrder, QueryStatus, Hidden
 from user.models import User
@@ -71,12 +72,12 @@ class BaseOpinionTest(ContentTestBase):
             raise ValueError('Not an opinion-related test')
 
         # default status is published if no term in query
-        status = QueryStatus.from_arg(query.get(STATUS_QUERY,
-                                                QueryStatus.PUBLISH.arg))
+        status = QueryStatus.from_arg(
+            query.get(STATUS_QUERY, QueryStatus.PUBLISH.arg))
         if status is None and STATUS_QUERY in query:
             # try partial match
             status = query.get(STATUS_QUERY)
-            status = list(filter(lambda qs: status in qs.arg, QueryStatus))
+            status = partial_status_search(status)
             if len(status) == 1:
                 status = status[0]
 
@@ -100,37 +101,45 @@ class BaseOpinionTest(ContentTestBase):
                 expected
             ))
 
-        for k, v in query.items():
-            if v is None:
+        for k, val in query.items():
+            if val is None:
                 continue
             filter_func = None
             if k in [TITLE_QUERY, CONTENT_QUERY]:
                 filter_func = text_in_field(
                     Opinion.TITLE_FIELD if k == TITLE_QUERY
-                    else Opinion.CONTENT_FIELD, v)
+                    else Opinion.CONTENT_FIELD, val)
             elif k == AUTHOR_QUERY:
                 filter_func = text_in_field([
                     Opinion.USER_FIELD,
                     User.USERNAME_FIELD
-                ], v)
+                ], val)
             elif k == STATUS_QUERY:
-                if status != QueryStatus.ALL:
-                    query_status = \
-                        list(filter(lambda qs: v in qs.arg, QueryStatus))
+                if status not in QueryStatus.combination_statuses():
+                    query_status = partial_status_search(val)
                     test_case.assertEqual(len(query_status), 1,
-                                          f'QueryStatus {v} not found')
+                                          f'QueryStatus {val} not found')
 
                     filter_func = text_in_field([
                         Opinion.STATUS_FIELD,
                         Status.NAME_FIELD
                     ], query_status[0].display)
                 # else all statuses so no need for filtering
+            elif k == REVIEW_QUERY:
+                test_case.assertIn(val, test_case.reported_status_opinions)
+                test_case.assertTrue(len(
+                    test_case.reported_status_opinions[val]) > 0)
+
+                # TODO review multi-status checks
+                def is_review_status(op):
+                    return op.id in test_case.reported_status_opinions[val]
+                filter_func = is_review_status
             elif k == HIDDEN_QUERY:
                 if hidden != Hidden.IGNORE:
                     hidden_status = \
-                        list(filter(lambda h: v in h.arg, Hidden))
+                        list(filter(lambda h: val in h.arg, Hidden))
                     test_case.assertEqual(len(hidden_status), 1,
-                                          f'Hidden {v} not found')
+                                          f'Hidden {val} not found')
                     hidden_status = hidden_status[0]
 
                     # opinions hidden by current user
@@ -150,9 +159,9 @@ class BaseOpinionTest(ContentTestBase):
                         raise NotImplementedError(f'{hidden_status}')
                 # else hidden status ignored so no need for filtering
             elif k == CATEGORY_QUERY:
-                filter_func = category_in_list(v)
+                filter_func = category_in_list(val)
             elif k in DATE_QUERIES:
-                filter_func = date_check(v, k)
+                filter_func = date_check(val, k)
 
             expected = list(
                 filter(
@@ -163,6 +172,18 @@ class BaseOpinionTest(ContentTestBase):
 
         return sort_expected(
             expected, order, per_page, page_num=page_num)
+
+
+def partial_status_search(text: str) -> List[QueryStatus]:
+    """
+    Perform a partial status arg search
+    :param text: text to search for
+    :return: list of matching QueryStatus
+    """
+    return list(
+        filter(lambda qs: text in qs.arg,
+               QueryStatus.non_combination_statuses())
+    )
 
 
 SortCtrl = namedtuple(

@@ -19,8 +19,8 @@ SECRET_KEY='this-is-a-very-secret-key'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 DATABASE_URL=postgresql://username:password@localhost/soapbox
 
-# The database url for the Heroku database (only required for configuration purposes)
-HEROKU_DATABASE_URL=postgres://abcdefghijk:verylongstringofalphanumericchars@ec2-somewhere.datacentre.compute.amazonaws.com:5432/lmnopqrstuv
+# The database url for the remote database (only required for configuration purposes)
+REMOTE_DATABASE_URL=postgres://abcdefghijk:verylongstringofalphanumericchars@ec2-somewhere.datacentre.compute.amazonaws.com:5432/lmnopqrstuv
 
 # Cloudinary url
 # https://pypi.org/project/dj3-cloudinary-storage/

@@ -82,6 +82,7 @@
                             <a class="nav-link active" aria-current="page" href="/">Home</a>
                         </li>
                         {% if user.is_authenticated %}
+                            {# --- opinion menu --- #}
                             <li class="nav-item dropdown">
                                 <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
                                    {% if opinion_create or opinion_read %}
@@ -106,7 +107,7 @@
                                         <a class="dropdown-item" href="{% url 'opinions:opinions' %}?author={{ user.username }}&status=preview">Previews</a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item" href="{% url 'opinions:opinion_in_review' %}?author={{ user.username }}">Review in progress</a>
+                                        <a class="dropdown-item" href="{% url 'opinions:opinion_in_review' %}?author={{ user.username }}">Reviews</a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item" href="{% url 'opinions:opinions' %}?author={{ user.username }}&status=all">All mine</a>
@@ -117,7 +118,10 @@
                                     </li>
                                     {% if opinion_follow %}
                                     <li>
-                                        <a class="dropdown-item" href="{% url 'opinions:opinion_followed' %}">New tagged author opinions</a>
+                                        <a class="dropdown-item" tabindex="-1" href="{% url 'opinions:opinion_followed' %}?filter=new">New tagged author opinions</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" tabindex="-1" href="{% url 'opinions:opinion_followed' %}?filter=all">All tagged author opinions</a>
                                     </li>
                                     {% endif %}
                                     <li>
@@ -126,6 +130,7 @@
                                     {% endif %}
                                 </ul>
                             </li>
+                            {# --- comment menu --- #}
                             <li class="nav-item dropdown">
                                 <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
                                    {% if comment_read %}
@@ -145,7 +150,7 @@
                                         <a class="dropdown-item" href="{% url 'opinions:comments' %}?author={{ user.username }}&status=preview">Previews</a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item" href="{% url 'opinions:comment_in_review' %}?author={{ user.username }}">Review in progress</a>
+                                        <a class="dropdown-item" href="{% url 'opinions:comment_in_review' %}?author={{ user.username }}">Reviews</a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item" href="{% url 'opinions:comments' %}?author={{ user.username }}&status=all">Mine</a>
@@ -157,6 +162,7 @@
                                     {% endif %}
                                 </ul>
                             </li>
+                            {# --- category menu --- #}
                             <li class="nav-item">
                                 <a
                                    {% if category_create or category_read %}
@@ -168,6 +174,42 @@
                                     Category
                                 </a>
                             </li>
+                            {# --- moderator menu --- #}
+                            {% if is_moderator %}
+                                <li class="nav-item dropdown">
+                                    <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
+                                       {% if comment_read %}
+                                       class="nav-link dropdown-toggle"
+                                       {% else %}
+                                       class="nav-link dropdown-toggle disabled"
+                                       {% endif %}
+                                    >
+                                        Moderate
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        {% if review_read %}
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'opinions:opinion_in_review' %}?review=pending-review">Opinion review pending</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'opinions:opinion_in_review' %}?review=under-review">Opinion review in progress</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'opinions:opinion_in_review' %}?review=unacceptable">Opinion review unacceptable</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'opinions:comment_in_review' %}?review=pending-review">Comment review pending</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'opinions:comment_in_review' %}?review=under-review">Comment review in progress</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'opinions:comment_in_review' %}?review=unacceptable">Comment review unacceptable</a>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </li>
+                            {% endif %}
                         {% endif %}
                     </ul>
                     <form class="d-flex" role="search" method="get" action="{% url 'opinions:opinion_search' %}">
@@ -194,7 +236,7 @@
                                 </a>
                                 <ul class="dropdown-menu">
                                     <li>
-                                        <a class="dropdown-item" href="{% url 'user:user_id' user.id %}">Profile</a>
+                                        <a class="dropdown-item" href="{% url 'user:user_id' user.id %}" aria-label="view profile">Profile</a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
@@ -295,6 +337,34 @@
         function enableTooltips() {
             const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
             const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+        }
+
+        const REDIRECT_PROP = 'redirect';
+        const REWRITES_PROP = 'rewrites';
+        const ELEMENT_ID_PROP = 'element_id';
+        const HTML_PROP = 'html';
+
+        const replaceHtml = (data) => $("#" + data[ELEMENT_ID_PROP]).replaceWith(data[HTML_PROP]);
+
+        /**
+         * Handle a redirect/rewrite response
+         * :param data: json data
+         */
+        function redirect_rewrite_response_handler(data) {
+            if (data !== undefined) {
+                if (data.hasOwnProperty(REDIRECT_PROP)) {
+                    // redirect to new url
+                    document.location.href = data[REDIRECT_PROP];
+                } else if (data.hasOwnProperty(ELEMENT_ID_PROP)) {
+                    // replace single element's html
+                    replaceHtml(data);
+                } else if (data.hasOwnProperty(REWRITES_PROP)) {
+                    // replace multiple element's html
+                    for (let element of data[REWRITES_PROP]) {
+                        replaceHtml(element);
+                    }
+                }
+            }
         }
 
         enableTooltips();

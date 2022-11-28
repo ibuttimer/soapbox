@@ -26,7 +26,8 @@ from typing import Optional
 import django
 
 from user.models import User
-from user.permissions import add_to_authors
+from user.permissions import add_to_authors, add_to_moderators
+from user.queries import is_moderator, is_author
 
 # 'allauth' checks for 'django.contrib.sites', so django must be setup before
 # test
@@ -57,11 +58,17 @@ class BaseUserTest(TestCase):
              "flattering-pic.jpg", "The man in the know"),
             ("Ana", "Know_a_bit", "ana.knowledge.some",
              "more-than-8-on-a-plate", "ask.ana@knowledge.some",
-             "nice-pic.jpg", "The woman to ask")
+             "nice-pic.jpg", "The woman to ask"),
+            ("Mod", "Er_ate", "mod.er.ate",
+             "more-than-8-playing-gate", "mod.it@fingers.button",
+             "looking-stern-pic.jpg", "The guy with his finger on the button"),
         ]
     }
+    MODERATOR_USERNAME = "mod"
 
     users: dict[str, User]
+    authors: dict[str, User]
+    moderators: dict[str, User]
 
     @staticmethod
     def create_users() -> dict:
@@ -78,8 +85,19 @@ class BaseUserTest(TestCase):
     def setUpTestData(cls):
         """ Set up data for the whole TestCase """
         cls.users = BaseUserTest.create_users()
+        cls.authors = {}
+        cls.moderators = {}
         for user in cls.users.values():
-            add_to_authors(user)
+            if user.username == cls.MODERATOR_USERNAME:
+                add_to_moderators(user)
+                cls.moderators.update(**{
+                    user.username: user
+                })
+            else:
+                add_to_authors(user)
+                cls.authors.update(**{
+                    user.username: user
+                })
 
     @classmethod
     def get_user_by_index(cls, index: int) -> tuple[User, str]:
@@ -103,24 +121,59 @@ class BaseUserTest(TestCase):
         )[index % len(BaseUserTest.USER_INFO)]
 
     @classmethod
-    def get_other_user(cls, not_this_user: User):
+    def get_other_user(cls, not_this_user: User, moderator: bool = False):
         """
         Get a user other than the specified user
         :param not_this_user: user to not get
+        :param moderator: is moderator flag; default False
         :return: another user
         """
         for user_idx in range(len(cls.users)):
             user, _ = cls.get_user_by_index(user_idx)
             if user != not_this_user:
-                break
+                if moderator and is_moderator(user):
+                    break
+                else:
+                    break
         else:
-            raise ValueError(f'User other than {not_this_user} not found')
+            raise ValueError(
+                f'{"Moderator" if moderator else "User"} other than '
+                f'{not_this_user} not found')
         return user
 
-    @staticmethod
-    def num_users():
+    @classmethod
+    def get_user(cls, moderator: bool = False, author: bool = False):
+        """
+        Get a user
+        :param moderator: is moderator flag; default False
+        :param author: is author flag; default False
+        :return: another user
+        """
+        for user_idx in range(len(cls.users)):
+            user, _ = cls.get_user_by_index(user_idx)
+            if moderator and is_moderator(user):
+                break
+            elif author and is_author(user):
+                break
+        else:
+            raise ValueError(
+                f'{"Moderator" if moderator else "User"} not found')
+        return user
+
+    @classmethod
+    def num_users(cls):
         """ Get number of users """
-        return len(BaseUserTest.USER_INFO)
+        return len(cls.users)
+
+    @classmethod
+    def num_authors(cls):
+        """ Get number of authors """
+        return len(cls.authors)
+
+    @classmethod
+    def num_moderators(cls):
+        """ Get number of moderators """
+        return len(cls.moderators)
 
     @staticmethod
     def login_user(test_instance: TestCase, user: User) -> User:

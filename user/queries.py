@@ -20,35 +20,25 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from .constants import (
-    STATUS_DRAFT, STATUS_PUBLISHED, STATUS_PREVIEW, STATUS_WITHDRAWN,
-    STATUS_PENDING_REVIEW, STATUS_UNDER_REVIEW, STATUS_UNACCEPTABLE,
-    STATUS_ACCEPTABLE,
-    CATEGORY_UNASSIGNED,
-    REACTION_AGREE, REACTION_DISAGREE, REACTION_HIDE, REACTION_SHOW,
-    REACTION_PIN, REACTION_UNPIN, REACTION_FOLLOW, REACTION_UNFOLLOW,
-    REACTION_REPORT
-)
+from .constants import MODERATOR_GROUP, AUTHOR_GROUP
+from .models import User
 
-__all__ = [
-    'STATUS_DRAFT',
-    'STATUS_PUBLISHED',
-    'STATUS_PREVIEW',
-    'STATUS_WITHDRAWN',
-    'STATUS_PENDING_REVIEW',
-    'STATUS_UNDER_REVIEW',
-    'STATUS_UNACCEPTABLE',
-    'STATUS_ACCEPTABLE',
 
-    'CATEGORY_UNASSIGNED',
+def is_moderator(user: User) -> bool:
+    """
+    Check if user is a moderator
+    :param user: user to check
+    :return: True if moderator
+    """
+    return user.groups.filter(name=MODERATOR_GROUP).exists() \
+        if user else False
 
-    'REACTION_AGREE',
-    'REACTION_DISAGREE',
-    'REACTION_HIDE',
-    'REACTION_SHOW',
-    'REACTION_PIN',
-    'REACTION_UNPIN',
-    'REACTION_FOLLOW',
-    'REACTION_UNFOLLOW',
-    'REACTION_REPORT'
-]
+
+def is_author(user: User) -> bool:
+    """
+    Check if user is an author
+    :param user: user to check
+    :return: True if author
+    """
+    return user.groups.filter(name=AUTHOR_GROUP).exists() \
+        if user else False

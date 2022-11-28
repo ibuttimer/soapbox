@@ -38,7 +38,7 @@ class TestCommentModel(BaseOpinionTest):
     @classmethod
     def setUpTestData(cls):
         """ Set up data for the whole TestCase """
-        super(TestCommentModel, TestCommentModel).setUpTestData()
+        super(TestCommentModel, cls).setUpTestData()
 
     def test_comment_defaults(self):
         user, _ = TestCommentModel.get_user_by_index(0)

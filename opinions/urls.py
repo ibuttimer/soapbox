@@ -50,7 +50,11 @@ from opinions.constants import (
     COMMENT_FOLLOW_ID_ROUTE_NAME, OPINION_FOLLOWED_URL,
     OPINION_FOLLOWED_ROUTE_NAME, OPINION_IN_REVIEW_URL,
     OPINION_IN_REVIEW_ROUTE_NAME, COMMENT_IN_REVIEW_URL,
-    COMMENT_IN_REVIEW_ROUTE_NAME,
+    COMMENT_IN_REVIEW_ROUTE_NAME, OPINION_REVIEW_STATUS_ID_URL,
+    OPINION_REVIEW_STATUS_ID_ROUTE_NAME, OPINION_REVIEW_DECISION_ID_URL,
+    OPINION_REVIEW_DECISION_ID_ROUTE_NAME, COMMENT_REVIEW_STATUS_ID_URL,
+    COMMENT_REVIEW_STATUS_ID_ROUTE_NAME, COMMENT_REVIEW_DECISION_ID_URL,
+    COMMENT_REVIEW_DECISION_ID_ROUTE_NAME,
 )
 from opinions.views.comment_create import (
     OpinionCommentCreate, CommentCommentCreate
@@ -62,14 +66,16 @@ from opinions.views.opinion_create import OpinionCreate
 from opinions.views.opinion_by_id import (
     OpinionDetailById, OpinionDetailBySlug, OpinionDetailPreviewById,
     opinion_status_patch, opinion_like_patch, opinion_hide_patch,
-    opinion_pin_patch, opinion_report_post, opinion_follow_patch
+    opinion_pin_patch, opinion_report_post, opinion_follow_patch,
+    opinion_review_status_patch, opinion_review_decision_post
 )
 from opinions.views.opinion_list import (
     OpinionList, OpinionSearch, OpinionFollowed, OpinionInReview
 )
 from opinions.views.comment_by_id import (
     comment_like_patch, comment_report_post, comment_hide_patch,
-    CommentDetailById, CommentDetailBySlug, comment_follow_patch
+    CommentDetailById, CommentDetailBySlug, comment_follow_patch,
+    comment_review_status_patch, comment_review_decision_post
 )
 
 # https://docs.djangoproject.com/en/4.1/topics/http/urls/#url-namespaces-and-included-urlconfs
@@ -114,6 +120,12 @@ urlpatterns = [
     # post opinion report by id
     path(OPINION_REPORT_ID_URL, opinion_report_post,
          name=OPINION_REPORT_ID_ROUTE_NAME),
+    # patch opinion review status by id
+    path(OPINION_REVIEW_STATUS_ID_URL, opinion_review_status_patch,
+         name=OPINION_REVIEW_STATUS_ID_ROUTE_NAME),
+    # post opinion review decision by id
+    path(OPINION_REVIEW_DECISION_ID_URL, opinion_review_decision_post,
+         name=OPINION_REVIEW_DECISION_ID_ROUTE_NAME),
 
     # create comment for opinion by id
     path(OPINION_COMMENT_ID_URL, OpinionCommentCreate.as_view(),
@@ -142,6 +154,12 @@ urlpatterns = [
     # post comment report by id
     path(COMMENT_REPORT_ID_URL, comment_report_post,
          name=COMMENT_REPORT_ID_ROUTE_NAME),
+    # patch comment review status by id
+    path(COMMENT_REVIEW_STATUS_ID_URL, comment_review_status_patch,
+         name=COMMENT_REVIEW_STATUS_ID_ROUTE_NAME),
+    # post comment review decision by id
+    path(COMMENT_REVIEW_DECISION_ID_URL, comment_review_decision_post,
+         name=COMMENT_REVIEW_DECISION_ID_ROUTE_NAME),
 
     # search comments
     path(COMMENT_SEARCH_URL, CommentSearch.as_view(),

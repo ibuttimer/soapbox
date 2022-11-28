@@ -29,6 +29,7 @@ CONTENT_FIELD = "content"
 EXCERPT_FIELD = "excerpt"
 CATEGORIES_FIELD = 'categories'
 STATUS_FIELD = 'status'
+IS_CURRENT_FIELD = 'is_current'
 USER_FIELD = 'user'
 SLUG_FIELD = 'slug'
 CREATED_FIELD = 'created'
@@ -44,6 +45,7 @@ REVIEWER_FIELD = 'reviewer'
 COMMENT_FIELD = 'comment'
 RESOLVED_FIELD = 'resolved'
 AUTHOR_FIELD = 'author'
+REVIEW_RESULT_FIELD = 'review_result'
 
 # Opinion routes related
 OPINIONS_URL = ""
@@ -61,6 +63,8 @@ OPINION_PIN_ID_URL = url_path(OPINION_ID_URL, "pin")
 OPINION_REPORT_ID_URL = url_path(OPINION_ID_URL, "report")
 OPINION_COMMENT_ID_URL = url_path(OPINION_ID_URL, "comment")
 OPINION_FOLLOW_ID_URL = url_path(OPINION_ID_URL, "follow")
+OPINION_REVIEW_STATUS_ID_URL = url_path(OPINION_ID_URL, "review_status")
+OPINION_REVIEW_DECISION_ID_URL = url_path(OPINION_ID_URL, "review_decision")
 
 COMMENTS_URL = append_slash("comments")
 COMMENT_SEARCH_URL = url_path(COMMENTS_URL, "search")
@@ -73,6 +77,8 @@ COMMENT_HIDE_ID_URL = url_path(COMMENT_ID_URL, "hide")
 COMMENT_REPORT_ID_URL = url_path(COMMENT_ID_URL, "report")
 COMMENT_COMMENT_ID_URL = url_path(COMMENT_ID_URL, "comment")
 COMMENT_FOLLOW_ID_URL = url_path(COMMENT_ID_URL, "follow")
+COMMENT_REVIEW_STATUS_ID_URL = url_path(COMMENT_ID_URL, "review_status")
+COMMENT_REVIEW_DECISION_ID_URL = url_path(COMMENT_ID_URL, "review_decision")
 
 OPINIONS_ROUTE_NAME = "opinions"
 OPINION_NEW_ROUTE_NAME = "opinion_new"
@@ -89,6 +95,9 @@ OPINION_PIN_ID_ROUTE_NAME = f"pin_{OPINION_ID_ROUTE_NAME}"
 OPINION_REPORT_ID_ROUTE_NAME = f"report_{OPINION_ID_ROUTE_NAME}"
 OPINION_COMMENT_ID_ROUTE_NAME = f"comment_{OPINION_ID_ROUTE_NAME}"
 OPINION_FOLLOW_ID_ROUTE_NAME = f"follow_{OPINION_ID_ROUTE_NAME}"
+OPINION_REVIEW_STATUS_ID_ROUTE_NAME = f"review_status_{OPINION_ID_ROUTE_NAME}"
+OPINION_REVIEW_DECISION_ID_ROUTE_NAME = \
+    f"review_decision_{OPINION_ID_ROUTE_NAME}"
 
 COMMENTS_ROUTE_NAME = "comments"
 COMMENT_ID_ROUTE_NAME = "comment_id"
@@ -101,6 +110,9 @@ COMMENT_HIDE_ID_ROUTE_NAME = f"hide_{COMMENT_ID_ROUTE_NAME}"
 COMMENT_REPORT_ID_ROUTE_NAME = f"report_{COMMENT_ID_ROUTE_NAME}"
 COMMENT_COMMENT_ID_ROUTE_NAME = f"comment_{COMMENT_ID_ROUTE_NAME}"
 COMMENT_FOLLOW_ID_ROUTE_NAME = f"follow_{COMMENT_ID_ROUTE_NAME}"
+COMMENT_REVIEW_STATUS_ID_ROUTE_NAME = f"review_status_{COMMENT_ID_ROUTE_NAME}"
+COMMENT_REVIEW_DECISION_ID_ROUTE_NAME = \
+    f"review_decision_{COMMENT_ID_ROUTE_NAME}"
 
 ORDER_QUERY: str = 'order'              # opinion order
 PAGE_QUERY: str = 'page'                # page number
@@ -131,6 +143,9 @@ COMMENT_DEPTH_QUERY: str = 'depth'          # comment level depth
 
 # general
 REFERENCE_QUERY: str = 'ref'                # reference
+MODE_QUERY: str = 'mode'                    # mode
+FILTER_QUERY: str = 'filter'                # filter
+REVIEW_QUERY: str = 'review'                # review status
 
 OPINION_PAGINATION_ON_EACH_SIDE = 1
 OPINION_PAGINATION_ON_ENDS = 1
@@ -160,6 +175,7 @@ REPORT_FORM_CTX = 'report_form'
 SUBMIT_URL_CTX = 'submit_url'
 READ_ONLY_CTX = 'read_only'     # read-only mode
 IS_PREVIEW_CTX = 'is_preview'   # preview mode
+IS_REVIEW_CTX = 'is_review'     # review mode
 VIEW_OK_CTX = 'view_ok'         # ok to view flag
 OPINION_CTX = 'opinion'
 COMMENT_CTX = 'comment'
@@ -167,6 +183,7 @@ STATUS_CTX = 'status'
 COMMENTS_CTX = 'comments'
 USER_CTX = 'user'
 CONTENT_STATUS_CTX = "content_status"
+OPINION_CONTENT_STATUS_CTX = "opinion_content_status"
 UNDER_REVIEW_TITLE_CTX = "under_review_title"
 UNDER_REVIEW_EXCERPT_CTX = "under_review_excerpt"
 UNDER_REVIEW_OPINION_CTX = "under_review_opinion"
@@ -176,6 +193,12 @@ HIDDEN_CONTENT_CTX = "hidden_content"
 POPULARITY_CTX = "popularity"
 OPINION_LIST_CTX = "opinion_list"
 STATUS_BG_CTX = "status_bg"
+REVIEW_BUTTON_CTX = "review_button"
+REVIEW_BUTTON_TIPS_CTX = "review_button_tips"
+IS_ASSIGNED_CTX = 'is_assigned'
+REVIEW_RECORD_CTX = 'review_record'
+REVIEW_FORM_CTX = 'review_form'
+ACTION_URL_CTX = 'action_url'
 
 # templates/opinions/snippet/comment_bundle.html
 # list of Reaction for comment
@@ -194,6 +217,7 @@ PAGE_HEADING_CTX = 'page_heading'               # page heading display
 REPEAT_SEARCH_TERM_CTX = 'repeat_search_term'   # search term for query
 REDIRECT_CTX = "redirect"
 
+REWRITES_PROP_CTX = 'rewrites'
 ELEMENT_ID_CTX = 'element_id'
 HTML_CTX = 'html'
 

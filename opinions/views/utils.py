@@ -22,17 +22,20 @@
 #
 from dataclasses import dataclass
 from datetime import datetime
+from http import HTTPStatus
 from typing import Any, Type, Union, List, Optional, TypeVar
 from zoneinfo import ZoneInfo
 
+from django import forms
 from django.core.exceptions import PermissionDenied
-from django.http import HttpRequest
+from django.http import HttpRequest, JsonResponse
 from django.template.defaultfilters import truncatechars
+from django.template.loader import render_to_string
 from bs4 import BeautifulSoup
 
 from opinions.queries import is_following
 from soapbox import OPINIONS_APP_NAME
-from utils import Crud, app_template_path, permission_check
+from utils import Crud, app_template_path, permission_check, find_index
 from categories import (
     STATUS_DRAFT, STATUS_PUBLISHED, CATEGORY_UNASSIGNED
 )
@@ -49,14 +52,15 @@ from opinions.constants import (
     UNDER_REVIEW_COMMENT_CONTENT, UNDER_REVIEW_TITLE_CTX,
     UNDER_REVIEW_EXCERPT_CTX, UNDER_REVIEW_TITLE, UNDER_REVIEW_EXCERPT,
     UNDER_REVIEW_OPINION_CONTENT, UNDER_REVIEW_COMMENT_CTX,
-    UNDER_REVIEW_OPINION_CTX
+    UNDER_REVIEW_OPINION_CTX, FILTER_QUERY, REVIEW_QUERY, HTML_CTX, TITLE_CTX,
+    REVIEW_FORM_CTX, IS_REVIEW_CTX, REVIEW_BUTTON_CTX, REVIEW_BUTTON_TIPS_CTX
 )
 from opinions.enums import (
     ChoiceArg, QueryArg, QueryStatus, ReactionStatus, OpinionSortOrder,
-    CommentSortOrder, PerPage, Hidden, Pinned, Report
+    CommentSortOrder, PerPage, Hidden, Pinned, Report, FilterMode, ViewMode
 )
-from opinions.models import Opinion, Comment
-from opinions.forms import OpinionForm
+from opinions.models import Opinion, Comment, Review
+from opinions.forms import OpinionForm, ReviewForm
 
 DEFAULT_COMMENT_DEPTH = 2
 
@@ -66,9 +70,18 @@ STATUS_BADGES = {
     QueryStatus.PREVIEW.display: "bg-secondary text-white",
     QueryStatus.PENDING_REVIEW.display: "bg-warning text-dark",
     QueryStatus.UNDER_REVIEW.display: "bg-warning text-dark",
-    QueryStatus.REJECTED.display: "bg-danger text-white",
+    QueryStatus.ACCEPTABLE.display: "bg-danger text-white",
+    QueryStatus.UNACCEPTABLE.display: "bg-danger text-white",
+    QueryStatus.WITHDRAWN.display: "bg-danger text-white",
 }
-
+REVIEW_STATUS_BUTTONS = {
+    QueryStatus.ACCEPTABLE.display: "btn btn-outline-success",
+    QueryStatus.UNACCEPTABLE.display: "btn btn-outline-danger",
+}
+REVIEW_STATUS_BUTTON_TOOLTIPS = {
+    QueryStatus.ACCEPTABLE.display: "Content acceptable",
+    QueryStatus.UNACCEPTABLE.display: "Content needs amending",
+}
 
 # workaround for self type hints from https://peps.python.org/pep-0673/
 TypeQueryOption = TypeVar("TypeQueryOption", bound="QueryOption")
@@ -123,9 +136,23 @@ OPINION_LIST_QUERY_ARGS = OPINION_REORDER_QUERY_ARGS.copy()
 OPINION_LIST_QUERY_ARGS.extend([
     # non-reorder query args
     QueryOption.of_no_cls_dflt(AUTHOR_QUERY),
-    QueryOption(PINNED_QUERY, Pinned, Pinned.IGNORE),
+    QueryOption(PINNED_QUERY, Pinned, Pinned.DEFAULT),
 ])
 OPINION_LIST_QUERY_ARGS.extend(APPLIED_DEFAULTS_QUERY_ARGS)
+# request arguments for a followed authors list request
+# (replace pinned with filter)
+FOLLOWED_OPINION_LIST_QUERY_ARGS = OPINION_LIST_QUERY_ARGS.copy()
+find_index(
+    FOLLOWED_OPINION_LIST_QUERY_ARGS, PINNED_QUERY,
+    mapper=lambda item: item.query,
+    replace=QueryOption(FILTER_QUERY, FilterMode, FilterMode.DEFAULT)
+)
+# request arguments for a review opinions list request
+REVIEW_OPINION_LIST_QUERY_ARGS = FOLLOWED_OPINION_LIST_QUERY_ARGS.copy()
+REVIEW_OPINION_LIST_QUERY_ARGS.extend([
+    # non-reorder query args
+    QueryOption(REVIEW_QUERY, QueryStatus, QueryStatus.REVIEW_QUERY_DEFAULT),
+])
 
 # args for a comment reorder/next page/etc. request
 COMMENT_REORDER_QUERY_ARGS = [
@@ -148,13 +175,17 @@ COMMENT_LIST_QUERY_ARGS.extend([
     QueryOption.of_no_cls_dflt(ID_QUERY),
 ])
 COMMENT_LIST_QUERY_ARGS.extend(APPLIED_DEFAULTS_QUERY_ARGS)
+# request arguments for a review comments list request
+REVIEW_COMMENT_LIST_QUERY_ARGS = COMMENT_LIST_QUERY_ARGS.copy()
+REVIEW_COMMENT_LIST_QUERY_ARGS.extend([
+    # non-reorder query args
+    QueryOption.of_no_cls_dflt(AUTHOR_QUERY),
+    QueryOption(FILTER_QUERY, FilterMode, FilterMode.DEFAULT),
+    QueryOption(REVIEW_QUERY, QueryStatus, QueryStatus.REVIEW_QUERY_DEFAULT),
+])
 
 # query args sent for list request which are not always sent with
 # a reorder request
-NON_REORDER_OPINION_LIST_QUERY_ARGS = [
-    a.query for a in OPINION_LIST_QUERY_ARGS
-    if a.query not in REORDER_REQ_QUERY_ARGS
-]
 NON_REORDER_COMMENT_LIST_QUERY_ARGS = [
     a.query for a in COMMENT_LIST_QUERY_ARGS
     if a.query not in REORDER_REQ_QUERY_ARGS
@@ -206,12 +237,53 @@ def get_opinion_context(title: str, **kwargs) -> dict:
         status = STATUS_DRAFT
 
     context = {
-        'title': title,
+        TITLE_CTX: title,
         READ_ONLY_CTX: kwargs.get(READ_ONLY_CTX, False),
         STATUS_CTX: status,
         STATUS_BG_CTX: STATUS_BADGES.get(status),
     }
 
+    opinion_form = kwargs.get(OPINION_FORM_CTX, None)
+    if opinion_form is not None:
+        context[OPINION_FORM_CTX] = opinion_form
+        context[SUBMIT_URL_CTX] = kwargs.get(SUBMIT_URL_CTX, None)
+
+    for key, value in kwargs.items():
+        if key not in [
+            READ_ONLY_CTX, STATUS_CTX, OPINION_FORM_CTX, SUBMIT_URL_CTX
+        ]:
+            value = kwargs.get(key, None)
+            if value is not None:
+                context[key] = value
+
+    return context
+
+
+def get_comment_context(title: str, **kwargs) -> dict:
+    """
+    Generate the context for the comment template
+    :param title: title
+    :param kwargs: context keyword values
+        comment_submit_url: form commit url, default None
+        comment_form: form to display, default None
+        opinion: opinion object, default None
+        comments: details of comments
+        read_only: read only flag, default False
+        status: status, default None
+    :return: tuple of template path and context
+    """
+    status = kwargs.get(STATUS_CTX, None)
+    if status is None:
+        status = STATUS_DRAFT
+
+    context = {
+        TITLE_CTX: title,
+        READ_ONLY_CTX: kwargs.get(READ_ONLY_CTX, False),
+        STATUS_CTX: status,
+        STATUS_BG_CTX: STATUS_BADGES.get(status),
+    }
+
+    # TODO ???
     opinion_form = kwargs.get(OPINION_FORM_CTX, None)
     if opinion_form is not None:
         context[OPINION_FORM_CTX] = opinion_form
@@ -378,51 +450,91 @@ def get_query_args(
     return params
 
 
-def opinion_permissions(request: HttpRequest) -> dict:
+def opinion_permissions(request: HttpRequest, context: dict = None) -> dict:
     """
     Get the current user's permissions for Opinions
     :param request: current request
-    :return: dict of permissions
+    :param context: context to update; default None
+    :return: dict of permissions with
+            `<model_name>_<crud_op>` as key and boolean value
     """
-    permissions = {}
-    opinion_model_name = Opinion.model_name().lower()
+    if context is None:
+        context = {}
+    # permissions for opinion and comment
     for model, check_func in [
-        (opinion_model_name, opinion_permission_check),
-        (Comment.model_name().lower(), comment_permission_check)
+        (Opinion, opinion_permission_check),
+        (Comment, comment_permission_check),
+        (Review, review_permission_check),
     ]:
-        permissions.update({
-            f'{model}_{op.name.lower()}':
-                check_func(request, op, raise_ex=False)
-            for op in Crud
+        context.update({
+            f'{model.model_name().lower()}_{crud_op.name.lower()}':
+                check_func(request, crud_op, raise_ex=False)
+            for crud_op in Crud
         })
-    permissions.update({
+        for perm, _ in model._meta.permissions:
+            context.update({
+                f'{perm}': check_func(request, perm, raise_ex=False)
+            })
+
+    return context
+
+
+def add_opinion_context(request: HttpRequest, context: dict = None) -> dict:
+    """
+    Add opinion-specific context entries
+    :param request: current request
+    :param context: context to update; default None
+    :return: updated context
+    """
+    if context is None:
+        context = {}
+    opinion_model_name = Opinion.model_name().lower()
+    context.update({
         f'{opinion_model_name}_follow': is_following(request.user).exists()
     })
-    return permissions
+    return context
 
 
-def opinion_permission_check(request: HttpRequest, op: Crud,
-                             raise_ex: bool = True) -> bool:
+def opinion_permission_check(
+        request: HttpRequest,
+        perm_op: Union[Union[Crud, str], List[Union[Crud, str]]],
+        raise_ex: bool = True) -> bool:
     """
     Check request user has specified opinion permission
     :param request: http request
-    :param op: Crud operation to check
+    :param perm_op: Crud operation or permission name to check
     :param raise_ex: raise exception; default True
     """
-    return permission_check(request, Opinion, op, app_label=OPINIONS_APP_NAME,
-                            raise_ex=raise_ex)
+    return permission_check(request, Opinion, perm_op,
+                            app_label=OPINIONS_APP_NAME, raise_ex=raise_ex)
 
 
-def comment_permission_check(request: HttpRequest, op: Crud,
-                             raise_ex: bool = True) -> bool:
+def comment_permission_check(
+        request: HttpRequest,
+        perm_op: Union[Union[Crud, str], List[Union[Crud, str]]],
+        raise_ex: bool = True) -> bool:
     """
     Check request user has specified comment permission
     :param request: http request
-    :param op: Crud operation to check
+    :param perm_op: Crud operation or permission name to check
     :param raise_ex: raise exception; default True
     """
-    return permission_check(request, Comment, op, app_label=OPINIONS_APP_NAME,
-                            raise_ex=raise_ex)
+    return permission_check(request, Comment, perm_op,
+                            app_label=OPINIONS_APP_NAME, raise_ex=raise_ex)
+
+
+def review_permission_check(
+        request: HttpRequest,
+        perm_op: Union[Union[Crud, str], List[Union[Crud, str]]],
+        raise_ex: bool = True) -> bool:
+    """
+    Check request user has specified review permission
+    :param request: http request
+    :param perm_op: Crud operation or permission name to check
+    :param raise_ex: raise exception; default True
+    """
+    return permission_check(request, Review, perm_op,
+                            app_label=OPINIONS_APP_NAME, raise_ex=raise_ex)
 
 
 def own_content_check(
@@ -493,15 +605,6 @@ def generate_excerpt(content: str):
         soup.get_text(), Opinion.OPINION_ATTRIB_EXCERPT_MAX_LEN)
 
 
-def ensure_list(item: Any) -> list[Any]:
-    """
-    Ensure argument is returned as a list
-    :param item: item(s) to return as list
-    :return: list
-    """
-    return item if isinstance(item, list) else [item]
-
-
 def query_search_term(
     query_params: dict[str, QueryArg], exclude_queries: list[str] = None,
     join_by: str = '&'
@@ -539,4 +642,49 @@ def add_content_no_show_markers(context: dict = None) -> dict:
         DELETED_CONTENT_CTX: DELETED_CONTENT,
         HIDDEN_CONTENT_CTX: HIDDEN_COMMENT_CONTENT,
     })
+    return context
+
+
+def form_errors_response(
+        form: forms.ModelForm, request: HttpRequest = None) -> JsonResponse:
+    """
+    Get a form errors response
+    :param form: processed form
+    :param request: request from client; default None
+    :return: response
+    """
+    return JsonResponse({
+        HTML_CTX: render_to_string(
+            app_template_path(
+                "snippet", "form_errors.html"),
+            context={
+                'form': form,
+            },
+            request=request),
+    }, status=HTTPStatus.BAD_REQUEST)
+
+
+def add_review_form_context(mode: ViewMode, effective_status: QueryStatus,
+                            context: dict = None) -> dict:
+    """
+    Add the review form context to the specified context.
+    :param mode: view mode
+    :param effective_status: effective status of content
+    :param context: context to update; default None
+    :return: updated context
+    """
+    if context is None:
+        context = {}
+
+    is_review = mode == ViewMode.REVIEW
+    context[IS_REVIEW_CTX] = is_review
+    if is_review:
+        context.update({
+            REVIEW_FORM_CTX:
+                ReviewForm() if effective_status.is_review_wip_status
+                else None,
+            REVIEW_BUTTON_CTX: REVIEW_STATUS_BUTTONS,
+            REVIEW_BUTTON_TIPS_CTX: REVIEW_STATUS_BUTTON_TOOLTIPS,
+        })
+
     return context

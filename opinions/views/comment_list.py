@@ -23,7 +23,7 @@
 from enum import Enum
 from http import HTTPStatus
 from string import capwords
-from typing import Type, Callable, Tuple, Optional, Union
+from typing import Type, Callable, Tuple, Optional, Union, List
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -41,12 +41,13 @@ from opinions.comment_utils import (
 from opinions.constants import (
     STATUS_QUERY, AUTHOR_QUERY, SEARCH_QUERY, REORDER_QUERY,
     CONTENT_STATUS_CTX, REPEAT_SEARCH_TERM_CTX, PAGE_HEADING_CTX, TITLE_CTX,
-    HTML_CTX, TEMPLATE_COMMENT_REACTIONS, TEMPLATE_REACTION_CTRLS
+    HTML_CTX, TEMPLATE_COMMENT_REACTIONS, TEMPLATE_REACTION_CTRLS,
+    REVIEW_QUERY, IS_REVIEW_CTX
 )
 from opinions.contexts.comment import comments_list_context_for_opinion
 from opinions.enums import QueryArg, QueryStatus, CommentSortOrder, SortOrder
 from opinions.models import Comment
-from opinions.queries import in_review_content
+from opinions.queries import review_content_by_status
 from opinions.query_params import QuerySetParams
 from opinions.reactions import (
     COMMENT_REACTIONS, get_reaction_status, ReactionsList
@@ -54,9 +55,10 @@ from opinions.reactions import (
 from opinions.views.content_list_mixin import ContentListMixin
 from opinions.views.utils import (
     comment_permission_check, REORDER_REQ_QUERY_ARGS,
-    NON_REORDER_COMMENT_LIST_QUERY_ARGS, query_search_term, get_query_args,
+    query_search_term, get_query_args,
     COMMENT_LIST_QUERY_ARGS, COMMENT_SEARCH_QUERY_ARGS,
-    add_content_no_show_markers
+    add_content_no_show_markers, QueryOption,
+    NON_REORDER_COMMENT_LIST_QUERY_ARGS, REVIEW_COMMENT_LIST_QUERY_ARGS
 )
 from soapbox import OPINIONS_APP_NAME, GET
 from utils import Crud, app_template_path
@@ -83,8 +85,11 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
     # inherited from MultipleObjectMixin via ListView
     model = Comment
 
-    response_template: ListTemplate
-    """ Response template to use """
+    def __init__(self):
+        # response template to use
+        self.response_template = ListTemplate.FULL_TEMPLATE
+
+        self.initialise(non_reorder_args=NON_REORDER_COMMENT_LIST_QUERY_ARGS)
 
     def permission_check_func(
             self) -> Callable[[HttpRequest, Crud, bool], bool]:
@@ -94,12 +99,12 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
         """
         return comment_permission_check
 
-    def req_query_args(self) -> Callable[[HttpRequest], dict[str, QueryArg]]:
+    def valid_req_query_args(self) -> List[QueryOption]:
         """
-        Get the request query args function
-        :return: request query args function
+        Get the valid request query args
+        :return: dict of query args
         """
-        return comment_list_query_args
+        return COMMENT_LIST_QUERY_ARGS
 
     def set_extra_context(self, query_params: dict[str, QueryArg]):
         """
@@ -120,9 +125,7 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
         Get the title and page heading for context
         :param query_params: request query
         """
-        if query_params.get(
-                AUTHOR_QUERY, QueryArg(None, False)
-        ).value == self.user.username:
+        if self.is_query_own(query_params):
             # current users comments by status
             status = query_params.get(
                 STATUS_QUERY, QueryArg(QueryStatus.DEFAULT, False)).value
@@ -158,7 +161,7 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
         if query_set_params is None:
             query_set_params = QuerySetParams()
 
-        for query in NON_REORDER_COMMENT_LIST_QUERY_ARGS:
+        for query in self.valid_req_non_reorder_query_args():
             get_comment_lookup(query, query_params[query].value, self.user,
                                query_set_params=query_set_params)
 
@@ -261,13 +264,12 @@ class CommentSearch(CommentList):
     Search Opinion list response
     """
 
-    def req_query_args(self) -> Callable[[HttpRequest], dict[str, QueryArg]]:
+    def valid_req_query_args(self) -> List[QueryOption]:
         """
-        Get the request query args function
-        :return: request query args function
+        Get the valid request query args
+        :return: dict of query args
         """
-        return \
-            lambda request: get_query_args(request, COMMENT_SEARCH_QUERY_ARGS)
+        return COMMENT_SEARCH_QUERY_ARGS
 
     def set_extra_context(self, query_params: dict[str, QueryArg]):
         """
@@ -367,22 +369,39 @@ class CommentInReview(CommentList):
 
     QS_PARAMS = 'qs_params'
 
-    def req_query_args(self) -> Callable[[HttpRequest], dict[str, QueryArg]]:
+    def valid_req_query_args(self) -> List[QueryOption]:
         """
-        Get the request query args function
-        :return: request query args function
+        Get the valid request query args
+        :return: dict of query args
         """
-        # TODO probably should be a more restricted list of args
-        return super().req_query_args()
+        return REVIEW_COMMENT_LIST_QUERY_ARGS
+
+    def set_extra_context(self, query_params: dict[str, QueryArg]):
+        """
+        Set the context extra content to be added to context
+        :param query_params: request query
+        """
+        super().set_extra_context(query_params)
+        self.extra_context[IS_REVIEW_CTX] = True
 
     def get_title_heading(self, query_params: dict[str, QueryArg]) -> dict:
         """
         Get the title and page heading for context
         :param query_params: request query
         """
+        status = query_params.get(
+            REVIEW_QUERY, QueryStatus.REVIEW_QUERY_DEFAULT).value
+        is_own = self.is_query_own(query_params)
+        if self.get_since(query_params) is None:
+            title = f'{status.display} comments'
+            heading = capwords(f'All {"my " if is_own else ""}{title}')
+        else:
+            title = f'New {status.display} comments'
+            heading = capwords(f'{"My " if is_own else ""}{title}')
+
         return {
-            TITLE_CTX: 'Review Comments',
-            PAGE_HEADING_CTX: 'Comments in Review',
+            TITLE_CTX: title,
+            PAGE_HEADING_CTX: heading,
         }
 
     def set_queryset(
@@ -403,19 +422,26 @@ class CommentInReview(CommentList):
         if query_kwargs is None:
             query_kwargs = {}
 
-        query_kwargs[CommentInReview.QS_PARAMS] = self.get_queryset_params()
+        query_kwargs[CommentInReview.QS_PARAMS] = \
+            self.get_queryset_params(query_params)
 
         return query_set_params, query_kwargs
 
-    def get_queryset_params(self) -> Optional[Union[QuerySet, QuerySetParams]]:
+    def get_queryset_params(
+            self, query_params: dict[str, QueryArg]
+    ) -> Optional[Union[QuerySet, QuerySetParams]]:
         """
         Get the queryset to get the list of items for this view
+        :param query_params: request query
         :return: query set params
         """
-        # TODO all in review and new in review
-        return in_review_content(
-            self.user, Comment, since=self.user.previous_login,
-            as_params=True)
+        since = self.get_since(query_params)
+
+        statuses = query_params.get(
+            REVIEW_QUERY, QueryStatus.REVIEW_QUERY_DEFAULT).value.listing()
+
+        return review_content_by_status(Comment, statuses, since=since,
+                                        as_params=True)
 
     def apply_queryset_param(
             self, query_set_params: QuerySetParams, **kwargs):

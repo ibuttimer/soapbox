@@ -35,7 +35,7 @@ from django.urls import resolve
 from django.views import View
 from django.views.decorators.http import require_http_methods
 
-from categories.constants import STATUS_DELETED
+from categories.constants import STATUS_DELETED, STATUS_PREVIEW
 from categories.models import Status
 from opinions.comment_data import (
     get_comment_query_args, CommentData, get_comments_review_status
@@ -46,22 +46,29 @@ from opinions.constants import (
     COMMENT_SLUG_ROUTE_NAME, OPINION_CTX, COMMENT_FORM_CTX, REPORT_FORM_CTX,
     ELEMENT_ID_CTX, HTML_CTX, REFERENCE_QUERY, COMMENTS_ROUTE_NAME,
     COMMENT_DATA_CTX, CONTENT_STATUS_CTX, OPINION_ID_ROUTE_NAME,
-    OPINION_SLUG_ROUTE_NAME,
+    OPINION_SLUG_ROUTE_NAME, MODE_QUERY, READ_ONLY_CTX, IS_ASSIGNED_CTX,
+    REVIEW_RECORD_CTX, STATUS_BG_CTX, IS_PREVIEW_CTX, IS_REVIEW_CTX,
+    OPINION_CONTENT_STATUS_CTX,
 )
-from opinions.enums import ReactionStatus
-from opinions.forms import CommentForm, ReviewForm
+from opinions.enums import ReactionStatus, ViewMode
+from opinions.forms import CommentForm, ReportForm
 from opinions.models import Comment
 from opinions.contexts.comment import (
     get_comment_bundle_context, comments_list_context_for_opinion
 )
-from opinions.queries import content_status_check
+from opinions.queries import (
+    content_status_check, effective_content_status, content_review_records_list
+)
 from opinions.reactions import COMMENT_REACTIONS
 from opinions.views.opinion_by_id import (
-    like_patch, report_post, hide_patch, follow_patch
+    like_patch, report_post, hide_patch, follow_patch, review_status_patch,
+    review_decision_post, TITLE_UPDATE
 )
 from opinions.views.utils import (
     opinion_permission_check, comment_permission_check, DEFAULT_COMMENT_DEPTH,
-    published_check, own_content_check, add_content_no_show_markers
+    published_check, own_content_check, add_content_no_show_markers,
+    get_query_args, QueryOption, STATUS_BADGES, get_comment_context,
+    add_review_form_context
 )
 from soapbox import PATCH, POST, OPINIONS_APP_NAME
 from utils import (
@@ -74,10 +81,13 @@ class CommentTemplate(Enum):
     OPINION_LIST_TEMPLATE = \
         app_template_path(
             OPINIONS_APP_NAME, "snippet", "comment_bundle.html"),
-    """ Template for individual comments in view opinion, comment list"""
+    """ Template for individual comments in view opinion, comment list """
     COMMENT_LIST_TEMPLATE = app_template_path(
         OPINIONS_APP_NAME, "snippet", "comment.html")
-    """ Template for individual comments in comment list"""
+    """ Template for individual comments in comment list """
+    COMMENT_VIEW_TEMPLATE = app_template_path(
+        OPINIONS_APP_NAME, "comment_view.html")
+    """ Template for comments by id/slug """
 
 
 CommentTemplate.DEFAULT = CommentTemplate.OPINION_LIST_TEMPLATE
@@ -101,50 +111,96 @@ class CommentDetail(LoginRequiredMixin, View):
         comment_permission_check(request, Crud.READ)
 
         comment_obj = self._get_comment(identifier)
+        opinion_obj = comment_obj.opinion
+
+        # get query params
+        query_params = get_query_args(
+            request, QueryOption(MODE_QUERY, ViewMode, ViewMode.DEFAULT))
+        mode = query_params.get(MODE_QUERY).value
 
         # perform own comment check
-        is_own = own_content_check(request, comment_obj, raise_ex=False)
+        is_own = own_content_check(
+            request, comment_obj,
+            raise_ex=mode == ViewMode.EDIT)
 
         # perform published check, other users don't have access to
         # unpublished comments
         published_check(request, comment_obj)
 
+        # read only if specifically requested, or not current user's comment
+        read_only = True if mode.is_non_edit_mode else \
+            kwargs.get(READ_ONLY_CTX, not is_own)
+        is_preview = comment_obj.status.name == STATUS_PREVIEW or \
+            mode == ViewMode.PREVIEW
+        is_review = mode == ViewMode.REVIEW
+
         # ok to view check
         content_status = content_status_check(
             comment_obj, current_user=request.user)
+        opinion_content_status = content_status_check(
+            opinion_obj, current_user=request.user)
         # users can always view their own comments
         view_ok = is_own \
             if not content_status.view_ok else content_status.view_ok
+        effective_status = effective_content_status(comment_obj)
 
         render_args = {
+            READ_ONLY_CTX: read_only,
             VIEW_OK_CTX: view_ok,
-            COMMENT_CTX: comment_obj,
-            OPINION_CTX: comment_obj.opinion,
-            STATUS_CTX: comment_obj.status,
-            COMMENT_FORM_CTX: CommentForm(),
-            REPORT_FORM_CTX: ReviewForm(),
+            COMMENT_CTX: CommentData(comment_obj),
+            OPINION_CTX: opinion_obj,
+            STATUS_CTX: effective_status.display,
+            IS_PREVIEW_CTX: is_preview,
+            IS_REVIEW_CTX: is_review,
+            OPINION_CONTENT_STATUS_CTX: opinion_content_status
         }
+        if is_review:
+            is_assigned = content_status.assigned_view
+            add_review_form_context(
+                mode, effective_status, context=render_args)
+            render_args.update({
+                IS_ASSIGNED_CTX: is_assigned,
+                REVIEW_RECORD_CTX: content_review_records_list(comment_obj),
+                STATUS_BG_CTX: STATUS_BADGES,
+            })
 
-        # get first page comments
-        query_params = get_comment_query_args(
-            opinion=comment_obj.opinion, comment=comment_obj)
-        render_args = comments_list_context_for_opinion(
-            query_params, request.user, context=render_args)
+        if comment_permission_check(
+                request, Crud.READ, raise_ex=False):
+            # get first page comments on comment
+            comments_list_context_for_opinion(
+                get_comment_query_args(
+                    opinion=opinion_obj, parent=comment_obj),
+                request.user, context=render_args
+            )
 
-        render_args.update({
-            USER_CTX: request.user,
-        })
-        render_args.update({
-               # visible opinion which may have not visible
-               # under review comments
-               COMMENT_FORM_CTX: CommentForm(),
-               REPORT_FORM_CTX: ReviewForm(),
-           } if view_ok else
-                # not visible under review opinion
-                add_content_no_show_markers()
+        if read_only:
+            # viewing comment
+            renderer = _render_view
+            render_args.update({
+                USER_CTX: request.user,
+            })
+            render_args.update({
+                   # visible opinion which may have not visible
+                   # under review comments
+                   COMMENT_FORM_CTX: CommentForm(),
+                   REPORT_FORM_CTX: ReportForm(),
+               } if view_ok else
+                    # not visible under review opinion
+                    add_content_no_show_markers()
+            )
+        else:
+            # updating comment
+            raise NotImplementedError("comment update not implemented")
+            # renderer = render_opinion_form
+            # render_args.update({
+            #     SUBMIT_URL_CTX: self.url(opinion_obj),
+            #     OPINION_FORM_CTX: OpinionForm(instance=opinion_obj),
+            # })
+
+        template_path, context = renderer(
+            f'Comment on {opinion_obj.title}' if read_only else TITLE_UPDATE,
+            **render_args
         )
-
-        template_path, context = _render_view(**render_args)
         return render(request, template_path, context=context)
 
     def delete(self, request: HttpRequest,
@@ -200,7 +256,7 @@ class CommentDetail(LoginRequiredMixin, View):
 
     def url(self, comment_obj: Comment) -> str:
         """
-        Get url for comment view/update
+        Get url for comment view/update/delete
         :param comment_obj: opinion
         :return: url
         """
@@ -208,13 +264,14 @@ class CommentDetail(LoginRequiredMixin, View):
             "'url' method must be overridden by sub classes")
 
 
-def _render_view(**kwargs):
+def _render_view(title: str, **kwargs):
     """
-    Render the opinion view
+    Render the comment view
+    :param title: title
     :param kwargs: context keyword values, see get_opinion_context()
     :return: tuple of template path and context
     """
-    context = kwargs.copy()
+    context = get_comment_context(title, **kwargs)
 
     # get reaction controls for opinion & comments
     reaction_ctrls = kwargs.get(TEMPLATE_REACTION_CTRLS, {})
@@ -230,7 +287,7 @@ def _render_view(**kwargs):
 
 class CommentDetailById(CommentDetail):
     """
-    Class-based view for individual comment view/update by id
+    Class-based view for individual comment view/update/delete by id
     """
 
     def get(self, request: HttpRequest,
@@ -259,20 +316,20 @@ class CommentDetailById(CommentDetail):
         """
         return super().delete(request, pk, *args, **kwargs)
 
-    def url(self, opinion_obj: Comment) -> str:
+    def url(self, comment_obj: Comment) -> str:
         """
-        Get url for opinion view/update
-        :param opinion_obj: opinion
+        Get url for comment view/update/delete
+        :param comment_obj: comment
         :return: url
         """
         return reverse_q(
             namespaced_url(OPINIONS_APP_NAME, COMMENT_ID_ROUTE_NAME),
-            args=[opinion_obj.id])
+            args=[comment_obj.id])
 
 
 class CommentDetailBySlug(CommentDetail):
     """
-    Class-based view for individual comment view/update by slug
+    Class-based view for individual comment view/update/delete by slug
     """
 
     def get(self, request: HttpRequest,
@@ -301,15 +358,15 @@ class CommentDetailBySlug(CommentDetail):
         """
         return super().delete(request, slug, *args, **kwargs)
 
-    def url(self, opinion_obj: Comment) -> str:
+    def url(self, comment_obj: Comment) -> str:
         """
-        Get url for opinion view/update
-        :param opinion_obj: opinion
+        Get url for comment view/update/delete
+        :param comment_obj: comment
         :return: url
         """
         return reverse_q(
             namespaced_url(OPINIONS_APP_NAME, COMMENT_SLUG_ROUTE_NAME),
-            args=[opinion_obj.slug])
+            args=[comment_obj.slug])
 
 
 @login_required
@@ -338,6 +395,36 @@ def comment_report_post(request: HttpRequest, pk: int) -> JsonResponse:
     comment_permission_check(request, Crud.READ)
 
     return report_post(request, Comment, pk)
+
+
+@login_required
+@require_http_methods([PATCH])
+def comment_review_status_patch(
+        request: HttpRequest, pk: int) -> JsonResponse:
+    """
+    View function to update comment review status.
+    :param request: http request
+    :param pk:      id of comment
+    :return: http response
+    """
+    comment_permission_check(request, Crud.UPDATE)
+
+    return review_status_patch(request, Comment, pk)
+
+
+@login_required
+@require_http_methods([POST])
+def comment_review_decision_post(
+        request: HttpRequest, pk: int) -> JsonResponse:
+    """
+    View function to update comment review decision status.
+    :param request: http request
+    :param pk:      id of comment
+    :return: http response
+    """
+    comment_permission_check(request, Crud.UPDATE)
+
+    return review_decision_post(request, Comment, pk)
 
 
 @login_required

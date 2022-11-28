@@ -1,0 +1,49 @@
+{# --- template variable defines for includes --- #}
+{# review request header template expects: 'is_assigned' as current user is assigned reviewer flag #}
+{#                                         'review_record' as list of Review #}
+{#                                         'opinion' as Opinion #}
+{#                                         'status_bg' as dict with status display as key and class as value #}
+
+{% load i18n %}
+{% load humanize %}
+{% load tz %}
+{% load dict_value %}
+
+<div id="id--div-review-request-header" class="alert alert-warning" role="alert">
+    <div class="row">
+        <div {% if not is_assigned %}class="col-sm-10"{% else %}class="col-sm-12"{% endif %}>
+            <h3>Review Request</h3>
+        </div>
+        {% if not is_assigned %}
+        <div class="col-sm-2">
+            <button type="button" class="btn btn-outline-success" onclick="updateReviewStatus('under-review')">
+                {% trans "Assign" %}
+            </button>
+        </div>
+        {% endif %}
+    </div>
+    {% for record in review_record %}
+    <div class="row">
+        <div class="col-sm-3">
+            <p><strong>Requested by</strong> <a href="{% url 'user:user_id' record.requested.id %}" aria-label="view requested by user's profile">{{ record.requested.username }}</a></p>
+        </div>
+        <div class="col-sm-3">
+            <p><strong>Created</strong> {{ record.created | localtime | naturaltime }}</p>
+        </div>
+        <div class="col-sm-3">
+            {% dict_value status_bg opinion.status as status_class %}
+            <span id="status_{{ forloop.counter }}" class="badge rounded-pill {{ status_class }}">{{ record.status }}</span>
+        </div>
+        <div class="col-sm-3">
+            {% if record.reviewer %}
+            <p><strong>Reviewer</strong> <a href="{% url 'user:user_id' record.reviewer.id %}" aria-label="view reviewer's profile">{{ record.reviewer.username }}</a></p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <p>{{ record.reason | safe }}</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>

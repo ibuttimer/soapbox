@@ -45,7 +45,7 @@ from .test_opinion_list import (
     OPINION_LIST_TEMPLATE, OPINION_LIST_SORT_TEMPLATE,
     verify_opinion_list_content
 )
-from ..category_mixin import CategoryMixin
+from ..category_mixin_test import CategoryMixin
 from ..soup_mixin import SoupMixin
 from ..user.base_user_test import BaseUserTest
 
@@ -59,7 +59,7 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
     @classmethod
     def setUpTestData(cls):
         """ Set up data for the whole TestCase """
-        super(TestOpinionSearch, TestOpinionSearch).setUpTestData()
+        super(TestOpinionSearch, cls).setUpTestData()
 
     def login_user_by_key(self, name: str | None = None) -> User:
         """
@@ -215,9 +215,9 @@ class TestOpinionSearch(SoupMixin, CategoryMixin, BaseOpinionTest):
         opinion, user, queries = self.get_query_options()
         user = self.login_user_by_id(user.id)
 
-        for q, v in queries:
+        for qry, val in queries:
             query = {
-                q: v
+                qry: val
             }
             expected = BaseOpinionTest.get_expected(
                 self, query, OpinionSortOrder.DEFAULT, user)

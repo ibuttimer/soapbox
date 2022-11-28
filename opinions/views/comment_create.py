@@ -44,7 +44,7 @@ from opinions.comment_data import CommentBundle
 from opinions.forms import CommentForm
 from opinions.models import Opinion, Comment
 from opinions.views.utils import (
-    comment_permission_check, timestamp_content
+    comment_permission_check, timestamp_content, form_errors_response
 )
 
 COMMENTS_CONTAINER_ID = 'id--comments-container'
@@ -106,15 +106,7 @@ class CommentCreate(LoginRequiredMixin, View):
             }, status=HTTPStatus.OK)
         else:
             # display form errors
-            response = JsonResponse({
-                HTML_CTX: render_to_string(
-                    app_template_path(
-                        "snippet", "form_errors.html"),
-                    context={
-                        'form': form,
-                    },
-                    request=request),
-            }, status=HTTPStatus.BAD_REQUEST)
+            response = form_errors_response(form, request=request)
 
         return response
 

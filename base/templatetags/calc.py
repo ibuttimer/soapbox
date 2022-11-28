@@ -20,35 +20,40 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from .constants import (
-    STATUS_DRAFT, STATUS_PUBLISHED, STATUS_PREVIEW, STATUS_WITHDRAWN,
-    STATUS_PENDING_REVIEW, STATUS_UNDER_REVIEW, STATUS_UNACCEPTABLE,
-    STATUS_ACCEPTABLE,
-    CATEGORY_UNASSIGNED,
-    REACTION_AGREE, REACTION_DISAGREE, REACTION_HIDE, REACTION_SHOW,
-    REACTION_PIN, REACTION_UNPIN, REACTION_FOLLOW, REACTION_UNFOLLOW,
-    REACTION_REPORT
-)
+from typing import Union, Any
 
-__all__ = [
-    'STATUS_DRAFT',
-    'STATUS_PUBLISHED',
-    'STATUS_PREVIEW',
-    'STATUS_WITHDRAWN',
-    'STATUS_PENDING_REVIEW',
-    'STATUS_UNDER_REVIEW',
-    'STATUS_UNACCEPTABLE',
-    'STATUS_ACCEPTABLE',
+from django import template
 
-    'CATEGORY_UNASSIGNED',
+register = template.Library()
 
-    'REACTION_AGREE',
-    'REACTION_DISAGREE',
-    'REACTION_HIDE',
-    'REACTION_SHOW',
-    'REACTION_PIN',
-    'REACTION_UNPIN',
-    'REACTION_FOLLOW',
-    'REACTION_UNFOLLOW',
-    'REACTION_REPORT'
-]
+# https://docs.djangoproject.com/en/4.1/howto/custom-template-tags/#simple-tags
+
+
+@register.simple_tag
+def calc(
+    a: Union[int, str, list, tuple], op: str, b: Union[int, str, list, tuple]
+) -> Union[int, float]:
+    """
+    Perform simple calculations. If an operation is a list or tuple, its
+    length is used in the calculation.
+    :param a: first operand
+    :param op: operation; '/', '*' etc.
+    :param b: second operand
+    :return: int/float result
+    """
+    a = _convert(a)
+    b = _convert(b)
+    result = eval(f'{a}{op}{b}')
+    return int(result) if result == int(result) else result
+
+
+def _convert(a: Union[int, str, list, tuple]) -> Any:
+    """ Convert operand """
+    if isinstance(a, list) or isinstance(a, tuple):
+        a = len(a)
+    elif isinstance(a, str):
+        if a.isdecimal():
+            a = int(a)
+        elif a.isnumeric():
+            a = float(a)
+    return a

@@ -27,7 +27,7 @@ from enum import Enum, auto
 from typing import TypeVar
 
 from opinions.models import Opinion
-from opinions.queries import effective_content_status, ContentStatus
+from opinions.queries import effective_content_status
 
 
 class HandleType(Enum):
@@ -301,5 +301,6 @@ class OpinionData:
         obj_kwargs['categories'] = list(
             map(lambda cat: cat.name, list(opinion.categories.all()))
         )
-        obj_kwargs['status'] = effective_content_status(opinion)
+        obj_kwargs[Opinion.STATUS_FIELD] = \
+            effective_content_status(opinion).display
         return OpinionData(**obj_kwargs)

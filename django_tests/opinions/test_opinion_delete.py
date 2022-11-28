@@ -26,8 +26,8 @@ from typing import Optional
 from opinions.models import Opinion, Comment
 from user.models import User
 from .base_opinion_test import BaseOpinionTest
-from .opinion_mixin import OpinionMixin, AccessBy
-from ..category_mixin import CategoryMixin
+from .opinion_mixin_test import OpinionMixin, AccessBy
+from ..category_mixin_test import CategoryMixin
 from ..soup_mixin import SoupMixin
 
 
@@ -41,7 +41,7 @@ class TestOpinionDelete(
     @classmethod
     def setUpTestData(cls):
         """ Set up data for the whole TestCase """
-        super(TestOpinionDelete, TestOpinionDelete).setUpTestData()
+        super(TestOpinionDelete, cls).setUpTestData()
 
     def test_not_logged_in_access_by_id(self):
         """ Test must be logged in to access opinion by id """

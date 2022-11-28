@@ -36,7 +36,7 @@ from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
 from .base_opinion_test import BaseOpinionTest
-from ..category_mixin import CategoryMixin
+from ..category_mixin_test import CategoryMixin
 from ..soup_mixin import SoupMixin
 from ..user.base_user_test import BaseUserTest
 
@@ -46,14 +46,14 @@ OPINION_LIST_SORT_TEMPLATE = f'{OPINIONS_APP_NAME}/opinion_list_content.html'
 
 class TestOpinionList(SoupMixin, CategoryMixin, BaseOpinionTest):
     """
-    Test opinion page view
+    Test opinion list page view
     https://docs.djangoproject.com/en/4.1/topics/testing/tools/
     """
 
     @classmethod
     def setUpTestData(cls):
         """ Set up data for the whole TestCase """
-        super(TestOpinionList, TestOpinionList).setUpTestData()
+        super(TestOpinionList, cls).setUpTestData()
 
     def login_user_by_key(self, name: str | None = None) -> User:
         """
@@ -75,7 +75,7 @@ class TestOpinionList(SoupMixin, CategoryMixin, BaseOpinionTest):
             self, order: OpinionSortOrder = None, page: int = None,
             per_page: PerPage = None) -> HttpResponse:
         """
-        Get the opinion page
+        Get the opinion list
         :param order:
             order to retrieve opinions in; default None i.e. don't care
         :param page: 1-based page number to get
@@ -205,6 +205,8 @@ def verify_opinion_list_content(
 
     for index, opinion in enumerate(expected):
 
+        dbg_msg = f'user={user} op={opinion.__repr__()}'
+
         # opinion author can always see own opinions
         under_review = user and opinion.user != user
         if under_review:
@@ -224,14 +226,16 @@ def verify_opinion_list_content(
         with test_case.subTest(sub_msg):
 
             # check title
-            titles = soup.find_all(id=f'id_title_{index + 1}')
+            titles = soup.find_all(id=f'id--title-{index + 1}')
             test_case.assertEqual(len(titles), 1)
-            test_case.assertEqual(titles[0].text.strip(), expected_title)
+            test_case.assertEqual(
+                titles[0].text.strip(), expected_title, dbg_msg)
 
             # check excerpt
             excerpts = soup.find_all(id=f'excerpt_{index + 1}')
             test_case.assertEqual(len(excerpts), 1)
-            test_case.assertEqual(excerpts[0].text.strip(), expected_excerpt)
+            test_case.assertEqual(
+                excerpts[0].text.strip(), expected_excerpt, dbg_msg)
 
             # check categories
             CategoryMixin.check_categories(

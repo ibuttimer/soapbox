@@ -1,0 +1,104 @@
+{# --- template variable defines for includes --- #}
+{# review form template expects: 'is_assigned' as current user is assigned reviewer flag #}
+{#                               'review_form' as list of Review #}
+{#                               'is_review' as in review mode boolean #}
+{#                               'review_button' as dict with status display as key and class as value #}
+{#                               'review_button_tips' as dict with status display as key and tooltip as value #}
+{#                               'action_url' as form action url #}
+
+{% load i18n %}
+{% load form_field %}
+{% load array_value %}
+{% load dict_value %}
+{% load calc %}
+
+<div id="id--review-form-container">
+    {# these contents are dynamically updated by ajax responses #}
+
+    {% if review_form and is_assigned %}
+    <form method="post" action="{{ action_url }}"
+          id="id--review-form">
+        {% csrf_token %}
+
+        <div id="id--review-form-errors-container">
+            {% with form=review_form %}
+            {% include "snippet/form_errors.html" %}
+            {% endwith %}
+        </div>
+
+        <fieldset>
+            <div class="row mb-3">
+                <legend>{{ review_form.review_result.label }}</legend>
+                {% calc 12 '/' review_form.review_result.field.choices as width %}
+                {% for radio in review_form.review_result %}
+                    {% array_value review_form.review_result.field.choices forloop.counter0 as radio_choice %}
+                    {% array_value radio_choice 0 as radio_val %}
+                    {% dict_value review_button radio.choice_label as label_class %}
+                    {% dict_value review_button_tips radio.choice_label as label_tooltip %}
+
+                    <div class="col-sm-{{ width }}">
+                        <span id="id--review-result-tip-{{ forloop.counter0 }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="{{ label_tooltip }}">
+                            <input type="radio" class="btn-check" name="review_result" id="{{ radio.id_for_label }}" value="{{ radio_val }}">
+                            <label class="{{ label_class }}" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+                        </span>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="row mb-3">
+                {% form_field review_form 'reason' as reason_field %}
+                <div class="col-sm-2 text-start">
+                    <label for="{{ reason_field.auto_id }}" class="form-label">{{ reason_field.label }}</label>
+                </div>
+                <div class="col-sm-10">
+                    {{ reason_field }}
+                </div>
+            </div>
+        </fieldset>
+        <div class="">
+            <button type="submit" class="btn btn-success">{% trans "Submit" %}</button>
+        </div>
+    </form>
+
+        {% if is_review %}
+        <script>
+            const reviewFormErrorsSelector = "#id--review-form-errors-container";
+            const reviewFormSelector = "form[id^='id--review-form']";
+            const radioSelector = "input[name='review_result']";
+            const radioTipSelector = "span[id^='id--review-result-tip']";
+
+            /* Submit handler for comment modal */
+            $(reviewFormSelector).submit(function (event) {
+
+                event.preventDefault();
+
+                const formData = new FormData(event.target);
+                const data = {};
+                for (const pair of formData.entries()) {
+                    data[pair[0]] = pair[1]
+                }
+                const baseUrl = window.location.href.slice(0, window.location.href.indexOf(window.location.pathname))
+                const url = `${baseUrl}${$(reviewFormSelector).attr('action')}`;
+
+                $.ajax({
+                    method: 'post',
+                    url: url,
+                    headers: {
+                        'X-CSRFTOKEN': '{{ csrf_token }}'
+                    },
+                    data: data,
+                }).done(function(data) {
+                    redirect_rewrite_response_handler(data);
+                }).fail(function(data) {
+                    // display form errors
+                    $(reviewFormErrorsSelector).html(data.responseJSON.html);
+                });
+            });
+
+            /* Change handler for review decision radio buttons */
+            $(radioSelector).change(function(event) {
+                $(radioTipSelector).tooltip("hide");
+            })
+        </script>
+        {% endif %}
+    {% endif  %}
+</div>

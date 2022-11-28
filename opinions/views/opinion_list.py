@@ -22,7 +22,7 @@
 #
 from datetime import datetime
 from enum import Enum
-from typing import Any, Type, Callable, Tuple, Optional, Union
+from typing import Any, Type, Callable, Tuple, Optional, Union, List
 from zoneinfo import ZoneInfo
 from string import capwords
 
@@ -40,17 +40,17 @@ from opinions.constants import (
     TEMPLATE_OPINION_REACTIONS,
     TEMPLATE_REACTION_CTRLS, CONTENT_STATUS_CTX, REPEAT_SEARCH_TERM_CTX,
     PAGE_HEADING_CTX, TITLE_CTX, POPULARITY_CTX, OPINION_LIST_CTX,
-    STATUS_BG_CTX
+    STATUS_BG_CTX, FILTER_QUERY, REVIEW_QUERY, IS_REVIEW_CTX
 )
 from opinions.data_structures import OpinionData
 from opinions.enums import (
     QueryArg, QueryStatus, OpinionSortOrder, Hidden, Pinned,
-    ChoiceArg, SortOrder
+    ChoiceArg, SortOrder, FilterMode
 )
 from opinions.models import Opinion, HideStatus, PinStatus
 from opinions.queries import (
     opinion_is_pinned, content_status_check, followed_author_publications,
-    in_review_content
+    review_content_by_status
 )
 from opinions.query_params import QuerySetParams, choice_arg_query
 from opinions.reactions import (
@@ -63,14 +63,15 @@ from opinions.search import (
 )
 from opinions.views.content_list_mixin import ContentListMixin
 from opinions.views.utils import (
-    opinion_permission_check, REORDER_REQ_QUERY_ARGS,
-    NON_REORDER_OPINION_LIST_QUERY_ARGS, ensure_list, DATE_QUERIES,
-    query_search_term, get_query_args, OPINION_LIST_QUERY_ARGS,
-    OPTION_SEARCH_QUERY_ARGS, STATUS_BADGES, add_content_no_show_markers
+    opinion_permission_check, REORDER_REQ_QUERY_ARGS, DATE_QUERIES,
+    query_search_term, OPINION_LIST_QUERY_ARGS,
+    OPTION_SEARCH_QUERY_ARGS, STATUS_BADGES, add_content_no_show_markers,
+    FOLLOWED_OPINION_LIST_QUERY_ARGS, QueryOption,
+    REVIEW_OPINION_LIST_QUERY_ARGS
 )
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
-from utils import Crud, app_template_path
+from utils import Crud, app_template_path, ensure_list
 
 NON_DATE_QUERIES = [
     TITLE_QUERY, CONTENT_QUERY, AUTHOR_QUERY, CATEGORY_QUERY, STATUS_QUERY,
@@ -106,6 +107,10 @@ ALWAYS_FILTERS = [
 FILTERS_ORDER.extend(
     [q for q in FIELD_LOOKUPS if q not in FILTERS_ORDER]
 )
+# complex queries which require more than a simple lookup
+NON_LOOKUP_ARGS = [
+    FILTER_QUERY, REVIEW_QUERY
+]
 
 SEARCH_REGEX = [
     # regex,            query param, regex match group
@@ -123,8 +128,8 @@ class ListTemplate(Enum):
     """ Enum representing possible response template """
     FULL_TEMPLATE = app_template_path(OPINIONS_APP_NAME, 'opinion_list.html')
     """ Whole page template """
-    CONTENT_TEMPLATE = app_template_path(OPINIONS_APP_NAME,
-                                         'opinion_list_content.html')
+    CONTENT_TEMPLATE = app_template_path(
+        OPINIONS_APP_NAME, 'opinion_list_content.html')
     """ List-only template for requery """
 
 
@@ -135,8 +140,11 @@ class OpinionList(LoginRequiredMixin, ContentListMixin):
     # inherited from MultipleObjectMixin via ListView
     model = Opinion
 
-    response_template: ListTemplate
-    """ Response template to use """
+    def __init__(self):
+        # response template to use
+        self.response_template = ListTemplate.FULL_TEMPLATE
+
+        self.initialise()
 
     def permission_check_func(
             self) -> Callable[[HttpRequest, Crud, bool], bool]:
@@ -146,13 +154,12 @@ class OpinionList(LoginRequiredMixin, ContentListMixin):
         """
         return opinion_permission_check
 
-    def req_query_args(self) -> Callable[[HttpRequest], dict[str, QueryArg]]:
+    def valid_req_query_args(self) -> List[QueryOption]:
         """
-        Get the request query args function
-        :return: request query args function
+        Get the valid request query args
+        :return: dict of query args
         """
-        return \
-            lambda request: get_query_args(request, OPINION_LIST_QUERY_ARGS)
+        return OPINION_LIST_QUERY_ARGS
 
     def set_extra_context(self, query_params: dict[str, QueryArg]):
         """
@@ -163,7 +170,7 @@ class OpinionList(LoginRequiredMixin, ContentListMixin):
         # inherited from ContextMixin via ListView
         self.extra_context = {
             REPEAT_SEARCH_TERM_CTX: query_search_term(
-                query_params, exclude_queries=REORDER_REQ_QUERY_ARGS),
+                query_params, exclude_queries=REORDER_REQ_QUERY_ARGS)
         }
         self.extra_context.update(
             self.get_title_heading(query_params))
@@ -178,9 +185,7 @@ class OpinionList(LoginRequiredMixin, ContentListMixin):
         ).value == Pinned.YES:
             # current users pinned opinions
             title = 'Pinned opinions'
-        elif query_params.get(
-                AUTHOR_QUERY, QueryArg(None, False)
-        ).value == self.user.username:
+        elif self.is_query_own(query_params):
             # current users opinions by status
             status = query_params.get(
                 STATUS_QUERY, QueryArg(QueryStatus.DEFAULT, False)).value
@@ -216,7 +221,7 @@ class OpinionList(LoginRequiredMixin, ContentListMixin):
         if query_set_params is None:
             query_set_params = QuerySetParams()
 
-        for query in NON_REORDER_OPINION_LIST_QUERY_ARGS:
+        for query in self.valid_req_non_reorder_query_args():
             get_lookup(query, query_params[query].value, self.user,
                        query_set_params=query_set_params)
 
@@ -327,13 +332,12 @@ class OpinionSearch(OpinionList):
     Search Opinion list response
     """
 
-    def req_query_args(self) -> Callable[[HttpRequest], dict[str, QueryArg]]:
+    def valid_req_query_args(self) -> List[QueryOption]:
         """
-        Get the request query args function
-        :return: request query args function
+        Get the valid request query args
+        :return: dict of query args
         """
-        return \
-            lambda request: get_query_args(request, OPTION_SEARCH_QUERY_ARGS)
+        return OPTION_SEARCH_QUERY_ARGS
 
     def set_extra_context(self, query_params: dict[str, QueryArg]):
         """
@@ -435,22 +439,31 @@ class OpinionFollowed(OpinionList):
 
     QS_PARAMS = 'qs_params'
 
-    def req_query_args(self) -> Callable[[HttpRequest], dict[str, QueryArg]]:
+    title_headings = {
+        FilterMode.ALL: ('Tagged author opinions',
+                         'All Opinions By Tagged Authors'),
+        FilterMode.NEW: ('New tagged author opinions',
+                         'New Opinions By Tagged Authors')
+    }
+
+    def valid_req_query_args(self) -> List[QueryOption]:
         """
-        Get the request query args function
-        :return: request query args function
+        Get the valid request query args
+        :return: dict of query args
         """
-        # TODO probably should be a more restricted list of args
-        return super().req_query_args()
+        return FOLLOWED_OPINION_LIST_QUERY_ARGS
 
     def get_title_heading(self, query_params: dict[str, QueryArg]) -> dict:
         """
         Get the title and page heading for context
         :param query_params: request query
         """
+        title_heading = self.title_headings.get(
+            query_params.get(FILTER_QUERY, FilterMode.DEFAULT).value
+        )
         return {
-            TITLE_CTX: 'New tagged author opinions',
-            PAGE_HEADING_CTX: 'New Opinions By Tagged Authors',
+            TITLE_CTX: title_heading[0],
+            PAGE_HEADING_CTX: title_heading[1],
         }
 
     def set_queryset(
@@ -471,17 +484,22 @@ class OpinionFollowed(OpinionList):
         if query_kwargs is None:
             query_kwargs = {}
 
-        query_kwargs[OpinionFollowed.QS_PARAMS] = self.get_queryset_params()
+        query_kwargs[OpinionFollowed.QS_PARAMS] = \
+            self.get_queryset_params(query_params)
 
         return query_set_params, query_kwargs
 
-    def get_queryset_params(self) -> Optional[Union[QuerySet, QuerySetParams]]:
+    def get_queryset_params(
+        self, query_params: dict[str, QueryArg]
+    ) -> Optional[Union[QuerySet, QuerySetParams]]:
         """
         Get the queryset to get the list of items for this view
+        :param query_params: request query
         :return: query set params
         """
+        since = self.get_since(query_params)
         return followed_author_publications(
-            self.user, since=self.user.previous_login, as_params=True)
+            self.user, since=since, as_params=True)
 
     def apply_queryset_param(
             self, query_set_params: QuerySetParams, **kwargs):
@@ -507,30 +525,62 @@ class OpinionInReview(OpinionFollowed):
     Opinions in review list response
     """
 
+    def valid_req_query_args(self) -> List[QueryOption]:
+        """
+        Get the valid request query args
+        :return: dict of query args
+        """
+        return REVIEW_OPINION_LIST_QUERY_ARGS
+
+    def set_extra_context(self, query_params: dict[str, QueryArg]):
+        """
+        Set the context extra content to be added to context
+        :param query_params: request query
+        """
+        super().set_extra_context(query_params)
+        self.extra_context[IS_REVIEW_CTX] = True
+
     def get_title_heading(self, query_params: dict[str, QueryArg]) -> dict:
         """
         Get the title and page heading for context
         :param query_params: request query
         """
+        status = query_params.get(
+            REVIEW_QUERY, QueryStatus.REVIEW_QUERY_DEFAULT).value
+        is_own = self.is_query_own(query_params)
+        if self.get_since(query_params) is None:
+            title = f'{status.display} opinions'
+            heading = capwords(f'All {"my " if is_own else ""}{title}')
+        else:
+            title = f'New {status.display} opinions'
+            heading = capwords(f'{"My " if is_own else ""}{title}')
+
         return {
-            TITLE_CTX: 'Review Opinions',
-            PAGE_HEADING_CTX: 'Opinions in Review',
+            TITLE_CTX: title,
+            PAGE_HEADING_CTX: heading,
         }
 
-    def get_queryset_params(self) -> Optional[Union[QuerySet, QuerySetParams]]:
+    def get_queryset_params(
+            self, query_params: dict[str, QueryArg]
+    ) -> Optional[Union[QuerySet, QuerySetParams]]:
         """
         Get the queryset to get the list of items for this view
+        :param query_params: request query
         :return: query set params
         """
-        # TODO all in review and new in review
-        return in_review_content(
-            self.user, Opinion, since=self.user.previous_login, as_params=True)
+        since = self.get_since(query_params)
+
+        statuses = query_params.get(
+            REVIEW_QUERY, QueryStatus.REVIEW_QUERY_DEFAULT).value.listing()
+
+        return review_content_by_status(Opinion, statuses, since=since,
+                                        as_params=True)
 
 
 def get_lookup(
-            query: str, value: Any, user: User,
-            query_set_params: QuerySetParams = None
-        ) -> QuerySetParams:
+    query: str, value: Any, user: User,
+    query_set_params: QuerySetParams = None
+) -> QuerySetParams:
     """
     Get the query lookup for the specified value
     :param query: query argument
@@ -565,16 +615,16 @@ def get_lookup(
         get_hidden_query(query_set_params, value, user)
     elif query == PINNED_QUERY:
         get_pinned_query(query_set_params, value, user)
-    elif value:
+    elif query not in NON_LOOKUP_ARGS and value:
         query_set_params.add_and_lookup(query, FIELD_LOOKUPS[query], value)
+    # else no value or complex query term handled elsewhere
 
     return query_set_params
 
 
 def get_search_term(
-            value: str, user: User,
-            query_set_params: QuerySetParams = None
-        ) -> QuerySetParams:
+    value: str, user: User, query_set_params: QuerySetParams = None
+) -> QuerySetParams:
     """
     Generate search terms for specified input value
     :param value: search value
@@ -632,9 +682,10 @@ def get_search_term(
                     # TODO add errors to QuerySetParams
                     # so they can be returned to user
                     pass
-            else:
+            elif query not in NON_LOOKUP_ARGS:
                 query_set_params.add_and_lookup(
                     query, FIELD_LOOKUPS[query], match.group(group))
+            # else complex query term handled elsewhere
 
     if query_set_params.is_empty:
         if not any(

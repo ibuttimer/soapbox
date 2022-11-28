@@ -30,6 +30,7 @@
 {% load tz %}
 {% load form_field %}
 {% load dict_value %}
+{% load array_value %}
 
 {% block head_title %}SoapBox - {{ title | truncatechars:7 }}{% endblock %}
 
@@ -65,10 +66,15 @@
                 </div>
             </div>
         </div>
+        {% elif is_review %}
+            {# --- template variable defines for includes --- #}
+            {# review request header template expects: 'is_assigned' as current user is assigned reviewer flag #}
+            {#                                         'review_record' as list of Review #}
+            {% include "opinions/snippet/review_request_header.html" %}
         {% endif %}
 
         <div class="row mb-3">
-            <h1 id="id_title">
+            <h1 id="id--title">
                 {% if view_ok %}{{ opinion.title }}{% else %}{{ under_review_title }}{% endif %}
             </h1>
         </div>
@@ -97,7 +103,7 @@
                 <p><strong>Updated</strong> {{ opinion.updated | localtime | naturaltime }}</p>
             </div>
             <div class="col-sm-2">
-                <p><strong>Author</strong> <a href="{% url 'user:user_id' opinion.user.id %}">{{ opinion.user.username }}</a></p>
+                <p><strong>Author</strong> <a href="{% url 'user:user_id' opinion.user.id %}" aria-label="view author's profile">{{ opinion.user.username }}</a></p>
             </div>
         </div>
 
@@ -111,43 +117,49 @@
             </div>
         </div>
 
-        <div class="row mb-3">
-            <div class="col-sm-2 offset-sm-5">
-                <a class="btn btn-secondary mb-1" href="{% url 'home' %}">{% trans "Done" %}</a>
-            </div>
+        {% if not is_review %}
+            {# no reactions in review mode #}
+            <div class="row mb-3">
+                <div class="col-sm-2 offset-sm-5">
+                    <a class="btn btn-secondary mb-1" href="{% url 'home' %}">{% trans "Done" %}</a>
+                </div>
 
-            {% if view_ok %}
-            <div class="col-sm-5 justify-content-start">
-                {# --- template variable defines for includes --- #}
-                {# reactions template expects: 'target_id' as id of target opinion/comment #}
-                {#                             'target_slug' as slug of target opinion/comment #}
-                {#                             'target_type' as opinion/comment #}
-                {#                             'target_author' as id of opinion/comment author #}
-                {#                             'reactions' as list of Reaction #}
-                {#                             'reaction_ctrls' as dict of ReactionCtrl #}
-                {% with reactions=opinion_reactions %}
-                    {% with target_type="opinion" %}
-                        {% with target_id=opinion.id %}
-                            {% with target_author=opinion.user.id %}
-                                {% with target_slug=opinion.slug %}
-                                    {% include "opinions/snippet/reactions.html" %}
+                {% if view_ok %}
+                <div class="col-sm-5 justify-content-start">
+                    {# --- template variable defines for includes --- #}
+                    {# reactions template expects: 'target_id' as id of target opinion/comment #}
+                    {#                             'target_slug' as slug of target opinion/comment #}
+                    {#                             'target_type' as opinion/comment #}
+                    {#                             'target_author' as id of opinion/comment author #}
+                    {#                             'reactions' as list of Reaction #}
+                    {#                             'reaction_ctrls' as dict of ReactionCtrl #}
+                    {% with reactions=opinion_reactions %}
+                        {% with target_type="opinion" %}
+                            {% with target_id=opinion.id %}
+                                {% with target_author=opinion.user.id %}
+                                    {% with target_slug=opinion.slug %}
+                                        {% include "opinions/snippet/reactions.html" %}
+                                    {% endwith %}
                                 {% endwith %}
                             {% endwith %}
                         {% endwith %}
                     {% endwith %}
-                {% endwith %}
+                </div>
+                {% endif %}
             </div>
-            {% endif %}
+        {% endif %}
+    </div>
+
+    {% if not is_review %}
+    {# no comments in review mode #}
+        <div id="id--comments-container" class="col-12 mt-2">
+            {# --- template variable defines for includes --- #}
+            {# view comments template expects: 'comments' as list[CommentBundle] #}
+            {% include "opinions/snippet/view_comments.html" %}
         </div>
-    </div>
+    {% endif %}
 
-    <div id="id--comments-container" class="col-12 mt-2">
-        {# --- template variable defines for includes --- #}
-        {# view comments template expects: 'comments' as list[CommentBundle] #}
-        {% include "opinions/snippet/view_comments.html" %}
-    </div>
-
-    {% if view_ok %}
+    {% if view_ok and not is_review %}
         {% include "opinions/snippet/modal_common.html" %}
         <!-- Modal to create comments -->
         <div id="id--comment-modal-container">
@@ -170,29 +182,42 @@
             {% include "opinions/snippet/comment_delete_modal.html" %}
         </div>
     {% endif %}
+
+    {% url 'opinions:review_decision_opinion_id' opinion.id as action %}
+    {% with action_url=action %}
+        {% include "opinions/snippet/review_form.html" %}
+    {% endwith %}
 </article>
 
 {% endblock content %}
 
 {% block extra_js_body %}
+    {% include "opinions/snippet/view_js.html" %}
     <script>
         /**
          * Update status of current opinion
          * :param new_status: new status, one of 'publish', 'preview' or 'draft'
          */
         function updateStatus(new_status) {
-            $.ajax({
-                url: "{% url 'opinions:status_opinion_id' opinion.id %}?status=" + new_status,
-                method: 'patch',
-                headers: {
-                    'X-CSRFTOKEN': '{{ csrf_token }}'
-                }
-            }).done(function(data) {
-                document.location.href = data.redirect;
-            });
+            updateStatusPatch("{% url 'opinions:status_opinion_id' opinion.id %}", new_status);
         }
     </script>
+    {% if is_review %}
+        <script>
+            /**
+            * Update review status of current opinion
+            * :param new_status: new status, one of 'withdrawn, 'pending-review',
+            *                    'under-review', 'unacceptable' or 'acceptable'
+            */
+            function updateReviewStatus(new_status) {
+                updateStatusPatch("{% url 'opinions:review_status_opinion_id' opinion.id %}", new_status);
+            }
+        </script>
+    {% endif %}
 
-    {% include "opinions/snippet/more_placeholder_js.html" %}
-    {% include "opinions/snippet/reactions_js.html" %}
+    {% if not is_review %}
+        {# no comments or reactions in review mode #}
+        {% include "opinions/snippet/more_placeholder_js.html" %}
+        {% include "opinions/snippet/reactions_js.html" %}
+    {% endif %}
 {% endblock extra_js_body %}

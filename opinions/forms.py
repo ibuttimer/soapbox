@@ -20,7 +20,7 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from django.forms import CharField, Textarea
+from django.forms import CharField, Textarea, ChoiceField, RadioSelect
 from django.utils.translation import gettext_lazy as _
 
 from django import forms
@@ -31,8 +31,10 @@ from utils import update_field_widgets, error_messages, ErrorMsgs
 from .constants import (
     TITLE_FIELD, CONTENT_FIELD, CATEGORIES_FIELD, STATUS_FIELD, SLUG_FIELD,
     CREATED_FIELD, UPDATED_FIELD, PUBLISHED_FIELD, REASON_FIELD, OPINION_FIELD,
-    REQUESTED_FIELD, REVIEWER_FIELD, COMMENT_FIELD, RESOLVED_FIELD
+    REQUESTED_FIELD, REVIEWER_FIELD, COMMENT_FIELD, RESOLVED_FIELD,
+    REVIEW_RESULT_FIELD
 )
+from .enums import QueryStatus
 from .models import Opinion, Category, Comment, Review
 
 
@@ -152,9 +154,9 @@ class CommentForm(forms.ModelForm):
             {'class': 'form-control'})
 
 
-class ReviewForm(forms.ModelForm):
+class ReportForm(forms.ModelForm):
     """
-    Form to create a review.
+    Form to create a content report.
     """
 
     OPINION_FF = OPINION_FIELD
@@ -197,6 +199,49 @@ class ReviewForm(forms.ModelForm):
         update_field_widgets(
             self,
             # exclude non-bootstrap fields
-            [field for field in CommentForm.Meta.fields
-             if field not in CommentForm.Meta.non_bootstrap_fields],
+            [field for field in ReportForm.Meta.fields
+             if field not in ReportForm.Meta.non_bootstrap_fields],
+            {'class': 'form-control'})
+
+
+class ReviewForm(ReportForm):
+    """
+    Form to create a content review.
+    """
+
+    REVIEW_RESULT_FF = REVIEW_RESULT_FIELD
+
+    review_result = ChoiceField(
+        choices=[
+            (choice.arg, choice.display)
+            for choice in QueryStatus.review_result_statuses()
+        ],
+        label="Review Decision",
+        widget=RadioSelect()
+    )
+
+    class Meta:
+        model = Review
+        fields = [
+            REASON_FIELD, REVIEW_RESULT_FIELD
+        ]
+        non_bootstrap_fields = []
+        help_texts = {
+            REASON_FIELD: 'Reason content.',
+            STATUS_FIELD: 'Review decision.',
+        }
+        error_messages = error_messages(
+            model.model_name_caps(),
+            *[ErrorMsgs(field, max_length=True)
+              for field in (REASON_FIELD, )]
+        )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # add the bootstrap class to the widget
+        update_field_widgets(
+            self,
+            # exclude non-bootstrap fields
+            [field for field in ReviewForm.Meta.fields
+             if field not in ReviewForm.Meta.non_bootstrap_fields],
             {'class': 'form-control'})
