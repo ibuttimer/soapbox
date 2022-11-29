@@ -14,7 +14,7 @@
 {% load reaction_popularity %}
 
 {% block opinion_list_content %}
-    <var id="var__repeat_search_term" hidden>{{ repeat_search_term }}</var>
+    <var id="var--repeat-search-term" hidden>{{ repeat_search_term }}</var>
 
     {% if paginator.count == 0 %}
         <div class="row">
@@ -141,22 +141,10 @@
             </div>
         </div>
 
-        <div class="row d-flex justify-content-between">
-            <div class="col-lg-2 col-md-4 col-sm-6 col-auto mt-2">
-                <!-- per page selection -->
-                <select id="per-page-select" class="form-select" aria-label="Opinions per page">
-                    {% for opt in per_page %}
-                    <option value="{{ opt.arg }}" {% if opt.value == selected_per_page %} selected {% endif %}>
-                        {{ opt.display }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-lg-10 col-md-8 col-sm-6 col-auto mt-2 d-flex justify-content-end float-end">
-                <!-- pagination -->
-                {% include "opinions/snippet/pagination.html" %}
-            </div>
-        </div>
+        {# per page and page selection #}
+        {% with "Opinions per page" as per_page_aria %}
+            {% include "opinions/snippet/per_page_pagination_select.html" %}
+        {% endwith %}
     {% endif %}
 {% endblock opinion_list_content %}
 <!-- opinion_list_content.html end -->

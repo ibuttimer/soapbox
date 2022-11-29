@@ -1,0 +1,25 @@
+<!-- sort_order_select.html start -->
+{# --- template variable defines for includes --- #}
+{# sort order select template expects: 'paginator' as a Paginator #}
+{#                                     'sort_order' as a list of SortOrder #}
+{# javascript functions in page_content_js.html #}
+
+{% if paginator.count > 0 %}
+<div class="row">
+    <div class="col-lg-2 offset-lg-10 col-md-4 offset-md-8 col-sm-6 offset-sm-6 col-auto mt-2">
+        <!-- sort order selection -->
+        <select id="id--sort-order-select" class="form-select" aria-label="Sort by">
+            {% for sort_opt in sort_order %}
+            <option value="{{ sort_opt.arg }}"
+                    {% if sort_opt == selected_sort %}
+                    selected
+                    {% endif %}
+            >
+                {{ sort_opt.display }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+{% endif %}
+<!-- sort_order_select.html end -->

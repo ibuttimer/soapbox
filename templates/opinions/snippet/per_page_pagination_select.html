@@ -1,0 +1,27 @@
+<!-- per_page_pagination_select.html start -->
+{# --- template variable defines for includes --- #}
+{# opinion list content template expects: 'paginator' as a Paginator #}
+{#                                        'per_page' as a list of PerPage #}
+{#                                        'selected_per_page' as current PerPage #}
+{#                                        'page_obj' as current Page from Paginator #}
+{#                                        'page_links' as a list of link controls to other pages #}
+{#                                        'per_page_aria' as aria content for per page select #}
+{# javascript functions in page_content_js.html #}
+
+<div class="row d-flex justify-content-between">
+    <div class="col-lg-2 col-md-4 col-sm-6 col-auto mt-2">
+        <!-- per page selection -->
+        <select id="per-page-select" class="form-select" aria-label="{{ per_page_aria }}">
+            {% for opt in per_page %}
+            <option value="{{ opt.arg }}" {% if opt.value == selected_per_page %} selected {% endif %}>
+                {{ opt.display }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-lg-10 col-md-8 col-sm-6 col-auto mt-2 d-flex justify-content-end float-end">
+        <!-- pagination -->
+        {% include "opinions/snippet/pagination.html" %}
+    </div>
+</div>
+<!-- per_page_pagination_select.html end -->
