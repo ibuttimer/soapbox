@@ -77,13 +77,13 @@ from opinions.reactions import (
 )
 from opinions.templatetags.reaction_ul_id import reaction_ul_id
 from opinions.views.utils import (
-    opinion_permission_check, opinion_save_query_args, timestamp_content,
+    opinion_permission_check, content_save_query_args, timestamp_content,
     own_content_check, published_check, get_opinion_context,
     render_opinion_form, comment_permission_check, like_query_args,
     hide_query_args, pin_query_args, generate_excerpt, follow_query_args,
     add_content_no_show_markers, review_permission_check, QueryOption,
-    get_query_args, STATUS_BADGES, REVIEW_STATUS_BUTTONS, form_errors_response,
-    REVIEW_STATUS_BUTTON_TOOLTIPS, add_review_form_context
+    get_query_args, STATUS_BADGES, form_errors_response,
+    add_review_form_context
 )
 from opinions.enums import QueryStatus, ReactionStatus, ViewMode
 
@@ -237,12 +237,12 @@ class OpinionDetail(LoginRequiredMixin, View):
 
         if form.is_valid():
             # normal fields are updated but ManyToMany aren't
-            # copy clean data to user object
+            # copy clean data to opinion object
             opinion_obj.categories.set(
                 form.cleaned_data[OpinionForm.CATEGORIES_FF]
             )
 
-            status, query = opinion_save_query_args(request)
+            status, query = content_save_query_args(request)
             opinion_obj.status = status
 
             timestamp_content(opinion_obj)
@@ -537,9 +537,12 @@ def opinion_status_patch(request: HttpRequest, pk: int) -> HttpResponse:
 
     own_content_check(request, opinion_obj)
 
-    status, _ = opinion_save_query_args(request)
+    status, _ = content_save_query_args(request)
 
     opinion_obj.status = status
+
+    timestamp_content(opinion_obj)
+
     opinion_obj.save()
 
     return redirect_response(HOME_URL, extra={

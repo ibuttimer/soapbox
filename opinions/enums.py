@@ -21,6 +21,7 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 from enum import Enum
+from string import capwords
 from typing import Any, Callable, TypeVar, Optional
 
 from categories.constants import (
@@ -31,6 +32,7 @@ from categories.constants import (
     REACTION_AGREE, REACTION_DISAGREE, REACTION_HIDE, REACTION_SHOW,
     REACTION_PIN, REACTION_UNPIN, REACTION_FOLLOW, REACTION_UNFOLLOW,
     REACTION_REPORT, REACTION_SHARE, REACTION_COMMENT, REACTION_DELETE,
+    REACTION_EDIT,
 )
 from categories.models import Status
 from opinions.models import Opinion, Comment
@@ -47,6 +49,10 @@ TypeOpinionSortOrder = \
 TypeCommentSortOrder = \
     TypeVar("TypeCommentSortOrder", bound="CommentSortOrder")
 TypeViewMode = TypeVar("ViewMode", bound="ViewMode")
+
+
+_ARROW_UP = "\N{Upwards Paired Arrows}"
+_ARROW_DOWN = "\N{Downwards Paired Arrows}"
 
 
 class ChoiceArg(Enum):
@@ -352,6 +358,7 @@ class ReactionStatus(ChoiceArg):
     REPORT = (REACTION_REPORT, 'report')
     COMMENT = (REACTION_COMMENT, 'comment')
     DELETE = (REACTION_DELETE, 'delete')
+    EDIT = (REACTION_EDIT, 'edit')
 
     def __init__(self, display: str, arg: str):
         super().__init__(display, arg)
@@ -367,10 +374,13 @@ class SortOrder(ChoiceArg):
 
 class OpinionSortOrder(SortOrder):
     """ Enum representing opinion sort orders """
-    NEWEST = ('Newest first', 'new',
-              f'{DATE_NEWEST_LOOKUP}{Opinion.SEARCH_DATE_FIELD}')
-    OLDEST = ('Oldest first', 'old',
-              f'{DATE_OLDEST_LOOKUP}{Opinion.SEARCH_DATE_FIELD}')
+    NEWEST = (f'{capwords(Opinion.SEARCH_DATE_FIELD)} Date {_ARROW_DOWN}',
+              'new', f'{DATE_NEWEST_LOOKUP}{Opinion.SEARCH_DATE_FIELD}')
+    OLDEST = (f'{capwords(Opinion.SEARCH_DATE_FIELD)} Date {_ARROW_UP}',
+              'old', f'{DATE_OLDEST_LOOKUP}{Opinion.SEARCH_DATE_FIELD}')
+
+    # TODO add sort by updated option
+
     AUTHOR_AZ = ('Author A-Z', 'aaz',
                  f'{Opinion.USER_FIELD}__{User.USERNAME_FIELD}')
     AUTHOR_ZA = ('Author Z-A', 'aza',
@@ -438,10 +448,10 @@ OpinionSortOrder.DEFAULT = OpinionSortOrder.NEWEST
 
 class CommentSortOrder(SortOrder):
     """ Enum representing opinion sort orders """
-    NEWEST = ('Newest first', 'new',
-              f'{DATE_NEWEST_LOOKUP}{Comment.SEARCH_DATE_FIELD}')
-    OLDEST = ('Oldest first', 'old',
-              f'{DATE_OLDEST_LOOKUP}{Comment.SEARCH_DATE_FIELD}')
+    NEWEST = (f'{capwords(Comment.SEARCH_DATE_FIELD)} Date {_ARROW_DOWN}',
+              'new', f'{DATE_NEWEST_LOOKUP}{Comment.SEARCH_DATE_FIELD}')
+    OLDEST = (f'{capwords(Comment.SEARCH_DATE_FIELD)} Date {_ARROW_UP}',
+              'old', f'{DATE_OLDEST_LOOKUP}{Comment.SEARCH_DATE_FIELD}')
     AUTHOR_AZ = ('Author A-Z', 'aaz',
                  f'{Comment.USER_FIELD}__{User.USERNAME_FIELD}')
     AUTHOR_ZA = ('Author Z-A', 'aza',

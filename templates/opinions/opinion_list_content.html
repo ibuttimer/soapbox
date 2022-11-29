@@ -118,8 +118,12 @@
                                                     <span id="status_{{ forloop.counter }}" class="badge rounded-pill {{ status_class }}">{{ opinion.status }}</span>
                                                 </div>
                                             </div>
-                                            <p class="mt-0 mb-0">
-                                                {{ opinion.updated | localtime | naturaltime }}
+                                            <p class="card-text text-muted mt-0 mb-0">
+                                                {% if opinion.published.year > 1 %}
+                                                <i class="fa-solid fa-upload"></i> {{ opinion.published | localtime | naturaltime  }}
+                                                {% endif %}
+                                                <br>
+                                                <i class="fa-solid fa-pen-to-square"></i> {{ opinion.updated | localtime | naturaltime }}
                                             </p>
                                         </div>
                                         <div class="col-sm-3 col-4 mt-0 mb-0">

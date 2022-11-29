@@ -29,6 +29,8 @@
     }).done(function(data) {
       $('#article-content').html(data);
 
+      setReactionHandlers();
+
       $('#per-page-select').ready(function(event) {
         add_page_content_handlers();
       });

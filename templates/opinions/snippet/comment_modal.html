@@ -23,7 +23,7 @@
                 {% csrf_token %}
 
                 <div id="id--comment-form-errors-container">
-                    {% with form=opinion_form %}
+                    {% with form=comment_form %}
                         {% include "snippet/form_errors.html" %}
                     {% endwith %}
                 </div>
@@ -50,9 +50,10 @@
     </div>
 </div>
 
+{% form_field comment_form 'content' as content_field %}
 <script>
-    const commentModalSelector = "#id--comment-modal";
-    {% form_field comment_form 'content' as content_field %}
+    const commentModalId = "id--comment-modal";
+    const commentModalSelector = `#${commentModalId}`;
     const commentContentSelector = "#{{ content_field.auto_id }}";
     const commentFormErrorsSelector = "#id--comment-form-errors-container";
     const commentSubmitUrlSelector = "#id--comment-submit-url";
@@ -66,7 +67,7 @@
         resetModalForm(commentModalSelector, commentFormErrorsSelector, commentContentSelector, true);
 
         /* Submit handler for comment modal */
-        $("form[id^='id--comment-modal']").submit(function (event) {
+        $(`form[id^='${commentModalId}']`).submit(function (event) {
             const formData = {
                 content: $(commentContentSelector).val(),
             };

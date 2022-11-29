@@ -74,7 +74,8 @@ class ListTemplate(Enum):
 
 
 COMMENT_LIST_REACTIONS = [
-    ReactionsList.SHARE_FIELD, ReactionsList.DELETE_FIELD
+    ReactionsList.SHARE_FIELD, ReactionsList.DELETE_FIELD,
+    ReactionsList.EDIT_FIELD
 ]
 
 

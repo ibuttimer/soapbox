@@ -477,4 +477,4 @@ def is_delete_button(tag: Tag):
     """
     return tag.name == 'button' \
         and SoupMixin.equal_tag_attr(tag, 'type', 'button') \
-        and SoupMixin.in_tag_attr(tag, 'class', 'btn__submit-opinion')
+        and SoupMixin.in_tag_attr(tag, 'class', 'btn--submit-opinion')

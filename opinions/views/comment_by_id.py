@@ -48,7 +48,7 @@ from opinions.constants import (
     COMMENT_DATA_CTX, CONTENT_STATUS_CTX, OPINION_ID_ROUTE_NAME,
     OPINION_SLUG_ROUTE_NAME, MODE_QUERY, READ_ONLY_CTX, IS_ASSIGNED_CTX,
     REVIEW_RECORD_CTX, STATUS_BG_CTX, IS_PREVIEW_CTX, IS_REVIEW_CTX,
-    OPINION_CONTENT_STATUS_CTX,
+    OPINION_CONTENT_STATUS_CTX, SUBMIT_URL_CTX,
 )
 from opinions.enums import ReactionStatus, ViewMode
 from opinions.forms import CommentForm, ReportForm
@@ -68,11 +68,12 @@ from opinions.views.utils import (
     opinion_permission_check, comment_permission_check, DEFAULT_COMMENT_DEPTH,
     published_check, own_content_check, add_content_no_show_markers,
     get_query_args, QueryOption, STATUS_BADGES, get_comment_context,
-    add_review_form_context
+    add_review_form_context, timestamp_content, content_save_query_args
 )
-from soapbox import PATCH, POST, OPINIONS_APP_NAME
+from soapbox import PATCH, POST, OPINIONS_APP_NAME, HOME_ROUTE_NAME
 from utils import (
-    Crud, app_template_path, reverse_q, namespaced_url
+    Crud, app_template_path, reverse_q, namespaced_url,
+    redirect_on_success_or_render
 )
 
 
@@ -91,6 +92,11 @@ class CommentTemplate(Enum):
 
 
 CommentTemplate.DEFAULT = CommentTemplate.OPINION_LIST_TEMPLATE
+
+
+COMMENT_DETAIL_QUERY_ARGS = [
+    QueryOption(MODE_QUERY, ViewMode, ViewMode.DEFAULT),
+]
 
 
 class CommentDetail(LoginRequiredMixin, View):
@@ -114,8 +120,7 @@ class CommentDetail(LoginRequiredMixin, View):
         opinion_obj = comment_obj.opinion
 
         # get query params
-        query_params = get_query_args(
-            request, QueryOption(MODE_QUERY, ViewMode, ViewMode.DEFAULT))
+        query_params = get_query_args(request, COMMENT_DETAIL_QUERY_ARGS)
         mode = query_params.get(MODE_QUERY).value
 
         # perform own comment check
@@ -190,18 +195,66 @@ class CommentDetail(LoginRequiredMixin, View):
             )
         else:
             # updating comment
-            raise NotImplementedError("comment update not implemented")
-            # renderer = render_opinion_form
-            # render_args.update({
-            #     SUBMIT_URL_CTX: self.url(opinion_obj),
-            #     OPINION_FORM_CTX: OpinionForm(instance=opinion_obj),
-            # })
+            renderer = _render_comment_form
+            render_args.update({
+                SUBMIT_URL_CTX: self.url(comment_obj),
+                COMMENT_FORM_CTX: CommentForm(instance=comment_obj),
+            })
 
         template_path, context = renderer(
             f'Comment on {opinion_obj.title}' if read_only else TITLE_UPDATE,
             **render_args
         )
         return render(request, template_path, context=context)
+
+    def post(self, request: HttpRequest,
+             identifier: [int, str], *args, **kwargs) -> HttpResponse:
+        """
+        POST method to update Comment
+        :param request: http request
+        :param identifier: id or slug of comment to update
+        :param args: additional arbitrary arguments
+        :param kwargs: additional keyword arguments
+        :return: http response
+        """
+        comment_permission_check(request, Crud.UPDATE)
+
+        comment_obj = self._get_comment(identifier)
+        success = True                      # default to success
+        success_route = HOME_ROUTE_NAME     # on success default route
+        success_args = []                   # on success route args
+
+        # perform own comment check
+        own_content_check(request, comment_obj)
+
+        form = CommentForm(data=request.POST, files=request.FILES,
+                           instance=comment_obj)
+
+        if form.is_valid():
+            status, query = content_save_query_args(request)
+            comment_obj.status = status
+
+            timestamp_content(comment_obj)
+
+            # save updated object
+            comment_obj.save()
+            # django autocommits changes
+            # https://docs.djangoproject.com/en/4.1/topics/db/transactions/#autocommit
+
+            template_path, context = None, None
+        else:
+            template_path, context = _render_comment_form(
+                TITLE_UPDATE, **{
+                    SUBMIT_URL_CTX: self.url(comment_obj),
+                    COMMENT_FORM_CTX: form,
+                    OPINION_CTX: comment_obj,
+                    STATUS_CTX: comment_obj.status
+                })
+            success = False
+
+        return redirect_on_success_or_render(
+            request, success, success_route, *success_args,
+            template_path=template_path, context=context)
 
     def delete(self, request: HttpRequest,
                identifier: [int, str], *args, **kwargs) -> HttpResponse:
@@ -285,6 +338,18 @@ def _render_view(title: str, **kwargs):
         OPINIONS_APP_NAME, "comment_view.html"), context
 
 
+def _render_comment_form(title: str, **kwargs) -> tuple[
+    str, dict[str, Comment | list[str] | CommentForm | bool]]:
+    """
+    Render the comment template
+    :param title: title
+    :param kwargs: context keyword values, see get_opinion_context()
+    :return: tuple of template path and context
+    """
+    context = get_comment_context(title, **kwargs)
+
+    return app_template_path(OPINIONS_APP_NAME, "comment_form.html"), context
+
 class CommentDetailById(CommentDetail):
     """
     Class-based view for individual comment view/update/delete by id
@@ -301,6 +366,18 @@ class CommentDetailById(CommentDetail):
         :return: http response
         """
         return super().get(request, pk, *args, **kwargs)
+
+    def post(self, request: HttpRequest, pk: int,
+             *args, **kwargs) -> HttpResponse:
+        """
+        POST method to update Comment
+        :param request: http request
+        :param pk: id of comment to get
+        :param args: additional arbitrary arguments
+        :param kwargs: additional keyword arguments
+        :return: http response
+        """
+        return super().post(request, pk, *args, **kwargs)
 
     def delete(self, request: HttpRequest, pk: int,
                *args, **kwargs) -> HttpResponse:
@@ -343,6 +420,18 @@ class CommentDetailBySlug(CommentDetail):
         :return: http response
         """
         return super().get(request, slug, *args, **kwargs)
+
+    def post(self, request: HttpRequest, slug: str,
+             *args, **kwargs) -> HttpResponse:
+        """
+        POST method to update Comment
+        :param request: http request
+        :param slug: slug of comment to update
+        :param args: additional arbitrary arguments
+        :param kwargs: additional keyword arguments
+        :return: http response
+        """
+        return super().post(request, slug, *args, **kwargs)
 
     def delete(self, request: HttpRequest, slug: str,
                *args, **kwargs) -> HttpResponse:

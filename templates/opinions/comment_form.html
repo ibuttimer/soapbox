@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+<!-- comment_form.html start -->
+{# --- template variable defines for includes --- #}
+{# comment form template expects: 'comment_form' as CommentForm #}
+
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+{% load tz %}
+{% load form_field %}
+
+{% block head_title %}SoapBox - {{ title }}{% endblock %}
+
+{% block extra_css %}
+    {# include summernote css - use bootstrap4 to match settings.SUMMERNOTE_THEME #}
+    <link href="{% static 'summernote/summernote-bs4.min.css' %}" rel="stylesheet">
+{% endblock extra_css %}
+
+{% block extra_js_head %}
+    <script src="https://code.jquery.com/jquery-3.6.1.min.js" integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous"></script>
+    <script>window.jQuery || document.write('<script type="text/javascript" src="{% static 'jquery/jquery-3.6.1.min.js' %}"><\/script>')</script>
+{% endblock extra_js_head %}
+
+{% block content %}
+<article class="row text-center">
+    <div class="col-12 mt-2">
+        <h1>
+            {% trans "Comment" %}
+            {% if not read_only %}
+                <span class="badge rounded-pill {{ status_bg }} fs-6 align-top">{{ status }}</span>
+            {% endif %}
+        </h1>
+
+        <form
+            {% if not read_only %}
+                method="post" action="{{ submit_url }}?status=publish" enctype="multipart/form-data"
+            {% endif %}
+        >
+            {% if not read_only %}
+                {% csrf_token %}
+            {% endif %}
+
+            <div id="id--comment-form-errors-container">
+                {% with form=comment_form %}
+                    {% include "snippet/form_errors.html" %}
+                {% endwith %}
+            </div>
+
+            <fieldset
+                    {% if read_only %}
+                    disabled
+                    {% endif %}
+            >
+                <!-- top row: updated/published/author, preview/draft/publish -->
+                <div class="row mb-3">
+                    <div
+                         {% if read_only %}
+                            class="col-sm-9"
+                         {% else %}
+                             class="col-sm-3"
+                         {% endif %}
+                    >
+                        {% if comment %}
+                            <table class="text-start">
+                                <tbody>
+                                    {% if comment.published.year > 1 %}
+                                        <tr>
+                                            <th scope="row">Published</th>
+                                            <td>{{ comment.published | localtime | naturaltime }}</td>
+                                        </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <th scope="row">Updated</th>
+                                        <td>{{ comment.updated | localtime | naturaltime }}</td>
+                                    </tr>
+                                    {% if read_only %}
+                                        <tr>
+                                            <th scope="row">Author</th>
+                                            <td>
+                                                <a href="{% url 'user_id' comment.user.id %}">{{ comment.user.username}}</a>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        {% endif %}
+                    </div>
+                    {% if not read_only %}
+                        <div class="col-sm-6">
+                            <div class="row">
+                                <div class="col-sm-3">
+                                    {% if comment.id %}
+                                    <button type="button" class="btn__submit-comment btn btn-outline-danger mb-1"
+                                            data-bs-toggle="modal" data-bs-target="#id--opinion-delete-confirm-modal">
+                                        {% trans "Delete" %}
+                                    </button>
+                                    {% endif %}
+                                </div>
+                                <div class="col-sm-3 offset-sm-6">
+                                    <button type="submit" class="btn__submit-comment btn btn-outline-success">{% trans "Publish" %}</button>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="row mb-3">
+                    {% form_field comment_form 'content' as content_field %}
+                    <div class="col-sm-2 text-start">
+                        <label for="{{ content_field.auto_id }}" class="form-label">{{ content_field.label }}</label>
+                    </div>
+                    <div class="col-sm-10">
+                        {% if read_only %}
+                        <div id="readonly_content" class="text-start">
+                            <!-- content replaced -->
+                        </div>
+                        {% else %}
+                            {{ content_field }}
+                        {% endif %}
+                    </div>
+                </div>
+            </fieldset>
+
+            {% if not read_only %}
+                <div class="row mb-3">
+                    <div class="col-sm-2 offset-sm-5">
+                        <a class="btn btn-secondary mb-1" href="{% url 'home' %}">{% trans "Cancel" %}</a>
+                    </div>
+                </div>
+            {% endif %}
+        </form>
+    </div>
+</article>
+
+{% if not read_only and opinion.id %}
+    {% include "opinions/snippet/modal_common.html" %}
+    <!-- Modal to delete comment -->
+    <div id="id--delete-modal-container">
+        {% include "opinions/snippet/comment_delete_modal.html" %}
+    </div>
+{% endif %}
+{% endblock content %}
+
+{% block extra_js_body %}
+    {# include summernote js - use bootstrap4 to match settings.SUMMERNOTE_THEME #}
+    <script src="{% static 'summernote/summernote-bs4.min.js' %}"></script>
+    {# lazy loading summernote need to call initSummernote #}
+<!--    <script>-->
+<!--        $(document).ready(function() {-->
+<!--            initSummernote_id_bio();-->
+<!--        });-->
+<!--    </script>-->
+
+    {% if read_only %}
+        {% form_field comment_form 'content' as content_field %}
+        <script>
+            $(document).ready(function() {
+                $('#readonly_content').html('{{ content_field.initial | safe }}');
+            });
+        </script>
+    {% endif %}
+{% endblock extra_js_body %}
+<!-- comment_form.html end -->

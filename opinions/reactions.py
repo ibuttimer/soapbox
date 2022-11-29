@@ -75,6 +75,7 @@ class ReactionsList:
     UNPIN_FIELD = ReactionStatus.UNPIN.arg
     REPORT_FIELD = ReactionStatus.REPORT.arg
     DELETE_FIELD = ReactionStatus.DELETE.arg
+    EDIT_FIELD = ReactionStatus.EDIT.arg
 
     AGREE_FIELDS = [AGREE_FIELD, DISAGREE_FIELD]
     FOLLOW_FIELDS = [FOLLOW_FIELD, UNFOLLOW_FIELD]
@@ -83,7 +84,7 @@ class ReactionsList:
     ALL_FIELDS = [
         AGREE_FIELD, DISAGREE_FIELD, COMMENT_FIELD, FOLLOW_FIELD,
         UNFOLLOW_FIELD, SHARE_FIELD, HIDE_FIELD, SHOW_FIELD, PIN_FIELD,
-        UNPIN_FIELD, REPORT_FIELD, DELETE_FIELD
+        UNPIN_FIELD, REPORT_FIELD, DELETE_FIELD, EDIT_FIELD
     ]
 
     def __init__(self, **kwargs):
@@ -264,6 +265,13 @@ COMMENT_REACTIONS_LIST = ReactionsList(
         url=namespaced_url(OPINIONS_APP_NAME, COMMENT_ID_ROUTE_NAME),
         option=ReactionStatus.DELETE.arg, field=ReactionsList.DELETE_FIELD
     ).set_icon(HtmlTag.i(clazz="fa-solid fa-trash-can")),
+    edit=Reaction.ajax_of(
+        name="Edit comment",
+        identifier=f"{ReactionStatus.EDIT.arg}-comment",
+        icon="", aria="Edit comment", url_type=UrlType.ID,
+        url=namespaced_url(OPINIONS_APP_NAME, COMMENT_ID_ROUTE_NAME),
+        option=ReactionStatus.EDIT.arg, field=ReactionsList.EDIT_FIELD
+    ).set_icon(HtmlTag.i(clazz="fa-solid fa-pen")),
 )
 
 # list of comment reaction fields in display order
@@ -272,7 +280,8 @@ COMMENT_REACTION_FIELDS = [
     ReactionsList.COMMENT_FIELD, ReactionsList.FOLLOW_FIELD,
     ReactionsList.UNFOLLOW_FIELD, ReactionsList.SHARE_FIELD,
     ReactionsList.HIDE_FIELD, ReactionsList.SHOW_FIELD,
-    ReactionsList.REPORT_FIELD, ReactionsList.DELETE_FIELD
+    ReactionsList.REPORT_FIELD, ReactionsList.DELETE_FIELD,
+    ReactionsList.EDIT_FIELD
 ]
 # list of comment reactions in display order
 COMMENT_REACTIONS = [
@@ -284,11 +293,13 @@ COMMENT_REACTIONS = [
 ALWAYS_AVAILABLE = [
     ReactionsList.COMMENT_FIELD, ReactionsList.SHARE_FIELD
 ]
+# only available to author reactions
+AUTHOR_ONLY = [
+    ReactionsList.DELETE_FIELD, ReactionsList.EDIT_FIELD
+]
 # reactions which don't reflect selected status
 NON_SELECTABLE = ALWAYS_AVAILABLE.copy()
-NON_SELECTABLE.extend([
-    ReactionsList.DELETE_FIELD
-])
+NON_SELECTABLE.extend(AUTHOR_ONLY)
 
 
 def get_reaction_status(
@@ -400,8 +411,8 @@ def get_reaction_status(
                     elif field in ALWAYS_AVAILABLE:
                         enabled[field] = not deleted
                         displayer[field] = True
-                    elif field == ReactionsList.DELETE_FIELD:
-                        # delete comment via reactions only available to
+                    elif field in AUTHOR_ONLY:
+                        # delete/edit comment via reactions only available to
                         # comment author
                         enabled[field] = \
                             False if entry_is_opinion or deleted else \

@@ -65,7 +65,7 @@
         // clear form errors and entered data when modal hidden
         resetModalForm(reportModalSelector, reportFormErrorsSelector, reasonFieldSelector, false);
 
-        /* Submit handler for comment modal */
+        /* Submit handler for report modal */
         $("form[id^='id--report-modal']").submit(function (event) {
             const formData = {
                 reason: $(reasonFieldSelector).val(),

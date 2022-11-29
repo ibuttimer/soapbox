@@ -57,7 +57,13 @@
                     </div>
                     <!-- comment updated info -->
                     <div class="col-sm-5 mt-0 mb-0">
-                        {{ comment_data.updated | localtime | naturaltime }}
+                        <p class="card-text text-muted mt-0 mb-0">
+                            {% if comment_data.published.year > 1 %}
+                            <i class="fa-solid fa-upload"></i> {{ comment_data.published | localtime | naturaltime  }}
+                            {% endif %}
+                            <br>
+                            <i class="fa-solid fa-pen-to-square"></i> {{ comment_data.updated | localtime | naturaltime }}
+                        </p>
                     </div>
                     <!-- comment reactions -->
                     <div class="col-sm-5 mt-0 mb-0 justify-content-start">

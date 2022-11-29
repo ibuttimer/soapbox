@@ -26,6 +26,20 @@
         });
     }
 
+    /**
+     * Update react status of current opinion
+     * :param event: click event
+     * :param done_func: reaction specific done handler function
+     */
+    function getCommentEdit(event, done_func) {
+        // hide tooltip
+        $("#" + event.currentTarget.id).tooltip("hide");
+
+        const reaction = get_react_info(event)
+
+        document.location.href = `${reaction.url}?mode=edit`;
+    }
+
     const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 
     /**
@@ -108,8 +122,10 @@
     const shareReactionsSelector = "button[id^='id--react-share']";
     // Reaction buttons for delete are named 'id--react-delete-....'
     const deleteReactionsSelector = "button[id^='id--react-delete']";
+    // Reaction buttons for comments are named 'id--react-edit-....'
+    const editCommentReactionsSelector = "button[id^='id--react-edit']";
 
-    /* Set the click handlers to set the submit url for comments */
+    /* Set the click handlers for reactions */
     function setReactionHandlers() {
         /* TODO removing and adding all the handlers is unnecessary */
 
@@ -119,7 +135,8 @@
                 hideReactionsSelector, showReactionsSelector,
                 pinReactionsSelector, unpinReactionsSelector,
                 followReactionsSelector, unfollowReactionsSelector,
-                reportReactionsSelector, shareReactionsSelector
+                reportReactionsSelector, shareReactionsSelector,
+                deleteReactionsSelector, editCommentReactionsSelector
         ]) {
             $(selector).off();
         }
@@ -128,7 +145,7 @@
         $(commentReactionsSelector).on('click', (event) => {
             // set the submit url for comments
             set_react_info_vars(event, {
-                url: "#id--comment-submit-url"
+                url: commentSubmitUrlSelector
             });
         });
         $(reportReactionsSelector).on('click', (event) => {
@@ -145,6 +162,11 @@
 
             // display confirmation modal
             $(commentDeleteConfirmModalSelector).modal('show');
+        });
+        $(editCommentReactionsSelector).on('click', (event) => {
+            getCommentEdit(event, function(data) {
+                /* TODO handle edit in comment modal */
+            });
         });
         $(shareReactionsSelector).on('click', (event) => {
             // set the share url for share

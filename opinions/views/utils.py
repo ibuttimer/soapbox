@@ -53,7 +53,8 @@ from opinions.constants import (
     UNDER_REVIEW_EXCERPT_CTX, UNDER_REVIEW_TITLE, UNDER_REVIEW_EXCERPT,
     UNDER_REVIEW_OPINION_CONTENT, UNDER_REVIEW_COMMENT_CTX,
     UNDER_REVIEW_OPINION_CTX, FILTER_QUERY, REVIEW_QUERY, HTML_CTX, TITLE_CTX,
-    REVIEW_FORM_CTX, IS_REVIEW_CTX, REVIEW_BUTTON_CTX, REVIEW_BUTTON_TIPS_CTX
+    REVIEW_FORM_CTX, IS_REVIEW_CTX, REVIEW_BUTTON_CTX, REVIEW_BUTTON_TIPS_CTX,
+    COMMENT_FORM_CTX
 )
 from opinions.enums import (
     ChoiceArg, QueryArg, QueryStatus, ReactionStatus, OpinionSortOrder,
@@ -219,18 +220,18 @@ COMMENT_SEARCH_QUERY_ARGS.extend([
 COMMENT_SEARCH_QUERY_ARGS.extend(DATE_QUERY_ARGS)
 
 
-def get_opinion_context(title: str, **kwargs) -> dict:
+def get_content_context(title: str, context_form_key: str, **kwargs) -> dict:
     """
-    Generate the context for the opinion template
+    Generate the context for an opinion/comment template
     :param title: title
+    :param context_form_key: key for content form
     :param kwargs: context keyword values
-        comment_submit_url: form commit url, default None
-        comment_form: form to display, default None
-        opinion: opinion object, default None
-        comments: details of comments
+        submit_url: form commit url, default None
+        opinion_form/comment_form: form to display, default None
         read_only: read only flag, default False
         status: status, default None
-    :return: tuple of template path and context
+        all additional keyword args are copied to context
+    :return: context dict
     """
     status = kwargs.get(STATUS_CTX, None)
     if status is None:
@@ -243,20 +244,36 @@ def get_opinion_context(title: str, **kwargs) -> dict:
         STATUS_BG_CTX: STATUS_BADGES.get(status),
     }
 
-    opinion_form = kwargs.get(OPINION_FORM_CTX, None)
+    opinion_form = kwargs.get(context_form_key, None)
     if opinion_form is not None:
-        context[OPINION_FORM_CTX] = opinion_form
+        context[context_form_key] = opinion_form
         context[SUBMIT_URL_CTX] = kwargs.get(SUBMIT_URL_CTX, None)
 
     for key, value in kwargs.items():
+        # copy other keyword args
         if key not in [
-            READ_ONLY_CTX, STATUS_CTX, OPINION_FORM_CTX, SUBMIT_URL_CTX
+            READ_ONLY_CTX, STATUS_CTX, context_form_key, SUBMIT_URL_CTX
         ]:
             value = kwargs.get(key, None)
             if value is not None:
                 context[key] = value
 
     return context
+
+
+def get_opinion_context(title: str, **kwargs) -> dict:
+    """
+    Generate the context for the opinion template
+    :param title: title
+    :param kwargs: context keyword values
+        submit_url: form commit url, default None
+        opinion_form/comment_form: form to display, default None
+        read_only: read only flag, default False
+        status: status, default None
+        all additional keyword args are copied to context
+    :return: context dict
+    """
+    return get_content_context(title, OPINION_FORM_CTX, **kwargs)
 
 
 def get_comment_context(title: str, **kwargs) -> dict:
@@ -264,40 +281,14 @@ def get_comment_context(title: str, **kwargs) -> dict:
     Generate the context for the comment template
     :param title: title
     :param kwargs: context keyword values
-        comment_submit_url: form commit url, default None
+        submit_url: form commit url, default None
         comment_form: form to display, default None
-        opinion: opinion object, default None
-        comments: details of comments
         read_only: read only flag, default False
         status: status, default None
-    :return: tuple of template path and context
+        all additional keyword args are copied to context
+    :return: context dict
     """
-    status = kwargs.get(STATUS_CTX, None)
-    if status is None:
-        status = STATUS_DRAFT
-
-    context = {
-        TITLE_CTX: title,
-        READ_ONLY_CTX: kwargs.get(READ_ONLY_CTX, False),
-        STATUS_CTX: status,
-        STATUS_BG_CTX: STATUS_BADGES.get(status),
-    }
-
-    # TODO ???
-    opinion_form = kwargs.get(OPINION_FORM_CTX, None)
-    if opinion_form is not None:
-        context[OPINION_FORM_CTX] = opinion_form
-        context[SUBMIT_URL_CTX] = kwargs.get(SUBMIT_URL_CTX, None)
-
-    for key, value in kwargs.items():
-        if key not in [
-            READ_ONLY_CTX, STATUS_CTX, OPINION_FORM_CTX, SUBMIT_URL_CTX
-        ]:
-            value = kwargs.get(key, None)
-            if value is not None:
-                context[key] = value
-
-    return context
+    return get_content_context(title, COMMENT_FORM_CTX, **kwargs)
 
 
 def timestamp_content(content: [Opinion, Comment]):
@@ -345,10 +336,10 @@ def query_args_status(
     return status, status_query
 
 
-def opinion_save_query_args(
+def content_save_query_args(
         request: HttpRequest) -> tuple[Status, QueryStatus]:
     """
-    Get opinion save query arguments from request query
+    Get content save query arguments from request query
     :param request: http request
     :return: tuple of Status and QueryStatus
     """
@@ -576,12 +567,6 @@ def render_opinion_form(title: str, **kwargs) -> tuple[
     :return: tuple of template path and context
     """
     context = get_opinion_context(title, **kwargs)
-
-    context.update({
-        'summernote_fields': [OpinionForm.CONTENT_FF],
-        'other_fields': [OpinionForm.TITLE_FF],
-        'category_fields': [OpinionForm.CATEGORIES_FF],
-    })
 
     # set initial data
     opinion_form = context.get(OPINION_FORM_CTX, None)

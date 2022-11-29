@@ -1,29 +1,6 @@
-<!--
-  ~ MIT License
-  ~
-  ~ Copyright (c) 2022 Ian Buttimer
-  ~
-  ~ Permission is hereby granted, free of charge, to any person obtaining a copy
-  ~ of this software and associated documentation files (the "Software"), to deal
-  ~ in the Software without restriction, including without limitation the rights
-  ~ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-  ~ copies of the Software, and to permit persons to whom the Software is
-  ~ furnished to do so, subject to the following conditions:
-  ~
-  ~ The above copyright notice and this permission notice shall be included in
-  ~ all copies or substantial portions of the Software.
-  ~
-  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  ~ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  ~ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-  ~ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  ~ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-  ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-  ~ SOFTWARE.
-  -->
-
 {% extends "base.html" %}
 
+<!-- opinion_form.html start -->
 {# --- template variable defines for includes --- #}
 {# opinion form template expects: 'opinion_form' as OpinionForm #}
 
@@ -36,7 +13,7 @@
 {% block head_title %}SoapBox - {{ title }}{% endblock %}
 
 {% block extra_css %}
-    <!-- include summernote css - use bootstrap4 to match settings.SUMMERNOTE_THEME -->
+    {# include summernote css - use bootstrap4 to match settings.SUMMERNOTE_THEME #}
     <link href="{% static 'summernote/summernote-bs4.min.css' %}" rel="stylesheet">
 {% endblock extra_css %}
 
@@ -123,26 +100,26 @@
                             <div class="row">
                                 <div class="col-sm-3">
                                     {% if opinion.id %}
-                                    <button type="button" class="btn__submit-opinion btn btn-outline-danger mb-1"
+                                    <button type="button" class="btn--submit-opinion btn btn-outline-danger mb-1"
                                             data-bs-toggle="modal" data-bs-target="#id--opinion-delete-confirm-modal">
                                         {% trans "Delete" %}
                                     </button>
                                     {% endif %}
                                 </div>
                                 <div class="col-sm-3">
-                                    <button type="submit" class="btn__submit-opinion btn btn-outline-primary mb-1"
+                                    <button type="submit" class="btn--submit-opinion btn btn-outline-primary mb-1"
                                             formaction="{{ submit_url }}?status=draft">
                                         {% trans "Save Draft" %}
                                     </button>
                                 </div>
                                 <div class="col-sm-3">
-                                    <button type="submit" class="btn__submit-opinion btn btn-outline-warning mb-1"
+                                    <button type="submit" class="btn--submit-opinion btn btn-outline-warning mb-1"
                                             formaction="{{ submit_url }}?status=preview">
                                         {% trans "Save Preview" %}
                                     </button>
                                 </div>
                                 <div class="col-sm-3">
-                                    <button type="submit" class="btn__submit-opinion btn btn-outline-success">{% trans "Publish" %}</button>
+                                    <button type="submit" class="btn--submit-opinion btn btn-outline-success">{% trans "Publish" %}</button>
                                 </div>
                             </div>
                         </div>
@@ -230,9 +207,9 @@
 {% endblock content %}
 
 {% block extra_js_body %}
-    <!-- include summernote js - use bootstrap4 to match settings.SUMMERNOTE_THEME -->
+    {# include summernote js - use bootstrap4 to match settings.SUMMERNOTE_THEME #}
     <script src="{% static 'summernote/summernote-bs4.min.js' %}"></script>
-    <!-- lazy loading summernote need to call initSummernote -->
+    {# lazy loading summernote need to call initSummernote #}
 <!--    <script>-->
 <!--        $(document).ready(function() {-->
 <!--            initSummernote_id_bio();-->
@@ -240,17 +217,17 @@
 <!--    </script>-->
 
     {% if read_only %}
+        {% form_field opinion_form 'content' as content_field %}
         <script>
             $(document).ready(function() {
-                {% form_field opinion_form 'content' as content_field %}
                 $('#readonly_content').html('{{ content_field.initial | safe }}');
             });
         </script>
-    {% else %}
+    {% elif opinion.id %}
         <script>
+            const opinionDeleteModalSelector = "#id--opinion-delete-modal";
+
             $("#id--btn-opinion-delete-confirm").on('click', function (event) {
-                // const url = event.currentTarget.attributes['href'].textContent;
-                {% if opinion.id %}
                 $.ajax({
                     method: 'delete',
                     url: "{% url 'opinions:opinion_id' opinion.id %}",
@@ -271,10 +248,10 @@
                     redirect_rewrite_response_handler(data);
 
                     // show modal
-                    $("#id--opinion-delete-modal").modal('show');
+                    $(opinionDeleteModalSelector).modal('show');
 
-                    $("#id--opinion-delete-modal").off('hidden.bs.modal');
-                    $("#id--opinion-delete-modal").on('hidden.bs.modal', (event) => {
+                    $(opinionDeleteModalSelector).off('hidden.bs.modal');
+                    $(opinionDeleteModalSelector).on('hidden.bs.modal', (event) => {
                         redirect_rewrite_response_handler(redirect);
                     });
 
@@ -282,9 +259,8 @@
                     // display reason
                     $("#id--opinion-delete-modal-body").html(data.responseJSON.html);
 
-                    $("#id--opinion-delete-modal").off('hidden.bs.modal');
-                    $("#id--opinion-delete-modal").on('hidden.bs.modal', (event) => {
-
+                    $(opinionDeleteModalSelector).off('hidden.bs.modal');
+                    $(opinionDeleteModalSelector).on('hidden.bs.modal', (event) => {
                         redirect_rewrite_response_handler(data);
                     });
 
@@ -292,8 +268,8 @@
 
                 event.preventDefault();
                 event.stopPropagation();
-                {% endif %}
             });
         </script>
     {% endif %}
 {% endblock extra_js_body %}
+<!-- opinion_form.html end -->
