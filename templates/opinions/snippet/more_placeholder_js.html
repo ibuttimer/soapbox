@@ -1,27 +1,4 @@
-<!--
-  ~ MIT License
-  ~
-  ~ Copyright (c) 2022 Ian Buttimer
-  ~
-  ~ Permission is hereby granted, free of charge, to any person obtaining a copy
-  ~ of this software and associated documentation files (the "Software"), to deal
-  ~ in the Software without restriction, including without limitation the rights
-  ~ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-  ~ copies of the Software, and to permit persons to whom the Software is
-  ~ furnished to do so, subject to the following conditions:
-  ~
-  ~ The above copyright notice and this permission notice shall be included in
-  ~ all copies or substantial portions of the Software.
-  ~
-  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  ~ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  ~ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-  ~ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  ~ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-  ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-  ~ SOFTWARE.
-  -->
-
+<!-- more_placeholder_js.html start -->
 <script>
     // More placeholder buttons are named 'id--comment-more-placeholder-<id>'
     const MORE_PLACEHOLDER_SELECTOR = "button[id^='id--comment-more-placeholder']";
@@ -59,7 +36,7 @@
             $(".dynamic-insert-remove").remove();
 
             // set placeholder click handlers
-            $(MORE_PLACEHOLDER_SELECTOR).on('click', morePlaceholderClickHandler);
+            addMorePlaceholderHandlers();
             // set click handlers for reactions
             setReactionHandlers();
             enableTooltips();
@@ -91,8 +68,8 @@
                 // set click handlers for reactions
                 setReactionHandlers();
                 enableTooltips();
-                // set collapse event handlers for comment reply containers
-                setCollapseDisplayHandlers();
+                // add sub-level comment handlers
+                addSubLevelHandlers();
             });
         }
     }
@@ -125,13 +102,26 @@
         event.stopPropagation();
     }
 
-    $(document).ready(function () {
-
+    /* Add handlers to request more comments */
+    function addMorePlaceholderHandlers() {
         /* Click handler to request more comments */
         $(MORE_PLACEHOLDER_SELECTOR).on('click', morePlaceholderClickHandler);
+    }
+
+    /* Add handlers to display/request sub-level comments */
+    function addSubLevelHandlers() {
         /* Add collapse event handlers for comment reply containers */
         setCollapseDisplayHandlers();
         /* Event handlers for sub-level comments containers */
         $(COMMENT_COLLAPSE_TOGGLE_SELECTOR).on('click', subLevelCommentsClickHandler);
+    }
+
+    $(document).ready(function () {
+
+        /* Handler for request more comments */
+        addMorePlaceholderHandlers();
+        /* Handlers for sub-level comments */
+        addSubLevelHandlers();
     });
 </script>
+<!-- more_placeholder_js.html end -->

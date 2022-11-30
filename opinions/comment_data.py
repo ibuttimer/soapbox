@@ -300,7 +300,7 @@ def get_comment_tree(
     else:
         # check if there are sub-level comments for another request
         page = QueryArg.value_arg_or_object(
-            sub_query_params[PAGE_QUERY]) + 1 \
+            sub_query_params[PAGE_QUERY]) \
             if PAGE_QUERY in sub_query_params else 1
         sub_query_params[PAGE_QUERY] = page
         sub_query_params[COMMENT_DEPTH_QUERY] = DEFAULT_COMMENT_DEPTH

@@ -21,8 +21,13 @@
         {% else %}
             id="id--comment-card-{{ bundle.comment.id }}"
         {% endif %}
-            class="card level-{{ bundle.comment.level }}">
-        <div class="card-body">
+        {% if bundle.comment.level <= 10 %}
+            class="card level-{{ bundle.comment.level }}"
+        {% else %}}
+            class="card level-10"
+        {% endif %}
+    >
+    <div class="card-body">
             <div class="row">
                 {% if bundle.is_more_placeholder %}
                     <!-- more placeholder -->
