@@ -19,15 +19,12 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
+#
+from utils import append_slash
 
-from django.apps import AppConfig
-from django.utils.translation import gettext_lazy as _
+# Base routes related
+FOLLOWING_FEED_URL = append_slash("following")
+CATEGORY_FEED_URL = append_slash("category")
 
-from soapbox import BASE_APP_NAME
-
-
-class BaseConfig(AppConfig):
-    """ Config class for base application """
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = BASE_APP_NAME
-    verbose_name = _("Application Base")
+FOLLOWING_FEED_ROUTE_NAME = "following_feed"
+CATEGORY_FEED_ROUTE_NAME = "category_feed"

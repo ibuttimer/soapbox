@@ -117,12 +117,12 @@
                                         <a class="dropdown-item" href="{% url 'opinions:opinions' %}?pinned=yes">Pinned</a>
                                     </li>
                                     {% if opinion_follow %}
-                                    <li>
-                                        <a class="dropdown-item" tabindex="-1" href="{% url 'opinions:opinion_followed' %}?filter=new">New tagged author opinions</a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" tabindex="-1" href="{% url 'opinions:opinion_followed' %}?filter=all">All tagged author opinions</a>
-                                    </li>
+                                        <li>
+                                            <a class="dropdown-item" tabindex="-1" href="{% url 'opinions:opinion_followed' %}?filter=new">New tagged author opinions</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" tabindex="-1" href="{% url 'opinions:opinion_followed' %}?filter=all">All tagged author opinions</a>
+                                        </li>
                                     {% endif %}
                                     <li>
                                         <a class="dropdown-item" href="{% url 'opinions:opinions' %}">All</a>

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+<!-- opinion_feed.html start -->
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+{% load tz %}
+{% load form_field %}
+{% load dict_value %}
+
+{% block extra_js_head %}
+<script src="https://code.jquery.com/jquery-3.6.1.min.js" integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous"></script>
+<script>window.jQuery || document.write('<script type="text/javascript" src="{% static 'jquery/jquery-3.6.1.min.js' %}"><\/script>')</script>
+{% endblock extra_js_head %}
+
+{% block head_title %}SoapBox - {{ title }}{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/styles-opinion.css' %}" rel="stylesheet">
+{% endblock extra_css %}
+
+{% block content %}
+{% if page_heading %}
+<div class="row mt-2">
+    <div class="col-12 text-center">
+        <h3>{{ page_heading }}</h3>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    {# left panel opinions #}
+    <div class="col-sm-10">
+        {# category list for feed #}
+        {% if is_category_feed %}
+            <div class="btn-group flex-wrap">
+            {% for category in followed_categories %}
+                <a href="{% url 'base:category_feed' %}?category={{ category.name }}"
+                   {% if category.current %}
+                   class="btn btn-success active" aria-current="page"
+                   {% else %}
+                   class="btn btn-outline-success"
+                   {% endif %}
+                >
+                    {{ category.name }}
+                </a>
+            {% endfor %}
+            </div>
+        {% endif %}
+
+        {# sort order select #}
+        {% include "opinions/snippet/sort_order_select.html" %}
+
+        <article id="article-content" class="row d-flex justify-content-center">
+            {% include "opinions/opinion_list_content.html" %}
+        </article>
+    </div>
+    {# right panel feed navigation #}
+    <div class="col-sm-2">
+        <nav class="row col-12">
+            <row class="col-12">
+                <h3>Feeds</h3>
+            </row>
+            <row class="col-12">
+                <a href="{% url 'base:following_feed' %}"
+                {% if is_following_feed %}
+                    class="btn btn-success mb-2"
+                {% else %}
+                   class="btn btn-outline-success mb-2"
+                {% endif %}
+                >
+                    {% trans "Following" %}
+                </a>
+            </row>
+            <row class="col-12">
+                <a href="{% url 'base:category_feed' %}"
+               {% if is_category_feed %}
+                   class="btn btn-success mb-2"
+               {% else %}
+                   class="btn btn-outline-success mb-2"
+               {% endif %}
+                >
+                    {% trans "Category" %}
+                </a>
+            </row>
+            {% if opinion_create or opinion_read %}
+            <row class="col-12">
+                <h3>Opinions</h3>
+            </row>
+            {% endif %}
+            {% if opinion_create %}
+            <row class="col-12">
+                <a class="btn btn-outline-warning mb-2" href="{% url 'opinions:opinion_new' %}">
+                    {% trans "New Opinion" %}
+                </a>
+            </row>
+            {% endif %}
+            {% if opinion_read %}
+            <row class="col-12">
+                <a class="btn btn-outline-warning mb-2" href="{% url 'opinions:opinions' %}?author={{ user.username }}&status=all">
+                    {% trans "My Opinions" %}
+                </a>
+            </row>
+            <row class="col-12">
+                <a class="btn btn-outline-warning" href="{% url 'opinions:opinions' %}?author={{ user.username }}&status=draft">
+                    {% trans "Draft Opinions" %}
+                </a>
+            </row>
+            {% endif %}
+        </nav>
+    </div>
+</div>
+
+{% endblock content %}
+
+{% block extra_js_body %}
+    {% include "opinions/snippet/page_content_js.html" %}
+{% endblock extra_js_body %}
+<!-- opinion_feed.html end -->

@@ -339,7 +339,7 @@ def _render_view(title: str, **kwargs):
 
 
 def _render_comment_form(title: str, **kwargs) -> tuple[
-    str, dict[str, Comment | list[str] | CommentForm | bool]]:
+        str, dict[str, Comment | list[str] | CommentForm | bool]]:
     """
     Render the comment template
     :param title: title
@@ -349,6 +349,7 @@ def _render_comment_form(title: str, **kwargs) -> tuple[
     context = get_comment_context(title, **kwargs)
 
     return app_template_path(OPINIONS_APP_NAME, "comment_form.html"), context
+
 
 class CommentDetailById(CommentDetail):
     """

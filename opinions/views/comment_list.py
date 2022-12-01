@@ -35,7 +35,7 @@ from django.views.decorators.http import require_http_methods
 from opinions.comment_data import (
     CommentData, get_comments_review_status
 )
-from opinions.comment_utils import (
+from opinions.views.comment_queries import (
     get_comment_lookup, COMMENT_ALWAYS_FILTERS, COMMENT_FILTERS_ORDER
 )
 from opinions.constants import (
@@ -129,7 +129,7 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
         if self.is_query_own(query_params):
             # current users comments by status
             status = query_params.get(
-                STATUS_QUERY, QueryArg(QueryStatus.DEFAULT, False)).value
+                STATUS_QUERY, QueryArg.of(QueryStatus.DEFAULT)).value
             if isinstance(status, QueryStatus):
                 title = 'All my comments' \
                     if status.display == QueryStatus.ALL.display \
@@ -211,8 +211,7 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
         Select the template for the response
         :param query_params: request query
         """
-        reorder_query = query_params[REORDER_QUERY].value \
-            if REORDER_QUERY in query_params else False
+        reorder_query = self.is_reorder(query_params)
         self.response_template = ListTemplate.CONTENT_TEMPLATE \
             if reorder_query else ListTemplate.FULL_TEMPLATE
 

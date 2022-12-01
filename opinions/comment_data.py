@@ -35,7 +35,7 @@ from .constants import (
     COMMENT_MORE_ROUTE_NAME, OPINION_ID_QUERY, ID_QUERY, OPINION_CTX
 )
 from .models import Comment, Opinion, AgreementStatus, HideStatus, PinStatus
-from .comment_utils import get_comment_queryset
+from .views.comment_queries import get_comment_queryset
 from .views.utils import (
     DEFAULT_COMMENT_DEPTH, query_search_term
 )

@@ -32,7 +32,7 @@ from django.views import generic
 from opinions.constants import (
     ORDER_QUERY, UPDATED_FIELD, PER_PAGE_QUERY,
     OPINION_PAGINATION_ON_EACH_SIDE, OPINION_PAGINATION_ON_ENDS, AUTHOR_QUERY,
-    FILTER_QUERY
+    FILTER_QUERY, REORDER_QUERY
 )
 from opinions.enums import SortOrder, QueryArg, PerPage, FilterMode
 from opinions.query_params import QuerySetParams
@@ -81,6 +81,7 @@ class ContentListMixin(generic.ListView):
         # TODO currently '/"/= can't be used in content
         # as search depends on them
         query_params = self.req_query_args()(request)
+        self.validate_queryset(query_params)
 
         # set context extra content
         self.set_extra_context(query_params)
@@ -138,6 +139,15 @@ class ContentListMixin(generic.ListView):
         :return: dict of query args
         """
         return self.non_reorder_query_args
+
+    def validate_queryset(self, query_params: dict[str, QueryArg]):
+        """
+        Validate the query params to get the list of items for this view.
+        (Subclasses may validate and modify the query params by overriding
+         this function)
+        :param query_params: request query
+        """
+        pass
 
     def set_extra_context(self, query_params: dict[str, QueryArg]):
         """
@@ -320,3 +330,8 @@ class ContentListMixin(generic.ListView):
         return None if \
             query_params.get(FILTER_QUERY, FilterMode.DEFAULT).value == \
             FilterMode.ALL else self.user.previous_login
+
+    @staticmethod
+    def is_reorder(query_params: dict[str, QueryArg]):
+        return query_params[REORDER_QUERY].value \
+            if REORDER_QUERY in query_params else False

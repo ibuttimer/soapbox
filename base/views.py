@@ -20,9 +20,11 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
+from base.constants import FOLLOWING_FEED_ROUTE_NAME
 from soapbox import BASE_APP_NAME
+from utils import app_template_path, namespaced_url
 
 
 def get_landing(request: HttpRequest) -> HttpResponse:
@@ -31,7 +33,9 @@ def get_landing(request: HttpRequest) -> HttpResponse:
     :param request: request
     :return: response
     """
-    return render(request, f'{BASE_APP_NAME}/landing.html')
+    return render(request, app_template_path(BASE_APP_NAME, "landing.html")) \
+        if not request.user or not request.user.is_authenticated else \
+        redirect(namespaced_url(BASE_APP_NAME, FOLLOWING_FEED_ROUTE_NAME))
 
 
 def get_home(request: HttpRequest) -> HttpResponse:
@@ -40,6 +44,6 @@ def get_home(request: HttpRequest) -> HttpResponse:
     :param request: request
     :return: response
     """
-    return render(request, f'{BASE_APP_NAME}/home.html') \
+    return render(request, app_template_path(BASE_APP_NAME, "home.html")) \
         if request.user and request.user.is_authenticated else \
         get_landing(request)

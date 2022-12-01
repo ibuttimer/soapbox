@@ -38,13 +38,13 @@ Including another URLconf
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
-from base import get_home
 from soapbox import (
     ADMIN_URL, ACCOUNTS_URL, SUMMERNOTE_URL,
     USERS_URL, USER_APP_NAME,
     OPINIONS_URL, OPINIONS_APP_NAME,
-    settings, HOME_ROUTE_NAME
+    settings, BASE_APP_NAME
 )
+from soapbox.constants import FEED_URL
 
 urlpatterns = [
     path(ADMIN_URL, admin.site.urls),
@@ -52,7 +52,8 @@ urlpatterns = [
     path(ACCOUNTS_URL, include('allauth.urls')),
     path(USERS_URL, include(f'{USER_APP_NAME}.urls')),
     path(OPINIONS_URL, include(f'{OPINIONS_APP_NAME}.urls')),
-    path('', get_home, name=HOME_ROUTE_NAME),
+    path(FEED_URL, include(f'{BASE_APP_NAME}.urls')),
+    path('', include(f'{BASE_APP_NAME}.root_urls')),
 ]
 
 if settings.DEBUG:

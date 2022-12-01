@@ -211,6 +211,11 @@ COMMENT_REVIEWS_CTX = "comment_reviews"
 # templates/opinions/snippet/tagged_author_opinions.html
 TAGGED_COUNT_CTX = "tagged_count"
 
+# templates/opinions/opinion_feed.html
+IS_FOLLOWING_FEED_CTX = "is_following_feed"
+IS_CATEGORY_FEED_CTX = "is_category_feed"
+FOLLOWED_CATEGORIES_CTX = "followed_categories"
+
 # general
 TITLE_CTX = 'title'                             # page title
 PAGE_HEADING_CTX = 'page_heading'               # page heading display
@@ -225,6 +230,7 @@ COMMENT_DATA_CTX = "comment_data"
 
 # miscellaneous
 ALL_FIELDS = 'all_fields'
+ALL_CATEGORIES = 'All'
 
 UNDER_REVIEW_TITLE = 'Under Review'
 UNDER_REVIEW_EXCERPT = 'Content not available'

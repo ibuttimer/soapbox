@@ -20,14 +20,37 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 
-from django.apps import AppConfig
-from django.utils.translation import gettext_lazy as _
+"""soapbox URL Configuration
 
+The `urlpatterns` list routes URLs to views. For more information please see:
+    https://docs.djangoproject.com/en/4.1/topics/http/urls/
+Examples:
+Function views
+    1. Add an import:  from my_app import views
+    2. Add a URL to urlpatterns:  path('', views.home, name='home')
+Class-based views
+    1. Add an import:  from other_app.views import Home
+    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
+Including another URLconf
+    1. Import the include() function: from django.urls import include, path
+    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+"""
+from django.urls import path
+
+from opinions.views.opinion_list import (
+    OpinionCategoryFeed, OpinionFollowedFeed
+)
 from soapbox import BASE_APP_NAME
+from .constants import (
+    FOLLOWING_FEED_URL, FOLLOWING_FEED_ROUTE_NAME,
+    CATEGORY_FEED_URL, CATEGORY_FEED_ROUTE_NAME,
+)
 
+app_name = BASE_APP_NAME
 
-class BaseConfig(AppConfig):
-    """ Config class for base application """
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = BASE_APP_NAME
-    verbose_name = _("Application Base")
+urlpatterns = [
+    path(FOLLOWING_FEED_URL, OpinionFollowedFeed.as_view(),
+         name=FOLLOWING_FEED_ROUTE_NAME),
+    path(CATEGORY_FEED_URL, OpinionCategoryFeed.as_view(),
+         name=CATEGORY_FEED_ROUTE_NAME),
+]

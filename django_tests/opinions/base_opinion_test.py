@@ -35,7 +35,7 @@ from opinions.constants import (
     BEFORE_QUERY, PUBLISHED_FIELD, REVIEW_QUERY
 )
 from utils import DESC_LOOKUP, DATE_NEWEST_LOOKUP
-from opinions.models import Opinion, HideStatus, Review
+from opinions.models import Opinion, HideStatus
 from opinions.views.utils import DATE_QUERIES
 from opinions.enums import PerPage, OpinionSortOrder, QueryStatus, Hidden
 from user.models import User

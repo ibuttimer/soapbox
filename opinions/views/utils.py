@@ -140,13 +140,21 @@ OPINION_LIST_QUERY_ARGS.extend([
     QueryOption(PINNED_QUERY, Pinned, Pinned.DEFAULT),
 ])
 OPINION_LIST_QUERY_ARGS.extend(APPLIED_DEFAULTS_QUERY_ARGS)
-# request arguments for a followed authors list request
+# request arguments for followed authors list and followed feed requests
 # (replace pinned with filter)
 FOLLOWED_OPINION_LIST_QUERY_ARGS = OPINION_LIST_QUERY_ARGS.copy()
 find_index(
     FOLLOWED_OPINION_LIST_QUERY_ARGS, PINNED_QUERY,
     mapper=lambda item: item.query,
     replace=QueryOption(FILTER_QUERY, FilterMode, FilterMode.DEFAULT)
+)
+# request arguments for a category feed request
+# (replace pinned with category)
+CATEGORY_FEED_QUERY_ARGS = OPINION_LIST_QUERY_ARGS.copy()
+find_index(
+    CATEGORY_FEED_QUERY_ARGS, PINNED_QUERY,
+    mapper=lambda item: item.query,
+    replace=QueryOption.of_no_cls_dflt(CATEGORY_QUERY)
 )
 # request arguments for a review opinions list request
 REVIEW_OPINION_LIST_QUERY_ARGS = FOLLOWED_OPINION_LIST_QUERY_ARGS.copy()
@@ -200,6 +208,10 @@ DATE_QUERIES = [
 DATE_QUERY_ARGS = [
     QueryOption.of_no_cls_dflt(query) for query in DATE_QUERIES
 ]
+
+# query terms which only appear in a search
+SEARCH_ONLY_QUERIES = [SEARCH_QUERY]
+SEARCH_ONLY_QUERIES.extend(DATE_QUERIES)
 
 # request arguments for an opinion search request
 OPTION_SEARCH_QUERY_ARGS = OPINION_LIST_QUERY_ARGS.copy()
@@ -418,8 +430,7 @@ def get_query_args(
         options = [options]
 
     for option in options:
-        #                               value,   was_set
-        params[option.query] = QueryArg(option.default, False)
+        params[option.query] = QueryArg.of(option.default)
 
         if option.query in request.GET:
             param = request.GET[option.query].lower()

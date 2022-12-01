@@ -226,5 +226,4 @@ def choice_arg_query(
             )
 
     if inner_qs is not None:
-        query_set_params.add_and_lookup(
-            query, and_lookup, inner_qs)
+        query_set_params.add_and_lookup(query, and_lookup, inner_qs)

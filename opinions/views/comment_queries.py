@@ -28,15 +28,15 @@ from django.db.models import Q, QuerySet
 
 from categories.models import Status
 from user.models import User
-from .constants import (
+from opinions.constants import (
     STATUS_QUERY, CONTENT_QUERY, CATEGORY_QUERY, AUTHOR_QUERY,
     ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY,
     EQUAL_QUERY, SEARCH_QUERY, OPINION_ID_QUERY, PARENT_ID_QUERY, HIDDEN_QUERY,
     ID_QUERY
 )
-from .models import Opinion, Comment
-from .query_params import QuerySetParams, choice_arg_query
-from .search import (
+from opinions.models import Opinion, Comment
+from opinions.query_params import QuerySetParams, choice_arg_query
+from opinions.search import (
     regex_matchers, TERM_GROUP, regex_date_matchers, DATE_QUERY_GROUP,
     DATE_QUERY_YR_GROUP, DATE_QUERY_MTH_GROUP,
     DATE_QUERY_DAY_GROUP, MARKER_CHARS
@@ -44,7 +44,7 @@ from .search import (
 from opinions.views.utils import (
     NON_REORDER_COMMENT_LIST_QUERY_ARGS, DATE_QUERIES
 )
-from .enums import QueryArg, QueryStatus
+from opinions.enums import QueryArg, QueryStatus
 
 
 NON_DATE_QUERIES = [

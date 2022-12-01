@@ -49,6 +49,7 @@ TypeOpinionSortOrder = \
 TypeCommentSortOrder = \
     TypeVar("TypeCommentSortOrder", bound="CommentSortOrder")
 TypeViewMode = TypeVar("ViewMode", bound="ViewMode")
+TypeQueryArg = TypeVar("QueryArg", bound="QueryArg")
 
 
 _ARROW_UP = "\N{Upwards Paired Arrows}"
@@ -177,7 +178,7 @@ class QueryArg:
         return self.was_set and chk_value == value
 
     @property
-    def value_arg_or_value(self):
+    def value_arg_or_value(self) -> Any:
         """
         Get the arg value if this object's value is a ChoiceArg, otherwise
         this object's value
@@ -187,7 +188,7 @@ class QueryArg:
             if isinstance(self.value, ChoiceArg) else self.value
 
     @staticmethod
-    def value_arg_or_object(obj):
+    def value_arg_or_object(obj) -> Any:
         """
         Get the arg value if `obj` is a ChoiceArg, otherwise `obj`
         :param obj: object to get value of
@@ -195,6 +196,15 @@ class QueryArg:
         """
         return ChoiceArg.arg_if_choice_arg(obj.value) \
             if isinstance(obj, QueryArg) else obj
+
+    @staticmethod
+    def of(obj) -> TypeQueryArg:
+        """
+        Get an unset QueryArg with the value 0f `obj`
+        :param obj: value
+        :return: new QueryArg
+        """
+        return QueryArg(obj, False)
 
     def __str__(self):
         return f'{self.value}, was_set {self.was_set}'
@@ -581,7 +591,7 @@ ViewMode.DEFAULT = ViewMode.READ_ONLY
 
 
 class FilterMode(ChoiceArg):
-    """ Enum representing view mode opinions """
+    """ Enum representing view mode options """
     NEW = ('New', 'new')
     ALL = ('All', 'all')
 
