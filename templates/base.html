@@ -26,7 +26,6 @@
 <html lang="en">
 
 {% load i18n %}
-
 {% load static %}
 <head>
     <meta charset="UTF-8">
@@ -213,7 +212,7 @@
                         {% endif %}
                     </ul>
                     <form class="d-flex" role="search" method="get" action="{% url 'opinions:opinion_search' %}">
-                        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" name="search">
+                        <input class="form-control me-2" type="search" placeholder="Search opinions" aria-label="Search" name="search">
                         <button class="btn btn-outline-success" type="submit">Search</button>
                     </form>
                     <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
