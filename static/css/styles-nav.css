@@ -23,3 +23,27 @@
     height: var(--user-icon-height);
     border-radius: var(--user-icon-radius);
 }
+
+.div__panel {
+    border-radius: 4px;
+}
+
+.div__left-panel {
+
+}
+
+.div__right-panel {
+
+}
+
+/* tiny screens, 315px wide or less */
+@media screen and (max-width: 315px) {
+
+    .div__left-panel {
+        margin-bottom: 10px;
+    }
+
+    .div__right-panel {
+        margin-bottom: 10px;
+    }
+}

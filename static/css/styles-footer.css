@@ -1,6 +1,6 @@
 
 main {
-    margin-bottom: 120px;
+
 }
 
 .socials {
@@ -14,7 +14,7 @@ main {
 @media screen and (max-width: 315px) {
 
     main {
-        margin-bottom: 155px;
+
     }
 }
 

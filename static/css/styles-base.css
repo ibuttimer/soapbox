@@ -25,3 +25,11 @@
 .theme-colour {
     color: var(--orange-yellow);
 }
+
+html {
+    height: 100%;
+}
+
+.main-content {
+    background: url("../img/balloons-1187260_1280.png") no-repeat center center;
+}
