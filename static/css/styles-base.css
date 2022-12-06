@@ -31,5 +31,9 @@ html {
 }
 
 .main-content {
-    background: url("../img/balloons-1187260_1280.png") no-repeat center center;
+    background: url("../img/balloons-1187260_1280.png") repeat center center;
+}
+
+.no-padding {
+    padding: 0;
 }

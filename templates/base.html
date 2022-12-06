@@ -48,6 +48,7 @@
     <link href="{% static 'fontawesome/css/brands.css' %}" rel="stylesheet">
     <link href="{% static 'fontawesome/css/solid.css' %}" rel="stylesheet">
 
+    <link href="{% static 'css/custom.css' %}" rel="stylesheet">
     <link href="{% static 'css/styles.css' %}" rel="stylesheet">
 
     {% block extra_css %}
@@ -64,7 +65,7 @@
 
 </head>
 <body class="h-100 d-flex flex-column">
-    <header class="container">
+    <header class="container no-padding">
         <nav class="navbar navbar-expand-lg bg-light div__panel">
             <div class="container-fluid">
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggler"
@@ -257,7 +258,7 @@
         </nav>
     </header>
 
-    <main class="container flex-shrink-0 flex-grow-1 overflow-auto main-content">
+    <main class="container flex-shrink-0 flex-grow-1 overflow-auto main-content no-padding">
         {% for message in messages %}
         <div class="container">
             <div class="row">
@@ -292,7 +293,7 @@
     </main>
 
     {# footer #}
-    <footer class="container d-flex flex-wrap justify-content-between align-items-center py-3 border-top bg-light div__panel">
+    <footer class="container d-flex flex-wrap justify-content-between align-items-center py-3 border-top bg-white div__panel">
         <div class="col-md-4 d-flex align-items-center">
             <a href="/" class="ms-2 me-2 mb-md-0 text-muted text-decoration-none lh-1">
                 <img class="bi" width="24" height="24" src="{% static 'favicon-32x32-gray.png' %}" alt="SoapBox logo"/>
@@ -301,11 +302,13 @@
         </div>
 
         <div class="col-md-4 d-flex align-items-center justify-content-center">
-            <a href="/admin" target="_blank" rel="noopener"
-               aria-label="visit admin page in another tab"
-               class="socials">
-                <i class="fa-solid fa-screwdriver-wrench text-muted"></i>
-            </a>
+            <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Admin">
+                <a href="/admin" target="_blank" rel="noopener"
+                   aria-label="visit admin page in another tab"
+                   class="socials">
+                    <i class="fa-solid fa-screwdriver-wrench text-muted"></i>
+                </a>
+            </span>
         </div>
 
         <ul class="nav col-md-4 justify-content-end list-unstyled d-flex">

@@ -56,35 +56,35 @@
         </article>
     </div>
     {# right panel feed navigation #}
-    <div class="col-sm-2 bg-light div__panel div__right-panel">
-        <nav class="row col-12">
+    <div class="col-sm-2 mb-2 bg-light div__panel div__right-panel">
+        <nav class="row col-12 mt-2">
             <row class="col-12">
                 <h3>Feeds</h3>
             </row>
-            <row class="col-12">
+            <row class="col-12 mb-2">
                 <a href="{% url 'base:following_feed' %}"
                 {% if is_following_feed %}
-                    class="btn btn-success mb-2"
+                    class="btn btn-success"
                 {% else %}
-                   class="btn btn-outline-success mb-2"
+                   class="btn btn-outline-success"
                 {% endif %}
                 >
                     {% trans "Following" %}
                 </a>
             </row>
-            <row class="col-12">
+            <row class="col-12 mb-2">
                 <a href="{% url 'base:category_feed' %}"
                {% if is_category_feed %}
-                   class="btn btn-success mb-2"
+                   class="btn btn-success"
                {% else %}
-                   class="btn btn-outline-success mb-2"
+                   class="btn btn-outline-success"
                {% endif %}
                 >
                     {% trans "Category" %}
                 </a>
             </row>
             {% if opinion_create or opinion_read %}
-            <row class="col-12">
+            <row class="col-12 mt-2">
                 <h3>Opinions</h3>
             </row>
             {% endif %}
@@ -115,5 +115,6 @@
 
 {% block extra_js_body %}
     {% include "opinions/snippet/page_content_js.html" %}
+    {% include "opinions/snippet/reactions_js.html" %}
 {% endblock extra_js_body %}
 <!-- opinion_feed.html end -->

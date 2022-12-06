@@ -147,6 +147,11 @@ Enter `Username`, `Password` and optionally `Email address`.
 ````shell
 $ python manage.py createsuperuser
 ````
+#### Build Bootstrap
+Build a customised version of Bootstrap.
+````shell
+$ npm run build
+````
 
 #### Configure authentication
 From [Configure authentication](https://django-allauth.readthedocs.io/en/latest/installation.html#post-installation)
