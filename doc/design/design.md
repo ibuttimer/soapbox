@@ -200,9 +200,8 @@ font-family: 'Rubik', sans-serif;
 
 ## Colour Scheme
 
-Colour scheme courtesy of [coolors](https://coolors.co/f8ffe5-06d6a0-1b9aaa-ef476f-ffc43d)
-
-![](img/colour-scheme-example.png)
+Colour scheme courtesy of [Huemint](https://huemint.com/bootstrap-basic/#palette=f3fafa-ffffff-00032d-1c4858-E0E0E0-b5a7af) with updates 
+from [Adobe Color Accessibility Tools](https://color.adobe.com/create/color-contrast-analyzer) improve contrast.
 
 ## UX Elements
 

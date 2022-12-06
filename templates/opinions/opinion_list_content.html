@@ -18,8 +18,13 @@
 
     {% if paginator.count == 0 %}
         <div class="row">
-            <div class="col-12 mt-2 text-center">
-                <h3>No opinions found</h3>
+            <div class="col-12 mt-2 d-flex justify-content-center">
+                <div class="card div__no-content-card">
+                    <img src="{% static 'img/no-speak-monkey-148893.png' %}" class="card-img-top" alt="...">
+                    <div class="card-body">
+                        <h4 class="card-text text-center">No opinions found.</h4>
+                    </div>
+                </div>
             </div>
         </div>
     {% else %}
