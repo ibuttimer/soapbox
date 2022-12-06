@@ -28,12 +28,14 @@
 </div>
 {% endif %}
 
-{# sort order select #}
-{% include "opinions/snippet/sort_order_select.html" %}
+<div class="row flex-grow-1 overflow-auto">
+    {# sort order select #}
+    {% include "opinions/snippet/sort_order_select.html" %}
 
-<article id="article-content" class="row">
-    {% include "opinions/comment_list_content.html" %}
-</article>
+    <article id="article-content" class="row d-flex justify-content-center">
+        {% include "opinions/comment_list_content.html" %}
+    </article>
+</div>
 
 {% include "opinions/snippet/modal_common.html" %}
 <!-- Modal to share opinion/comment -->

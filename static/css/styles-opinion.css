@@ -87,3 +87,8 @@
 .div__no-content-card {
     width: 12rem;
 }
+
+.div__comment-list-padding {
+    padding-right: calc(var(--bs-gutter-x)*.5);
+    padding-left: calc(var(--bs-gutter-x)*.5);
+}
