@@ -108,44 +108,56 @@
         </div>
 
         <div class="row mb-3">
-            <div id="readonly_content" class="text-start">
-                {% if view_ok %}
-                    {{ opinion.content | safe }}
-                {% else %}
-                    <em>{{ under_review_opinion }}</em>
-                {% endif %}
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body readonly_content">
+                        {% if view_ok %}
+                            {{ opinion.content | safe }}
+                        {% else %}
+                            <em>{{ under_review_opinion }}</em>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
 
         {% if not is_review %}
             {# no reactions in review mode #}
             <div class="row mb-3">
-                <div class="col-sm-2 offset-sm-5">
-                    <a class="btn btn-secondary mb-1" href="{% url 'home' %}">{% trans "Done" %}</a>
-                </div>
+                <div class="col-12">
+                    <div class="card bg-gray-100">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-sm-2 offset-sm-5">
+                                    <a class="btn btn-dark mb-1" href="{% url 'home' %}">{% trans "Done" %}</a>
+                                </div>
 
-                {% if view_ok %}
-                <div class="col-sm-5 justify-content-start">
-                    {# --- template variable defines for includes --- #}
-                    {# reactions template expects: 'target_id' as id of target opinion/comment #}
-                    {#                             'target_slug' as slug of target opinion/comment #}
-                    {#                             'target_type' as opinion/comment #}
-                    {#                             'target_author' as id of opinion/comment author #}
-                    {#                             'reactions' as list of Reaction #}
-                    {#                             'reaction_ctrls' as dict of ReactionCtrl #}
-                    {% with reactions=opinion_reactions %}
-                        {% with target_type="opinion" %}
-                            {% with target_id=opinion.id %}
-                                {% with target_author=opinion.user.id %}
-                                    {% with target_slug=opinion.slug %}
-                                        {% include "opinions/snippet/reactions.html" %}
+                                {% if view_ok %}
+                                <div class="col-sm-5 justify-content-start">
+                                    {# --- template variable defines for includes --- #}
+                                    {# reactions template expects: 'target_id' as id of target opinion/comment #}
+                                    {#                             'target_slug' as slug of target opinion/comment #}
+                                    {#                             'target_type' as opinion/comment #}
+                                    {#                             'target_author' as id of opinion/comment author #}
+                                    {#                             'reactions' as list of Reaction #}
+                                    {#                             'reaction_ctrls' as dict of ReactionCtrl #}
+                                    {% with reactions=opinion_reactions %}
+                                        {% with target_type="opinion" %}
+                                            {% with target_id=opinion.id %}
+                                                {% with target_author=opinion.user.id %}
+                                                    {% with target_slug=opinion.slug %}
+                                                        {% include "opinions/snippet/reactions.html" %}
+                                                    {% endwith %}
+                                                {% endwith %}
+                                            {% endwith %}
+                                        {% endwith %}
                                     {% endwith %}
-                                {% endwith %}
-                            {% endwith %}
-                        {% endwith %}
-                    {% endwith %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                {% endif %}
             </div>
         {% endif %}
     </div>

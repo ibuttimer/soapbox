@@ -14,7 +14,7 @@
 }
 
 .reactions-selected {
-    color: blue;
+    color: var(--paradise-pink);
 }
 
 .reactions-disabled {

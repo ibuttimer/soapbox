@@ -145,3 +145,9 @@ $dark: #00032d;
   }
 }
 
+@each $color, $value in $grays {
+  // generate .bg-gray-{colour}, e.g. bg-gray-100
+  .bg-gray-#{$color} {
+    @include bg-colour($value);
+  }
+}
