@@ -37,3 +37,7 @@ html {
 .no-padding {
     padding: 0;
 }
+
+.btn__text {
+    width: 7em;
+}

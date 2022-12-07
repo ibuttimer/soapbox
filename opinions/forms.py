@@ -92,8 +92,14 @@ class OpinionForm(forms.ModelForm):
             self,
             # exclude non-bootstrap fields
             [field for field in OpinionForm.Meta.fields
-             if field not in OpinionForm.Meta.non_bootstrap_fields],
+             if field not in OpinionForm.Meta.non_bootstrap_fields
+             and field != CATEGORIES_FIELD],
             {'class': 'form-control'})
+        update_field_widgets(
+            self,
+            # exclude non-bootstrap fields
+            [CATEGORIES_FIELD],
+            {'class': 'form-select'})
 
 
 class CommentForm(forms.ModelForm):
@@ -139,6 +145,7 @@ class CommentForm(forms.ModelForm):
                         ['para', ['ul', 'ol', 'paragraph']],
                         ['height', ['height']],
                     ],
+                    'height': '240',
                 }
             })
         }

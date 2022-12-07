@@ -64,9 +64,9 @@
             <row class="col-12 mb-2">
                 <a href="{% url 'base:following_feed' %}"
                 {% if is_following_feed %}
-                    class="btn btn-success"
+                    class="btn btn-success btn__text"
                 {% else %}
-                   class="btn btn-outline-success"
+                   class="btn btn-outline-success btn__text"
                 {% endif %}
                 >
                     {% trans "Following" %}
@@ -75,9 +75,9 @@
             <row class="col-12 mb-2">
                 <a href="{% url 'base:category_feed' %}"
                {% if is_category_feed %}
-                   class="btn btn-success"
+                   class="btn btn-success btn__text"
                {% else %}
-                   class="btn btn-outline-success"
+                   class="btn btn-outline-success btn__text"
                {% endif %}
                 >
                     {% trans "Category" %}
@@ -90,19 +90,19 @@
             {% endif %}
             {% if opinion_create %}
             <row class="col-12">
-                <a class="btn btn-outline-warning mb-2" href="{% url 'opinions:opinion_new' %}">
+                <a class="btn btn-outline-warning mb-2 btn__text" href="{% url 'opinions:opinion_new' %}">
                     {% trans "New Opinion" %}
                 </a>
             </row>
             {% endif %}
             {% if opinion_read %}
             <row class="col-12">
-                <a class="btn btn-outline-warning mb-2" href="{% url 'opinions:opinions' %}?author={{ user.username }}&status=all">
+                <a class="btn btn-outline-warning mb-2 btn__text" href="{% url 'opinions:opinions' %}?author={{ user.username }}&status=all">
                     {% trans "My Opinions" %}
                 </a>
             </row>
             <row class="col-12">
-                <a class="btn btn-outline-warning" href="{% url 'opinions:opinions' %}?author={{ user.username }}&status=draft">
+                <a class="btn btn-outline-warning btn__text" href="{% url 'opinions:opinions' %}?author={{ user.username }}&status=draft">
                     {% trans "Draft Opinions" %}
                 </a>
             </row>
