@@ -88,22 +88,21 @@
 
         <!-- top row: category, updated/published/author, preview/draft/publish -->
         <div class="row mb-3">
-            <div class="col-sm-4">
+            <div class="col-lg-3 col-md-6 mb-3">
                 {% for category in opinion.categories.all %}
-                    <span class="badge rounded-pill text-bg-info">{{ category.name }}</span>
+                    <span class="badge rounded-pill text-bg-info fs-6">{{ category.name }}</span>
                 {% endfor %}
             </div>
-
-            <div class="col-sm-3">
+            <div class="col-lg-3 col-md-6">
+                <p><strong>Author</strong> <a href="{% url 'user:user_id' opinion.user.id %}" aria-label="view author's profile">{{ opinion.user.username }}</a></p>
+            </div>
+            <div class="col-lg-3 col-md-6">
                 {% if opinion.published.year > 1 %}
                     <p><strong>Published</strong> {{ opinion.published | localtime | naturaltime  }}</p>
                 {% endif %}
             </div>
-            <div class="col-sm-3">
+            <div class="col-lg-3 col-md-6">
                 <p><strong>Updated</strong> {{ opinion.updated | localtime | naturaltime }}</p>
-            </div>
-            <div class="col-sm-2">
-                <p><strong>Author</strong> <a href="{% url 'user:user_id' opinion.user.id %}" aria-label="view author's profile">{{ opinion.user.username }}</a></p>
             </div>
         </div>
 
@@ -129,7 +128,7 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-sm-2 offset-sm-5">
-                                    <a class="btn btn-dark mb-1 btn__text" href="{% url 'home' %}">{% trans "Done" %}</a>
+                                    <a class="btn btn-dark mb-1 btn__text   " href="{% url 'home' %}">{% trans "Done" %}</a>
                                 </div>
 
                                 {% if view_ok %}

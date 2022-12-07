@@ -17,10 +17,10 @@
     <var id="var--repeat-search-term" hidden>{{ repeat_search_term }}</var>
 
     {% if paginator.count == 0 %}
-        <div class="row">
+        <div class="row mb-3">
             <div class="col-12 mt-2 d-flex justify-content-center">
                 <div class="card div__no-content-card">
-                    <img src="{% static 'img/no-speak-monkey-148893.png' %}" class="card-img-top" alt="...">
+                    <img src="{% static 'img/no-speak-monkey-148893.png' %}" class="card-img-top" alt="speak no evil monkey image">
                     <div class="card-body">
                         <h4 class="card-text text-center">No opinions found.</h4>
                     </div>
@@ -50,7 +50,7 @@
                                         </div>
                                         <div id="categories_{{ forloop.counter }}" class="col-sm-3 col-10 mt-0 mb-0">
                                             {% for category in opinion.categories %}
-                                            <span class="badge rounded-pill text-bg-info">{{ category }}</span>
+                                            <span class="badge rounded-pill text-bg-info fs-6">{{ category }}</span>
                                             {% endfor %}
                                         </div>
                                         <div id="pinned_{{ forloop.counter }}" class="col-sm-1 col-2 mt-0 mb-0">
@@ -107,7 +107,7 @@
                                             {% endif %}
                                             {% if is_review and is_moderator %}
                                             <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Review">
-                                                <a class="btn btn-info" href="{% url 'opinions:opinion_slug' opinion.slug %}?mode=review" aria-label="review {{ opinion.title }}">
+                                                <a class="btn btn-info mb-2" href="{% url 'opinions:opinion_slug' opinion.slug %}?mode=review" aria-label="review {{ opinion.title }}">
                                                     <i class="fa-solid fa-magnifying-glass"></i>
                                                 </a>
                                             </span>
@@ -120,7 +120,7 @@
                                                 </div>
                                                 <div class="col-md-6 mt-0 mb-0">
                                                     {% dict_value status_bg opinion.status as status_class %}
-                                                    <span id="status_{{ forloop.counter }}" class="badge rounded-pill {{ status_class }}">{{ opinion.status }}</span>
+                                                    <span id="status_{{ forloop.counter }}" class="badge rounded-pill {{ status_class }} fs-6">{{ opinion.status }}</span>
                                                 </div>
                                             </div>
                                             <p class="card-text text-muted mt-0 mb-0">

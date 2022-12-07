@@ -87,7 +87,7 @@
                                         <tr>
                                             <th scope="row">Author</th>
                                             <td>
-                                                <a href="{% url 'user_id' opinion.user.id %}">{{ opinion.user.username}}</a>
+                                                <a href="{% url 'user:user_id' opinion.user.id %}">{{ opinion.user.username}}</a>
                                             </td>
                                         </tr>
                                     {% endif %}

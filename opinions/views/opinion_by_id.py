@@ -46,7 +46,7 @@ from soapbox import (
 )
 from utils import (
     app_template_path, redirect_on_success_or_render, Crud, reverse_q,
-    namespaced_url, ensure_list
+    namespaced_url, ensure_list, ModelMixin
 )
 from opinions.constants import (
     OPINION_ID_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME,
@@ -59,9 +59,9 @@ from opinions.constants import (
     ALL_FIELDS, VIEW_OK_CTX, TEMPLATE_TARGET_SLUG, TEMPLATE_TARGET_AUTHOR,
     REDIRECT_CTX, ELEMENT_ID_CTX, HTML_CTX, OPINIONS_ROUTE_NAME, AUTHOR_QUERY,
     STATUS_QUERY, MODE_QUERY, IS_REVIEW_CTX, IS_ASSIGNED_CTX,
-    REVIEW_RECORD_CTX, REVIEW_FORM_CTX, REWRITES_PROP_CTX, STATUS_BG_CTX,
-    REVIEW_BUTTON_CTX, ACTION_URL_CTX, OPINION_REVIEW_DECISION_ID_ROUTE_NAME,
-    COMMENT_REVIEW_DECISION_ID_ROUTE_NAME, REVIEW_BUTTON_TIPS_CTX
+    REVIEW_RECORD_CTX, REWRITES_PROP_CTX, STATUS_BG_CTX, ACTION_URL_CTX,
+    OPINION_REVIEW_DECISION_ID_ROUTE_NAME,
+    COMMENT_REVIEW_DECISION_ID_ROUTE_NAME,
 )
 from opinions.forms import OpinionForm, CommentForm, ReportForm, ReviewForm
 from opinions.models import (
@@ -69,8 +69,8 @@ from opinions.models import (
     FollowStatus
 )
 from opinions.queries import (
-    content_status_check, effective_content_status, content_review_record,
-    content_review_history, content_review_records_list
+    content_status_check, effective_content_status, content_review_history,
+    content_review_records_list
 )
 from opinions.reactions import (
     OPINION_REACTIONS, COMMENT_REACTIONS, get_reaction_status
@@ -735,7 +735,7 @@ REVIEW_UPDATE_COPY_FIELDS = [
 
 
 def review_status_patch(
-        request: HttpRequest, model: Type[Model], pk: int) -> JsonResponse:
+        request: HttpRequest, model: Type[ModelMixin], pk: int) -> JsonResponse:
     """
     View function to update content review status.
     :param request: http request
@@ -760,7 +760,8 @@ def review_status_patch(
         Review.STATUS_FIELD: Status.objects.get(**{
             f'{Status.NAME_FIELD}': effective_status.display
         }),
-        Review.REVIEWER_FIELD: request.user
+        Review.REVIEWER_FIELD: request.user,
+        Review.content_field(model): content
     }
 
     # create new review record for each of current_reviews
