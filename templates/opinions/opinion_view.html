@@ -128,10 +128,11 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-sm-2 offset-sm-5">
-                                    <a class="btn btn-dark mb-1 btn__text   " href="{% url 'home' %}">{% trans "Done" %}</a>
+                                    <a class="btn btn-dark mb-1 btn__text" href="{% url 'home' %}">{% trans "Done" %}</a>
                                 </div>
 
                                 {% if view_ok %}
+                                <!-- opinion reactions -->
                                 <div class="col-sm-5 justify-content-start">
                                     {# --- template variable defines for includes --- #}
                                     {# reactions template expects: 'target_id' as id of target opinion/comment #}

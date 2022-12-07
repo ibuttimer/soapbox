@@ -26,7 +26,7 @@
             </div>
             <!-- comment details -->
             <div class="col-sm-10 mt-0 mb-0">
-                <div class="row">
+                <div class="row mb-2">
                     <div class="col-sm-10 mt-0 mb-0" id="id--comment-content-{{ comment_data.id }}">
                         {% dict_value content_status comment_data.id as status %}
                         {% if status.deleted %}
@@ -44,7 +44,7 @@
                         <span class="badge rounded-pill text-bg-warning">c{{ comment_data.id }} o{{ comment_data.opinion.id }}</span>
                     </div>
                 </div>
-                <div class="row">
+                <div class="row mb-2">
                     <!-- review info -->
                     <div class="col-sm-2 mt-0 mb-0">
                         {% if is_review and is_moderator %}
@@ -86,6 +86,17 @@
                                 {% endwith %}
                             {% endwith %}
                         {% endwith %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 justify-content-center">
+                        <p>
+                            From opinion
+                            <a href="{% url 'opinions:opinion_id' comment_data.opinion.id %}?mode=read-only"
+                               class="post-link" aria-label="read opinion {{ comment_data.opinion.title }}">
+                                {{ comment_data.opinion.title }}
+                            </a>
+                        </p>
                     </div>
                 </div>
             </div>

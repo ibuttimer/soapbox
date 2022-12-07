@@ -20,7 +20,7 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from typing import Union, Any
+from typing import Union
 
 from django import template
 
@@ -30,31 +30,13 @@ register = template.Library()
 
 
 @register.simple_tag
-def calc(
-    left: Union[int, str, list, tuple], op: str,
-    right: Union[int, str, list, tuple]
-) -> Union[int, float]:
+def comment_level(level: Union[int, str], offset: Union[int, str] = 0):
     """
-    Perform simple calculations. If an operation is a list or tuple, its
-    length is used in the calculation.
-    :param left: first operand
-    :param op: operation; '/', '*' etc.
-    :param right: second operand
-    :return: int/float result
+    Get the comment level class
+    :param level: comment level
+    :param offset: comment level offset
+    :return: class
     """
-    left = _convert(left)
-    right = _convert(right)
-    result = eval(f'{left}{op}{right}')
-    return int(result) if result == int(result) else result
-
-
-def _convert(a: Union[int, str, list, tuple]) -> Any:
-    """ Convert operand """
-    if isinstance(a, (list, tuple)):
-        a = len(a)
-    elif isinstance(a, str):
-        if a.isdecimal():
-            a = int(a)
-        elif a.isnumeric():
-            a = float(a)
-    return a
+    level = int(level) - int(offset if offset else 0)
+    level = min(level, 10)
+    return f'level-{level}'

@@ -5,28 +5,26 @@
 {% load humanize %}
 {% load tz %}
 {% load dict_value %}
+{% load comment_level %}
 
 {# --- template variable defines for includes --- #}
 {# comment bundle template expects: 'bundle' as CommentBundle #}
 {#                                  'content_status' as dict with key: comment id, value: ContentStatus #}
+{#                                  'comment_offset' as comment level offset #}
 
 <div
     {% if bundle.dynamic_insert %}
         class="dynamic-insert"
     {% endif %}
     id="id--comment-section-{{ bundle.comment.id }}">
+    {% comment_level bundle.comment.level comment_offset as level %}
     <div
         {% if bundle.is_more_placeholder %}
             id="id--comment-card-more-{{ bundle.comment.id }}"
         {% else %}
             id="id--comment-card-{{ bundle.comment.id }}"
         {% endif %}
-        {% if bundle.comment.level <= 10 %}
-            class="card level-{{ bundle.comment.level }}"
-        {% else %}}
-            class="card level-10"
-        {% endif %}
-    >
+        class="card {{ level }}">
     <div class="card-body">
             <div class="row">
                 {% if bundle.is_more_placeholder %}

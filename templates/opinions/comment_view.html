@@ -1,27 +1,3 @@
-<!--
-  ~ MIT License
-  ~
-  ~ Copyright (c) 2022 Ian Buttimer
-  ~
-  ~ Permission is hereby granted, free of charge, to any person obtaining a copy
-  ~ of this software and associated documentation files (the "Software"), to deal
-  ~ in the Software without restriction, including without limitation the rights
-  ~ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-  ~ copies of the Software, and to permit persons to whom the Software is
-  ~ furnished to do so, subject to the following conditions:
-  ~
-  ~ The above copyright notice and this permission notice shall be included in
-  ~ all copies or substantial portions of the Software.
-  ~
-  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  ~ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  ~ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-  ~ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  ~ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-  ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-  ~ SOFTWARE.
-  -->
-
 {% extends "base.html" %}
 
 {% load i18n %}
@@ -30,6 +6,7 @@
 {% load tz %}
 {% load form_field %}
 {% load dict_value %}
+{% load calc %}
 
 {% block head_title %}SoapBox - {{ title | truncatechars:7 }}{% endblock %}
 
@@ -69,7 +46,7 @@
 
     <div class="row mt-2">
         <!-- author avatar and user link -->
-        <div id="id--comment-author" class="col-sm-2 mt-0 mb-0">
+        <div id="id--comment-author" class="col-sm-2 mt-0 mb-3">
             <img src="{{ comment.avatar_url }}" width="40px" height="40px" alt="{{ comment.user.username }} image">
             <p class="mt-0 mb-0">
                 <a id="id--comment-avatar-link-{{ comment.id }}" href="{% url 'user:user_id' comment.user.id %}" aria-label="view author's profile">
@@ -82,15 +59,19 @@
             <div class="row mb-3">
                 <div id="id--comment-content-{{ comment.id }}" class="col-sm-10 mt-0 mb-0">
                     {% dict_value content_status comment.id as status %}
-                    {% if status.deleted %}
-                        <em>{{ deleted_content }}</em>
-                    {% elif status.review_no_show %}
-                        <em>{{ under_review_comment }}</em>
-                    {% elif status.hidden %}
-                        <em>{{ hidden_content }}</em>
-                    {% else %}
-                        {{ comment.content | safe }}
-                    {% endif %}
+                    <div class="card">
+                        <div class="card-body">
+                        {% if status.deleted %}
+                            <em>{{ deleted_content }}</em>
+                        {% elif status.review_no_show %}
+                            <em>{{ under_review_comment }}</em>
+                        {% elif status.hidden %}
+                            <em>{{ hidden_content }}</em>
+                        {% else %}
+                            {{ comment.content | safe }}
+                        {% endif %}
+                        </div>
+                    </div>
                 </div>
                 <div class="col-sm-2 mt-0 mb-0">
                     {# HACK display id for dev purposes #}
@@ -99,43 +80,50 @@
             </div>
             <div class="row mb-3">
                 <!-- comment updated info -->
-                <div class="col-sm-6 mt-0 mb-0">
-                    {{ comment.updated | localtime | naturaltime }}
+                <div class="col-12 mt-0 mb-0">
+                    <p><strong>Updated</strong> {{ comment.updated | localtime | naturaltime }}</p>
                 </div>
             </div>
         </div>
-
+    </div>
+    <div class="row justify-content-center">
         {% if not is_review %}
-            <div class="col-sm-10 mt-0 mb-0">
-                {# no reactions in review mode #}
-                <div class="row mb-3">
-                    <div class="col-sm-2 offset-sm-5">
-                        <a class="btn btn-secondary mb-1" href="{% url 'home' %}">{% trans "Done" %}</a>
-                    </div>
+            {# no reactions in review mode #}
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="card bg-gray-100">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-sm-2 offset-sm-5">
+                                    <a class="btn btn-dark mb-1 btn__text" href="{% url 'home' %}">{% trans "Done" %}</a>
+                                </div>
 
-                    {% if view_ok %}
-                    <!-- comment reactions -->
-                    <div class="col-sm-5 justify-content-start">
-                        {# --- template variable defines for includes --- #}
-                        {# reactions template expects: 'target_id' as id of target opinion/comment #}
-                        {#                             'target_slug' as slug of target opinion/comment #}
-                        {#                             'target_type' as opinion/comment #}
-                        {#                             'target_author' as id of opinion/comment author #}
-                        {#                             'reactions' as list of Reaction #}
-                        {#                             'reaction_ctrls' as dict of ReactionCtrl #}
-                        {% with reactions=comment_reactions %}
-                            {% with target_type="comment" %}
-                                {% with target_id=comment.id %}
-                                    {% with target_author=comment.user.id %}
-                                        {% with target_slug=comment.slug %}
-                                            {% include "opinions/snippet/reactions.html" %}
+                                {% if view_ok %}
+                                <!-- comment reactions -->
+                                <div class="col-sm-5 justify-content-start">
+                                    {# --- template variable defines for includes --- #}
+                                    {# reactions template expects: 'target_id' as id of target opinion/comment #}
+                                    {#                             'target_slug' as slug of target opinion/comment #}
+                                    {#                             'target_type' as opinion/comment #}
+                                    {#                             'target_author' as id of opinion/comment author #}
+                                    {#                             'reactions' as list of Reaction #}
+                                    {#                             'reaction_ctrls' as dict of ReactionCtrl #}
+                                    {% with reactions=comment_reactions %}
+                                        {% with target_type="comment" %}
+                                            {% with target_id=comment.id %}
+                                                {% with target_author=comment.user.id %}
+                                                    {% with target_slug=comment.slug %}
+                                                        {% include "opinions/snippet/reactions.html" %}
+                                                    {% endwith %}
+                                                {% endwith %}
+                                            {% endwith %}
                                         {% endwith %}
                                     {% endwith %}
-                                {% endwith %}
-                            {% endwith %}
-                        {% endwith %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
-                    {% endif %}
                 </div>
             </div>
         {% endif %}
@@ -143,11 +131,14 @@
 
     {% if not is_review %}
     {# no comments in review mode #}
-    <div id="id--comments-container" class="col-12 mt-2">
-        {# --- template variable defines for includes --- #}
-        {# view comments template expects: 'comments' as list[CommentBundle] #}
-        {% include "opinions/snippet/view_comments.html" %}
-    </div>
+        <div id="id--comments-container" class="col-12 mt-2">
+            {# --- template variable defines for includes --- #}
+            {# view comments template expects: 'comments' as list[CommentBundle] #}
+            {% calc comment.level '+' 1 as next_level %}
+            {% with comment_offset=next_level %}
+                {% include "opinions/snippet/view_comments.html" %}
+            {% endwith %}
+        </div>
     {% endif %}
 
     {% if view_ok and not is_review %}
