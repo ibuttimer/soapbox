@@ -296,7 +296,7 @@ class OpinionDetail(LoginRequiredMixin, View):
         count, _ = opinion_obj.delete()
 
         return JsonResponse({
-            ELEMENT_ID_CTX: "id--opinion-delete-modal-body",
+            ELEMENT_ID_CTX: "id--opinion-deleted-modal-body",
             HTML_CTX: render_to_string(
                 app_template_path(
                     OPINIONS_APP_NAME, "snippet", "content_delete.html"),

@@ -3,7 +3,7 @@
 {% load form_field %}
 
 <!-- Confirm delete comment modal -->
-<div id="id--comment-delete-confirm-modal" class="modal fade" tabindex="-1" aria-label="Comment Delete Confirm" aria-hidden="true">
+<div id="id--comment-delete-confirm-modal" class="modal fade" tabindex="-1" aria-labelledby="id--comment-delete-confirm-modal-label" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
 
@@ -12,7 +12,7 @@
             </var>
 
             <div class="modal-header">
-                <h5 class="modal-title">Comment Delete</h5>
+                <h5 class="modal-title" id="id--comment-delete-confirm-modal-label">Comment Delete Confirm</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -29,14 +29,14 @@
 </div>
 
 <!-- Comment deleted modal -->
-<div id="id--comment-delete-modal" class="modal fade" tabindex="-1" aria-label="Comment Deleted" aria-hidden="true">
+<div id="id--comment-deleted-modal" class="modal fade" tabindex="-1" aria-labelledby="id--comment-deleted-modal-label" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Comment Delete</h5>
+                <h5 class="modal-title" id="id--comment-deleted-modal-label">Comment Deleted</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div id="id--comment-delete-modal-body" class="modal-body">
+            <div id="id--comment-deleted-modal-body" class="modal-body">
                 <p>The comment was successfully deleted</p>
             </div>
             <div class="modal-footer">
@@ -48,8 +48,8 @@
 
 <script>
     const commentDeleteConfirmModalSelector = "#id--comment-delete-confirm-modal";
-    const commentDeleteModalSelector = "#id--comment-delete-modal";
-    const commentDeleteModalBodySelector = "#id--comment-delete-modal-body";
+    const commentDeleteModalSelector = "#id--comment-deleted-modal";
+    const commentDeleteModalBodySelector = "#id--comment-deleted-modal-body";
     const commentDeleteUrlSelector = "#id--comment-delete-url";
 
     $(document).ready(function () {

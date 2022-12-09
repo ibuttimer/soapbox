@@ -189,6 +189,11 @@ cloudinary_python.txt
 /doc/design/*.drawio.bkp
 /doc/design/*.dtmp
 
+# unnecessary artifacts
+/doc/test/lighthouse/results.md
+
 # temp
 /doc/test/django_report/
 /doc/test/unittest_report/
+/doc/test/lighthouse/
+/doc/test/generated/

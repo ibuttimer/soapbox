@@ -145,12 +145,6 @@
                                 <ul class="dropdown-menu">
                                     {% if comment_read %}
                                     <li>
-                                        <a class="dropdown-item" href="{% url 'opinions:comments' %}?author={{ user.username }}&status=draft">Drafts</a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" href="{% url 'opinions:comments' %}?author={{ user.username }}&status=preview">Previews</a>
-                                    </li>
-                                    <li>
                                         <a class="dropdown-item" href="{% url 'opinions:comment_in_review' %}?author={{ user.username }}">Reviews</a>
                                     </li>
                                     <li>
@@ -162,18 +156,6 @@
                                     </li>
                                     {% endif %}
                                 </ul>
-                            </li>
-                            {# --- category menu --- #}
-                            <li class="nav-item">
-                                <a
-                                   {% if category_create or category_read %}
-                                        class="nav-link"
-                                   {% else %}
-                                        class="nav-link disabled"
-                                   {% endif %}
-                                >
-                                    Category
-                                </a>
                             </li>
                             {# --- moderator menu --- #}
                             {% if is_moderator %}
@@ -297,7 +279,7 @@
     <footer class="container d-flex flex-wrap justify-content-between align-items-center py-3 border-top bg-white div__panel">
         <div class="col-md-4 d-flex align-items-center">
             <a href="/" class="ms-2 me-2 mb-md-0 text-muted text-decoration-none lh-1">
-                <img class="bi" width="24" height="24" src="{% static 'favicon-32x32-gray.png' %}" alt="SoapBox logo"/>
+                <img class="bi" width="24" height="24" src="{% static 'favicon-32x32-gray.png' %}" alt="SoapBox logo">
             </a>
             <span class="mb-md-0 text-muted">&copy; {{ copyright_year }} {{ copyright }}</span>
         </div>

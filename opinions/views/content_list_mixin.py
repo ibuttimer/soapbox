@@ -272,7 +272,7 @@ class ContentListMixin(generic.ListView):
                     f"?page={page}" if page != Paginator.ELLIPSIS else '',
                 'label':
                     f"page {page}" if page != Paginator.ELLIPSIS else '',
-                'hidden': f'{bool(page != Paginator.ELLIPSIS)}',
+                'hidden': f'{str(bool(page != Paginator.ELLIPSIS)).lower()}',
             } for page in context['paginator'].get_elided_page_range(
                 number=context['page_obj'].number,
                 on_each_side=OPINION_PAGINATION_ON_EACH_SIDE,

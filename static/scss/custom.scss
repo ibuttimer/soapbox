@@ -45,6 +45,9 @@ $danger: #C60E1B;
 $light: #f3fafa;
 $dark: #00032d;
 
+$pagination-active-bg: #1A8044;
+$pagination-active-border-color: #1A8044;
+
 // 3. Include remainder of required Bootstrap stylesheets
 @import "../../node_modules/bootstrap/scss/variables";
 
@@ -72,7 +75,7 @@ $dark: #00032d;
 @import "../node_modules/bootstrap/scss/card";
 // @import "../node_modules/bootstrap/scss/breadcrumb";
 // @import "../node_modules/bootstrap/scss/accordion";
-// @import "../node_modules/bootstrap/scss/pagination";
+ @import "../node_modules/bootstrap/scss/pagination";
 @import "../node_modules/bootstrap/scss/badge";
 @import "../node_modules/bootstrap/scss/alert";
 // @import "../node_modules/bootstrap/scss/progress";

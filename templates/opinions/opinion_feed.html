@@ -35,7 +35,7 @@
         {% if is_category_feed %}
             <div class="btn-group flex-wrap">
             {% for category in followed_categories %}
-                <a href="{% url 'base:category_feed' %}?category={{ category.name }}"
+                <a href="{% url 'base:category_feed' %}?category={{ category.name|urlencode }}"
                    {% if category.current %}
                    class="btn btn-success active" aria-current="page"
                    {% else %}
@@ -56,12 +56,12 @@
         </article>
     </div>
     {# right panel feed navigation #}
-    <div class="col-lg-2 col-md-3 bg-light div__panel div__right-panel">
-        <nav class="row col-12 mt-2">
-            <row class="col-12">
+    <div class="col-lg-2 col-md-3 bg-light div__panel div__right-panel ">
+        <nav class="mt-2">
+            <div class="col-12">
                 <h3>Feeds</h3>
-            </row>
-            <row class="col-12 mb-2">
+            </div>
+            <div class="mb-2">
                 <a href="{% url 'base:following_feed' %}"
                 {% if is_following_feed %}
                     class="btn btn-success btn__text"
@@ -71,8 +71,8 @@
                 >
                     {% trans "Following" %}
                 </a>
-            </row>
-            <row class="col-12 mb-2">
+            </div>
+            <div class="mb-2">
                 <a href="{% url 'base:category_feed' %}"
                {% if is_category_feed %}
                    class="btn btn-success btn__text"
@@ -82,30 +82,30 @@
                 >
                     {% trans "Category" %}
                 </a>
-            </row>
+            </div>
             {% if opinion_create or opinion_read %}
-            <row class="col-12 mt-2">
+            <div class="mt-2">
                 <h3>Opinions</h3>
-            </row>
+            </div>
             {% endif %}
             {% if opinion_create %}
-            <row class="col-12">
-                <a class="btn btn-outline-warning mb-2 btn__text" href="{% url 'opinions:opinion_new' %}">
+            <div class="mb-2">
+                <a class="btn btn-outline-warning btn__text" href="{% url 'opinions:opinion_new' %}">
                     {% trans "New Opinion" %}
                 </a>
-            </row>
+            </div>
             {% endif %}
             {% if opinion_read %}
-            <row class="col-12">
-                <a class="btn btn-outline-warning mb-2 btn__text" href="{% url 'opinions:opinions' %}?author={{ user.username }}&status=all">
+            <div class="mb-2">
+                <a class="btn btn-outline-warning btn__text" href="{% url 'opinions:opinions' %}?author={{ user.username }}&status=all">
                     {% trans "My Opinions" %}
                 </a>
-            </row>
-            <row class="col-12">
-                <a class="btn btn-outline-warning mb-2 btn__text" href="{% url 'opinions:opinions' %}?author={{ user.username }}&status=draft">
+            </div>
+            <div class="mb-2">
+                <a class="btn btn-outline-warning btn__text" href="{% url 'opinions:opinions' %}?author={{ user.username }}&status=draft">
                     {% trans "Draft Opinions" %}
                 </a>
-            </row>
+            </div>
             {% endif %}
         </nav>
     </div>

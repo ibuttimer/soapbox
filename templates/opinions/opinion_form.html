@@ -143,7 +143,7 @@
                     <div class="col-sm-2 text-start">
                         <label for="{{ content_field.auto_id }}" class="form-label">{{ content_field.label }}</label>
                     </div>
-                    <div class="col-sm-10  container flex-grow-1 overflow-auto">
+                    <div class="col-sm-10 container flex-grow-1 overflow-auto">
                         {% if read_only %}
                         <div id="readonly_content" class="text-start">
                             <!-- content replaced -->
@@ -170,11 +170,11 @@
 </article>
 
 <!-- Confirm delete opinion modal -->
-<div id="id--opinion-delete-confirm-modal" class="modal fade" tabindex="-1" aria-label="Opinion Delete Confirm" aria-hidden="true">
+<div id="id--opinion-delete-confirm-modal" class="modal fade" tabindex="-1" aria-labelledby="id--opinion-delete-confirm-modal-label" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Opinion Delete</h5>
+                <h5 class="modal-title" id="id--opinion-delete-confirm-modal-label">Opinion Delete Confirm</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -192,14 +192,14 @@
 </div>
 
 <!-- Opinion deleted modal -->
-<div id="id--opinion-delete-modal" class="modal fade" tabindex="-1" aria-label="Opinion Deleted" aria-hidden="true">
+<div id="id--opinion-deleted-modal" class="modal fade" tabindex="-1" aria-labelledby="id--opinion-deleted-modal-label" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Opinion Delete</h5>
+                <h5 class="modal-title" id="id--opinion-deleted-modal-label">Opinion Delete</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div id="id--opinion-delete-modal-body" class="modal-body">
+            <div id="id--opinion-deleted-modal-body" class="modal-body">
                 <p>The opinion was successfully deleted</p>
             </div>
             <div class="modal-footer">
@@ -230,7 +230,7 @@
         </script>
     {% elif opinion.id %}
         <script>
-            const opinionDeleteModalSelector = "#id--opinion-delete-modal";
+            const opinionDeleteModalSelector = "#id--opinion-deleted-modal";
 
             $("#id--btn-opinion-delete-confirm").on('click', function (event) {
                 $.ajax({
@@ -262,7 +262,7 @@
 
                 }).fail(function(data) {
                     // display reason
-                    $("#id--opinion-delete-modal-body").html(data.responseJSON.html);
+                    $("#id--opinion-deleted-modal-body").html(data.responseJSON.html);
 
                     $(opinionDeleteModalSelector).off('hidden.bs.modal');
                     $(opinionDeleteModalSelector).on('hidden.bs.modal', (event) => {
