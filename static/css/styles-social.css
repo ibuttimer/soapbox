@@ -4,6 +4,7 @@
 .google {
     background-color: #3f80e8;
     border-color: #3f80e8;
+    color: #0E0E0E;
 }
 .google:hover {
     background-color: #ea4333;
@@ -18,6 +19,7 @@
 .twitter {
     background-color: #1d9bf0;
     border-color: #1d9bf0;
+    color: #0E0E0E;
 }
 .twitter:hover {
     background-color: #fff;
@@ -29,4 +31,8 @@
     border-color: #1d9bf0;
 }
 
+.div__highlight {
+    background-color: #f8f9fa;  /* bg-gray-100 */
+    border-radius: 10px;
+}
 
