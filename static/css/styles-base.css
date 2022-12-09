@@ -31,7 +31,18 @@ html {
 }
 
 .main-content {
-    background: url("../img/balloons-1187260_1280.png") repeat center center;
+    background-repeat: repeat;
+    background-position: center;
+    background-image: url("../img/balloons-1187260_1280.png");
+    background-image: -webkit-image-set(
+            url("../img/balloons-1187260_1280.webp") 1x
+    );
+    /* TODO the standard way; image-set(). This is a CSS Images Module Level 4 feature,
+        and as the W3C CSS Validator currently only supports CSS3, unable to
+        follow recommendations from https://developer.mozilla.org/en-US/docs/Web/CSS/image/image-set.
+        Also Chrome does not support type: "implementation has not been per the spec, as only URL values
+        were accepted for the image, and only resolutions with 'x' as a unit were accepted"
+        https://chromestatus.com/feature/5432024223449088 */
 }
 
 .no-padding {

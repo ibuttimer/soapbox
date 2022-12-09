@@ -1,12 +1,17 @@
 {% extends "account/base.html" %}
 
 {% load i18n %}
+{% load static %}
 
 {% block head_title %}{% trans "Register" %}{% endblock %}
 
+{% block extra_css %}
+<link href="{% static 'css/styles-social.css' %}" rel="stylesheet">
+{% endblock extra_css %}
+
 {% block content %}
 
-<div class="container text-center">
+<div class="container text-center div__highlight mt-5">
   <div class="row">
     <div class="col-md-8 mt-2 offset-md-2">
       <h1>{% trans "Register" %}</h1>
@@ -37,7 +42,11 @@
         {% if redirect_field_value %}
           <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
         {% endif %}
-        <button class="btn btn-primary" type="submit">{% trans "Register" %} &raquo;</button>
+        <div class="row">
+          <div class="col-4 offset-4 mt-2 mb-3">
+            <button class="btn btn-primary" type="submit">{% trans "Register" %} &raquo;</button>
+          </div>
+        </div>
       </form>
     </div>
   </div>
