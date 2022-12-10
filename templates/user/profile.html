@@ -141,10 +141,10 @@
             {% if not read_only %}
                 <div class="row mb-3">
                     <div class="col-sm-2 offset-sm-3">
-                        <a class="btn btn-secondary mb-1" href="{% url 'home' %}">{% trans "Cancel" %}</a>
+                        <a class="btn btn-dark mb-1 btn__text" href="{% url 'home' %}">{% trans "Cancel" %}</a>
                     </div>
                     <div class="col-sm-2 offset-sm-2">
-                        <button type="submit" class="btn btn-primary">{% trans "Update" %}</button>
+                        <button type="submit" class="btn btn-primary btn__text">{% trans "Update" %}</button>
                     </div>
                 </div>
             {% endif %}

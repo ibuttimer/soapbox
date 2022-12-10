@@ -31,12 +31,12 @@
                     <h3>Preview</h3>
                 </div>
                 <div class="col-sm-2">
-                    <a class="btn btn-outline-warning mb-1" href="{% url 'opinions:opinion_id' opinion.id %}?mode=edit">
+                    <a class="btn btn-outline-warning mb-1 btn__text" href="{% url 'opinions:opinion_id' opinion.id %}?mode=edit">
                         {% trans "Edit" %}
                     </a>
                 </div>
                 <div class="col-sm-2">
-                    <button type="button" class="btn btn-outline-success" onclick="updateStatus('publish')">
+                    <button type="button" class="btn btn-outline-success btn__text" onclick="updateStatus('publish')">
                         {% trans "Publish" %}
                     </button>
                 </div>

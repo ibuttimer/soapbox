@@ -39,7 +39,7 @@
                                     <div class="row">
                                         <div class="col-sm-8 col-12 mt-0 mb-0">
                                             <!-- title -->
-                                            <a {% if status.view_ok %} href="{% url 'opinions:opinion_slug' opinion.slug %}?mode=read-only" {% endif %}
+                                            <a {% if status.view_ok %} href="{% url 'opinions:opinion_id' opinion.id %}?mode=read-only" {% endif %}
                                                class="post-link">
                                                 <h4 id="id--title-{{ forloop.counter }}" class="card-title">
                                                     {% if status.review_no_show %}{{ under_review_title }}{% else %}{{ opinion.title }}{% endif %}
@@ -88,7 +88,7 @@
                                             {% endif %}
                                                 <a
                                                     {% if status.view_ok %}
-                                                    class="btn btn-primary mb-2" href="{% url 'opinions:opinion_slug' opinion.slug %}?mode=read-only" aria-label="read {{ opinion.title }}"
+                                                    class="btn btn-primary mb-2" href="{% url 'opinions:opinion_id' opinion.id %}?mode=read-only" aria-label="read {{ opinion.title }}"
                                                     {% else %}}
                                                     class="btn btn-primary mb-2 disabled" aria-label="Not available for reading" aria-disabled="true"
                                                     {% endif %}
@@ -100,14 +100,14 @@
                                             {% endif %}
                                             {% if status.mine %}
                                             <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Edit">
-                                                <a class="btn btn-warning mb-2" href="{% url 'opinions:opinion_slug' opinion.slug %}?mode=edit" aria-label="edit {{ opinion.title }}">
+                                                <a class="btn btn-warning mb-2" href="{% url 'opinions:opinion_id' opinion.id %}?mode=edit" aria-label="edit {{ opinion.title }}">
                                                     <i class="fa-solid fa-pen"></i>
                                                 </a>
                                             </span>
                                             {% endif %}
                                             {% if is_review and is_moderator %}
                                             <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Review">
-                                                <a class="btn btn-info mb-2" href="{% url 'opinions:opinion_slug' opinion.slug %}?mode=review" aria-label="review {{ opinion.title }}">
+                                                <a class="btn btn-info mb-2" href="{% url 'opinions:opinion_id' opinion.id %}?mode=review" aria-label="review {{ opinion.title }}">
                                                     <i class="fa-solid fa-magnifying-glass"></i>
                                                 </a>
                                             </span>
