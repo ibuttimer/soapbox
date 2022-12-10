@@ -28,6 +28,7 @@ from django.http import HttpRequest
 from user.queries import is_moderator, is_author
 from opinions.views.utils import opinion_permissions, add_opinion_context
 from categories.views import category_permissions
+from . import DEVELOPMENT
 from .constants import COPYRIGHT_YEAR, COPYRIGHT
 
 Social = namedtuple("Social", ["name", "icon", "url"])
@@ -53,6 +54,7 @@ def footer_context(request: HttpRequest) -> dict:
         "is_super": request.user.is_superuser,
         "is_moderator": is_moderator(request.user),
         "is_author": is_author(request.user),
+        "is_development": DEVELOPMENT
     }
     # add content permissions; key `<model_name>_<crud_op>` with boolean value
     opinion_permissions(request, context=context)

@@ -116,7 +116,7 @@ if env('DEVELOPMENT'):
     ALLOWED_HOSTS = ['testserver'] \
         if env('TEST') else ['localhost', '127.0.0.1']
 else:
-    ALLOWED_HOSTS = [env('HEROKU_HOSTNAME')]
+    ALLOWED_HOSTS = env.list('HEROKU_HOSTNAME')
 
 # Application definition
 INSTALLED_APPS = [

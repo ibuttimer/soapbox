@@ -20,7 +20,7 @@
 {% endblock extra_css %}
 
 {% block content %}
-<article class="row text-center">
+<article class="row text-center justify-content-center">
 
     {% if is_review %}
         {# --- template variable defines for includes --- #}
@@ -36,7 +36,7 @@
                 {{ under_review_title }} Opinion
             {% else %}
             <!-- title -->
-            <a {% if opinion_content_status.view_ok %} href="{% url 'opinions:opinion_slug' opinion.slug %}?mode=read-only" {% endif %}
+            <a {% if opinion_content_status.view_ok %} href="{% url 'opinions:opinion_id' opinion.id %}?mode=read-only" {% endif %}
                class="post-link" aria-label="read opinion {{ opinion.title }}">
                 {{ opinion.title }}
             </a>
@@ -57,7 +57,7 @@
         <!-- comment details -->
         <div class="col-sm-10 mt-0 mb-0">
             <div class="row mb-3">
-                <div id="id--comment-content-{{ comment.id }}" class="col-sm-10 mt-0 mb-0">
+                <div id="id--comment-content-{{ comment.id }}" class="col-sm-12 mt-0 mb-0">
                     {% dict_value content_status comment.id as status %}
                     <div class="card">
                         <div class="card-body">
@@ -70,12 +70,12 @@
                         {% else %}
                             {{ comment.content | safe }}
                         {% endif %}
+                        {% if is_development %}
+                            {# display id for dev purposes #}
+                            <span class="badge rounded-pill text-bg-warning">c{{ comment.id }} p{{ comment.parent }} o{{ comment.opinion.id }}</span>
+                        {% endif %}
                         </div>
                     </div>
-                </div>
-                <div class="col-sm-2 mt-0 mb-0">
-                    {# HACK display id for dev purposes #}
-                    <span class="badge rounded-pill text-bg-warning">c{{ comment.id }} o{{ comment.opinion.id }}</span>
                 </div>
             </div>
             <div class="row mb-3">
@@ -86,42 +86,40 @@
             </div>
         </div>
     </div>
-    <div class="row justify-content-center">
+    <div class="row mb-3 justify-content-center">
         {% if not is_review %}
             {# no reactions in review mode #}
-            <div class="row mb-3">
-                <div class="col-12">
-                    <div class="card bg-gray-100">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-sm-2 offset-sm-5">
-                                    <a class="btn btn-dark mb-1 btn__text" href="{% url 'home' %}">{% trans "Done" %}</a>
-                                </div>
+            <div class="col-12">
+                <div class="card bg-gray-100">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-sm-2 offset-sm-5">
+                                <a class="btn btn-dark mb-1 btn__text" href="{% url 'home' %}">{% trans "Done" %}</a>
+                            </div>
 
-                                {% if view_ok %}
-                                <!-- comment reactions -->
-                                <div class="col-sm-5 justify-content-start">
-                                    {# --- template variable defines for includes --- #}
-                                    {# reactions template expects: 'target_id' as id of target opinion/comment #}
-                                    {#                             'target_slug' as slug of target opinion/comment #}
-                                    {#                             'target_type' as opinion/comment #}
-                                    {#                             'target_author' as id of opinion/comment author #}
-                                    {#                             'reactions' as list of Reaction #}
-                                    {#                             'reaction_ctrls' as dict of ReactionCtrl #}
-                                    {% with reactions=comment_reactions %}
-                                        {% with target_type="comment" %}
-                                            {% with target_id=comment.id %}
-                                                {% with target_author=comment.user.id %}
-                                                    {% with target_slug=comment.slug %}
-                                                        {% include "opinions/snippet/reactions.html" %}
-                                                    {% endwith %}
+                            {% if view_ok %}
+                            <!-- comment reactions -->
+                            <div class="col-sm-5 justify-content-start">
+                                {# --- template variable defines for includes --- #}
+                                {# reactions template expects: 'target_id' as id of target opinion/comment #}
+                                {#                             'target_slug' as slug of target opinion/comment #}
+                                {#                             'target_type' as opinion/comment #}
+                                {#                             'target_author' as id of opinion/comment author #}
+                                {#                             'reactions' as list of Reaction #}
+                                {#                             'reaction_ctrls' as dict of ReactionCtrl #}
+                                {% with reactions=comment_reactions %}
+                                    {% with target_type="comment" %}
+                                        {% with target_id=comment.id %}
+                                            {% with target_author=comment.user.id %}
+                                                {% with target_slug=comment.slug %}
+                                                    {% include "opinions/snippet/reactions.html" %}
                                                 {% endwith %}
                                             {% endwith %}
                                         {% endwith %}
                                     {% endwith %}
-                                </div>
-                                {% endif %}
+                                {% endwith %}
                             </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -131,6 +129,7 @@
 
     {% if not is_review %}
     {# no comments in review mode #}
+    <div class="row mb-3 justify-content-center">
         <div id="id--comments-container" class="col-12 mt-2">
             {# --- template variable defines for includes --- #}
             {# view comments template expects: 'comments' as list[CommentBundle] #}
@@ -139,6 +138,7 @@
                 {% include "opinions/snippet/view_comments.html" %}
             {% endwith %}
         </div>
+    </div>
     {% endif %}
 
     {% if view_ok and not is_review %}

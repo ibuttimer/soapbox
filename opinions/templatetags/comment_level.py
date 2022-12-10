@@ -37,6 +37,10 @@ def comment_level(level: Union[int, str], offset: Union[int, str] = 0):
     :param offset: comment level offset
     :return: class
     """
-    level = int(level) - int(offset if offset else 0)
-    level = min(level, 10)
-    return f'level-{level}'
+    work_level = int(level) - int(offset if offset else 0)
+    work_level = min(work_level, 10)
+    if level > 10:
+        alt = '-alt' if level % 2 != offset % 2 else ''
+    else:
+        alt = ''
+    return f'level-{work_level}{alt}'

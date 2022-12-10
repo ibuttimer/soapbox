@@ -29,6 +29,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import QuerySet
 from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_http_methods
 
@@ -39,10 +40,12 @@ from opinions.views.comment_queries import (
     get_comment_lookup, COMMENT_ALWAYS_FILTERS, COMMENT_FILTERS_ORDER
 )
 from opinions.constants import (
-    STATUS_QUERY, AUTHOR_QUERY, SEARCH_QUERY, REORDER_QUERY,
+    STATUS_QUERY, AUTHOR_QUERY, SEARCH_QUERY,
     CONTENT_STATUS_CTX, REPEAT_SEARCH_TERM_CTX, PAGE_HEADING_CTX, TITLE_CTX,
     HTML_CTX, TEMPLATE_COMMENT_REACTIONS, TEMPLATE_REACTION_CTRLS,
-    REVIEW_QUERY, IS_REVIEW_CTX
+    REVIEW_QUERY, IS_REVIEW_CTX, COMMENT_OFFSET_CTX,
+    COMMENT_ID_ROUTE_NAME, COMMENT_SLUG_ROUTE_NAME,
+    OPINION_ID_ROUTE_NAME, REFERENCE_QUERY, PK_PARAM_NAME, SLUG_PARAM_NAME
 )
 from opinions.contexts.comment import comments_list_context_for_opinion
 from opinions.enums import QueryArg, QueryStatus, CommentSortOrder, SortOrder
@@ -58,7 +61,8 @@ from opinions.views.utils import (
     query_search_term, get_query_args,
     COMMENT_LIST_QUERY_ARGS, COMMENT_SEARCH_QUERY_ARGS,
     add_content_no_show_markers, QueryOption,
-    NON_REORDER_COMMENT_LIST_QUERY_ARGS, REVIEW_COMMENT_LIST_QUERY_ARGS
+    NON_REORDER_COMMENT_LIST_QUERY_ARGS, REVIEW_COMMENT_LIST_QUERY_ARGS,
+    resolve_ref
 )
 from soapbox import OPINIONS_APP_NAME, GET
 from utils import Crud, app_template_path
@@ -474,6 +478,27 @@ def opinion_comments(request: HttpRequest) -> HttpResponse:
     query_params = comment_list_query_args(request)
 
     context = comments_list_context_for_opinion(query_params, request.user)
+
+    comment_offset = 0
+    called_by = resolve_ref(request)
+    if called_by:
+        if called_by.url_name == OPINION_ID_ROUTE_NAME:
+            pass
+        elif called_by.url_name in [
+            COMMENT_ID_ROUTE_NAME, COMMENT_SLUG_ROUTE_NAME
+        ]:
+            get_param = {
+                Comment.id_field(): called_by.kwargs.get(PK_PARAM_NAME)
+            } if called_by.url_name == COMMENT_ID_ROUTE_NAME else {
+                Comment.SLUG_FIELD: called_by.kwargs.get(SLUG_PARAM_NAME)
+            }
+            parent = get_object_or_404(Comment, **get_param)
+            comment_offset = parent.level + 1
+        else:
+            raise ValueError(
+                f'Unknown {REFERENCE_QUERY} query value: '
+                f'{request.GET[REFERENCE_QUERY]}')
+    context[COMMENT_OFFSET_CTX] = comment_offset
 
     return JsonResponse({
         HTML_CTX: render_to_string(

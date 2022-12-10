@@ -27,6 +27,7 @@ from zoneinfo import ZoneInfo
 from django.db.models import Q, QuerySet
 
 from categories.models import Status
+from opinions.views.opinion_queries import NON_LOOKUP_ARGS
 from user.models import User
 from opinions.constants import (
     STATUS_QUERY, CONTENT_QUERY, CATEGORY_QUERY, AUTHOR_QUERY,
@@ -125,7 +126,7 @@ def get_comment_lookup(
     elif query == HIDDEN_QUERY:
         # get_hidden_query(query_set_params, value, user)
         pass
-    elif value or was_set:
+    elif query not in NON_LOOKUP_ARGS and (value or was_set):
         query_set_params.add_and_lookup(query, FIELD_LOOKUPS[query], value)
 
     return query_set_params

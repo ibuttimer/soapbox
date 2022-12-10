@@ -32,6 +32,7 @@ from django.http import HttpRequest, JsonResponse
 from django.template.defaultfilters import truncatechars
 from django.template.loader import render_to_string
 from bs4 import BeautifulSoup
+from django.urls import ResolverMatch, resolve, Resolver404
 
 from opinions.queries import is_following
 from soapbox import OPINIONS_APP_NAME
@@ -54,7 +55,7 @@ from opinions.constants import (
     UNDER_REVIEW_OPINION_CONTENT, UNDER_REVIEW_COMMENT_CTX,
     UNDER_REVIEW_OPINION_CTX, FILTER_QUERY, REVIEW_QUERY, HTML_CTX, TITLE_CTX,
     REVIEW_FORM_CTX, IS_REVIEW_CTX, REVIEW_BUTTON_CTX, REVIEW_BUTTON_TIPS_CTX,
-    COMMENT_FORM_CTX
+    COMMENT_FORM_CTX, REFERENCE_QUERY
 )
 from opinions.enums import (
     ChoiceArg, QueryArg, QueryStatus, ReactionStatus, OpinionSortOrder,
@@ -179,8 +180,8 @@ COMMENT_LIST_QUERY_ARGS = COMMENT_REORDER_QUERY_ARGS.copy()
 COMMENT_LIST_QUERY_ARGS.extend([
     # non-reorder query args
     QueryOption.of_no_cls_dflt(AUTHOR_QUERY),
-    QueryOption.of_no_cls_dflt(OPINION_ID_QUERY),
-    QueryOption.of_no_cls_dflt(PARENT_ID_QUERY),
+    QueryOption.of_no_cls(OPINION_ID_QUERY, 0),
+    QueryOption.of_no_cls(PARENT_ID_QUERY, 0),
     QueryOption.of_no_cls_dflt(ID_QUERY),
 ])
 COMMENT_LIST_QUERY_ARGS.extend(APPLIED_DEFAULTS_QUERY_ARGS)
@@ -188,7 +189,6 @@ COMMENT_LIST_QUERY_ARGS.extend(APPLIED_DEFAULTS_QUERY_ARGS)
 REVIEW_COMMENT_LIST_QUERY_ARGS = COMMENT_LIST_QUERY_ARGS.copy()
 REVIEW_COMMENT_LIST_QUERY_ARGS.extend([
     # non-reorder query args
-    QueryOption.of_no_cls_dflt(AUTHOR_QUERY),
     QueryOption(FILTER_QUERY, FilterMode, FilterMode.DEFAULT),
     QueryOption(REVIEW_QUERY, QueryStatus, QueryStatus.REVIEW_QUERY_DEFAULT),
 ])
@@ -684,3 +684,20 @@ def add_review_form_context(mode: ViewMode, effective_status: QueryStatus,
         })
 
     return context
+
+
+def resolve_ref(request: HttpRequest) -> Optional[ResolverMatch]:
+    """
+    Resolve any `ref` param in a request
+    :param request: http request
+    :return: resolver match or None
+    """
+    match = None
+    if REFERENCE_QUERY in request.GET:
+        ref = request.GET[REFERENCE_QUERY].lower()
+        try:
+            match = resolve(ref)
+        except Resolver404:
+            pass    # unable to resolve
+
+    return match

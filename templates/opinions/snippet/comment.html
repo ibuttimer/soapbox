@@ -27,7 +27,7 @@
             <!-- comment details -->
             <div class="col-sm-10 mt-0 mb-0">
                 <div class="row mb-2">
-                    <div class="col-sm-10 mt-0 mb-0" id="id--comment-content-{{ comment_data.id }}">
+                    <div class="col-sm-12 mt-0 mb-0" id="id--comment-content-{{ comment_data.id }}">
                         {% dict_value content_status comment_data.id as status %}
                         {% if status.deleted %}
                             <em>{{ deleted_content }}</em>
@@ -38,15 +38,30 @@
                         {% else %}
                             {{ comment_data.content | safe }}
                         {% endif %}
-                    </div>
-                    <div class="col-sm-2 mt-0 mb-0">
-                        {# HACK display id for dev purposes #}
-                        <span class="badge rounded-pill text-bg-warning">c{{ comment_data.id }} o{{ comment_data.opinion.id }}</span>
+                        {% if is_development %}
+                        {# display id for dev purposes #}
+                            <span class="badge rounded-pill text-bg-warning">c{{ comment_data.id }} p{{ comment_data.parent }} o{{ comment_data.opinion.id }}</span>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="row mb-2">
                     <!-- review info -->
                     <div class="col-sm-2 mt-0 mb-0">
+                        {% if status.view_ok %}
+                        <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Read">
+                        {% endif %}
+                            <a
+                                {% if status.view_ok %}
+                                class="btn btn-primary mb-2" href="{% url 'opinions:comment_id' comment_data.id %}?mode=read-only" aria-label="read comment thread"
+                                {% else %}}
+                                class="btn btn-primary mb-2 disabled" aria-label="Not available for reading" aria-disabled="true"
+                                {% endif %}
+                            >
+                                <i class="fa-solid fa-book-open"></i>
+                            </a>
+                        {% if status.view_ok %}
+                        </span>
+                        {% endif %}
                         {% if is_review and is_moderator %}
                             <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Review">
                                 <a class="btn btn-info mt-2" href="{% url 'opinions:comment_id' comment_data.id %}?mode=review" aria-label="review comment">

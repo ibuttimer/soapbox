@@ -72,8 +72,12 @@
                                 >
                                     <i class="fa-solid fa-chevron-down"></i>
                                 </a>
-                                {# HACK display id for dev purposes #}
-                                <span class="badge rounded-pill text-bg-warning">c{{ bundle.comment.id }} o{{ bundle.comment.opinion.id }}</span>
+                                {% if is_development %}
+                                {# display id for dev purposes #}
+                                <span class="badge rounded-pill text-bg-warning">
+                                    c{{ bundle.comment.id }} p{{ bundle.comment.parent }} l{{ bundle.comment.level }} o{{ bundle.comment.opinion.id }}
+                                </span>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="row">

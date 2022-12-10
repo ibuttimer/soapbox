@@ -68,7 +68,8 @@ from opinions.views.utils import (
     opinion_permission_check, comment_permission_check, DEFAULT_COMMENT_DEPTH,
     published_check, own_content_check, add_content_no_show_markers,
     get_query_args, QueryOption, STATUS_BADGES, get_comment_context,
-    add_review_form_context, timestamp_content, content_save_query_args
+    add_review_form_context, timestamp_content, content_save_query_args,
+    resolve_ref
 )
 from soapbox import PATCH, POST, OPINIONS_APP_NAME, HOME_ROUTE_NAME
 from utils import (
@@ -276,17 +277,18 @@ class CommentDetail(LoginRequiredMixin, View):
         own_content_check(request, comment_obj, raise_ex=True)
 
         template = CommentTemplate.DEFAULT
-        if REFERENCE_QUERY in request.GET:
-            ref = request.GET[REFERENCE_QUERY].lower()
-            called_by = resolve(ref)
+        called_by = resolve_ref(request)
+        if called_by:
             if called_by.url_name == COMMENTS_ROUTE_NAME:
                 template = CommentTemplate.COMMENT_LIST_TEMPLATE
-            elif called_by.url_name == OPINION_ID_ROUTE_NAME or \
-                    called_by.url_name == OPINION_SLUG_ROUTE_NAME:
+            elif called_by.url_name in [
+                OPINION_ID_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME
+            ]:
                 template = CommentTemplate.OPINION_LIST_TEMPLATE
             else:
                 raise ValueError(
-                    f'Unknown {REFERENCE_QUERY} query value: {ref}')
+                    f'Unknown {REFERENCE_QUERY} query value: '
+                    f'{request.GET[REFERENCE_QUERY]}')
 
         comment_obj.content = ""
         comment_obj.status = Status.objects.get(name=STATUS_DELETED)

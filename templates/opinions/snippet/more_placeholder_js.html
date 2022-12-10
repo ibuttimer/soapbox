@@ -11,7 +11,7 @@
 
     /* Click handler for more comments placeholder */
     function morePlaceholderClickHandler(event) {
-        const url = event.currentTarget.attributes['data-bs-href'].textContent;
+        const url = `${event.currentTarget.attributes['data-bs-href'].textContent}&ref=${window.location.pathname}`;
 
         // hide tooltip
         $("#" + event.currentTarget.id).tooltip("hide");
@@ -48,7 +48,7 @@
         if (event.currentTarget.hasAttribute(DATA_COMMENT_QUERY)) {
             const query = event.currentTarget.attributes[DATA_COMMENT_QUERY].textContent;
 
-            const url = "{% url 'opinions:comment_more' %}?" + query;
+            const url = "{% url 'opinions:comment_more' %}?" + `${query}&ref=${window.location.pathname}`;
 
             $.ajax({
                 method: 'get',

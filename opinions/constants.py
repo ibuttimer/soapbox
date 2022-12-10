@@ -48,13 +48,15 @@ AUTHOR_FIELD = 'author'
 REVIEW_RESULT_FIELD = 'review_result'
 
 # Opinion routes related
+PK_PARAM_NAME = "pk"
+SLUG_PARAM_NAME = "slug"
 OPINIONS_URL = ""
 OPINION_NEW_URL = append_slash("new")
 OPINION_SEARCH_URL = append_slash("search")
 OPINION_FOLLOWED_URL = append_slash("followed")
 OPINION_IN_REVIEW_URL = append_slash("in_review")
-OPINION_ID_URL = append_slash("<int:pk>")
-OPINION_SLUG_URL = append_slash("<slug:slug>")
+OPINION_ID_URL = append_slash(f"<int:{PK_PARAM_NAME}>")
+OPINION_SLUG_URL = append_slash(f"<slug:{SLUG_PARAM_NAME}>")
 OPINION_PREVIEW_ID_URL = url_path(OPINION_ID_URL, "preview")
 OPINION_STATUS_ID_URL = url_path(OPINION_ID_URL, "status")
 OPINION_LIKE_ID_URL = url_path(OPINION_ID_URL, "like")
@@ -70,8 +72,8 @@ COMMENTS_URL = append_slash("comments")
 COMMENT_SEARCH_URL = url_path(COMMENTS_URL, "search")
 COMMENT_MORE_URL = url_path(COMMENTS_URL, "more")
 COMMENT_IN_REVIEW_URL = url_path(COMMENTS_URL, "in_review")
-COMMENT_ID_URL = url_path(COMMENTS_URL, "<int:pk>")
-COMMENT_SLUG_URL = url_path(COMMENTS_URL, "<slug:slug>")
+COMMENT_ID_URL = url_path(COMMENTS_URL, f"<int:{PK_PARAM_NAME}>")
+COMMENT_SLUG_URL = url_path(COMMENTS_URL, f"<slug:{SLUG_PARAM_NAME}>")
 COMMENT_LIKE_ID_URL = url_path(COMMENT_ID_URL, "like")
 COMMENT_HIDE_ID_URL = url_path(COMMENT_ID_URL, "hide")
 COMMENT_REPORT_ID_URL = url_path(COMMENT_ID_URL, "report")
@@ -227,6 +229,7 @@ ELEMENT_ID_CTX = 'element_id'
 HTML_CTX = 'html'
 
 COMMENT_DATA_CTX = "comment_data"
+COMMENT_OFFSET_CTX = "comment_offset"
 
 # miscellaneous
 ALL_FIELDS = 'all_fields'

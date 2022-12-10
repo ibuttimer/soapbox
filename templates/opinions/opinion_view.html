@@ -55,12 +55,14 @@
             </h1>
         </div>
 
+        {% if is_development %}
         <div class="row mb-3">
             <div class="col-1">
-                {# HACK display id for dev purposes #}
+                {# display id for dev purposes #}
                 <span class="badge rounded-pill text-bg-warning">{{ opinion.id }}</span>
             </div>
         </div>
+        {% endif %}
 
         <!-- top row: category, updated/published/author, preview/draft/publish -->
         <div class="row mb-3">
