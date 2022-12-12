@@ -42,19 +42,32 @@ class UserDetail(LoginRequiredMixin, View):
     """
 
     def get(self, request: HttpRequest,
-            pk: int, *args, **kwargs) -> HttpResponse:
+            identifier: [int, str], *args, **kwargs) -> HttpResponse:
         """
         GET method for User
         :param request: http request
-        :param pk: id of user to get
+        :param identifier: id or username of user to get
         :param args: additional arbitrary arguments
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        user_obj = get_object_or_404(User, id=pk)
+        user_obj = self._get_user(identifier)
 
         template_path, context = self._render_profile(request, user_obj)
         return render(request, template_path, context=context)
+
+    @staticmethod
+    def _get_user(identifier: [int, str]) -> User:
+        """
+        Get user for specified identifier
+        :param identifier: id or slug of user to get
+        :return: user
+        """
+        query = {
+            User.id_field() if isinstance(identifier, int)
+            else User.USERNAME_FIELD: identifier
+        }
+        return get_object_or_404(User, **query)
 
     @staticmethod
     def _render_profile(
@@ -97,19 +110,19 @@ class UserDetail(LoginRequiredMixin, View):
         }
 
     def post(self, request: HttpRequest,
-             pk: int, *args, **kwargs) -> HttpResponse:
+             identifier: [int, str], *args, **kwargs) -> HttpResponse:
         """
         POST method to update User
         :param request: http request
-        :param pk: id of user to update
+        :param identifier: id or username of user to get
         :param args: additional arbitrary arguments
         :param kwargs: additional keyword arguments
         :return: http response
         """
-        if request.user.id != pk and not request.user.is_superuser:
-            raise PermissionDenied("Users may only update their own profile")
+        user_obj = self._get_user(identifier)
 
-        user_obj = get_object_or_404(User, id=pk)
+        if request.user.id != user_obj.id and not request.user.is_superuser:
+            raise PermissionDenied("Users may only update their own profile")
 
         form = UserForm(data=request.POST, files=request.FILES,
                         instance=user_obj)
@@ -150,3 +163,63 @@ class UserDetail(LoginRequiredMixin, View):
         return redirect_on_success_or_render(
             request, success, HOME_ROUTE_NAME,
             template_path=template_path, context=context)
+
+
+class UserDetailById(UserDetail):
+    """
+    Class-based view for users by id
+    """
+
+    def get(self, request: HttpRequest,
+            pk: int, *args, **kwargs) -> HttpResponse:
+        """
+        GET method for User
+        :param request: http request
+        :param pk: id of user to get
+        :param args: additional arbitrary arguments
+        :param kwargs: additional keyword arguments
+        :return: http response
+        """
+        return super().get(request, pk, *args, **kwargs)
+
+    def post(self, request: HttpRequest,
+             pk: int, *args, **kwargs) -> HttpResponse:
+        """
+        POST method to update User
+        :param request: http request
+        :param pk: id of user to update
+        :param args: additional arbitrary arguments
+        :param kwargs: additional keyword arguments
+        :return: http response
+        """
+        return super().post(request, pk, *args, **kwargs)
+
+
+class UserDetailByUsername(UserDetail):
+    """
+    Class-based view for users by username
+    """
+
+    def get(self, request: HttpRequest,
+            name: str, *args, **kwargs) -> HttpResponse:
+        """
+        GET method for User
+        :param request: http request
+        :param name: username of user to get
+        :param args: additional arbitrary arguments
+        :param kwargs: additional keyword arguments
+        :return: http response
+        """
+        return super().get(request, name, *args, **kwargs)
+
+    def post(self, request: HttpRequest,
+             name: str, *args, **kwargs) -> HttpResponse:
+        """
+        POST method to update User
+        :param request: http request
+        :param name: username of user to get
+        :param args: additional arbitrary arguments
+        :param kwargs: additional keyword arguments
+        :return: http response
+        """
+        return super().post(request, name, *args, **kwargs)

@@ -46,12 +46,17 @@ from .constants import (
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-env = environ.Env(
+# required environment variables are keys of 'scheme' plus REQUIRED_ENV_VARS
+scheme = {
     # set casting, default value
-    DEBUG=(bool, False),
-    DEVELOPMENT=(bool, False),
-    TEST=(bool, False)
-)
+    'DEBUG': (bool, False),
+    'DEVELOPMENT': (bool, False),
+    'TEST': (bool, False)
+}
+REQUIRED_ENV_VARS = [key for key, _ in scheme.items()]
+REQUIRED_ENV_VARS.extend(['SITE_ID', 'SECRET_KEY', 'DATABASE_URL'])
+
+env = environ.Env(**scheme)
 # Take environment variables from .env file
 os.environ.setdefault('ENV_FILE', '.env')
 environ.Env.read_env(
@@ -67,6 +72,7 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 DEVELOPMENT = env('DEVELOPMENT')
+TEST = env('TEST')
 
 # https://docs.djangoproject.com/en/4.1/ref/clickjacking/
 # required for Summernote editor
@@ -254,6 +260,7 @@ MESSAGE_TAGS = {
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
 # Parse database connection url strings
+# https://django-environ.readthedocs.io/en/latest/api.html#environ.Env.db_url_config
 # like psql://user:pass@127.0.0.1:8458/db
 DATABASES = {
     # read os.environ['DATABASE_URL'] and raises
@@ -265,13 +272,13 @@ DATABASES = {
     # read os.environ['REMOTE_DATABASE_URL']
     'remote': env.db_url(
         'REMOTE_DATABASE_URL',
-        default='sqlite:////tmp/my-tmp-sqlite.db'
+        default=f'sqlite:///{os.path.join(BASE_DIR, "temp-remote.sqlite3")}'
     ),
 
     # read os.environ['SQLITE_URL']
     'extra': env.db_url(
         'SQLITE_URL',
-        default='sqlite:////tmp/my-tmp-sqlite.db'
+        default=f'sqlite:///{os.path.join(BASE_DIR, "temp-sqlite.sqlite3")}'
     )
 }
 
@@ -348,7 +355,7 @@ DEFAULT_FILE_STORAGE = \
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # url for blank avatar image
-AVATAR_BLANK_URL = env('AVATAR_BLANK_URL')
+AVATAR_BLANK_URL = env.get_value('AVATAR_BLANK_URL', default='')
 
 LOGGING = {
     'version': 1,

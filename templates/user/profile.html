@@ -41,7 +41,7 @@
 {% endblock extra_js_head %}
 
 {% block content %}
-<article article="row">
+<article class="row">
     <div class="col-12 mt-2 text-center">
         <h1>{% trans "Profile" %} <em>{{ user_profile.username }}</em></h1>
 
@@ -82,7 +82,7 @@
                     <div class="col-6">
                         {# user avatar field #}
                         <div class="preview">
-                            <img src="{{ avatar_url }}" width="100px" height="100px" alt="Avatar image">
+                            <img src="{{ avatar_url }}" width="100" height="100" alt="Avatar image">
                         </div>
                         {% if not read_only %}
                             {% form_field form 'avatar' as avatar_field %}
