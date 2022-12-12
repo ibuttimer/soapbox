@@ -26,6 +26,10 @@
     color: var(--orange-yellow);
 }
 
+.site-warning-lead {
+    color: red;
+}
+
 html {
     height: 100%;
 }
