@@ -379,3 +379,7 @@ LOGGING = {
         }
     }
 }
+
+# Google site verification
+# https://support.google.com/webmasters/answer/9008080#meta_tag_verification&zippy=%2Chtml-tag
+GOOGLE_SITE_VERIFICATION = env('GOOGLE_SITE_VERIFICATION', default='')

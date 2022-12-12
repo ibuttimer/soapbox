@@ -29,7 +29,7 @@ from user.queries import is_moderator, is_author
 from opinions.views.utils import opinion_permissions, add_opinion_context
 from categories.views import category_permissions
 from .constants import COPYRIGHT_YEAR, COPYRIGHT
-from .settings import DEVELOPMENT, TEST
+from .settings import DEVELOPMENT, TEST, GOOGLE_SITE_VERIFICATION
 
 Social = namedtuple("Social", ["name", "icon", "url"])
 
@@ -55,7 +55,8 @@ def footer_context(request: HttpRequest) -> dict:
         "is_moderator": is_moderator(request.user),
         "is_author": is_author(request.user),
         "is_development": DEVELOPMENT,
-        "is_test": TEST
+        "is_test": TEST,
+        "google_site_verification": GOOGLE_SITE_VERIFICATION
     }
     # add content permissions; key `<model_name>_<crud_op>` with boolean value
     opinion_permissions(request, context=context)
