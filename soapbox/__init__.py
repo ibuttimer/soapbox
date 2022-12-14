@@ -30,7 +30,7 @@ from .constants import (
     AVATAR_FOLDER, IMAGE_FILE_TYPES, DEV_IMAGE_FILE_TYPES,
     MIN_PASSWORD_LEN
 )
-from .settings import AVATAR_BLANK_URL, DEVELOPMENT
+from .settings import AVATAR_BLANK_URL, DEVELOPMENT, TEST
 
 __all__ = [
     'BASE_APP_NAME',
@@ -61,5 +61,6 @@ __all__ = [
     'MIN_PASSWORD_LEN',
 
     'AVATAR_BLANK_URL',
-    'DEVELOPMENT'
+    'DEVELOPMENT',
+    'TEST',
 ]

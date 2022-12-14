@@ -200,7 +200,8 @@ class OpinionDetail(LoginRequiredMixin, View):
         )
         return render(request, template_path, context=context)
 
-    def _get_opinion(self, identifier: [int, str]) -> Opinion:
+    @staticmethod
+    def _get_opinion(identifier: [int, str]) -> Opinion:
         """
         Get opinion for specified identifier
         :param identifier: id or slug of opinion to get
@@ -735,7 +736,8 @@ REVIEW_UPDATE_COPY_FIELDS = [
 
 
 def review_status_patch(
-        request: HttpRequest, model: Type[ModelMixin], pk: int) -> JsonResponse:
+    request: HttpRequest, model: Type[ModelMixin], pk: int
+) -> JsonResponse:
     """
     View function to update content review status.
     :param request: http request

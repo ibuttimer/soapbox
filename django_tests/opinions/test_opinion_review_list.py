@@ -34,12 +34,12 @@ from opinions.enums import OpinionSortOrder, PerPage, QueryStatus
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
-from .base_opinion_test import BaseOpinionTest
+from .base_opinion_test_cls import BaseOpinionTest
 from .test_opinion_list import OPINION_LIST_TEMPLATE, \
     verify_opinion_list_content, OPINION_LIST_SORT_TEMPLATE
-from ..category_mixin_test import CategoryMixin
+from ..category_mixin_test_cls import CategoryMixin
 from ..soup_mixin import SoupMixin
-from ..user.base_user_test import BaseUserTest
+from ..user.base_user_test_cls import BaseUserTest
 
 
 class TestOpinionReviewList(SoupMixin, CategoryMixin, BaseOpinionTest):

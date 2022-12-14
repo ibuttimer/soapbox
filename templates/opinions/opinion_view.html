@@ -55,7 +55,7 @@
             </h1>
         </div>
 
-        {% if is_development %}
+        {% if is_development and not is_test %}
         <div class="row mb-3">
             <div class="col-1">
                 {# display id for dev purposes #}

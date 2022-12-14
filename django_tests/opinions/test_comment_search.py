@@ -20,36 +20,31 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from datetime import datetime, date
 from http import HTTPStatus
 from typing import Any
-from unittest import skip
-from zoneinfo import ZoneInfo
 
 from django.http import HttpResponse
 
-from categories.models import Status
 from opinions.constants import (
     COMMENT_SEARCH_ROUTE_NAME, ORDER_QUERY, PAGE_QUERY, PER_PAGE_QUERY,
     CONTENT_QUERY, AUTHOR_QUERY, SEARCH_QUERY,
     ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY,
     EQUAL_QUERY, STATUS_QUERY
 )
-from opinions.models import Comment
 from opinions.enums import QueryStatus, CommentSortOrder, PerPage
-
+from opinions.models import Comment
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
-from .base_comment_test import BaseCommentTest, sort_expected
-from .base_opinion_test import middle_word
+from .base_comment_test_cls import BaseCommentTest
+from .base_opinion_test_cls import middle_word
 from .test_comment_list import (
     COMMENT_LIST_TEMPLATE, COMMENT_LIST_CONTENT_TEMPLATE,
     verify_comment_list_content
 )
-from ..category_mixin_test import CategoryMixin
+from ..category_mixin_test_cls import CategoryMixin
 from ..soup_mixin import SoupMixin
-from ..user.base_user_test import BaseUserTest
+from ..user.base_user_test_cls import BaseUserTest
 
 DATE_SPACED_FMT = "%d %m %Y"
 DATE_SLASHED_FMT = "%d/%m/%Y"

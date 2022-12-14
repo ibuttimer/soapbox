@@ -20,19 +20,11 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-import os
+from django.test import TestCase
 
-import django
+import django_tests.check_setup     # do env checks and setup
 
 from user.models import User
-
-# 'allauth' checks for 'django.contrib.sites', so django must be setup before
-# test
-os.environ.setdefault("ENV_FILE", ".test-env")
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "soapbox.settings")
-django.setup()
-
-from django.test import TestCase    # noqa
 
 
 class TestUserModel(TestCase):

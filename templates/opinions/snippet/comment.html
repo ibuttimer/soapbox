@@ -38,7 +38,7 @@
                         {% else %}
                             {{ comment_data.content | safe }}
                         {% endif %}
-                        {% if is_development %}
+                        {% if is_development and not is_test %}
                         {# display id for dev purposes #}
                             <span class="badge rounded-pill text-bg-warning">c{{ comment_data.id }} p{{ comment_data.parent }} o{{ comment_data.opinion.id }}</span>
                         {% endif %}
@@ -46,7 +46,7 @@
                 </div>
                 <div class="row mb-2">
                     <!-- review info -->
-                    <div class="col-sm-2 mt-0 mb-0">
+                    <div class="col-sm-2 mt-0 mb-2">
                         {% if status.view_ok %}
                         <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Read">
                         {% endif %}
@@ -64,7 +64,7 @@
                         {% endif %}
                         {% if is_review and is_moderator %}
                             <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Review">
-                                <a class="btn btn-info mt-2" href="{% url 'opinions:comment_id' comment_data.id %}?mode=review" aria-label="review comment">
+                                <a class="btn btn-info mb-2" href="{% url 'opinions:comment_id' comment_data.id %}?mode=review" aria-label="review comment">
                                     <i class="fa-solid fa-magnifying-glass"></i>
                                 </a>
                             </span>

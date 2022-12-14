@@ -45,7 +45,7 @@
                                                     {% if status.review_no_show %}{{ under_review_title }}{% else %}{{ opinion.title }}{% endif %}
                                                 </h4>
                                             </a>
-                                            {% if is_development %}
+                                            {% if is_development and not is_test %}
                                             {# display id for dev purposes #}
                                             <span class="badge rounded-pill text-bg-warning">{{ opinion.id }}</span>
                                             {% endif %}

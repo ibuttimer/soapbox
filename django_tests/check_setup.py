@@ -20,3 +20,24 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
+import os
+
+import django
+
+from soapbox.settings import REQUIRED_ENV_VARS
+
+# 'allauth' checks for 'django.contrib.sites', so django must be setup before
+# test
+
+for key in REQUIRED_ENV_VARS:
+    if key not in os.environ:
+        raise EnvironmentError(
+            f"The '{key}' environment variable must be set")
+
+test_mode = os.environ.get("TEST", False)
+if not test_mode:
+    raise EnvironmentError(f"Attempting to run tests in non-test mode")
+
+os.environ.setdefault("ENV_FILE", ".test-env")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "soapbox.settings")
+django.setup()

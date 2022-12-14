@@ -20,24 +20,14 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-import os
 from http import HTTPStatus
 
-import django
+from bs4 import BeautifulSoup
 from django.http import HttpResponse
 from django.urls import reverse
-from bs4 import BeautifulSoup
 
-from django_tests.user.base_user_test import BaseUserTest
+from django_tests.user.base_user_test_cls import BaseUserTest
 from soapbox import OPINIONS_APP_NAME
-
-# 'allauth' checks for 'django.contrib.sites', so django must be setup before
-# test
-os.environ.setdefault("ENV_FILE", ".test-env")
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "soapbox.settings")
-django.setup()
-
-from django.test import TestCase    # noqa
 
 
 class TestHome(BaseUserTest):
@@ -60,7 +50,8 @@ class TestHome(BaseUserTest):
         self.user_login()
         response = self.get_home()
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertTemplateUsed(response, f'{OPINIONS_APP_NAME}/opinion_feed.html')
+        self.assertTemplateUsed(response,
+                                f'{OPINIONS_APP_NAME}/opinion_feed.html')
 
     def test_home_content(self):
         """ Test home page content """

@@ -31,8 +31,8 @@ from opinions.models import Comment
 from opinions.views.utils import DATE_QUERIES
 from opinions.enums import PerPage, CommentSortOrder, QueryStatus, Hidden
 from user.models import User
-from .base_content_test import ContentTestBase
-from .base_opinion_test import (
+from .base_content_test_cls import ContentTestBase
+from .base_opinion_test_cls import (
     SortCtrl, text_in_field, date_check, multi_sort, partial_status_search
 )
 

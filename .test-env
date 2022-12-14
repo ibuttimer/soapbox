@@ -2,3 +2,5 @@ DEBUG=on
 DEVELOPMENT=true
 TEST=true
 SITE_ID=2
+SECRET_KEY=xyz
+DATABASE_URL=sqlite:////test-db.sqlite3

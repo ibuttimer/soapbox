@@ -39,7 +39,7 @@ from opinions.models import Opinion, HideStatus
 from opinions.views.utils import DATE_QUERIES
 from opinions.enums import PerPage, OpinionSortOrder, QueryStatus, Hidden
 from user.models import User
-from .base_content_test import ContentTestBase
+from .base_content_test_cls import ContentTestBase
 
 
 DATE_SPACED_FMT = "%d %m %Y"

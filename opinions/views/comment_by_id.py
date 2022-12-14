@@ -297,7 +297,8 @@ class CommentDetail(LoginRequiredMixin, View):
         return get_render_comment_response(
             request, comment_obj.id, template=template)
 
-    def _get_comment(self, identifier: [int, str]) -> Comment:
+    @staticmethod
+    def _get_comment(identifier: [int, str]) -> Comment:
         """
         Get opinion for specified identifier
         :param identifier: id or slug of opinion to get

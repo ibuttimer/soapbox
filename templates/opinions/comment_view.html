@@ -70,7 +70,7 @@
                         {% else %}
                             {{ comment.content | safe }}
                         {% endif %}
-                        {% if is_development %}
+                        {% if is_development and not is_test %}
                             {# display id for dev purposes #}
                             <span class="badge rounded-pill text-bg-warning">c{{ comment.id }} p{{ comment.parent }} o{{ comment.opinion.id }}</span>
                         {% endif %}

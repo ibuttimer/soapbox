@@ -36,7 +36,7 @@ from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
 from ..soup_mixin import SoupMixin
-from ..user.base_user_test import BaseUserTest
+from ..user.base_user_test_cls import BaseUserTest
 
 OPINION_FORM_TEMPLATE = f'{OPINIONS_APP_NAME}/opinion_form.html'
 

@@ -20,19 +20,36 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
+from enum import Enum, auto
 from http import HTTPStatus
+from typing import Union
 
 from bs4 import BeautifulSoup
 from django.http import HttpResponse
 
 from opinions.models import Category
 from soapbox import USER_APP_NAME
+from user.constants import USER_USERNAME_ROUTE_NAME
 from utils import reverse_q, namespaced_url
 from user import USER_ID_ROUTE_NAME
 from user.models import User
-from .base_user_test import BaseUserTest
-from ..category_mixin_test import CategoryMixin
+from .base_user_test_cls import BaseUserTest
+from ..category_mixin_test_cls import CategoryMixin
 from ..soup_mixin import SoupMixin
+
+
+class AccessBy(Enum):
+    """ Access route class """
+    BY_ID = auto()
+    BY_USERNAME = auto()
+
+    def identifier(self, user: User) -> Union[int, str]:
+        """
+        Get the identifier from `user` as specified by this access
+        :param user: user to get identifier for
+        :return: identifier
+        """
+        return user.id if self == AccessBy.BY_ID else user.username
 
 
 class TestProfileView(SoupMixin, CategoryMixin, BaseUserTest):
@@ -63,47 +80,68 @@ class TestProfileView(SoupMixin, CategoryMixin, BaseUserTest):
         """
         return BaseUserTest.login_user_by_key(self, name)
 
-    def get_profile(self, user: User) -> HttpResponse:
+    def get_profile(self, user: User, access_by: AccessBy) -> HttpResponse:
         """
         Get the profile page
-        :param user - user to get profile for
+        :param user: user to get profile for
+        :param access_by: access method
         """
         self.assertIsNotNone(user)
         return self.client.get(
             reverse_q(
-                namespaced_url(USER_APP_NAME, USER_ID_ROUTE_NAME),
-                args=[user.id]))
+                namespaced_url(
+                    USER_APP_NAME,
+                    USER_ID_ROUTE_NAME if access_by == AccessBy.BY_ID else
+                    USER_USERNAME_ROUTE_NAME
+                ),
+                args=[access_by.identifier(user)]))
 
     def test_not_logged_in_access_profile(self):
         """ Test must be logged in to access profile """
         user, _ = TestProfileView.get_user_by_index(0)
-        response = self.get_profile(user)
+        response = self.get_profile(user, AccessBy.BY_ID)
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
     def test_get_profile(self):
         """ Test profile page uses correct template """
         user = self.login_user_by_key()
-        response = self.get_profile(user)
+        response = self.get_profile(user, AccessBy.BY_ID)
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertTemplateUsed(response, f'{USER_APP_NAME}/profile.html')
 
-    def test_own_profile_content(self):
-        """ Test profile page content for logged-in user"""
+    def own_profile_content_test(self, access_by: AccessBy):
+        """ Test profile page content for logged-in user """
         _, key = TestProfileView.get_user_by_index(0)
         user = self.login_user_by_key(key)
-        response = self.get_profile(user)
+        response = self.get_profile(user, access_by)
         self.verify_profile_content(user, key, response)
 
-    def test_other_profile_content(self):
-        """ Test profile page content for not logged-in user"""
+    def other_profile_content_test(self, access_by: AccessBy):
+        """ Test profile page content for not logged-in user """
         _, key = TestProfileView.get_user_by_index(0)
         logged_in_user = self.login_user_by_key(key)
 
         user, key = TestProfileView.get_user_by_index(1)
 
         self.assertNotEqual(logged_in_user, user)
-        response = self.get_profile(user)
+        response = self.get_profile(user, access_by)
         self.verify_profile_content(user, key, response, is_readonly=True)
+
+    def test_own_profile_content_by_id(self):
+        """ Test profile page content for logged-in user by id """
+        self.own_profile_content_test(AccessBy.BY_ID)
+
+    def test_other_profile_content_by_id(self):
+        """ Test profile page content for not logged-in user by id """
+        self.other_profile_content_test(AccessBy.BY_ID)
+
+    def test_own_profile_content_by_username(self):
+        """ Test profile page content for logged-in user by username """
+        self.own_profile_content_test(AccessBy.BY_USERNAME)
+
+    def test_other_profile_content_username(self):
+        """ Test profile page content for not logged-in user by username """
+        self.other_profile_content_test(AccessBy.BY_USERNAME)
 
     def verify_profile_content(
                 self, user: User, key: str, response: HttpResponse,

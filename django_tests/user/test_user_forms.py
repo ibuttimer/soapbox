@@ -20,19 +20,14 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-import os
-import unittest
-import django
 
-# 'allauth' checks for 'django.contrib.sites', so django must be setup before
-# test
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "soapbox.settings")
-django.setup()
+from django.test import TestCase
+import django_tests.check_setup     # do env checks and setup
 
-from user.forms import UserSignupForm   # noqa
+from user.forms import UserSignupForm
 
 
-class TestUserSignupForm(unittest.TestCase):
+class TestUserSignupForm(TestCase):
     """ Test user signup form """
 
     # based on allauth defaults
@@ -83,7 +78,3 @@ class TestUserSignupForm(unittest.TestCase):
             "first_name", "last_name", "email", "username", "password1",
             "password2"
         ])
-
-
-if __name__ == '__main__':
-    unittest.main()

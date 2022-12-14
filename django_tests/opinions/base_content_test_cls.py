@@ -38,7 +38,7 @@ from opinions.views.utils import generate_excerpt
 from opinions.enums import PerPage
 from user.models import User
 from user.queries import is_moderator
-from ..user.base_user_test import BaseUserTest
+from ..user.base_user_test_cls import BaseUserTest
 
 
 class ContentTestBase(BaseUserTest):

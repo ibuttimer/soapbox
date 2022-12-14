@@ -37,10 +37,24 @@ Alternatively, if using:
 ## Django Test Tools Unit Testing
 Unit testing of views was undertaken using [Django Test Tools](https://docs.djangoproject.com/en/4.1/topics/testing/tools/).
 The test scripts are located in the [django_tests](../../django_tests/) folder, and the naming format is `test_*.py`.
-The [.test-env](../../.test-env) is used to setup the environment.
+The [.test-env](../../.test-env) is used to set up the environment.
 
-**Note:** [Environment](#environment)
+**Note 1:** [Environment](#environment)
 
+**Note 2:** Running the test full suite can take 5-6 minutes
+
+**It is necessary to specify a number of environment variables prior to running tests.**
+The [.test-env](.test-env) configuration file provides the necessary settings, and may be utilised by setting the `ENV_FILE` environment variable. 
+```shell
+Powershell
+> $env:ENV_FILE='.test-env'
+
+Windows
+> set ENV_FILE=.test-env
+
+Linux
+> export ENV_FILE='.test-env'
+```
 The tests may be run from the project root folder:
 ```shell
 Run all tests
@@ -128,6 +142,11 @@ Test coverage:
 ## Validator Testing 
 
 The [W3C Nu Html Checker](https://validator.w3.org/nu/) was utilised to check the HTML validity, while the [W3C CSS Validation Service](https://jigsaw.w3.org/css-validator/) was utilised to check the CSS validity with respect to [CSS level 3 + SVG](https://www.w3.org/Style/CSS/current-work.html.)
+
+The
+
+node .\scrape.js -b http://127.0.0.1:8000/ -u user1 -p contrib1 -v user-profile
+
 
 | Page    | HTML                                                                                            | HTML Result                                         | CSS                                                                                                                                                                                 | CSS Result                                          |
 |---------|-------------------------------------------------------------------------------------------------|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------|

@@ -36,11 +36,11 @@ from soapbox import OPINIONS_APP_NAME, USER_APP_NAME
 from user import USER_ID_ROUTE_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
-from .base_comment_test import BaseCommentTest
-from .base_opinion_test import BaseOpinionTest
-from ..category_mixin_test import CategoryMixin
+from .base_comment_test_cls import BaseCommentTest
+from .base_opinion_test_cls import BaseOpinionTest
+from ..category_mixin_test_cls import CategoryMixin
 from ..soup_mixin import SoupMixin
-from ..user.base_user_test import BaseUserTest
+from ..user.base_user_test_cls import BaseUserTest
 
 COMMENT_LIST_TEMPLATE = f'{OPINIONS_APP_NAME}/comment_list.html'
 COMMENT_LIST_CONTENT_TEMPLATE = \
@@ -209,6 +209,7 @@ def verify_comment_list_content(
     tags = soup.find_all(
         lambda tag: tag.name == 'div'
         and SoupMixin.in_tag_attr(tag, 'class', 'card')
+        and not SoupMixin.in_tag_attr(tag, 'class', 'div__no-content-card')
     )
     test_case.assertEqual(
         len(expected), len(tags),
