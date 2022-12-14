@@ -51,7 +51,8 @@ scheme = {
     # set casting, default value
     'DEBUG': (bool, False),
     'DEVELOPMENT': (bool, False),
-    'TEST': (bool, False)
+    'TEST': (bool, False),
+    'LOG_DEBUG': (bool, False),
 }
 REQUIRED_ENV_VARS = [key for key, _ in scheme.items()]
 REQUIRED_ENV_VARS.extend(['SITE_ID', 'SECRET_KEY', 'DATABASE_URL'])
@@ -73,6 +74,7 @@ SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
 DEVELOPMENT = env('DEVELOPMENT')
 TEST = env('TEST')
+LOG_DEBUG = env('LOG_DEBUG')
 
 # https://docs.djangoproject.com/en/4.1/ref/clickjacking/
 # required for Summernote editor
@@ -123,6 +125,8 @@ if env('DEVELOPMENT'):
         if env('TEST') else ['localhost', '127.0.0.1']
 else:
     ALLOWED_HOSTS = env.list('HEROKU_HOSTNAME')
+if LOG_DEBUG:
+    print("ALLOWED_HOSTS", ALLOWED_HOSTS)
 
 # Application definition
 INSTALLED_APPS = [
@@ -348,6 +352,13 @@ DEFAULT_FILE_STORAGE = \
     'django.core.files.storage.FileSystemStorage' \
     if DEVELOPMENT else \
     'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+if LOG_DEBUG:
+    print("STATICFILES_STORAGE", STATICFILES_STORAGE)
+    print("STATICFILES_DIRS", STATICFILES_DIRS)
+    print("STATIC_ROOT", STATIC_ROOT)
+    print("MEDIA_ROOT", MEDIA_ROOT)
+    print("DEFAULT_FILE_STORAGE", DEFAULT_FILE_STORAGE)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
