@@ -179,7 +179,7 @@ class ReportForm(forms.ModelForm):
     reason = CharField(
         max_length=Review.REVIEW_ATTRIB_REASON_MAX_LEN,
         widget=Textarea(attrs={
-            "max_length": Review.REVIEW_ATTRIB_REASON_MAX_LEN,
+            "maxlength": Review.REVIEW_ATTRIB_REASON_MAX_LEN,
             "cols": "40",
             "rows": "5",
             "placeholder": _("Reason details")

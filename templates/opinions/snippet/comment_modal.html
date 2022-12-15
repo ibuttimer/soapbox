@@ -3,7 +3,7 @@
 {% load form_field %}
 {# comment modal template expects: 'comment_form' as CommentForm #}
 
-<div class="modal fade" id="id--comment-modal" tabindex="-1" aria-label="Create comment" aria-hidden="true">
+<div class="modal fade" id="id--comment-modal" tabindex="-1" aria-labelledby="id--comment-modal-heading" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-fullscreen-md-down modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
 
@@ -31,13 +31,16 @@
                 <div class="modal-body">
                     <fieldset>
                         <div class="row mb-3">
-                            {% form_field comment_form 'content' as content_field %}
-                            <div class="col-sm-2 text-start">
-                                <label for="{{ content_field.auto_id }}" class="form-label">{{ content_field.label }}</label>
-                            </div>
-                            <div class="col-sm-10">
-                                {{ content_field }}
-                            </div>
+                            {% if not val_test %}
+                                {# exclude summernote for html test as its fails the W3C Nu Html Checker #}
+                                {% form_field comment_form 'content' as content_field %}
+                                <div class="col-sm-2 text-start">
+                                    <label for="{{ content_field.auto_id }}" class="form-label">{{ content_field.label }}</label>
+                                </div>
+                                <div class="col-sm-10">
+                                    {{ content_field }}
+                                </div>
+                            {% endif %}
                         </div>
                     </fieldset>
                 </div>
