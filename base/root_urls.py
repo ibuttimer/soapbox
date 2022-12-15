@@ -37,11 +37,18 @@ Including another URLconf
 """
 from django.urls import path
 
-from soapbox.constants import LANDING_ROUTE_NAME, HOME_ROUTE_NAME
+from soapbox import css_test_route_name
+from soapbox.constants import (
+    LANDING_ROUTE_NAME, HOME_ROUTE_NAME, CSS_TEST_PATH_PREFIX
+)
 from .views import get_landing
 
 urlpatterns = [
     # TODO duplicate routes
+    path(CSS_TEST_PATH_PREFIX, get_landing,
+         name=css_test_route_name(HOME_ROUTE_NAME)),
+    path(CSS_TEST_PATH_PREFIX, get_landing,
+         name=css_test_route_name(LANDING_ROUTE_NAME)),
     path('', get_landing, name=HOME_ROUTE_NAME),
     path('', get_landing, name=LANDING_ROUTE_NAME),
 ]

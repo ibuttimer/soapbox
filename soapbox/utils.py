@@ -19,53 +19,24 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
+#
+from soapbox import CSS_TEST_PATH_PREFIX
+from utils import url_path
 
-from .constants import (
-    BASE_APP_NAME, USER_APP_NAME, CATEGORIES_APP_NAME, OPINIONS_APP_NAME,
-    APP_NAME, COPYRIGHT_YEAR, COPYRIGHT,
-    GET, PATCH, POST, DELETE,
-    HOME_URL, HOME_ROUTE_NAME,
-    ADMIN_URL, ACCOUNTS_URL, SUMMERNOTE_URL,
-    USERS_URL, OPINIONS_URL, CSS_TEST_PATH_PREFIX,
-    AVATAR_FOLDER, IMAGE_FILE_TYPES, DEV_IMAGE_FILE_TYPES,
-    MIN_PASSWORD_LEN
-)
-from .settings import AVATAR_BLANK_URL, DEVELOPMENT, TEST
-from .utils import css_test_route_name, css_test_url
 
-__all__ = [
-    'BASE_APP_NAME',
-    'USER_APP_NAME',
-    'CATEGORIES_APP_NAME',
-    'OPINIONS_APP_NAME',
-    'APP_NAME',
-    'COPYRIGHT_YEAR',
-    'COPYRIGHT',
+def css_test_route_name(route: str):
+    """
+    Generate a css test route name
+    :param route:
+    :return:
+    """
+    return f'{route}_{CSS_TEST_PATH_PREFIX}'
 
-    'GET',
-    'PATCH',
-    'POST',
-    'DELETE',
+def css_test_url(url: str):
+    """
+    Generate a css test url
+    :param url:
+    :return:
+    """
+    return url_path(CSS_TEST_PATH_PREFIX, url)
 
-    'HOME_URL',
-    'HOME_ROUTE_NAME',
-    'ADMIN_URL',
-    'ACCOUNTS_URL',
-    'SUMMERNOTE_URL',
-    'USERS_URL',
-    'OPINIONS_URL',
-    'CSS_TEST_PATH_PREFIX',
-
-    'AVATAR_FOLDER',
-    'IMAGE_FILE_TYPES',
-    'DEV_IMAGE_FILE_TYPES',
-
-    'MIN_PASSWORD_LEN',
-
-    'AVATAR_BLANK_URL',
-    'DEVELOPMENT',
-    'TEST',
-
-    'css_test_route_name',
-    'css_test_url',
-]

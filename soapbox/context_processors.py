@@ -28,7 +28,7 @@ from django.http import HttpRequest
 from user.queries import is_moderator, is_author
 from opinions.views.utils import opinion_permissions, add_opinion_context
 from categories.views import category_permissions
-from .constants import COPYRIGHT_YEAR, COPYRIGHT
+from .constants import COPYRIGHT_YEAR, COPYRIGHT, CSS_TEST_PATH_PREFIX
 from .settings import DEVELOPMENT, TEST, GOOGLE_SITE_VERIFICATION
 
 Social = namedtuple("Social", ["name", "icon", "url"])
@@ -64,3 +64,14 @@ def footer_context(request: HttpRequest) -> dict:
     # add general context updates
     add_opinion_context(request, context=context)
     return context
+
+
+def test_context(request: HttpRequest) -> dict:
+    """
+    Context processor to add test related context
+    :param request: http return
+    :return: dictionary to add to template context
+    """
+    return {
+        "css_test": request.path.index(CSS_TEST_PATH_PREFIX) >= 0
+    }

@@ -61,6 +61,9 @@ USERS_URL = append_slash("users")
 # Opinion routes related
 OPINIONS_URL = append_slash("opinions")
 
+# CSS test related
+CSS_TEST_PATH_PREFIX = 'css-test'
+
 # cloudinary related
 AVATAR_FOLDER = "soapbox"
 

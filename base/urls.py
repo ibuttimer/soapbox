@@ -40,7 +40,7 @@ from django.urls import path
 from opinions.views.opinion_list import (
     OpinionCategoryFeed, OpinionFollowedFeed
 )
-from soapbox import BASE_APP_NAME
+from soapbox import BASE_APP_NAME, css_test_url, css_test_route_name
 from .constants import (
     FOLLOWING_FEED_URL, FOLLOWING_FEED_ROUTE_NAME,
     CATEGORY_FEED_URL, CATEGORY_FEED_ROUTE_NAME,
@@ -49,8 +49,14 @@ from .constants import (
 app_name = BASE_APP_NAME
 
 urlpatterns = [
+    path(css_test_url(FOLLOWING_FEED_URL), OpinionFollowedFeed.as_view(),
+         name=css_test_route_name(FOLLOWING_FEED_ROUTE_NAME)),
+    path(css_test_url(CATEGORY_FEED_URL), OpinionCategoryFeed.as_view(),
+         name=css_test_route_name(CATEGORY_FEED_ROUTE_NAME)),
+
     path(FOLLOWING_FEED_URL, OpinionFollowedFeed.as_view(),
          name=FOLLOWING_FEED_ROUTE_NAME),
     path(CATEGORY_FEED_URL, OpinionCategoryFeed.as_view(),
          name=CATEGORY_FEED_ROUTE_NAME),
 ]
+

@@ -194,6 +194,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 # soapbox context processors
                 'soapbox.context_processors.footer_context',
+                'soapbox.context_processors.test_context',
             ],
         },
     },
