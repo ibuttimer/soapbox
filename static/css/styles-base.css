@@ -37,9 +37,9 @@ html {
 .main-content {
     background-repeat: repeat;
     background-position: center;
-    background-image: url("../img/balloons-1187260_1280.png");
+    background-image: url("img/balloons-1187260_1280.png");
     background-image: -webkit-image-set(
-            url("../img/balloons-1187260_1280.webp") 1x
+            url("img/balloons-1187260_1280.webp") 1x
     );
     /* TODO the standard way; image-set(). This is a CSS Images Module Level 4 feature,
         and as the W3C CSS Validator currently only supports CSS3, unable to
