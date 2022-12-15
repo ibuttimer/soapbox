@@ -42,6 +42,22 @@
     {% block extra_head %}
     {% endblock extra_head %}
 
+    <style>
+        .main-content {
+            background-repeat: repeat;
+            background-position: center;
+            background-image: url("{% static 'img/balloons-1187260_1280.png' %}");
+            background-image: -webkit-image-set(
+                    url("{% static 'img/balloons-1187260_1280.webp' %}") 1x
+            );
+            /* TODO the standard way; image-set(). This is a CSS Images Module Level 4 feature,
+                and as the W3C CSS Validator currently only supports CSS3, unable to
+                follow recommendations from https://developer.mozilla.org/en-US/docs/Web/CSS/image/image-set.
+                Also Chrome does not support type: "implementation has not been per the spec, as only URL values
+                were accepted for the image, and only resolutions with 'x' as a unit were accepted"
+                https://chromestatus.com/feature/5432024223449088 */
+        }
+    </style>
 </head>
 <body class="h-100 d-flex flex-column">
     <header class="container no-padding">
