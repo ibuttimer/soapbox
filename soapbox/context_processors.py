@@ -73,5 +73,5 @@ def test_context(request: HttpRequest) -> dict:
     :return: dictionary to add to template context
     """
     return {
-        "css_test": request.path.index(CSS_TEST_PATH_PREFIX) >= 0
+        "css_test": request.path.find(CSS_TEST_PATH_PREFIX) >= 0
     }
