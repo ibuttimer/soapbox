@@ -20,23 +20,23 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from soapbox import CSS_TEST_PATH_PREFIX
+from soapbox import VAL_TEST_PATH_PREFIX
 from utils import url_path
 
 
-def css_test_route_name(route: str):
+def val_test_route_name(route: str):
     """
     Generate a css test route name
     :param route:
     :return:
     """
-    return f'{route}_{CSS_TEST_PATH_PREFIX}'
+    return f'{route}_{VAL_TEST_PATH_PREFIX}'
 
-def css_test_url(url: str):
+def val_test_url(url: str):
     """
     Generate a css test url
     :param url:
     :return:
     """
-    return url_path(CSS_TEST_PATH_PREFIX, url)
+    return url_path(VAL_TEST_PATH_PREFIX, url)
 

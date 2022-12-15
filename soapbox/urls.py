@@ -43,18 +43,18 @@ from soapbox import (
     ADMIN_URL, ACCOUNTS_URL, SUMMERNOTE_URL,
     USERS_URL, USER_APP_NAME,
     OPINIONS_URL, OPINIONS_APP_NAME,
-    settings, BASE_APP_NAME, css_test_url, css_test_route_name
+    settings, BASE_APP_NAME, val_test_url, val_test_route_name
 )
 from soapbox.constants import FEED_URL
 
 urlpatterns = [
-    # css-test urls for allauth paths
-    path(css_test_url("signup/"), views.signup,
-         name=css_test_route_name("account_signup")),
-    path(css_test_url("login/"), views.login,
-         name=css_test_route_name("account_login")),
-    path(css_test_url("logout/"), views.logout,
-         name=css_test_route_name("account_logout")),
+    # val-test urls for allauth paths
+    path(val_test_url("signup/"), views.signup,
+         name=val_test_route_name("account_signup")),
+    path(val_test_url("login/"), views.login,
+         name=val_test_route_name("account_login")),
+    path(val_test_url("logout/"), views.logout,
+         name=val_test_route_name("account_logout")),
 
     # standard app urls
     path(ADMIN_URL, admin.site.urls),

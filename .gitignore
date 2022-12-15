@@ -196,4 +196,4 @@ cloudinary_python.txt
 /doc/test/django_report/
 /doc/test/unittest_report/
 /doc/test/lighthouse/
-/doc/test/generated/
+/data/run_scrape.py

@@ -28,7 +28,7 @@ from django.http import HttpRequest
 from user.queries import is_moderator, is_author
 from opinions.views.utils import opinion_permissions, add_opinion_context
 from categories.views import category_permissions
-from .constants import COPYRIGHT_YEAR, COPYRIGHT, CSS_TEST_PATH_PREFIX
+from .constants import COPYRIGHT_YEAR, COPYRIGHT, VAL_TEST_PATH_PREFIX
 from .settings import DEVELOPMENT, TEST, GOOGLE_SITE_VERIFICATION
 
 Social = namedtuple("Social", ["name", "icon", "url"])
@@ -73,5 +73,5 @@ def test_context(request: HttpRequest) -> dict:
     :return: dictionary to add to template context
     """
     return {
-        "css_test": request.path.find(CSS_TEST_PATH_PREFIX) >= 0
+        "val_test": request.path.find(VAL_TEST_PATH_PREFIX) >= 0
     }
