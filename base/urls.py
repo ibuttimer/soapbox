@@ -49,11 +49,13 @@ from .constants import (
 app_name = BASE_APP_NAME
 
 urlpatterns = [
+    # css-test urls
     path(css_test_url(FOLLOWING_FEED_URL), OpinionFollowedFeed.as_view(),
          name=css_test_route_name(FOLLOWING_FEED_ROUTE_NAME)),
     path(css_test_url(CATEGORY_FEED_URL), OpinionCategoryFeed.as_view(),
          name=css_test_route_name(CATEGORY_FEED_ROUTE_NAME)),
 
+    # standard app urls
     path(FOLLOWING_FEED_URL, OpinionFollowedFeed.as_view(),
          name=FOLLOWING_FEED_ROUTE_NAME),
     path(CATEGORY_FEED_URL, OpinionCategoryFeed.as_view(),
