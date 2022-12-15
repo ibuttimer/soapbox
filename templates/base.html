@@ -3,6 +3,7 @@
 
 {% load i18n %}
 {% load static %}
+{% load cloudinary_static %}
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -51,7 +52,11 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <a class="navbar-brand theme-colour-background" href="/">
+                    {% if is_development %}
                     <img src="{% static 'img/bullhorn.svg' %}" alt="SoapBox logo" width="30" height="24" class="d-inline-block align-text-top">
+                    {% else %}
+                    {% cloudinary_static 'img/bullhorn.svg' width=30 height=24 alt="SoapBox logo" class="d-inline-block align-text-top" %}
+                    {% endif %}
                     <span class="theme-colour">SoapBox</span>
                 </a>
                 <div class="collapse navbar-collapse" id="navbarToggler">
