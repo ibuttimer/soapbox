@@ -47,7 +47,7 @@
     <div class="row mt-2">
         <!-- author avatar and user link -->
         <div id="id--comment-author" class="col-sm-2 mt-0 mb-3">
-            <img src="{{ comment.avatar_url }}" width="40px" height="40px" alt="{{ comment.user.username }} image">
+            <img src="{{ comment.avatar_url }}" width="40" height="40" alt="{{ comment.user.username }} image">
             <p class="mt-0 mb-0">
                 <a id="id--comment-avatar-link-{{ comment.id }}" href="{% url 'user:user_id' comment.user.id %}" aria-label="view author's profile">
                     {{ comment.user.username }}

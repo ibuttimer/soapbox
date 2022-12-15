@@ -42,6 +42,7 @@
     {% block extra_head %}
     {% endblock extra_head %}
 
+    {# in order to use cloudinary for background images style must be in the html file #}
     <style>
         .main-content {
             background-repeat: repeat;
@@ -68,11 +69,7 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <a class="navbar-brand theme-colour-background" href="/">
-                    {% if is_development %}
                     <img src="{% static 'img/bullhorn.svg' %}" alt="SoapBox logo" width="30" height="24" class="d-inline-block align-text-top">
-                    {% else %}
-                    {% cloudinary_static 'img/bullhorn.svg' width=30 height=24 alt="SoapBox logo" class="d-inline-block align-text-top" %}
-                    {% endif %}
                     <span class="theme-colour">SoapBox</span>
                 </a>
                 <div class="collapse navbar-collapse" id="navbarToggler">
