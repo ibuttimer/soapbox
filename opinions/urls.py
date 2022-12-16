@@ -94,6 +94,7 @@ urlpatterns = [
     path(val_test_url(OPINION_IN_REVIEW_URL), OpinionInReview.as_view(),
          name=val_test_route_name(OPINION_IN_REVIEW_ROUTE_NAME)),
 
+    # standard app urls
     # list opinions
     path(OPINIONS_URL, OpinionList.as_view(), name=OPINIONS_ROUTE_NAME),
     # search opinions

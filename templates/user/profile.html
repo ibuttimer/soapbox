@@ -67,21 +67,24 @@
                     </div>
                 </div>
 
-                {% form_field form 'bio' as bio_field %}
-                <div class="row mb-3">
-                    <div class="col-sm-2 text-start">
-                        <label for="{{ bio_field.auto_id }}" class="form-label">{{ bio_field.label }}</label>
+                {% if not val_test %}
+                {# exclude summernote for html test as its fails the W3C Nu Html Checker #}
+                    {% form_field form 'bio' as bio_field %}
+                    <div class="row mb-3">
+                        <div class="col-sm-2 text-start">
+                            <label for="{{ bio_field.auto_id }}" class="form-label">{{ bio_field.label }}</label>
+                        </div>
+                        <div class="col-sm-10">
+                            {% if read_only %}
+                                <div id="readonly_content" class="text-start">
+                                    <!-- content replaced -->
+                                </div>
+                            {% else %}
+                                {{ bio_field }}
+                            {% endif %}
+                        </div>
                     </div>
-                    <div class="col-sm-10">
-                        {% if read_only %}
-                            <div id="readonly_content" class="text-start">
-                                <!-- content replaced -->
-                            </div>
-                        {% else %}
-                            {{ bio_field }}
-                        {% endif %}
-                    </div>
-                </div>
+                {% endif %}
 
                 {% form_field form 'categories' as categories_field %}
                 <div class="row mb-3">
