@@ -1,6 +1,9 @@
 
 :root {
-    --margin-comment-level: 7px
+    --margin-comment-level: 7px;
+
+    --img-no-content-width: 500px;
+    --img-no-content-height: 450px;
 }
 
 
@@ -97,4 +100,19 @@
 .div__comment-list-padding {
     padding-right: calc(var(--bs-gutter-x)*.5);
     padding-left: calc(var(--bs-gutter-x)*.5);
+}
+
+.img__no-content {
+    width: calc(var(--img-no-content-width) / 4);
+    height: calc(var(--img-no-content-height) / 4);
+}
+
+
+/* tiny screens, 315px wide or less */
+@media screen and (max-width: 315px) {
+    .img__no-content {
+        width: calc(var(--img-no-content-width) / 6);
+        height: calc(var(--img-no-content-height) / 6);
+    }
+
 }
