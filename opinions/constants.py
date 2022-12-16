@@ -194,6 +194,7 @@ DELETED_CONTENT_CTX = "deleted_content"
 HIDDEN_CONTENT_CTX = "hidden_content"
 POPULARITY_CTX = "popularity"
 OPINION_LIST_CTX = "opinion_list"
+COMMENT_LIST_CTX = 'comment_list'
 STATUS_BG_CTX = "status_bg"
 REVIEW_BUTTON_CTX = "review_button"
 REVIEW_BUTTON_TIPS_CTX = "review_button_tips"
@@ -221,6 +222,7 @@ FOLLOWED_CATEGORIES_CTX = "followed_categories"
 # general
 TITLE_CTX = 'title'                             # page title
 PAGE_HEADING_CTX = 'page_heading'               # page heading display
+LIST_HEADING_CTX = 'list_heading'               # list heading display
 REPEAT_SEARCH_TERM_CTX = 'repeat_search_term'   # search term for query
 REDIRECT_CTX = "redirect"
 

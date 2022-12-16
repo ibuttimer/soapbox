@@ -40,10 +40,10 @@ from opinions.views.comment_queries import (
     get_comment_lookup, COMMENT_ALWAYS_FILTERS, COMMENT_FILTERS_ORDER
 )
 from opinions.constants import (
-    STATUS_QUERY, AUTHOR_QUERY, SEARCH_QUERY,
-    CONTENT_STATUS_CTX, REPEAT_SEARCH_TERM_CTX, PAGE_HEADING_CTX, TITLE_CTX,
-    HTML_CTX, TEMPLATE_COMMENT_REACTIONS, TEMPLATE_REACTION_CTRLS,
-    REVIEW_QUERY, IS_REVIEW_CTX, COMMENT_OFFSET_CTX,
+    STATUS_QUERY, AUTHOR_QUERY, SEARCH_QUERY, COMMENT_LIST_CTX,
+    CONTENT_STATUS_CTX, REPEAT_SEARCH_TERM_CTX, LIST_HEADING_CTX,
+    PAGE_HEADING_CTX, TITLE_CTX, HTML_CTX, TEMPLATE_COMMENT_REACTIONS,
+    TEMPLATE_REACTION_CTRLS, REVIEW_QUERY, IS_REVIEW_CTX, COMMENT_OFFSET_CTX,
     COMMENT_ID_ROUTE_NAME, COMMENT_SLUG_ROUTE_NAME,
     OPINION_ID_ROUTE_NAME, REFERENCE_QUERY, PK_PARAM_NAME, SLUG_PARAM_NAME
 )
@@ -149,7 +149,7 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
 
         return {
             TITLE_CTX: title,
-            PAGE_HEADING_CTX: capwords(title)
+            LIST_HEADING_CTX: capwords(title)
         }
 
     def set_queryset(
@@ -247,12 +247,18 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
             enablers={key: True for key in COMMENT_LIST_REACTIONS})
 
         context.update({
-            'comment_list': comment_bundles,
+            COMMENT_LIST_CTX: comment_bundles,
             CONTENT_STATUS_CTX: comments_review_status,
             TEMPLATE_COMMENT_REACTIONS: COMMENT_REACTIONS,
             TEMPLATE_REACTION_CTRLS: reaction_ctrls,
         })
         add_content_no_show_markers(context=context)
+
+        if len(context[COMMENT_LIST_CTX]) == 0:
+            # move list heading to page heading as no content
+            context[PAGE_HEADING_CTX] = context[LIST_HEADING_CTX]
+            del context[LIST_HEADING_CTX]
+
         return context
 
     def is_list_only_template(self) -> bool:
@@ -287,7 +293,7 @@ class CommentSearch(CommentList):
         ])
         self.extra_context = {
             TITLE_CTX: 'Comment search',
-            PAGE_HEADING_CTX: f"Results of {search_term}",
+            LIST_HEADING_CTX: f"Results of {search_term}",
             REPEAT_SEARCH_TERM_CTX:
                 f'{SEARCH_QUERY}='
                 f'{query_params[SEARCH_QUERY].value}'
@@ -405,7 +411,7 @@ class CommentInReview(CommentList):
 
         return {
             TITLE_CTX: title,
-            PAGE_HEADING_CTX: heading,
+            LIST_HEADING_CTX: heading,
         }
 
     def set_queryset(

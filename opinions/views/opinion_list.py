@@ -32,9 +32,9 @@ from opinions.comment_data import get_popularity_levels
 from opinions.constants import (
     STATUS_QUERY, AUTHOR_QUERY, SEARCH_QUERY, PINNED_QUERY,
     TEMPLATE_OPINION_REACTIONS, TEMPLATE_REACTION_CTRLS, CONTENT_STATUS_CTX,
-    REPEAT_SEARCH_TERM_CTX, PAGE_HEADING_CTX, TITLE_CTX, POPULARITY_CTX,
-    OPINION_LIST_CTX, STATUS_BG_CTX, FILTER_QUERY, REVIEW_QUERY,
-    IS_REVIEW_CTX, IS_FOLLOWING_FEED_CTX, IS_CATEGORY_FEED_CTX,
+    REPEAT_SEARCH_TERM_CTX, LIST_HEADING_CTX, PAGE_HEADING_CTX, TITLE_CTX,
+    POPULARITY_CTX, OPINION_LIST_CTX, STATUS_BG_CTX, FILTER_QUERY,
+    REVIEW_QUERY, IS_REVIEW_CTX, IS_FOLLOWING_FEED_CTX, IS_CATEGORY_FEED_CTX,
     FOLLOWED_CATEGORIES_CTX, CATEGORY_QUERY, ALL_CATEGORIES
 )
 from opinions.data_structures import OpinionData
@@ -148,7 +148,7 @@ class OpinionList(LoginRequiredMixin, ContentListMixin):
 
         return {
             TITLE_CTX: title,
-            PAGE_HEADING_CTX: capwords(title)
+            LIST_HEADING_CTX: capwords(title)
         }
 
     def set_queryset(
@@ -260,6 +260,11 @@ class OpinionList(LoginRequiredMixin, ContentListMixin):
                 map(OpinionData.from_model, context[OPINION_LIST_CTX])
             )
         })
+        if len(context[OPINION_LIST_CTX]) == 0:
+            # move list heading to page heading as no content
+            context[PAGE_HEADING_CTX] = context[LIST_HEADING_CTX]
+            del context[LIST_HEADING_CTX]
+
         return context
 
     def is_list_only_template(self) -> bool:
@@ -294,7 +299,7 @@ class OpinionSearch(OpinionList):
         ])
         self.extra_context = {
             TITLE_CTX: 'Opinion search',
-            PAGE_HEADING_CTX: f"Results of {search_term}",
+            LIST_HEADING_CTX: f"Results of {search_term}",
             REPEAT_SEARCH_TERM_CTX:
                 f'{SEARCH_QUERY}='
                 f'{query_params[SEARCH_QUERY].value}'
@@ -406,7 +411,7 @@ class OpinionFollowed(OpinionList):
         )
         return {
             TITLE_CTX: title_heading[0],
-            PAGE_HEADING_CTX: title_heading[1],
+            LIST_HEADING_CTX: title_heading[1],
         }
 
     def set_queryset(
@@ -500,7 +505,7 @@ class OpinionInReview(OpinionFollowed):
 
         return {
             TITLE_CTX: title,
-            PAGE_HEADING_CTX: heading,
+            LIST_HEADING_CTX: heading,
         }
 
     def get_queryset_params(
@@ -554,7 +559,7 @@ class OpinionFollowedFeed(OpinionFollowed):
         """
         return {
             TITLE_CTX: "Following Feed",
-            PAGE_HEADING_CTX: "Following Feed",
+            LIST_HEADING_CTX: "Following Feed",
         }
 
     def set_extra_context(self, query_params: dict[str, QueryArg]):
@@ -624,7 +629,7 @@ class OpinionCategoryFeed(OpinionList):
         """
         return {
             TITLE_CTX: "Category Feed",
-            PAGE_HEADING_CTX: "Category Feed",
+            LIST_HEADING_CTX: "Category Feed",
         }
 
     def set_extra_context(self, query_params: dict[str, QueryArg]):
