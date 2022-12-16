@@ -197,3 +197,4 @@ cloudinary_python.txt
 /doc/test/unittest_report/
 /doc/test/lighthouse/
 /data/run_scrape.py
+/data/scrape_val_views.py

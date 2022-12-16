@@ -1,0 +1,465 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/hrcj5dv7b/image/upload/v1/static/apple-touch-icon.05bae240b98e.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://res.cloudinary.com/hrcj5dv7b/image/upload/v1/static/favicon-32x32.0489f17023fe.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://res.cloudinary.com/hrcj5dv7b/image/upload/v1/static/favicon-16x16.24eb55e0fd3e.png">
+    <link rel="manifest" href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/site.fb74105a5f88.webmanifest">
+    <link rel="mask-icon" href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/safari-pinned-tab.bf8bc2e456d1.svg" color="#ffc43d">
+    <meta name="msapplication-TileColor" content="#ffc43d">
+    <meta name="theme-color" content="#ffc43d">
+    <meta name="description" content="SoapBox is a community platform that allows users to post opinions and engage in online discussions.">
+    <meta name="google-site-verification" content="nSLaF9fnDohng9nLW2_KvEKKAdIk40-RHsQEQsY8-GI">
+
+    
+    <link href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/css/styles.b2224c8a1d4d.css" rel="stylesheet" type="text/css">
+
+    
+<link href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/css/styles-opinion.97b5ca478420.css" rel="stylesheet" type="text/css">
+
+
+    
+    <script src="https://code.jquery.com/jquery-3.6.1.min.js" integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous"></script>
+    <script>window.jQuery || document.write('<script type="text/javascript" src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/jquery/jquery-3.6.1.min.00727d1d5d9c.js"><\/script>')</script>
+
+
+    <script src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/js/script.8683d7058d68.js"></script>
+
+    <title>SoapBox - Very c…</title>
+    
+    
+
+    
+    <style>
+        .main-content {
+            background-repeat: repeat;
+            background-position: center;
+            background-image: url("https://res.cloudinary.com/hrcj5dv7b/image/upload/v1/static/img/balloons-1187260_1280.dabf99bff7df.png");
+            background-image: -webkit-image-set(
+                    url("https://res.cloudinary.com/hrcj5dv7b/image/upload/v1/static/img/balloons-1187260_1280.39f5bf6c513d.webp") 1x
+            );
+            /* TODO the standard way; image-set(). This is a CSS Images Module Level 4 feature,
+                and as the W3C CSS Validator currently only supports CSS3, unable to
+                follow recommendations from https://developer.mozilla.org/en-US/docs/Web/CSS/image/image-set.
+                Also Chrome does not support type: "implementation has not been per the spec, as only URL values
+                were accepted for the image, and only resolutions with 'x' as a unit were accepted"
+                https://chromestatus.com/feature/5432024223449088 */
+        }
+    </style>
+</head>
+<body class="h-100 d-flex flex-column">
+    <header class="container no-padding">
+        <nav class="navbar navbar-expand-lg bg-light div__panel">
+            <div class="container-fluid">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggler" aria-controls="navbarToggler" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <a class="navbar-brand theme-colour-background" href="/">
+                    <img src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/img/bullhorn.995d53581847.svg" alt="SoapBox logo" width="30" height="24" class="d-inline-block align-text-top">
+                    <span class="theme-colour">SoapBox</span>
+                </a>
+                <div class="collapse navbar-collapse" id="navbarToggler">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="/">Home</a>
+                        </li>
+                        
+                            
+                            <li class="nav-item dropdown">
+                                <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="nav-link dropdown-toggle">
+                                    Opinion
+                                </a>
+                                <ul class="dropdown-menu">
+                                    
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/new/">New</a>
+                                    </li>
+                                    
+                                    
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/?author=mod1&amp;status=draft">Drafts</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/?author=mod1&amp;status=preview">Previews</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/in_review/?author=mod1">Reviews</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/?author=mod1&amp;status=all">All mine</a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/?pinned=yes">Pinned</a>
+                                    </li>
+                                    
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/">All</a>
+                                    </li>
+                                    
+                                </ul>
+                            </li>
+                            
+                            <li class="nav-item dropdown">
+                                <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="nav-link dropdown-toggle">
+                                    Comment
+                                </a>
+                                <ul class="dropdown-menu">
+                                    
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/comments/in_review/?author=mod1">Reviews</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/comments/?author=mod1&amp;status=all">Mine</a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/comments/">All</a>
+                                    </li>
+                                    
+                                </ul>
+                            </li>
+                            
+                            
+                                <li class="nav-item dropdown">
+                                    <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="nav-link dropdown-toggle">
+                                        Moderate
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        
+                                        <li>
+                                            <a class="dropdown-item" href="/opinions/in_review/?review=pending-review">Opinion review pending</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="/opinions/in_review/?review=under-review">Opinion review in progress</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="/opinions/in_review/?review=unacceptable">Opinion review unacceptable</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="/opinions/comments/in_review/?review=pending-review">Comment review pending</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="/opinions/comments/in_review/?review=under-review">Comment review in progress</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="/opinions/comments/in_review/?review=unacceptable">Comment review unacceptable</a>
+                                        </li>
+                                        
+                                    </ul>
+                                </li>
+                            
+                        
+                    </ul>
+                    <form class="d-flex" role="search" method="get" action="/opinions/search/">
+                        <input class="form-control me-2" type="search" placeholder="Search opinions" aria-label="Search" name="search">
+                        <button class="btn btn-outline-success btn__text" type="submit">Search</button>
+                    </form>
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                        
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    
+                                        <i class="fa-solid fa-user-plus"></i>
+                                    
+                                    &nbsp;
+                                    
+                                        Mod1
+                                    
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="/users/5/" aria-label="view profile">Profile</a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="/accounts/logout/">Sign Out</a>
+                                    </li>
+                                </ul>
+                            </li>
+                        
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container flex-shrink-0 flex-grow-1 overflow-auto main-content no-padding">
+        
+
+        <div class="container">
+            
+<article class="row text-center">
+    <div class="col-12 mt-2">
+
+        <!-- preview banner -->
+        
+            
+            
+            
+            
+
+
+
+
+
+
+
+
+
+
+<div id="id--div-review-request-header" class="alert alert-warning" role="alert">
+    <div class="row mb-3">
+        <div class="col-md-9">
+            <h3>Review Request</h3>
+        </div>
+        
+        <div class="col-md-3">
+            <button type="button" class="btn btn-outline-success btn__text" onclick="updateReviewStatus('under-review')">
+                Assign
+            </button>
+        </div>
+        
+    </div>
+    
+    <div class="row">
+        <div class="col-sm-3">
+            <p><strong>Requested by</strong> <a href="/users/6/" aria-label="view requested by user's profile">user2</a></p>
+        </div>
+        <div class="col-sm-3">
+            <p><strong>Created</strong> 2&nbsp;weeks from now</p>
+        </div>
+        <div class="col-sm-3">
+            
+            <span id="status_1" class="badge rounded-pill bg-warning text-white fs-6 mb-3">Pending Review</span>
+        </div>
+        <div class="col-sm-3">
+            
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    I disagree
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+        
+
+        <div class="row mb-3">
+            <h1 id="id--title">
+                Very contentious according to user2 - Pending Review
+            </h1>
+        </div>
+
+        
+
+        <!-- top row: category, updated/published/author, preview/draft/publish -->
+        <div class="row mb-3">
+            <div class="col-lg-3 col-md-6 mb-3">
+                
+                    <span class="badge rounded-pill text-bg-info fs-6">Television</span>
+                
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <p><strong>Author</strong> <a href="/users/2/" aria-label="view author's profile">user1</a></p>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <p><strong>Updated</strong> 1&nbsp;week, 6&nbsp;days from now</p>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body readonly_content">
+                        
+                            user1 thinks people will complain
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+    </div>
+
+    
+
+    
+
+    
+    
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="id--review-form-container">
+    
+
+    
+</div>
+
+    
+</article>
+
+
+        </div>
+    </main>
+
+    
+    <footer class="container d-flex flex-wrap justify-content-between align-items-center py-3 border-top bg-white div__panel">
+        <div class="col-md-4 d-flex align-items-center">
+            <a href="/" class="ms-2 me-2 mb-md-0 text-muted text-decoration-none lh-1">
+                <img class="bi" width="24" height="24" src="https://res.cloudinary.com/hrcj5dv7b/image/upload/v1/static/favicon-32x32-gray.37dde23947e1.png" alt="SoapBox logo">
+            </a>
+            <span class="mb-md-0 text-muted">© 2022 Ian Buttimer</span>
+        </div>
+
+        <div class="col-md-4 d-flex align-items-center justify-content-center">
+            <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Admin">
+                <a href="/admin" target="_blank" rel="noopener" aria-label="visit admin page in another tab" class="socials">
+                    <i class="fa-solid fa-screwdriver-wrench text-muted"></i>
+                </a>
+            </span>
+        </div>
+
+        <ul class="nav col-md-4 justify-content-end list-unstyled d-flex">
+            
+                <li>
+                    <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Facebook">
+                        <a href="https://facebook.com" target="_blank" rel="noopener" aria-label="visit our Facebook page in another tab" class="socials">
+                            <i class="fa-brands fa-square-facebook text-muted"></i>
+                        </a>
+                    </span>
+                </li>
+            
+                <li>
+                    <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Twitter">
+                        <a href="https://twitter.com" target="_blank" rel="noopener" aria-label="visit our Twitter page in another tab" class="socials">
+                            <i class="fa-brands fa-square-twitter text-muted"></i>
+                        </a>
+                    </span>
+                </li>
+            
+                <li>
+                    <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Instagram">
+                        <a href="https://instagram.com" target="_blank" rel="noopener" aria-label="visit our Instagram page in another tab" class="socials">
+                            <i class="fa-brands fa-square-instagram text-muted"></i>
+                        </a>
+                    </span>
+                </li>
+            
+        </ul>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
+    
+    <!-- view_js.html start -->
+<script>
+    /**
+     * Update status of content
+     * :param patchUrl: base url to call
+     * :param new_status: new status, one of QueryStatus args
+     */
+    function updateStatusPatch(patchUrl, new_status) {
+        $.ajax({
+            url: `${patchUrl}?status=${new_status}`,
+            method: 'patch',
+            headers: {
+                'X-CSRFTOKEN': 'OdcoQqrSj4hg69C6KM0ouZ3wzwBLhVRBBDxW4WI1GwdQks6KvxRxlN6GXTKsIRcb'
+            }
+        }).done(function(data) {
+            redirect_rewrite_response_handler(data);
+            enableTooltips();
+        });
+    }
+</script>
+<!-- view_js.html end -->
+
+    <script>
+        /**
+         * Update status of current opinion
+         * :param new_status: new status, one of 'publish', 'preview' or 'draft'
+         */
+        function updateStatus(new_status) {
+            updateStatusPatch("/opinions/51/status/", new_status);
+        }
+    </script>
+    
+        <script>
+            /**
+            * Update review status of current opinion
+            * :param new_status: new status, one of 'withdrawn, 'pending-review',
+            *                    'under-review', 'unacceptable' or 'acceptable'
+            */
+            function updateReviewStatus(new_status) {
+                updateStatusPatch("/opinions/51/review_status/", new_status);
+            }
+        </script>
+    
+
+    
+
+
+    <script>
+        /* Enable Bootstrap tooltips */
+        function enableTooltips() {
+            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+            const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+        }
+
+        const REDIRECT_PROP = 'redirect';
+        const REWRITES_PROP = 'rewrites';
+        const ELEMENT_ID_PROP = 'element_id';
+        const HTML_PROP = 'html';
+
+        const replaceHtml = (data) => $("#" + data[ELEMENT_ID_PROP]).replaceWith(data[HTML_PROP]);
+
+        /**
+         * Handle a redirect/rewrite response
+         * :param data: json data
+         */
+        function redirect_rewrite_response_handler(data) {
+            if (data !== undefined) {
+                if (data.hasOwnProperty(REDIRECT_PROP)) {
+                    // redirect to new url
+                    document.location.href = data[REDIRECT_PROP];
+                } else if (data.hasOwnProperty(ELEMENT_ID_PROP)) {
+                    // replace single element's html
+                    replaceHtml(data);
+                } else if (data.hasOwnProperty(REWRITES_PROP)) {
+                    // replace multiple element's html
+                    for (let element of data[REWRITES_PROP]) {
+                        replaceHtml(element);
+                    }
+                }
+            }
+        }
+
+        enableTooltips();
+    </script>
+
+</body></html>

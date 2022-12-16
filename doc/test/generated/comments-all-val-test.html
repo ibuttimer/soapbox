@@ -1,0 +1,3187 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/hrcj5dv7b/image/upload/v1/static/apple-touch-icon.05bae240b98e.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://res.cloudinary.com/hrcj5dv7b/image/upload/v1/static/favicon-32x32.0489f17023fe.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://res.cloudinary.com/hrcj5dv7b/image/upload/v1/static/favicon-16x16.24eb55e0fd3e.png">
+    <link rel="manifest" href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/site.fb74105a5f88.webmanifest">
+    <link rel="mask-icon" href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/safari-pinned-tab.bf8bc2e456d1.svg" color="#ffc43d">
+    <meta name="msapplication-TileColor" content="#ffc43d">
+    <meta name="theme-color" content="#ffc43d">
+    <meta name="description" content="SoapBox is a community platform that allows users to post opinions and engage in online discussions.">
+    <meta name="google-site-verification" content="nSLaF9fnDohng9nLW2_KvEKKAdIk40-RHsQEQsY8-GI">
+
+    
+    <link href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/css/styles.b2224c8a1d4d.css" rel="stylesheet" type="text/css">
+
+    
+<link href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/css/styles-opinion.97b5ca478420.css" rel="stylesheet" type="text/css">
+
+
+    
+<script src="https://code.jquery.com/jquery-3.6.1.min.js" integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous"></script>
+<script>window.jQuery || document.write('<script type="text/javascript" src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/jquery/jquery-3.6.1.min.00727d1d5d9c.js"><\/script>')</script>
+
+
+    <script src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/js/script.8683d7058d68.js"></script>
+
+    <title>SoapBox - Comments</title>
+    
+    
+
+    
+    <style>
+        .main-content {
+            background-repeat: repeat;
+            background-position: center;
+            background-image: url("https://res.cloudinary.com/hrcj5dv7b/image/upload/v1/static/img/balloons-1187260_1280.dabf99bff7df.png");
+            background-image: -webkit-image-set(
+                    url("https://res.cloudinary.com/hrcj5dv7b/image/upload/v1/static/img/balloons-1187260_1280.39f5bf6c513d.webp") 1x
+            );
+            /* TODO the standard way; image-set(). This is a CSS Images Module Level 4 feature,
+                and as the W3C CSS Validator currently only supports CSS3, unable to
+                follow recommendations from https://developer.mozilla.org/en-US/docs/Web/CSS/image/image-set.
+                Also Chrome does not support type: "implementation has not been per the spec, as only URL values
+                were accepted for the image, and only resolutions with 'x' as a unit were accepted"
+                https://chromestatus.com/feature/5432024223449088 */
+        }
+    </style>
+</head>
+<body class="h-100 d-flex flex-column">
+    <header class="container no-padding">
+        <nav class="navbar navbar-expand-lg bg-light div__panel">
+            <div class="container-fluid">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggler" aria-controls="navbarToggler" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <a class="navbar-brand theme-colour-background" href="/">
+                    <img src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/img/bullhorn.995d53581847.svg" alt="SoapBox logo" width="30" height="24" class="d-inline-block align-text-top">
+                    <span class="theme-colour">SoapBox</span>
+                </a>
+                <div class="collapse navbar-collapse" id="navbarToggler">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="/">Home</a>
+                        </li>
+                        
+                            
+                            <li class="nav-item dropdown">
+                                <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="nav-link dropdown-toggle">
+                                    Opinion
+                                </a>
+                                <ul class="dropdown-menu">
+                                    
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/new/">New</a>
+                                    </li>
+                                    
+                                    
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/?author=user1&amp;status=draft">Drafts</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/?author=user1&amp;status=preview">Previews</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/in_review/?author=user1">Reviews</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/?author=user1&amp;status=all">All mine</a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/?pinned=yes">Pinned</a>
+                                    </li>
+                                    
+                                        <li>
+                                            <a class="dropdown-item" tabindex="-1" href="/opinions/followed/?filter=new">New tagged author opinions</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" tabindex="-1" href="/opinions/followed/?filter=all">All tagged author opinions</a>
+                                        </li>
+                                    
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/">All</a>
+                                    </li>
+                                    
+                                </ul>
+                            </li>
+                            
+                            <li class="nav-item dropdown">
+                                <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="nav-link dropdown-toggle">
+                                    Comment
+                                </a>
+                                <ul class="dropdown-menu">
+                                    
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/comments/in_review/?author=user1">Reviews</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/comments/?author=user1&amp;status=all">Mine</a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/comments/">All</a>
+                                    </li>
+                                    
+                                </ul>
+                            </li>
+                            
+                            
+                        
+                    </ul>
+                    <form class="d-flex" role="search" method="get" action="/opinions/search/">
+                        <input class="form-control me-2" type="search" placeholder="Search opinions" aria-label="Search" name="search">
+                        <button class="btn btn-outline-success btn__text" type="submit">Search</button>
+                    </form>
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                        
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    
+                                        <i class="fa-solid fa-user"></i>
+                                    
+                                    &nbsp;
+                                    
+                                        User1
+                                    
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="/users/2/" aria-label="view profile">Profile</a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="/accounts/logout/">Sign Out</a>
+                                    </li>
+                                </ul>
+                            </li>
+                        
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container flex-shrink-0 flex-grow-1 overflow-auto main-content no-padding">
+        
+
+        <div class="container">
+            
+
+
+<div class="row flex-grow-1 overflow-auto d-flex justify-content-center">
+    
+    <!-- sort_order_select.html start -->
+
+
+
+
+
+
+
+<div class="row d-flex justify-content-center">
+    <div class="row d-flex justify-content-center">
+        <div class="col-xxl-10 col-lg-9 col-md-8 col-sm-6 col-auto mt-2 text-center">
+            <h3>Comments</h3>
+        </div>
+        <div class="col-xxl-2 col-lg-3 col-md-4 col-sm-6 col-auto mt-2">
+            <!-- sort order selection -->
+            <select id="id--sort-order-select" class="form-select" aria-label="Sort by">
+                
+                <option value="new">
+                    Published Date ⇊
+                </option>
+                
+                <option value="old" selected="">
+                    Published Date ⇈
+                </option>
+                
+                <option value="aaz">
+                    Author A-Z
+                </option>
+                
+                <option value="aza">
+                    Author Z-A
+                </option>
+                
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- sort_order_select.html end -->
+
+
+    <article id="article-content" class="row d-flex justify-content-center">
+        <!-- comment_list_content.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+    <var id="var--repeat-search-term" hidden=""></var>
+
+    
+
+        
+            <div class="row">
+                <div class="col-12 mt-2">
+                    <div class="row d-flex align-items-center div__comment-list-padding">
+                        <!-- comment.html start -->
+
+
+
+
+
+
+
+
+
+
+
+<div id="id--comment-card-48" class="card">
+    <div class="card-body">
+        <div class="row">
+            <!-- author avatar and user link -->
+            <div class="col-sm-2 mt-0 mb-0">
+                <img src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1671049692/static/img/avatar_blank.5cdd10ce5091.svg" width="40" height="40" alt="user2 image" id="id--comment-avatar-48">
+                <p class="mt-0 mb-0">
+                    <a id="id--comment-avatar-link-48" aria-label="view author's profile" href="/users/6/">
+                        user2
+                    </a>
+                </p>
+            </div>
+            <!-- comment details -->
+            <div class="col-sm-10 mt-0 mb-0">
+                <div class="row mb-2">
+                    <div class="col-sm-12 mt-0 mb-0" id="id--comment-content-48">
+                        
+                        
+                            That's interesting
+                        
+                        
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <!-- review info -->
+                    <div class="col-sm-2 mt-0 mb-2">
+                        
+                        <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Read">
+                        
+                            <a class="btn btn-primary mb-2" href="/opinions/comments/48/?mode=read-only" aria-label="read comment thread">
+                                <i class="fa-solid fa-book-open"></i>
+                            </a>
+                        
+                        </span>
+                        
+                        
+                    </div>
+                    <!-- comment updated info -->
+                    <div class="col-sm-5 mt-0 mb-0">
+                        <p class="card-text text-muted mt-0 mb-0">
+                            
+                            <i class="fa-solid fa-upload"></i> 1&nbsp;day, 13&nbsp;hours ago
+                            
+                            <br>
+                            <i class="fa-solid fa-pen-to-square"></i> 1&nbsp;day, 13&nbsp;hours ago
+                        </p>
+                    </div>
+                    <!-- comment reactions -->
+                    <div class="col-sm-5 mt-0 mb-0 justify-content-start">
+
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                            
+                                
+                                    
+                                        
+                                            <!-- reactions.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<ul id="id--react-ul-comment-48" class="nav list-unstyled d-flex">
+    
+        
+        <li id="id--react-li-agree-comment-48">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-disagree-comment-48">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-comment-comment-48">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-follow-comment-48">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-unfollow-comment-48">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-share-comment-48">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-share-comment-48" type="button" aria-label="Share comment" class="reactions" data-bs-href="/opinions/comments/thats-interesting-MTY3MTA1MzE3OC43ODY1Nzc_2Gv/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Share comment">
+        <span data-bs-toggle="modal" data-bs-target="#id--share-modal"><i class="fa-solid fa-share-nodes"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-hide-comment-48">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-show-comment-48">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-report-comment-48">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-delete-comment-48">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-edit-comment-48">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+</ul>
+<!-- reactions.html end -->
+
+                                        
+                                    
+                                
+                            
+                        
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 justify-content-center">
+                        <h6>
+                            From opinion
+                            <a href="/opinions/33/?mode=read-only" class="post-link" aria-label="read opinion New Zealand passes world-first tobacco law to ban smoking by 2025">
+                                New Zealand passes world-first tobacco law to ban smoking by 2025
+                            </a>
+                        </h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- comment.html end -->
+
+                    </div>
+                </div>
+            </div>
+        
+            <div class="row">
+                <div class="col-12 mt-2">
+                    <div class="row d-flex align-items-center div__comment-list-padding">
+                        <!-- comment.html start -->
+
+
+
+
+
+
+
+
+
+
+
+<div id="id--comment-card-49" class="card">
+    <div class="card-body">
+        <div class="row">
+            <!-- author avatar and user link -->
+            <div class="col-sm-2 mt-0 mb-0">
+                <img src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1671049692/static/img/avatar_blank.5cdd10ce5091.svg" width="40" height="40" alt="user3 image" id="id--comment-avatar-49">
+                <p class="mt-0 mb-0">
+                    <a id="id--comment-avatar-link-49" aria-label="view author's profile" href="/users/4/">
+                        user3
+                    </a>
+                </p>
+            </div>
+            <!-- comment details -->
+            <div class="col-sm-10 mt-0 mb-0">
+                <div class="row mb-2">
+                    <div class="col-sm-12 mt-0 mb-0" id="id--comment-content-49">
+                        
+                        
+                            That's interesting
+                        
+                        
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <!-- review info -->
+                    <div class="col-sm-2 mt-0 mb-2">
+                        
+                        <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Read">
+                        
+                            <a class="btn btn-primary mb-2" href="/opinions/comments/49/?mode=read-only" aria-label="read comment thread">
+                                <i class="fa-solid fa-book-open"></i>
+                            </a>
+                        
+                        </span>
+                        
+                        
+                    </div>
+                    <!-- comment updated info -->
+                    <div class="col-sm-5 mt-0 mb-0">
+                        <p class="card-text text-muted mt-0 mb-0">
+                            
+                            <i class="fa-solid fa-upload"></i> 1&nbsp;day, 13&nbsp;hours ago
+                            
+                            <br>
+                            <i class="fa-solid fa-pen-to-square"></i> 1&nbsp;day, 13&nbsp;hours ago
+                        </p>
+                    </div>
+                    <!-- comment reactions -->
+                    <div class="col-sm-5 mt-0 mb-0 justify-content-start">
+
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                            
+                                
+                                    
+                                        
+                                            <!-- reactions.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<ul id="id--react-ul-comment-49" class="nav list-unstyled d-flex">
+    
+        
+        <li id="id--react-li-agree-comment-49">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-disagree-comment-49">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-comment-comment-49">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-follow-comment-49">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-unfollow-comment-49">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-share-comment-49">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-share-comment-49" type="button" aria-label="Share comment" class="reactions" data-bs-href="/opinions/comments/thats-interesting-MTY3MTA1MzE3OC45MTQ1NzU_4PZ/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Share comment">
+        <span data-bs-toggle="modal" data-bs-target="#id--share-modal"><i class="fa-solid fa-share-nodes"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-hide-comment-49">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-show-comment-49">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-report-comment-49">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-delete-comment-49">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-edit-comment-49">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+</ul>
+<!-- reactions.html end -->
+
+                                        
+                                    
+                                
+                            
+                        
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 justify-content-center">
+                        <h6>
+                            From opinion
+                            <a href="/opinions/33/?mode=read-only" class="post-link" aria-label="read opinion New Zealand passes world-first tobacco law to ban smoking by 2025">
+                                New Zealand passes world-first tobacco law to ban smoking by 2025
+                            </a>
+                        </h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- comment.html end -->
+
+                    </div>
+                </div>
+            </div>
+        
+            <div class="row">
+                <div class="col-12 mt-2">
+                    <div class="row d-flex align-items-center div__comment-list-padding">
+                        <!-- comment.html start -->
+
+
+
+
+
+
+
+
+
+
+
+<div id="id--comment-card-50" class="card">
+    <div class="card-body">
+        <div class="row">
+            <!-- author avatar and user link -->
+            <div class="col-sm-2 mt-0 mb-0">
+                <img src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1671049692/static/img/avatar_blank.5cdd10ce5091.svg" width="40" height="40" alt="mod1 image" id="id--comment-avatar-50">
+                <p class="mt-0 mb-0">
+                    <a id="id--comment-avatar-link-50" aria-label="view author's profile" href="/users/5/">
+                        mod1
+                    </a>
+                </p>
+            </div>
+            <!-- comment details -->
+            <div class="col-sm-10 mt-0 mb-0">
+                <div class="row mb-2">
+                    <div class="col-sm-12 mt-0 mb-0" id="id--comment-content-50">
+                        
+                        
+                            That's boring
+                        
+                        
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <!-- review info -->
+                    <div class="col-sm-2 mt-0 mb-2">
+                        
+                        <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Read">
+                        
+                            <a class="btn btn-primary mb-2" href="/opinions/comments/50/?mode=read-only" aria-label="read comment thread">
+                                <i class="fa-solid fa-book-open"></i>
+                            </a>
+                        
+                        </span>
+                        
+                        
+                    </div>
+                    <!-- comment updated info -->
+                    <div class="col-sm-5 mt-0 mb-0">
+                        <p class="card-text text-muted mt-0 mb-0">
+                            
+                            <i class="fa-solid fa-upload"></i> 1&nbsp;day, 13&nbsp;hours ago
+                            
+                            <br>
+                            <i class="fa-solid fa-pen-to-square"></i> 1&nbsp;day, 13&nbsp;hours ago
+                        </p>
+                    </div>
+                    <!-- comment reactions -->
+                    <div class="col-sm-5 mt-0 mb-0 justify-content-start">
+
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                            
+                                
+                                    
+                                        
+                                            <!-- reactions.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<ul id="id--react-ul-comment-50" class="nav list-unstyled d-flex">
+    
+        
+        <li id="id--react-li-agree-comment-50">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-disagree-comment-50">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-comment-comment-50">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-follow-comment-50">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-unfollow-comment-50">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-share-comment-50">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-share-comment-50" type="button" aria-label="Share comment" class="reactions" data-bs-href="/opinions/comments/thats-boring-MTY3MTA1MzE3OS4wNTE2NzE_iwn/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Share comment">
+        <span data-bs-toggle="modal" data-bs-target="#id--share-modal"><i class="fa-solid fa-share-nodes"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-hide-comment-50">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-show-comment-50">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-report-comment-50">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-delete-comment-50">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-edit-comment-50">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+</ul>
+<!-- reactions.html end -->
+
+                                        
+                                    
+                                
+                            
+                        
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 justify-content-center">
+                        <h6>
+                            From opinion
+                            <a href="/opinions/33/?mode=read-only" class="post-link" aria-label="read opinion New Zealand passes world-first tobacco law to ban smoking by 2025">
+                                New Zealand passes world-first tobacco law to ban smoking by 2025
+                            </a>
+                        </h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- comment.html end -->
+
+                    </div>
+                </div>
+            </div>
+        
+            <div class="row">
+                <div class="col-12 mt-2">
+                    <div class="row d-flex align-items-center div__comment-list-padding">
+                        <!-- comment.html start -->
+
+
+
+
+
+
+
+
+
+
+
+<div id="id--comment-card-51" class="card">
+    <div class="card-body">
+        <div class="row">
+            <!-- author avatar and user link -->
+            <div class="col-sm-2 mt-0 mb-0">
+                <img src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1671049692/static/img/avatar_blank.5cdd10ce5091.svg" width="40" height="40" alt="user1 image" id="id--comment-avatar-51">
+                <p class="mt-0 mb-0">
+                    <a id="id--comment-avatar-link-51" aria-label="view author's profile" href="/users/2/">
+                        user1
+                    </a>
+                </p>
+            </div>
+            <!-- comment details -->
+            <div class="col-sm-10 mt-0 mb-0">
+                <div class="row mb-2">
+                    <div class="col-sm-12 mt-0 mb-0" id="id--comment-content-51">
+                        
+                        
+                            That's interesting
+                        
+                        
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <!-- review info -->
+                    <div class="col-sm-2 mt-0 mb-2">
+                        
+                        <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Read">
+                        
+                            <a class="btn btn-primary mb-2" href="/opinions/comments/51/?mode=read-only" aria-label="read comment thread">
+                                <i class="fa-solid fa-book-open"></i>
+                            </a>
+                        
+                        </span>
+                        
+                        
+                    </div>
+                    <!-- comment updated info -->
+                    <div class="col-sm-5 mt-0 mb-0">
+                        <p class="card-text text-muted mt-0 mb-0">
+                            
+                            <i class="fa-solid fa-upload"></i> 1&nbsp;day, 13&nbsp;hours ago
+                            
+                            <br>
+                            <i class="fa-solid fa-pen-to-square"></i> 1&nbsp;day, 13&nbsp;hours ago
+                        </p>
+                    </div>
+                    <!-- comment reactions -->
+                    <div class="col-sm-5 mt-0 mb-0 justify-content-start">
+
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                            
+                                
+                                    
+                                        
+                                            <!-- reactions.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<ul id="id--react-ul-comment-51" class="nav list-unstyled d-flex">
+    
+        
+        <li id="id--react-li-agree-comment-51">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-disagree-comment-51">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-comment-comment-51">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-follow-comment-51">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-unfollow-comment-51">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-share-comment-51">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-share-comment-51" type="button" aria-label="Share comment" class="reactions" data-bs-href="/opinions/comments/thats-interesting-MTY3MTA1MzE3OS41NTQwMQ__dz5/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Share comment">
+        <span data-bs-toggle="modal" data-bs-target="#id--share-modal"><i class="fa-solid fa-share-nodes"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-hide-comment-51">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-show-comment-51">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-report-comment-51">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-delete-comment-51">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-delete-comment-51" type="button" aria-label="Delete comment" class="reactions" data-bs-href="/opinions/comments/51/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Delete comment">
+        <span data-bs-option="delete"><i class="fa-solid fa-trash-can"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-edit-comment-51">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-edit-comment-51" type="button" aria-label="Edit comment" class="reactions" data-bs-href="/opinions/comments/51/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Edit comment">
+        <span data-bs-option="edit"><i class="fa-solid fa-pen"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+</ul>
+<!-- reactions.html end -->
+
+                                        
+                                    
+                                
+                            
+                        
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 justify-content-center">
+                        <h6>
+                            From opinion
+                            <a href="/opinions/34/?mode=read-only" class="post-link" aria-label="read opinion US sends first shipment of power equipment in aid to Ukraine">
+                                US sends first shipment of power equipment in aid to Ukraine
+                            </a>
+                        </h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- comment.html end -->
+
+                    </div>
+                </div>
+            </div>
+        
+            <div class="row">
+                <div class="col-12 mt-2">
+                    <div class="row d-flex align-items-center div__comment-list-padding">
+                        <!-- comment.html start -->
+
+
+
+
+
+
+
+
+
+
+
+<div id="id--comment-card-52" class="card">
+    <div class="card-body">
+        <div class="row">
+            <!-- author avatar and user link -->
+            <div class="col-sm-2 mt-0 mb-0">
+                <img src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1671049692/static/img/avatar_blank.5cdd10ce5091.svg" width="40" height="40" alt="user3 image" id="id--comment-avatar-52">
+                <p class="mt-0 mb-0">
+                    <a id="id--comment-avatar-link-52" aria-label="view author's profile" href="/users/4/">
+                        user3
+                    </a>
+                </p>
+            </div>
+            <!-- comment details -->
+            <div class="col-sm-10 mt-0 mb-0">
+                <div class="row mb-2">
+                    <div class="col-sm-12 mt-0 mb-0" id="id--comment-content-52">
+                        
+                        
+                            That's interesting
+                        
+                        
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <!-- review info -->
+                    <div class="col-sm-2 mt-0 mb-2">
+                        
+                        <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Read">
+                        
+                            <a class="btn btn-primary mb-2" href="/opinions/comments/52/?mode=read-only" aria-label="read comment thread">
+                                <i class="fa-solid fa-book-open"></i>
+                            </a>
+                        
+                        </span>
+                        
+                        
+                    </div>
+                    <!-- comment updated info -->
+                    <div class="col-sm-5 mt-0 mb-0">
+                        <p class="card-text text-muted mt-0 mb-0">
+                            
+                            <i class="fa-solid fa-upload"></i> 1&nbsp;day, 13&nbsp;hours ago
+                            
+                            <br>
+                            <i class="fa-solid fa-pen-to-square"></i> 1&nbsp;day, 13&nbsp;hours ago
+                        </p>
+                    </div>
+                    <!-- comment reactions -->
+                    <div class="col-sm-5 mt-0 mb-0 justify-content-start">
+
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                            
+                                
+                                    
+                                        
+                                            <!-- reactions.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<ul id="id--react-ul-comment-52" class="nav list-unstyled d-flex">
+    
+        
+        <li id="id--react-li-agree-comment-52">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-disagree-comment-52">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-comment-comment-52">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-follow-comment-52">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-unfollow-comment-52">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-share-comment-52">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-share-comment-52" type="button" aria-label="Share comment" class="reactions" data-bs-href="/opinions/comments/thats-interesting-MTY3MTA1MzE3OS42NzU5NDk_Z35/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Share comment">
+        <span data-bs-toggle="modal" data-bs-target="#id--share-modal"><i class="fa-solid fa-share-nodes"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-hide-comment-52">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-show-comment-52">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-report-comment-52">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-delete-comment-52">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-edit-comment-52">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+</ul>
+<!-- reactions.html end -->
+
+                                        
+                                    
+                                
+                            
+                        
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 justify-content-center">
+                        <h6>
+                            From opinion
+                            <a href="/opinions/34/?mode=read-only" class="post-link" aria-label="read opinion US sends first shipment of power equipment in aid to Ukraine">
+                                US sends first shipment of power equipment in aid to Ukraine
+                            </a>
+                        </h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- comment.html end -->
+
+                    </div>
+                </div>
+            </div>
+        
+            <div class="row">
+                <div class="col-12 mt-2">
+                    <div class="row d-flex align-items-center div__comment-list-padding">
+                        <!-- comment.html start -->
+
+
+
+
+
+
+
+
+
+
+
+<div id="id--comment-card-53" class="card">
+    <div class="card-body">
+        <div class="row">
+            <!-- author avatar and user link -->
+            <div class="col-sm-2 mt-0 mb-0">
+                <img src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1671049692/static/img/avatar_blank.5cdd10ce5091.svg" width="40" height="40" alt="mod1 image" id="id--comment-avatar-53">
+                <p class="mt-0 mb-0">
+                    <a id="id--comment-avatar-link-53" aria-label="view author's profile" href="/users/5/">
+                        mod1
+                    </a>
+                </p>
+            </div>
+            <!-- comment details -->
+            <div class="col-sm-10 mt-0 mb-0">
+                <div class="row mb-2">
+                    <div class="col-sm-12 mt-0 mb-0" id="id--comment-content-53">
+                        
+                        
+                            That's boring
+                        
+                        
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <!-- review info -->
+                    <div class="col-sm-2 mt-0 mb-2">
+                        
+                        <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Read">
+                        
+                            <a class="btn btn-primary mb-2" href="/opinions/comments/53/?mode=read-only" aria-label="read comment thread">
+                                <i class="fa-solid fa-book-open"></i>
+                            </a>
+                        
+                        </span>
+                        
+                        
+                    </div>
+                    <!-- comment updated info -->
+                    <div class="col-sm-5 mt-0 mb-0">
+                        <p class="card-text text-muted mt-0 mb-0">
+                            
+                            <i class="fa-solid fa-upload"></i> 1&nbsp;day, 13&nbsp;hours ago
+                            
+                            <br>
+                            <i class="fa-solid fa-pen-to-square"></i> 1&nbsp;day, 13&nbsp;hours ago
+                        </p>
+                    </div>
+                    <!-- comment reactions -->
+                    <div class="col-sm-5 mt-0 mb-0 justify-content-start">
+
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                            
+                                
+                                    
+                                        
+                                            <!-- reactions.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<ul id="id--react-ul-comment-53" class="nav list-unstyled d-flex">
+    
+        
+        <li id="id--react-li-agree-comment-53">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-disagree-comment-53">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-comment-comment-53">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-follow-comment-53">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-unfollow-comment-53">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-share-comment-53">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-share-comment-53" type="button" aria-label="Share comment" class="reactions" data-bs-href="/opinions/comments/thats-boring-MTY3MTA1MzE3OS43ODcxNDM_61W/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Share comment">
+        <span data-bs-toggle="modal" data-bs-target="#id--share-modal"><i class="fa-solid fa-share-nodes"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-hide-comment-53">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-show-comment-53">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-report-comment-53">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-delete-comment-53">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-edit-comment-53">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+</ul>
+<!-- reactions.html end -->
+
+                                        
+                                    
+                                
+                            
+                        
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 justify-content-center">
+                        <h6>
+                            From opinion
+                            <a href="/opinions/34/?mode=read-only" class="post-link" aria-label="read opinion US sends first shipment of power equipment in aid to Ukraine">
+                                US sends first shipment of power equipment in aid to Ukraine
+                            </a>
+                        </h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- comment.html end -->
+
+                    </div>
+                </div>
+            </div>
+        
+
+        
+        
+            <!-- per_page_pagination_select.html start -->
+
+
+
+
+
+
+
+
+
+<div class="row d-flex justify-content-between mb-2">
+    <div class="col-xxl-2 col-lg-3 col-md-4 col-sm-6 col-auto mt-2">
+        <!-- per page selection -->
+        <select id="per-page-select" class="form-select" aria-label="Opinions per page">
+            
+            <option value="6" selected="">
+                6 per page
+            </option>
+            
+            <option value="9">
+                9 per page
+            </option>
+            
+            <option value="12">
+                12 per page
+            </option>
+            
+            <option value="15">
+                15 per page
+            </option>
+            
+        </select>
+    </div>
+    <div class="col-xxl-10 col-lg-9 col-md-8 col-sm-6 col-auto mt-2 d-flex justify-content-end float-end">
+        <!-- pagination -->
+        <!-- pagination.html start -->
+
+
+
+
+
+
+
+
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        <li class="page-item disabled disable-link">
+            <a href="" class="page-link disable-link" aria-label="Previous">
+                <span aria-hidden="true">«</span>
+            </a>
+        </li>
+        
+            
+            
+            
+            
+            
+            <li class="page-item active" aria-current="page" id="current-page">
+                <a href="?page=1" class="page-link" aria-label="page 1">
+                    <span aria-hidden="true">1</span>
+                </a>
+            </li>
+        
+            
+            
+            
+            
+            
+            <li class="page-item">
+                <a href="?page=2" class="page-link" aria-label="page 2">
+                    <span aria-hidden="true">2</span>
+                </a>
+            </li>
+        
+            
+            
+            
+            
+            
+            <li class="page-item disabled disable-link">
+                <a href="" class="page-link disable-link" aria-label="">
+                    <span aria-hidden="false">…</span>
+                </a>
+            </li>
+        
+            
+            
+            
+            
+            
+            <li class="page-item">
+                <a href="?page=8" class="page-link" aria-label="page 8">
+                    <span aria-hidden="true">8</span>
+                </a>
+            </li>
+        
+        <li class="page-item">
+            <a href="?page=2" class="page-link" aria-label="Next">
+                <span aria-hidden="true">»</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+
+<!-- pagination.html end -->
+
+    </div>
+</div>
+<!-- per_page_pagination_select.html end -->
+
+        
+    
+
+<!-- comment_list_content.html end -->
+
+    </article>
+</div>
+
+<!-- modal_common.html start -->
+<script>
+    /**
+     * Set focus when modal displayed
+     * @param modalSelector: modal selector
+     * @param focusTarget: focus target selector
+     */
+    function modalFocus(modalSelector, focusTarget) {
+        /* Due to how HTML5 defines its semantics, the autofocus HTML attribute has no effect in Bootstrap modals.
+           To achieve the same effect, use some custom JavaScript
+           https://getbootstrap.com/docs/5.2/components/modal/#how-it-works
+         */
+        $(modalSelector).on('shown.bs.modal', (event) => {
+            $(focusTarget).focus();
+        });
+    }
+
+    /**
+     * Clear form errors and entered data when modal hidden
+     * @param modalSelector: modal selector
+     * @param errorsSelector: error container selector
+     * @param inputSelector: input selector
+     * @param isSummernote: is summernote input flag
+     */
+    function resetModalForm(modalSelector, errorsSelector, inputSelector, isSummernote = false) {
+        /* Clear form errors and entered data when modal hidden */
+        $(modalSelector).on('hidden.bs.modal', (event) => {
+            $(errorsSelector).html("");
+            if (isSummernote) {
+                /* TODO find method of clearing summernote editor content and remove all stored history
+                    suggested method (https://summernote.org/deep-dive/#reset) doesn't work (maybe because in iframe?)
+                    Can clear input element using $(inputSelector).val("") but editor content is still displayed
+                 */
+            } else {
+                $(inputSelector).val("")
+            }
+        });
+    }
+</script>
+<!-- modal_common.html end -->
+
+<!-- Modal to share opinion/comment -->
+<div id="id--share-modal-container">
+    <!-- report_modal.html start -->
+
+
+
+<div class="modal fade" id="id--share-modal" tabindex="-1" aria-labelledby="id--share-modal-heading" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-fullscreen-md-down modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="id--share-modal-heading">
+                    
+                    Share
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <fieldset>
+                    <div class="row mb-3">
+                        <div class="col-md-10 col-sm-12 d-flex justify-content-center" id="id--share-url">
+                            
+                        </div>
+                        <div class="col-md-2 col-sm-12 mt-2 d-flex justify-content-center">
+                            <button id="id--btn-share" type="button" class="btn btn-outline-success">
+                                <i class="fa-solid fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-dark btn__text" type="button" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="id--shared-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+            URL copied to clipboard.
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+
+        /* Submit handler for share modal */
+        $("#id--btn-share").on("click", function (event) {
+
+            const url = $("#id--share-url").text();
+            navigator.clipboard.writeText(url).then(
+                () => {
+                    /* clipboard successfully set */
+                    const toastLiveExample = document.getElementById('id--shared-toast')
+                    const toast = new bootstrap.Toast(toastLiveExample)
+                    toast.show()
+                },
+                () => {
+                    /* clipboard write failed */
+                }
+            );
+        });
+    });
+</script>
+<!-- report_modal.html end -->
+
+</div>
+<!-- Modal to delete comment -->
+<div id="id--delete-modal-container">
+    <!-- comment_delete_modal.html start -->
+
+
+
+<!-- Confirm delete comment modal -->
+<div id="id--comment-delete-confirm-modal" class="modal fade" tabindex="-1" aria-labelledby="id--comment-delete-confirm-modal-label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <var id="id--comment-delete-url" hidden="">
+                
+            </var>
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="id--comment-delete-confirm-modal-label">Comment Delete Confirm</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this comment?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-dark btn__text" type="button" data-bs-dismiss="modal">Cancel</button>
+                <button id="id--btn-opinion-delete-confirm" class="btn btn-outline-danger btn__text" type="button" data-bs-dismiss="modal">
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Comment deleted modal -->
+<div id="id--comment-deleted-modal" class="modal fade" tabindex="-1" aria-labelledby="id--comment-deleted-modal-label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="id--comment-deleted-modal-label">Comment Deleted</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div id="id--comment-deleted-modal-body" class="modal-body">
+                <p>The comment was successfully deleted</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-dark btn__text" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const commentDeleteConfirmModalSelector = "#id--comment-delete-confirm-modal";
+    const commentDeleteModalSelector = "#id--comment-deleted-modal";
+    const commentDeleteModalBodySelector = "#id--comment-deleted-modal-body";
+    const commentDeleteUrlSelector = "#id--comment-delete-url";
+
+    $(document).ready(function () {
+
+        $("#id--btn-opinion-delete-confirm").on('click', function (event) {
+
+            const url = $(commentDeleteUrlSelector).text();
+
+            $.ajax({
+                method: 'delete',
+                url: `${url}?ref=${window.location.pathname}`,
+                headers: {
+                    'X-CSRFTOKEN': 'QNMZPD6P1Uo2KcfCcWMPgdkCzAcHnBeBwEUOigr2PjFOOKpTl1cvTfOMbs5maN7R'
+            },
+            }).done(function(data) {
+
+                react_response_handler(data);
+
+                // show modal
+                $(commentDeleteModalSelector).modal('show');
+
+            }).fail(function(data) {
+                // display reason
+                $(commentDeleteModalBodySelector).html(data.responseJSON.html);
+            });
+
+            event.preventDefault();
+            event.stopPropagation();
+        });
+    });
+</script>
+<!-- comment_delete_modal.html end -->
+
+</div>
+
+
+        </div>
+    </main>
+
+    
+    <footer class="container d-flex flex-wrap justify-content-between align-items-center py-3 border-top bg-white div__panel">
+        <div class="col-md-4 d-flex align-items-center">
+            <a href="/" class="ms-2 me-2 mb-md-0 text-muted text-decoration-none lh-1">
+                <img class="bi" width="24" height="24" src="https://res.cloudinary.com/hrcj5dv7b/image/upload/v1/static/favicon-32x32-gray.37dde23947e1.png" alt="SoapBox logo">
+            </a>
+            <span class="mb-md-0 text-muted">© 2022 Ian Buttimer</span>
+        </div>
+
+        <div class="col-md-4 d-flex align-items-center justify-content-center">
+            <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Admin">
+                <a href="/admin" target="_blank" rel="noopener" aria-label="visit admin page in another tab" class="socials">
+                    <i class="fa-solid fa-screwdriver-wrench text-muted"></i>
+                </a>
+            </span>
+        </div>
+
+        <ul class="nav col-md-4 justify-content-end list-unstyled d-flex">
+            
+                <li>
+                    <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Facebook">
+                        <a href="https://facebook.com" target="_blank" rel="noopener" aria-label="visit our Facebook page in another tab" class="socials">
+                            <i class="fa-brands fa-square-facebook text-muted"></i>
+                        </a>
+                    </span>
+                </li>
+            
+                <li>
+                    <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Twitter">
+                        <a href="https://twitter.com" target="_blank" rel="noopener" aria-label="visit our Twitter page in another tab" class="socials">
+                            <i class="fa-brands fa-square-twitter text-muted"></i>
+                        </a>
+                    </span>
+                </li>
+            
+                <li>
+                    <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Instagram">
+                        <a href="https://instagram.com" target="_blank" rel="noopener" aria-label="visit our Instagram page in another tab" class="socials">
+                            <i class="fa-brands fa-square-instagram text-muted"></i>
+                        </a>
+                    </span>
+                </li>
+            
+        </ul>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
+    
+    
+
+
+<script>
+  /**
+   * Update sort order/per page
+   * :param event: change event
+   */
+  function update_content(order, per_page, page) {
+
+    if (page === undefined) {
+      page = "?page=1"
+    }
+
+    // remove per page and page handlers as new elements will be returned with the response
+    $('#per-page-select').off();
+    $('.page-item').off();
+
+    const repeat_search = $('#var--repeat-search-term').text().trim();
+    const query_args = [
+      "order=" + order, "per-page=" + per_page, "reorder=1"
+    ];
+    if (repeat_search.length > 0) {
+      query_args.push(repeat_search)
+    }
+
+    $.ajax({
+      url: page + "&" + query_args.join("&")
+    }).done(function(data) {
+      $('#article-content').html(data);
+
+      setReactionHandlers();
+      enableTooltips();
+
+      $('#per-page-select').ready(function(event) {
+        add_page_content_handlers();
+      });
+    });
+  }
+
+  /** Get current per page value */
+  function get_per_page() {
+    return $('#per-page-select').find(":selected").val();
+  }
+
+  /** Get current order value */
+  function get_order() {
+    return $('#id--sort-order-select').find(":selected").val()
+  }
+
+  /** Get current page value */
+  function get_page() {
+    const page = $('#current-page').find("a");
+    return page.length ? "?page=" + page.text().trim() : undefined
+  }
+
+  /**
+   * Add change handler for per page selector and pages
+   */
+  function add_page_content_handlers() {
+    /**
+     * Change handler for per page
+     * :param event: change event
+     */
+    $('#per-page-select').on( "change", function(event) {
+      update_content(get_order(), event.target.value, get_page())
+    });
+    /**
+     * Click handler for page request
+     * :param event: change event
+     */
+    $('.page-item').on( "click", function(event) {
+      event.preventDefault();
+      update_content(get_order(), get_per_page(), event.currentTarget.firstElementChild.href)
+    });
+  }
+
+
+  $(document).ready(function() {
+    /**
+     * Change handler for sort order
+     * :param event: change event
+     */
+    $('#id--sort-order-select').on( "change", function(event) {
+      update_content(event.target.value, get_per_page(), get_page())
+    });
+
+    add_page_content_handlers();
+  });
+</script>
+
+    <!-- reactions_js.html start -->
+<script>
+    /**
+     * Update react status of current opinion
+     * :param event: click event
+     * :param done_func: reaction specific done handler function
+     */
+    function updateReactStatus(event, done_func) {
+        // hide tooltip
+        $("#" + event.currentTarget.id).tooltip("hide");
+
+        const reaction = get_react_info(event)
+
+        $.ajax({
+            url: reaction.url + "?status=" + reaction.option,
+            method: 'patch',
+            headers: {
+                'X-CSRFTOKEN': 'QNMZPD6P1Uo2KcfCcWMPgdkCzAcHnBeBwEUOigr2PjFOOKpTl1cvTfOMbs5maN7R'
+            }
+        }).done(function(data) {
+            done_func(data);
+
+            // set click handlers for reactions
+            setReactionHandlers();
+            enableTooltips();
+        });
+    }
+
+    /**
+     * Update react status of current opinion
+     * :param event: click event
+     * :param done_func: reaction specific done handler function
+     */
+    function getCommentEdit(event, done_func) {
+        // hide tooltip
+        $("#" + event.currentTarget.id).tooltip("hide");
+
+        const reaction = get_react_info(event)
+
+        document.location.href = `${reaction.url}?mode=edit`;
+    }
+
+    const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+
+    /**
+     * Get react info
+     * :param event: click event
+     */
+    function get_react_info(event) {
+        // ids are of the form 'id--react-<action>-<type>-<id>' e.g. 'id--react-agree-opinion-1'
+        const split = event.currentTarget.attributes['id'].textContent.split('-')
+        let data_bs_option = '';
+        if (event.currentTarget.firstElementChild.attributes.hasOwnProperty('data-bs-option')) {
+            data_bs_option = event.currentTarget.firstElementChild.attributes['data-bs-option'].textContent
+        }
+        return {
+            // href is on the button
+            url: event.currentTarget.attributes['data-bs-href'].textContent,
+            // title is on the button
+            title: event.currentTarget.attributes['data-bs-title'].textContent,
+            // type is taken from the button id
+            type: split[4],
+            // status option is on the span in the button (see reactions.html)
+            option: data_bs_option,
+            // status option is the action to perform, e.g. 'show'/'hide'/etc. i.e. ReactionStatus.XXX.arg
+            action: data_bs_option,
+            submit: capitalize(data_bs_option)
+        };
+    }
+    /**
+     * Set react info vars
+     * :param event: click event
+     * :param ids: object with keys matching those returned by get_react_info()
+     *             and values as ids of element to be set
+     * :param baseUrl: base url to prepend to url value
+     */
+    function set_react_info_vars(event, ids, baseUrl = undefined) {
+        const reaction = get_react_info(event)
+        for (const [key, selector] of Object.entries(ids)) {
+            let value = reaction[key];
+            if (key === 'url' && baseUrl !== undefined) {
+                value = baseUrl + value;
+            }
+            $(selector).text(value);
+        }
+    }
+
+    /**
+     * Update like/unlike status of current opinion
+     * :param event: click event
+     */
+    function updateOnOffReaction(event) {
+        updateReactStatus(event, redirect_rewrite_response_handler);
+    }
+
+    // Reaction buttons have the general form: "id--react-<action>-<type>-<id>"
+    // where: action is [agree|disagree|comment|follow|unfollow|share|hide|unhide|pin|unpin|report]
+    //        type is [opinion|comment]
+    //        id is id of target opinion/comment
+
+    // Reaction buttons for comments are named 'id--react-comment-....'
+    const commentReactionsSelector = "button[id^='id--react-comment']";
+    // Reaction buttons for like are named 'id--react-agree-....'
+    const likeReactionsSelector = "button[id^='id--react-agree']";
+    // Reaction buttons for unlike are named 'id--react-disagree-....'
+    const unlikeReactionsSelector = "button[id^='id--react-disagree']";
+    // Reaction buttons for hide are named 'id--react-hide-....'
+    const hideReactionsSelector = "button[id^='id--react-hide']";
+    // Reaction buttons for hide are named 'id--react-show-....'
+    const showReactionsSelector = "button[id^='id--react-show']";
+    // Reaction buttons for pin are named 'id--react-pin-....'
+    const pinReactionsSelector = "button[id^='id--react-pin']";
+    // Reaction buttons for unpin are named 'id--react-unpin-....'
+    const unpinReactionsSelector = "button[id^='id--react-unpin']";
+    // Reaction buttons for follow are named 'id--react-follow-....'
+    const followReactionsSelector = "button[id^='id--react-follow']";
+    // Reaction buttons for unfollow are named 'id--react-unfollow-....'
+    const unfollowReactionsSelector = "button[id^='id--react-unfollow']";
+    // Reaction buttons for report are named 'id--react-report-....'
+    const reportReactionsSelector = "button[id^='id--react-report']";
+    // Reaction buttons for share are named 'id--react-share-....'
+    const shareReactionsSelector = "button[id^='id--react-share']";
+    // Reaction buttons for delete are named 'id--react-delete-....'
+    const deleteReactionsSelector = "button[id^='id--react-delete']";
+    // Reaction buttons for comments are named 'id--react-edit-....'
+    const editCommentReactionsSelector = "button[id^='id--react-edit']";
+
+    /* Set the click handlers for reactions */
+    function setReactionHandlers() {
+        /* TODO removing and adding all the handlers is unnecessary */
+
+        // remove old handlers to prevent duplicates
+        for (let selector of [
+                commentReactionsSelector, likeReactionsSelector, unlikeReactionsSelector,
+                hideReactionsSelector, showReactionsSelector,
+                pinReactionsSelector, unpinReactionsSelector,
+                followReactionsSelector, unfollowReactionsSelector,
+                reportReactionsSelector, shareReactionsSelector,
+                deleteReactionsSelector, editCommentReactionsSelector
+        ]) {
+            $(selector).off();
+        }
+
+        // add new handlers
+        $(commentReactionsSelector).on('click', (event) => {
+            // set the submit url for comments
+            set_react_info_vars(event, {
+                url: commentSubmitUrlSelector
+            });
+        });
+        $(reportReactionsSelector).on('click', (event) => {
+            // set the submit url for reports
+            set_react_info_vars(event, {
+                url: reportSubmitUrlSelector
+            });
+        });
+        $(deleteReactionsSelector).on('click', (event) => {
+            // set the delete url for comments
+            set_react_info_vars(event, {
+                url: commentDeleteUrlSelector
+            });
+
+            // display confirmation modal
+            $(commentDeleteConfirmModalSelector).modal('show');
+        });
+        $(editCommentReactionsSelector).on('click', (event) => {
+            getCommentEdit(event, function(data) {
+                /* TODO handle edit in comment modal */
+            });
+        });
+        $(shareReactionsSelector).on('click', (event) => {
+            // set the share url for share
+            const baseUrl = window.location.href.slice(0, window.location.href.indexOf(window.location.pathname))
+            set_react_info_vars(event, {
+                url: "#id--share-url",
+                title: "#id--share-modal-heading"
+            }, baseUrl);
+        });
+        for (let selector of [
+            // update like/unlike status
+            likeReactionsSelector, unlikeReactionsSelector,
+            // update pin/unpin status
+            pinReactionsSelector, unpinReactionsSelector,
+            // update follow/unfollow status
+            followReactionsSelector, unfollowReactionsSelector,
+        ]) {
+            $(selector).on('click', (event) => {
+                updateOnOffReaction(event);
+            });
+        }
+        for (let selector of [hideReactionsSelector, showReactionsSelector]) {
+            $(selector).on('click', (event) => {
+                // set the submit url/option/title for hide/show
+                set_react_info_vars(event, {
+                    // keys are value names, values are ids of tags to update
+                    url: hideSubmitUrlSelector,
+                    option: hideSubmitOptionSelector,
+                    title: "#id--hide-modal-heading",
+                    type: "#id--hide-modal-element",
+                    action: "#id--hide-modal-action",
+                    submit: "#id--submit-btn-hide-modal",
+                });
+            });
+        }
+    }
+
+    $(document).ready(function () {
+        // set click handlers for reactions
+        setReactionHandlers();
+    });
+</script>
+<!-- reactions_js.html end -->
+
+
+
+    <script>
+        /* Enable Bootstrap tooltips */
+        function enableTooltips() {
+            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+            const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+        }
+
+        const REDIRECT_PROP = 'redirect';
+        const REWRITES_PROP = 'rewrites';
+        const ELEMENT_ID_PROP = 'element_id';
+        const HTML_PROP = 'html';
+
+        const replaceHtml = (data) => $("#" + data[ELEMENT_ID_PROP]).replaceWith(data[HTML_PROP]);
+
+        /**
+         * Handle a redirect/rewrite response
+         * :param data: json data
+         */
+        function redirect_rewrite_response_handler(data) {
+            if (data !== undefined) {
+                if (data.hasOwnProperty(REDIRECT_PROP)) {
+                    // redirect to new url
+                    document.location.href = data[REDIRECT_PROP];
+                } else if (data.hasOwnProperty(ELEMENT_ID_PROP)) {
+                    // replace single element's html
+                    replaceHtml(data);
+                } else if (data.hasOwnProperty(REWRITES_PROP)) {
+                    // replace multiple element's html
+                    for (let element of data[REWRITES_PROP]) {
+                        replaceHtml(element);
+                    }
+                }
+            }
+        }
+
+        enableTooltips();
+    </script>
+
+</body></html>

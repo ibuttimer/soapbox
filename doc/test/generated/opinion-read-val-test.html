@@ -1,0 +1,2752 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/hrcj5dv7b/image/upload/v1/static/apple-touch-icon.05bae240b98e.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://res.cloudinary.com/hrcj5dv7b/image/upload/v1/static/favicon-32x32.0489f17023fe.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://res.cloudinary.com/hrcj5dv7b/image/upload/v1/static/favicon-16x16.24eb55e0fd3e.png">
+    <link rel="manifest" href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/site.fb74105a5f88.webmanifest">
+    <link rel="mask-icon" href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/safari-pinned-tab.bf8bc2e456d1.svg" color="#ffc43d">
+    <meta name="msapplication-TileColor" content="#ffc43d">
+    <meta name="theme-color" content="#ffc43d">
+    <meta name="description" content="SoapBox is a community platform that allows users to post opinions and engage in online discussions.">
+    <meta name="google-site-verification" content="nSLaF9fnDohng9nLW2_KvEKKAdIk40-RHsQEQsY8-GI">
+
+    
+    <link href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/css/styles.b2224c8a1d4d.css" rel="stylesheet" type="text/css">
+
+    
+<link href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/css/styles-opinion.97b5ca478420.css" rel="stylesheet" type="text/css">
+
+
+    
+    <script src="https://code.jquery.com/jquery-3.6.1.min.js" integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous"></script>
+    <script>window.jQuery || document.write('<script type="text/javascript" src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/jquery/jquery-3.6.1.min.00727d1d5d9c.js"><\/script>')</script>
+
+
+    <script src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/js/script.8683d7058d68.js"></script>
+
+    <title>SoapBox - I can …</title>
+    
+    
+
+    
+    <style>
+        .main-content {
+            background-repeat: repeat;
+            background-position: center;
+            background-image: url("https://res.cloudinary.com/hrcj5dv7b/image/upload/v1/static/img/balloons-1187260_1280.dabf99bff7df.png");
+            background-image: -webkit-image-set(
+                    url("https://res.cloudinary.com/hrcj5dv7b/image/upload/v1/static/img/balloons-1187260_1280.39f5bf6c513d.webp") 1x
+            );
+            /* TODO the standard way; image-set(). This is a CSS Images Module Level 4 feature,
+                and as the W3C CSS Validator currently only supports CSS3, unable to
+                follow recommendations from https://developer.mozilla.org/en-US/docs/Web/CSS/image/image-set.
+                Also Chrome does not support type: "implementation has not been per the spec, as only URL values
+                were accepted for the image, and only resolutions with 'x' as a unit were accepted"
+                https://chromestatus.com/feature/5432024223449088 */
+        }
+    </style>
+</head>
+<body class="h-100 d-flex flex-column">
+    <header class="container no-padding">
+        <nav class="navbar navbar-expand-lg bg-light div__panel">
+            <div class="container-fluid">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggler" aria-controls="navbarToggler" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <a class="navbar-brand theme-colour-background" href="/">
+                    <img src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/img/bullhorn.995d53581847.svg" alt="SoapBox logo" width="30" height="24" class="d-inline-block align-text-top">
+                    <span class="theme-colour">SoapBox</span>
+                </a>
+                <div class="collapse navbar-collapse" id="navbarToggler">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="/">Home</a>
+                        </li>
+                        
+                            
+                            <li class="nav-item dropdown">
+                                <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="nav-link dropdown-toggle">
+                                    Opinion
+                                </a>
+                                <ul class="dropdown-menu">
+                                    
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/new/">New</a>
+                                    </li>
+                                    
+                                    
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/?author=user1&amp;status=draft">Drafts</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/?author=user1&amp;status=preview">Previews</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/in_review/?author=user1">Reviews</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/?author=user1&amp;status=all">All mine</a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/?pinned=yes">Pinned</a>
+                                    </li>
+                                    
+                                        <li>
+                                            <a class="dropdown-item" tabindex="-1" href="/opinions/followed/?filter=new">New tagged author opinions</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" tabindex="-1" href="/opinions/followed/?filter=all">All tagged author opinions</a>
+                                        </li>
+                                    
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/">All</a>
+                                    </li>
+                                    
+                                </ul>
+                            </li>
+                            
+                            <li class="nav-item dropdown">
+                                <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="nav-link dropdown-toggle">
+                                    Comment
+                                </a>
+                                <ul class="dropdown-menu">
+                                    
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/comments/in_review/?author=user1">Reviews</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/comments/?author=user1&amp;status=all">Mine</a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/comments/">All</a>
+                                    </li>
+                                    
+                                </ul>
+                            </li>
+                            
+                            
+                        
+                    </ul>
+                    <form class="d-flex" role="search" method="get" action="/opinions/search/">
+                        <input class="form-control me-2" type="search" placeholder="Search opinions" aria-label="Search" name="search">
+                        <button class="btn btn-outline-success btn__text" type="submit">Search</button>
+                    </form>
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                        
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    
+                                        <i class="fa-solid fa-user"></i>
+                                    
+                                    &nbsp;
+                                    
+                                        User1
+                                    
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="/users/2/" aria-label="view profile">Profile</a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="/accounts/logout/">Sign Out</a>
+                                    </li>
+                                </ul>
+                            </li>
+                        
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container flex-shrink-0 flex-grow-1 overflow-auto main-content no-padding">
+        
+
+        <div class="container">
+            
+<article class="row text-center">
+    <div class="col-12 mt-2">
+
+        <!-- preview banner -->
+        
+
+        <div class="row mb-3">
+            <h1 id="id--title">
+                I can eat fish for the first time in life! What should I make/eat/buy?
+            </h1>
+        </div>
+
+        
+
+        <!-- top row: category, updated/published/author, preview/draft/publish -->
+        <div class="row mb-3">
+            <div class="col-lg-3 col-md-6 mb-3">
+                
+                    <span class="badge rounded-pill text-bg-info fs-6">Cooking</span>
+                
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <p><strong>Author</strong> <a href="/users/6/" aria-label="view author's profile">user2</a></p>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                
+                    <p><strong>Published</strong> 1&nbsp;day, 13&nbsp;hours ago</p>
+                
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <p><strong>Updated</strong> 1&nbsp;day, 13&nbsp;hours ago</p>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body readonly_content">
+                        
+                            <p>I’ve suffered from a severe allergy to fish since childhood. If I ate any type of fish (excluding shellfish, I’ve been eating that my whole life) I’d go into anaphylactic shock. I was hospitalized several times for it as a kid and carried around an epipen for most of my adulthood preparing for the worst. Well, somehow, after 30+ years, I’ve grown out of it. I’ve been skin tested, blood tested, and as of last night have completed an eating test. I can now eat fish, any type. And I’m all in.</p><p><span style="font-size: 1rem;">My question to you all - what fish dishes should I eat? I’m pumped to try a fish filet from McDs, some sushi, battered catfish, fish sticks, and all the other things I’ve heard of and had to avoid like the plague. I’m making a list and will be checking things off one by one.</span><br></p><p><span style="font-size: 1rem;">No recipe is too daunting for me, no dish too wild, no restaurant too cheap - I’m here for all the flavors. Thank you in advance for helping me explore this tasty new chapter of my life!</span></p><p>Original post courtesy of <a href="https://www.reddit.com/r/Cooking/comments/zkhrz5/i_can_eat_fish_for_the_first_time_in_life_what/" target="_blank">Reddit.com</a><br></p>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+            
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="card bg-gray-100">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-sm-2 offset-sm-5">
+                                    <a class="btn btn-dark mb-1 btn__text" href="/">Done</a>
+                                </div>
+
+                                
+                                <!-- opinion reactions -->
+                                <div class="col-sm-5 justify-content-start">
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                        
+                                            
+                                                
+                                                    
+                                                        <!-- reactions.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<ul id="id--react-ul-opinion-40" class="nav list-unstyled d-flex">
+    
+        
+        <li id="id--react-li-agree-opinion-40">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-agree-opinion-40" type="button" aria-label="Agree with opinion" class="reactions" data-bs-href="/opinions/40/like/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Agree">
+        <span data-bs-option="agree"><i class="fa-solid fa-hands-clapping"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-disagree-opinion-40">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-disagree-opinion-40" type="button" aria-label="Disagree with opinion" class="reactions" data-bs-href="/opinions/40/like/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Disagree">
+        <span data-bs-option="disagree"><i class="fa-solid fa-thumbs-down"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-comment-opinion-40">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-comment-opinion-40" type="button" aria-label="Comment on opinion" class="reactions" data-bs-href="/opinions/40/comment/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Comment">
+        <span data-bs-toggle="modal" data-bs-target="#id--comment-modal"><i class="fa-solid fa-comment"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-follow-opinion-40">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-unfollow-opinion-40">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-unfollow-opinion-40" type="button" aria-label="Unfollow opinion author" class="reactions reactions-selected" data-bs-href="/opinions/40/follow/" data-group="6" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Unfollow opinion author">
+        <span data-bs-option="unfollow"><i class="fa-solid fa-user-xmark"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-share-opinion-40">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-share-opinion-40" type="button" aria-label="Share opinion" class="reactions" data-bs-href="/opinions/i-can-eat-fish-for-the-MTY3MTA1MzE4My40MTgyODY_NX0/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Share opinion">
+        <span data-bs-toggle="modal" data-bs-target="#id--share-modal"><i class="fa-solid fa-share-nodes"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-hide-opinion-40">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-hide-opinion-40" type="button" aria-label="Hide opinion" class="reactions" data-bs-href="/opinions/40/hide/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Hide opinion">
+        <span data-bs-toggle="modal" data-bs-target="#id--hide-modal" data-bs-option="hide"><i class="fa-solid fa-eye-slash"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-show-opinion-40">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-pin-opinion-40">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-pin-opinion-40" type="button" aria-label="Pin opinion" class="reactions" data-bs-href="/opinions/40/pin/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Pin opinion">
+        <span data-bs-option="pin"><i class="fa-solid fa-lock"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-unpin-opinion-40">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-report-opinion-40">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-report-opinion-40" type="button" aria-label="Report opinion" class="reactions" data-bs-href="/opinions/40/report/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Report opinion">
+        <span data-bs-toggle="modal" data-bs-target="#id--report-modal"><i class="fa-solid fa-person-military-pointing"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+</ul>
+<!-- reactions.html end -->
+
+                                                    
+                                                
+                                            
+                                        
+                                    
+                                </div>
+                                
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        
+    </div>
+
+    
+    
+        <div id="id--comments-container" class="col-12 mt-2">
+            
+            
+            <!-- view_comments.html start -->
+
+
+
+
+
+    
+
+      
+      
+      
+      
+
+      <!-- comment_bundle.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="id--comment-section-69">
+    
+    <div id="id--comment-card-69" class="card level-0">
+    <div class="card-body">
+            <div class="row">
+                
+                    <!-- author avatar and user link -->
+                    <div class="col-sm-2 mt-0 mb-0">
+                        <img src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1671049692/static/img/avatar_blank.5cdd10ce5091.svg" width="40" height="40" alt="user1 image">
+                        <p class="mt-0 mb-0"><a href="/users/2/" aria-label="view author's profile">user1</a></p>
+                    </div>
+                    <!-- comment details -->
+                    <div class="col-sm-10 mt-0 mb-0">
+                        <div class="row">
+                            <div class="col-sm-10 mt-0 mb-0">
+                                
+                                
+                                    That's interesting
+                                
+                            </div>
+                            <div class="col-sm-2 mt-0 mb-0">
+                                <a id="id--comment-collapse-69-toggle" class="btn btn-primary collapsed" data-bs-toggle="collapse" href="#id--comment-collapse-69" role="button" aria-expanded="false" aria-label="see or hide comments" aria-controls="id--comment-collapse-69" hidden="">
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="row">
+                            <!-- comment updated info -->
+                            <div class="col-sm-6 mt-0 mb-0">
+                                <p class="card-text text-muted mt-0 mb-0">
+                                    
+                                        <i class="fa-solid fa-upload"></i> 1&nbsp;day, 13&nbsp;hours ago
+                                    
+                                    <br>
+                                    <i class="fa-solid fa-pen-to-square"></i> 1&nbsp;day, 13&nbsp;hours ago
+                                </p>
+                            </div>
+                            <!-- comment reactions -->
+                            <div class="col-sm-6 mt-0 mb-0 justify-content-start">
+
+                                
+                                
+                                
+                                
+                                
+                                
+                                
+                                
+                                    
+                                        
+                                            
+                                                
+                                                    <!-- reactions.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<ul id="id--react-ul-comment-69" class="nav list-unstyled d-flex">
+    
+        
+        <li id="id--react-li-agree-comment-69">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-agree-comment-69" type="button" aria-label="Agree with comment" class="reactions reactions-disabled" disabled="" data-bs-href="/opinions/comments/69/like/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Agree">
+        <span data-bs-option="agree"><i class="fa-solid fa-hands-clapping"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-disagree-comment-69">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-disagree-comment-69" type="button" aria-label="Disagree with comment" class="reactions reactions-disabled" disabled="" data-bs-href="/opinions/comments/69/like/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Disagree">
+        <span data-bs-option="disagree"><i class="fa-solid fa-thumbs-down"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-comment-comment-69">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-comment-comment-69" type="button" aria-label="Comment on comment" class="reactions" data-bs-href="/opinions/comments/69/comment/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Comment">
+        <span data-bs-toggle="modal" data-bs-target="#id--comment-modal"><i class="fa-solid fa-comment"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-follow-comment-69">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-follow-comment-69" type="button" aria-label="Follow comment author" class="reactions reactions-disabled" disabled="" data-bs-href="/opinions/comments/69/follow/" data-group="2" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Follow comment author">
+        <span data-bs-option="follow"><i class="fa-solid fa-user-tag"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-unfollow-comment-69">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-share-comment-69">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-share-comment-69" type="button" aria-label="Share comment" class="reactions" data-bs-href="/opinions/comments/thats-interesting-MTY3MTA1MzE4My42MTQ2NTk_HC5/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Share comment">
+        <span data-bs-toggle="modal" data-bs-target="#id--share-modal"><i class="fa-solid fa-share-nodes"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-hide-comment-69">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-hide-comment-69" type="button" aria-label="Hide comment" class="reactions reactions-disabled" disabled="" data-bs-href="/opinions/comments/69/hide/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Hide comment">
+        <span data-bs-toggle="modal" data-bs-target="#id--hide-modal" data-bs-option="hide"><i class="fa-solid fa-eye-slash"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-show-comment-69">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-report-comment-69">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-report-comment-69" type="button" aria-label="Report comment" class="reactions reactions-disabled" disabled="" data-bs-href="/opinions/comments/69/report/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Report comment">
+        <span data-bs-toggle="modal" data-bs-target="#id--report-modal"><i class="fa-solid fa-person-military-pointing"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-delete-comment-69">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-delete-comment-69" type="button" aria-label="Delete comment" class="reactions" data-bs-href="/opinions/comments/69/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Delete comment">
+        <span data-bs-option="delete"><i class="fa-solid fa-trash-can"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-edit-comment-69">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-edit-comment-69" type="button" aria-label="Edit comment" class="reactions" data-bs-href="/opinions/comments/69/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Edit comment">
+        <span data-bs-option="edit"><i class="fa-solid fa-pen"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+</ul>
+<!-- reactions.html end -->
+
+                                                
+                                            
+                                        
+                                    
+                                
+                            </div>
+                        </div>
+                    </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- collapse container for replies to comment -->
+    <div class="collapse" id="id--comment-collapse-69">
+    
+    </div>
+</div>
+<!-- comment_bundle.html end -->
+
+
+    
+
+      
+      
+      
+      
+
+      <!-- comment_bundle.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="id--comment-section-70">
+    
+    <div id="id--comment-card-70" class="card level-0">
+    <div class="card-body">
+            <div class="row">
+                
+                    <!-- author avatar and user link -->
+                    <div class="col-sm-2 mt-0 mb-0">
+                        <img src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1671049692/static/img/avatar_blank.5cdd10ce5091.svg" width="40" height="40" alt="user3 image">
+                        <p class="mt-0 mb-0"><a href="/users/4/" aria-label="view author's profile">user3</a></p>
+                    </div>
+                    <!-- comment details -->
+                    <div class="col-sm-10 mt-0 mb-0">
+                        <div class="row">
+                            <div class="col-sm-10 mt-0 mb-0">
+                                
+                                
+                                    That's interesting
+                                
+                            </div>
+                            <div class="col-sm-2 mt-0 mb-0">
+                                <a id="id--comment-collapse-70-toggle" class="btn btn-primary collapsed" data-bs-toggle="collapse" href="#id--comment-collapse-70" role="button" aria-expanded="false" aria-label="see or hide comments" aria-controls="id--comment-collapse-70" hidden="">
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="row">
+                            <!-- comment updated info -->
+                            <div class="col-sm-6 mt-0 mb-0">
+                                <p class="card-text text-muted mt-0 mb-0">
+                                    
+                                        <i class="fa-solid fa-upload"></i> 1&nbsp;day, 13&nbsp;hours ago
+                                    
+                                    <br>
+                                    <i class="fa-solid fa-pen-to-square"></i> 1&nbsp;day, 13&nbsp;hours ago
+                                </p>
+                            </div>
+                            <!-- comment reactions -->
+                            <div class="col-sm-6 mt-0 mb-0 justify-content-start">
+
+                                
+                                
+                                
+                                
+                                
+                                
+                                
+                                
+                                    
+                                        
+                                            
+                                                
+                                                    <!-- reactions.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<ul id="id--react-ul-comment-70" class="nav list-unstyled d-flex">
+    
+        
+        <li id="id--react-li-agree-comment-70">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-agree-comment-70" type="button" aria-label="Agree with comment" class="reactions" data-bs-href="/opinions/comments/70/like/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Agree">
+        <span data-bs-option="agree"><i class="fa-solid fa-hands-clapping"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-disagree-comment-70">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-disagree-comment-70" type="button" aria-label="Disagree with comment" class="reactions" data-bs-href="/opinions/comments/70/like/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Disagree">
+        <span data-bs-option="disagree"><i class="fa-solid fa-thumbs-down"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-comment-comment-70">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-comment-comment-70" type="button" aria-label="Comment on comment" class="reactions" data-bs-href="/opinions/comments/70/comment/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Comment">
+        <span data-bs-toggle="modal" data-bs-target="#id--comment-modal"><i class="fa-solid fa-comment"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-follow-comment-70">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-unfollow-comment-70">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-unfollow-comment-70" type="button" aria-label="Unfollow comment author" class="reactions reactions-selected" data-bs-href="/opinions/comments/70/follow/" data-group="4" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Unfollow comment author">
+        <span data-bs-option="unfollow"><i class="fa-solid fa-user-xmark"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-share-comment-70">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-share-comment-70" type="button" aria-label="Share comment" class="reactions" data-bs-href="/opinions/comments/thats-interesting-MTY3MTA1MzE4My43NDY4Nzg_OZk/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Share comment">
+        <span data-bs-toggle="modal" data-bs-target="#id--share-modal"><i class="fa-solid fa-share-nodes"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-hide-comment-70">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-hide-comment-70" type="button" aria-label="Hide comment" class="reactions" data-bs-href="/opinions/comments/70/hide/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Hide comment">
+        <span data-bs-toggle="modal" data-bs-target="#id--hide-modal" data-bs-option="hide"><i class="fa-solid fa-eye-slash"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-show-comment-70">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-report-comment-70">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-report-comment-70" type="button" aria-label="Report comment" class="reactions" data-bs-href="/opinions/comments/70/report/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Report comment">
+        <span data-bs-toggle="modal" data-bs-target="#id--report-modal"><i class="fa-solid fa-person-military-pointing"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-delete-comment-70">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-edit-comment-70">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+</ul>
+<!-- reactions.html end -->
+
+                                                
+                                            
+                                        
+                                    
+                                
+                            </div>
+                        </div>
+                    </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- collapse container for replies to comment -->
+    <div class="collapse" id="id--comment-collapse-70">
+    
+    </div>
+</div>
+<!-- comment_bundle.html end -->
+
+
+    
+
+      
+      
+      
+      
+
+      <!-- comment_bundle.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="id--comment-section-71">
+    
+    <div id="id--comment-card-71" class="card level-0">
+    <div class="card-body">
+            <div class="row">
+                
+                    <!-- author avatar and user link -->
+                    <div class="col-sm-2 mt-0 mb-0">
+                        <img src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1671049692/static/img/avatar_blank.5cdd10ce5091.svg" width="40" height="40" alt="mod1 image">
+                        <p class="mt-0 mb-0"><a href="/users/5/" aria-label="view author's profile">mod1</a></p>
+                    </div>
+                    <!-- comment details -->
+                    <div class="col-sm-10 mt-0 mb-0">
+                        <div class="row">
+                            <div class="col-sm-10 mt-0 mb-0">
+                                
+                                
+                                    That's boring
+                                
+                            </div>
+                            <div class="col-sm-2 mt-0 mb-0">
+                                <a id="id--comment-collapse-71-toggle" class="btn btn-primary collapsed" data-bs-toggle="collapse" href="#id--comment-collapse-71" role="button" aria-expanded="false" aria-label="see or hide comments" aria-controls="id--comment-collapse-71" hidden="">
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        <div class="row">
+                            <!-- comment updated info -->
+                            <div class="col-sm-6 mt-0 mb-0">
+                                <p class="card-text text-muted mt-0 mb-0">
+                                    
+                                        <i class="fa-solid fa-upload"></i> 1&nbsp;day, 13&nbsp;hours ago
+                                    
+                                    <br>
+                                    <i class="fa-solid fa-pen-to-square"></i> 1&nbsp;day, 13&nbsp;hours ago
+                                </p>
+                            </div>
+                            <!-- comment reactions -->
+                            <div class="col-sm-6 mt-0 mb-0 justify-content-start">
+
+                                
+                                
+                                
+                                
+                                
+                                
+                                
+                                
+                                    
+                                        
+                                            
+                                                
+                                                    <!-- reactions.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<ul id="id--react-ul-comment-71" class="nav list-unstyled d-flex">
+    
+        
+        <li id="id--react-li-agree-comment-71">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-agree-comment-71" type="button" aria-label="Agree with comment" class="reactions" data-bs-href="/opinions/comments/71/like/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Agree">
+        <span data-bs-option="agree"><i class="fa-solid fa-hands-clapping"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-disagree-comment-71">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-disagree-comment-71" type="button" aria-label="Disagree with comment" class="reactions" data-bs-href="/opinions/comments/71/like/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Disagree">
+        <span data-bs-option="disagree"><i class="fa-solid fa-thumbs-down"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-comment-comment-71">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-comment-comment-71" type="button" aria-label="Comment on comment" class="reactions" data-bs-href="/opinions/comments/71/comment/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Comment">
+        <span data-bs-toggle="modal" data-bs-target="#id--comment-modal"><i class="fa-solid fa-comment"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-follow-comment-71">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-follow-comment-71" type="button" aria-label="Follow comment author" class="reactions" data-bs-href="/opinions/comments/71/follow/" data-group="5" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Follow comment author">
+        <span data-bs-option="follow"><i class="fa-solid fa-user-tag"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-unfollow-comment-71">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-share-comment-71">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-share-comment-71" type="button" aria-label="Share comment" class="reactions" data-bs-href="/opinions/comments/thats-boring-MTY3MTA1MzE4My44NzAwNzk_Upl/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Share comment">
+        <span data-bs-toggle="modal" data-bs-target="#id--share-modal"><i class="fa-solid fa-share-nodes"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-hide-comment-71">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-hide-comment-71" type="button" aria-label="Hide comment" class="reactions" data-bs-href="/opinions/comments/71/hide/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Hide comment">
+        <span data-bs-toggle="modal" data-bs-target="#id--hide-modal" data-bs-option="hide"><i class="fa-solid fa-eye-slash"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-show-comment-71">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-report-comment-71">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <button id="id--react-report-comment-71" type="button" aria-label="Report comment" class="reactions" data-bs-href="/opinions/comments/71/report/" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Report comment">
+        <span data-bs-toggle="modal" data-bs-target="#id--report-modal"><i class="fa-solid fa-person-military-pointing"></i></span>
+    </button>
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-delete-comment-71">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-edit-comment-71">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+</ul>
+<!-- reactions.html end -->
+
+                                                
+                                            
+                                        
+                                    
+                                
+                            </div>
+                        </div>
+                    </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- collapse container for replies to comment -->
+    <div class="collapse" id="id--comment-collapse-71">
+    
+    </div>
+</div>
+<!-- comment_bundle.html end -->
+
+
+    
+
+
+<!-- view_comments.html end -->
+
+        </div>
+    
+
+    
+        <!-- modal_common.html start -->
+<script>
+    /**
+     * Set focus when modal displayed
+     * @param modalSelector: modal selector
+     * @param focusTarget: focus target selector
+     */
+    function modalFocus(modalSelector, focusTarget) {
+        /* Due to how HTML5 defines its semantics, the autofocus HTML attribute has no effect in Bootstrap modals.
+           To achieve the same effect, use some custom JavaScript
+           https://getbootstrap.com/docs/5.2/components/modal/#how-it-works
+         */
+        $(modalSelector).on('shown.bs.modal', (event) => {
+            $(focusTarget).focus();
+        });
+    }
+
+    /**
+     * Clear form errors and entered data when modal hidden
+     * @param modalSelector: modal selector
+     * @param errorsSelector: error container selector
+     * @param inputSelector: input selector
+     * @param isSummernote: is summernote input flag
+     */
+    function resetModalForm(modalSelector, errorsSelector, inputSelector, isSummernote = false) {
+        /* Clear form errors and entered data when modal hidden */
+        $(modalSelector).on('hidden.bs.modal', (event) => {
+            $(errorsSelector).html("");
+            if (isSummernote) {
+                /* TODO find method of clearing summernote editor content and remove all stored history
+                    suggested method (https://summernote.org/deep-dive/#reset) doesn't work (maybe because in iframe?)
+                    Can clear input element using $(inputSelector).val("") but editor content is still displayed
+                 */
+            } else {
+                $(inputSelector).val("")
+            }
+        });
+    }
+</script>
+<!-- modal_common.html end -->
+
+        <!-- Modal to create comments -->
+        <div id="id--comment-modal-container">
+            <!-- comment_modal.html start -->
+
+
+
+
+<div class="modal fade" id="id--comment-modal" tabindex="-1" aria-labelledby="id--comment-modal-heading" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-fullscreen-md-down modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <var id="id--comment-submit-url" hidden="">
+                
+            </var>
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="id--comment-modal-heading">Add comment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="/opinions/40/comment/" id="id--comment-modal-form">
+                
+                
+
+                <input type="hidden" name="csrfmiddlewaretoken" value="8FDZiD84cg7LaaUjXwLkYmtnjdoT0uQCoyqk211raVVkqyrikN8nuqcHVGUHCc2V">
+
+                <div id="id--comment-form-errors-container">
+                    
+                        
+
+                    
+                </div>
+
+                <div class="modal-body">
+                    <fieldset>
+                        <div class="row mb-3">
+                            
+                        </div>
+                    </fieldset>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-dark btn__text" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn__save-comment btn btn-outline-success btn__text">
+                        Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    const commentModalId = "id--comment-modal";
+    const commentModalSelector = `#${commentModalId}`;
+    const commentContentSelector = "#id_content";
+    const commentFormErrorsSelector = "#id--comment-form-errors-container";
+    const commentSubmitUrlSelector = "#id--comment-submit-url";
+
+    $(document).ready(function () {
+
+        // set focus
+        modalFocus(commentModalSelector, commentContentSelector);
+
+        // clear form errors and entered data when modal hidden
+        resetModalForm(commentModalSelector, commentFormErrorsSelector, commentContentSelector, true);
+
+        /* Submit handler for comment modal */
+        $(`form[id^='${commentModalId}']`).submit(function (event) {
+            const formData = {
+                content: $(commentContentSelector).val(),
+            };
+
+            const url = $(commentSubmitUrlSelector).text();
+
+            $.ajax({
+                method: 'post',
+                url: url,
+                headers: {
+                    'X-CSRFTOKEN': '8FDZiD84cg7LaaUjXwLkYmtnjdoT0uQCoyqk211raVVkqyrikN8nuqcHVGUHCc2V'
+                },
+                data: formData,
+            }).done(function(data) {
+                const parentSelector = `#${data.parent_container}`;
+                //                                                     "id--comment-section-<id>"
+                const lastCommentSectionSelector = `${parentSelector} > div:last-child`;
+                //                                                     "id--comment-card-{more}-<id>"
+                const lastCommentId = $(`${lastCommentSectionSelector} > div:first-child`).attr('id')
+                // last section in parent container is a 'more'
+                let lastIsMore = false;
+                if (lastCommentId !== undefined) {
+                    lastIsMore = lastCommentId.includes('more');
+                }
+
+                if (lastIsMore) {
+                    // insert new html before 'more' comment section, marking as for removal if 'more' requested
+                    $(lastCommentSectionSelector).before(
+                        data.html.replace('dynamic-insert', 'dynamic-insert-remove')
+                    );
+                } else {
+                    // add new comment to end of container
+                    $(parentSelector).append(data.html);
+                }
+
+                // make toggle visible and expand collapse if necessary
+                if (!data.opinion_comment) {
+                    const toggleSelector = `${parentSelector}-toggle`;
+                    $(toggleSelector).removeAttr('hidden');
+                    $(toggleSelector).removeClass('collapsed');
+
+                    const bsCollapse = new bootstrap.Collapse(parentSelector, {
+                        toggle: false
+                    });
+                    bsCollapse.show();
+                }
+                // close modal
+                $(commentModalSelector).modal('hide');
+
+                // set click handlers for reactions
+                setReactionHandlers();
+
+            }).fail(function(data) {
+                // redisplay modal
+                $(commentFormErrorsSelector).html(data.responseJSON.html);
+            });
+
+            event.preventDefault();
+        });
+    });
+</script>
+<!-- comment_modal.html end -->
+
+        </div>
+        <!-- Modal to create review reports -->
+        <div id="id--report-modal-container">
+            <!-- report_modal.html start -->
+
+
+
+
+<div class="modal fade" id="id--report-modal" tabindex="-1" aria-labelledby="id--report-modal-heading" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-fullscreen-md-down modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <var id="id--report-submit-url" hidden="">
+                
+            </var>
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="id--report-modal-heading">Report opinion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="/opinions/40/report/" id="id--report-modal-form">
+                
+                
+
+                <input type="hidden" name="csrfmiddlewaretoken" value="8FDZiD84cg7LaaUjXwLkYmtnjdoT0uQCoyqk211raVVkqyrikN8nuqcHVGUHCc2V">
+
+                <div id="id--report-form-errors-container">
+                    
+                        
+
+                    
+                </div>
+
+                <div class="modal-body">
+                    <fieldset>
+                        <div class="row mb-3">
+                            
+                            <div class="col-sm-2 text-start">
+                                <label for="id_reason" class="form-label">Reason</label>
+                            </div>
+                            <div class="col-sm-10">
+                                <textarea name="reason" cols="40" rows="5" maxlength="500" placeholder="Reason details" class="form-control" required="" id="id_reason"></textarea>
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-dark btn__text" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn__save-comment btn btn-outline-success btn__text">
+                        Report
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const reportModalSelector = "#id--report-modal";
+    
+    const reasonFieldSelector = "#id_reason";
+    const reportFormErrorsSelector = "#id--report-form-errors-container";
+    const reportSubmitUrlSelector = "#id--report-submit-url";
+
+    $(document).ready(function () {
+
+        // set focus
+        modalFocus(reportModalSelector, reasonFieldSelector);
+
+        // clear form errors and entered data when modal hidden
+        resetModalForm(reportModalSelector, reportFormErrorsSelector, reasonFieldSelector, false);
+
+        /* Submit handler for report modal */
+        $("form[id^='id--report-modal']").submit(function (event) {
+            const formData = {
+                reason: $(reasonFieldSelector).val(),
+            };
+
+            const url = $(reportSubmitUrlSelector).text();
+
+            $.ajax({
+                method: 'post',
+                url: url,
+                headers: {
+                    'X-CSRFTOKEN': '8FDZiD84cg7LaaUjXwLkYmtnjdoT0uQCoyqk211raVVkqyrikN8nuqcHVGUHCc2V'
+                },
+                data: formData,
+            }).done(function(data) {
+                // update html
+                $("#" + data[ELEMENT_ID_PROP]).replaceWith(data.html);
+
+                // close modal
+                $(reportModalSelector).modal('hide');
+
+                // set click handlers for reactions
+                setReactionHandlers();
+                enableTooltips();
+            }).fail(function(data) {
+                // redisplay modal
+                $(reportFormErrorsSelector).html(data.responseJSON.html);
+            });
+
+            event.preventDefault();
+        });
+    });
+</script>
+<!-- report_modal.html end -->
+
+        </div>
+        <!-- Modal to hide opinion/comment -->
+        <div id="id--hide-modal-container">
+            <!-- hide_modal.html start -->
+
+
+<div class="modal fade" id="id--hide-modal" tabindex="-1" aria-labelledby="id--hide-modal-heading" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-fullscreen-md-down modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <var id="id--hide-submit-url" hidden="">
+                
+            </var>
+            <var id="id--hide-submit-option" hidden="">
+                
+            </var>
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="id--hide-modal-heading">
+                    
+                    Hide
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to <span id="id--hide-modal-action"></span> this <span id="id--hide-modal-element"></span>?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-dark btn__text" data-bs-dismiss="modal">
+                    Cancel
+                </button>
+                <button id="id--submit-btn-hide-modal" type="submit" class="btn__save-comment btn btn-outline-success btn__text">
+                    Hide
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const hideModalSelector = "#id--hide-modal";
+    const hideSubmitUrlSelector = "#id--hide-submit-url";
+    const hideSubmitOptionSelector = "#id--hide-submit-option";
+
+    $(document).ready(function () {
+
+        /* Submit handler for hide modal */
+        $("#id--submit-btn-hide-modal").on('click', function (event) {
+
+            $("#" + event.currentTarget.id).tooltip("hide");
+
+            const url = $(hideSubmitUrlSelector).text();
+            const option = $(hideSubmitOptionSelector).text();
+
+            $.ajax({
+                url: url + "?status=" + option,
+                method: 'patch',
+                headers: {
+                    'X-CSRFTOKEN': '8FDZiD84cg7LaaUjXwLkYmtnjdoT0uQCoyqk211raVVkqyrikN8nuqcHVGUHCc2V'
+                }
+            }).done(function(data) {
+                react_response_handler(data);
+
+                // close modal
+                $(hideModalSelector).modal('hide');
+
+                // set click handlers for reactions
+                setReactionHandlers();
+                enableTooltips();
+            });
+        });
+    });
+</script>
+<!-- hide_modal.html end -->
+
+        </div>
+        <!-- Modal to share opinion/comment -->
+        <div id="id--share-modal-container">
+            <!-- report_modal.html start -->
+
+
+
+<div class="modal fade" id="id--share-modal" tabindex="-1" aria-labelledby="id--share-modal-heading" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-fullscreen-md-down modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="id--share-modal-heading">
+                    
+                    Share
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <fieldset>
+                    <div class="row mb-3">
+                        <div class="col-md-10 col-sm-12 d-flex justify-content-center" id="id--share-url">
+                            
+                        </div>
+                        <div class="col-md-2 col-sm-12 mt-2 d-flex justify-content-center">
+                            <button id="id--btn-share" type="button" class="btn btn-outline-success">
+                                <i class="fa-solid fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-dark btn__text" type="button" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="id--shared-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+            URL copied to clipboard.
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+
+        /* Submit handler for share modal */
+        $("#id--btn-share").on("click", function (event) {
+
+            const url = $("#id--share-url").text();
+            navigator.clipboard.writeText(url).then(
+                () => {
+                    /* clipboard successfully set */
+                    const toastLiveExample = document.getElementById('id--shared-toast')
+                    const toast = new bootstrap.Toast(toastLiveExample)
+                    toast.show()
+                },
+                () => {
+                    /* clipboard write failed */
+                }
+            );
+        });
+    });
+</script>
+<!-- report_modal.html end -->
+
+        </div>
+        <!-- Modal to delete comment -->
+        <div id="id--delete-modal-container">
+            <!-- comment_delete_modal.html start -->
+
+
+
+<!-- Confirm delete comment modal -->
+<div id="id--comment-delete-confirm-modal" class="modal fade" tabindex="-1" aria-labelledby="id--comment-delete-confirm-modal-label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <var id="id--comment-delete-url" hidden="">
+                
+            </var>
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="id--comment-delete-confirm-modal-label">Comment Delete Confirm</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this comment?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-dark btn__text" type="button" data-bs-dismiss="modal">Cancel</button>
+                <button id="id--btn-opinion-delete-confirm" class="btn btn-outline-danger btn__text" type="button" data-bs-dismiss="modal">
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Comment deleted modal -->
+<div id="id--comment-deleted-modal" class="modal fade" tabindex="-1" aria-labelledby="id--comment-deleted-modal-label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="id--comment-deleted-modal-label">Comment Deleted</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div id="id--comment-deleted-modal-body" class="modal-body">
+                <p>The comment was successfully deleted</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-dark btn__text" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const commentDeleteConfirmModalSelector = "#id--comment-delete-confirm-modal";
+    const commentDeleteModalSelector = "#id--comment-deleted-modal";
+    const commentDeleteModalBodySelector = "#id--comment-deleted-modal-body";
+    const commentDeleteUrlSelector = "#id--comment-delete-url";
+
+    $(document).ready(function () {
+
+        $("#id--btn-opinion-delete-confirm").on('click', function (event) {
+
+            const url = $(commentDeleteUrlSelector).text();
+
+            $.ajax({
+                method: 'delete',
+                url: `${url}?ref=${window.location.pathname}`,
+                headers: {
+                    'X-CSRFTOKEN': '8FDZiD84cg7LaaUjXwLkYmtnjdoT0uQCoyqk211raVVkqyrikN8nuqcHVGUHCc2V'
+            },
+            }).done(function(data) {
+
+                react_response_handler(data);
+
+                // show modal
+                $(commentDeleteModalSelector).modal('show');
+
+            }).fail(function(data) {
+                // display reason
+                $(commentDeleteModalBodySelector).html(data.responseJSON.html);
+            });
+
+            event.preventDefault();
+            event.stopPropagation();
+        });
+    });
+</script>
+<!-- comment_delete_modal.html end -->
+
+        </div>
+    
+
+    
+    
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="id--review-form-container">
+    
+
+    
+</div>
+
+    
+</article>
+
+
+        </div>
+    </main>
+
+    
+    <footer class="container d-flex flex-wrap justify-content-between align-items-center py-3 border-top bg-white div__panel">
+        <div class="col-md-4 d-flex align-items-center">
+            <a href="/" class="ms-2 me-2 mb-md-0 text-muted text-decoration-none lh-1">
+                <img class="bi" width="24" height="24" src="https://res.cloudinary.com/hrcj5dv7b/image/upload/v1/static/favicon-32x32-gray.37dde23947e1.png" alt="SoapBox logo">
+            </a>
+            <span class="mb-md-0 text-muted">© 2022 Ian Buttimer</span>
+        </div>
+
+        <div class="col-md-4 d-flex align-items-center justify-content-center">
+            <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Admin">
+                <a href="/admin" target="_blank" rel="noopener" aria-label="visit admin page in another tab" class="socials">
+                    <i class="fa-solid fa-screwdriver-wrench text-muted"></i>
+                </a>
+            </span>
+        </div>
+
+        <ul class="nav col-md-4 justify-content-end list-unstyled d-flex">
+            
+                <li>
+                    <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Facebook">
+                        <a href="https://facebook.com" target="_blank" rel="noopener" aria-label="visit our Facebook page in another tab" class="socials">
+                            <i class="fa-brands fa-square-facebook text-muted"></i>
+                        </a>
+                    </span>
+                </li>
+            
+                <li>
+                    <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Twitter">
+                        <a href="https://twitter.com" target="_blank" rel="noopener" aria-label="visit our Twitter page in another tab" class="socials">
+                            <i class="fa-brands fa-square-twitter text-muted"></i>
+                        </a>
+                    </span>
+                </li>
+            
+                <li>
+                    <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Instagram">
+                        <a href="https://instagram.com" target="_blank" rel="noopener" aria-label="visit our Instagram page in another tab" class="socials">
+                            <i class="fa-brands fa-square-instagram text-muted"></i>
+                        </a>
+                    </span>
+                </li>
+            
+        </ul>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
+    
+    <!-- view_js.html start -->
+<script>
+    /**
+     * Update status of content
+     * :param patchUrl: base url to call
+     * :param new_status: new status, one of QueryStatus args
+     */
+    function updateStatusPatch(patchUrl, new_status) {
+        $.ajax({
+            url: `${patchUrl}?status=${new_status}`,
+            method: 'patch',
+            headers: {
+                'X-CSRFTOKEN': '8FDZiD84cg7LaaUjXwLkYmtnjdoT0uQCoyqk211raVVkqyrikN8nuqcHVGUHCc2V'
+            }
+        }).done(function(data) {
+            redirect_rewrite_response_handler(data);
+            enableTooltips();
+        });
+    }
+</script>
+<!-- view_js.html end -->
+
+    <script>
+        /**
+         * Update status of current opinion
+         * :param new_status: new status, one of 'publish', 'preview' or 'draft'
+         */
+        function updateStatus(new_status) {
+            updateStatusPatch("/opinions/40/status/", new_status);
+        }
+    </script>
+    
+
+    
+        
+        <!-- more_placeholder_js.html start -->
+<script>
+    // More placeholder buttons are named 'id--comment-more-placeholder-<id>'
+    const MORE_PLACEHOLDER_SELECTOR = "button[id^='id--comment-more-placeholder']";
+    // Comment collapse divs are named 'id--comment-collapse-<id>'
+    const COMMENT_COLLAPSE_SELECTOR = "div[id^='id--comment-collapse']"
+    // Comment collapse toggle links are named 'id--comment-collapse-<id>-toggle'
+    const COMMENT_COLLAPSE_TOGGLE_SELECTOR = "a[id^='id--comment-collapse'][id$='toggle']";
+
+    const DATA_COMMENT_QUERY = 'data-comment-query';
+
+    /* Click handler for more comments placeholder */
+    function morePlaceholderClickHandler(event) {
+        const url = `${event.currentTarget.attributes['data-bs-href'].textContent}&ref=${window.location.pathname}`;
+
+        // hide tooltip
+        $("#" + event.currentTarget.id).tooltip("hide");
+
+        $.ajax({
+            method: 'get',
+            url: url,
+        }).done(function (data) {
+            // remove placeholder click handlers
+            $(MORE_PLACEHOLDER_SELECTOR).off();
+
+            // comment card more div has id "id--comment-card-more-<id>"
+            const splits = event.currentTarget.id.split('-');
+            const commentId = splits[splits.length - 1]
+            const moreDivIdSelector = `#id--comment-card-more-${commentId}`;
+            // add additional comments to end of list
+            $(moreDivIdSelector).parent().append(data.html);
+            // remove more placeholder & collapse
+            $(moreDivIdSelector).remove();
+            $(`#id--comment-collapse-more-${commentId}`).remove();
+            // remove any (on whatever level) dynamically inserted elements that are displaying out of place
+            $(".dynamic-insert-remove").remove();
+
+            // set placeholder click handlers
+            addMorePlaceholderHandlers();
+            // set click handlers for reactions
+            setReactionHandlers();
+            enableTooltips();
+        });
+    }
+
+    /* Click handler for sub-level comments */
+    function subLevelCommentsClickHandler(event) {
+        if (event.currentTarget.hasAttribute(DATA_COMMENT_QUERY)) {
+            const query = event.currentTarget.attributes[DATA_COMMENT_QUERY].textContent;
+
+            const url = "/opinions/comments/more/?" + `${query}&ref=${window.location.pathname}`;
+
+            $.ajax({
+                method: 'get',
+                url: url,
+            }).done(function (data) {
+
+                // Comment collapse toggle links are named 'id--comment-collapse-<id>-toggle'
+                const splits = event.currentTarget.id.split('-');
+                const commentId = splits[splits.length - 2]
+                const collapseDivIdSelector = "#id--comment-collapse-" + commentId;
+
+                // add additional comments to end of list
+                $(collapseDivIdSelector).append(data.html);
+                // remove comment query from collapse toggle
+                event.currentTarget.removeAttribute(DATA_COMMENT_QUERY);
+
+                // set click handlers for reactions
+                setReactionHandlers();
+                enableTooltips();
+                // add sub-level comment handlers
+                addSubLevelHandlers();
+            });
+        }
+    }
+
+    function setCollapseDisplayHandlers() {
+        // remove old handlers to prevent duplicates
+        $(COMMENT_COLLAPSE_SELECTOR).off();
+
+        for (const type of ['hidden.bs.collapse', 'shown.bs.collapse']) {
+            $(COMMENT_COLLAPSE_SELECTOR).on(type, updateCollapseDisplay);
+        }
+    }
+
+
+    const toggleSpanSelector = (event) => "#" + event.currentTarget.id + "-toggle > i";
+
+    /* Event handler to update collapse toggle display */
+    function updateCollapseDisplay(event) {
+        const selector = toggleSpanSelector(event)
+        // default shown event
+        let toRemove = "fa-chevron-down";
+        let toAdd = "fa-chevron-up";
+        if (event.type === 'hidden') {
+            toRemove = "fa-chevron-up";
+            toAdd = "fa-chevron-down";
+        }
+        $(selector).removeClass(toRemove);
+        $(selector).addClass(toAdd);
+        // prevent propagation back up to the parent tags to stop them changing as well
+        event.stopPropagation();
+    }
+
+    /* Add handlers to request more comments */
+    function addMorePlaceholderHandlers() {
+        /* Click handler to request more comments */
+        $(MORE_PLACEHOLDER_SELECTOR).on('click', morePlaceholderClickHandler);
+    }
+
+    /* Add handlers to display/request sub-level comments */
+    function addSubLevelHandlers() {
+        /* Add collapse event handlers for comment reply containers */
+        setCollapseDisplayHandlers();
+        /* Event handlers for sub-level comments containers */
+        $(COMMENT_COLLAPSE_TOGGLE_SELECTOR).on('click', subLevelCommentsClickHandler);
+    }
+
+    $(document).ready(function () {
+
+        /* Handler for request more comments */
+        addMorePlaceholderHandlers();
+        /* Handlers for sub-level comments */
+        addSubLevelHandlers();
+    });
+</script>
+<!-- more_placeholder_js.html end -->
+
+        <!-- reactions_js.html start -->
+<script>
+    /**
+     * Update react status of current opinion
+     * :param event: click event
+     * :param done_func: reaction specific done handler function
+     */
+    function updateReactStatus(event, done_func) {
+        // hide tooltip
+        $("#" + event.currentTarget.id).tooltip("hide");
+
+        const reaction = get_react_info(event)
+
+        $.ajax({
+            url: reaction.url + "?status=" + reaction.option,
+            method: 'patch',
+            headers: {
+                'X-CSRFTOKEN': '8FDZiD84cg7LaaUjXwLkYmtnjdoT0uQCoyqk211raVVkqyrikN8nuqcHVGUHCc2V'
+            }
+        }).done(function(data) {
+            done_func(data);
+
+            // set click handlers for reactions
+            setReactionHandlers();
+            enableTooltips();
+        });
+    }
+
+    /**
+     * Update react status of current opinion
+     * :param event: click event
+     * :param done_func: reaction specific done handler function
+     */
+    function getCommentEdit(event, done_func) {
+        // hide tooltip
+        $("#" + event.currentTarget.id).tooltip("hide");
+
+        const reaction = get_react_info(event)
+
+        document.location.href = `${reaction.url}?mode=edit`;
+    }
+
+    const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+
+    /**
+     * Get react info
+     * :param event: click event
+     */
+    function get_react_info(event) {
+        // ids are of the form 'id--react-<action>-<type>-<id>' e.g. 'id--react-agree-opinion-1'
+        const split = event.currentTarget.attributes['id'].textContent.split('-')
+        let data_bs_option = '';
+        if (event.currentTarget.firstElementChild.attributes.hasOwnProperty('data-bs-option')) {
+            data_bs_option = event.currentTarget.firstElementChild.attributes['data-bs-option'].textContent
+        }
+        return {
+            // href is on the button
+            url: event.currentTarget.attributes['data-bs-href'].textContent,
+            // title is on the button
+            title: event.currentTarget.attributes['data-bs-title'].textContent,
+            // type is taken from the button id
+            type: split[4],
+            // status option is on the span in the button (see reactions.html)
+            option: data_bs_option,
+            // status option is the action to perform, e.g. 'show'/'hide'/etc. i.e. ReactionStatus.XXX.arg
+            action: data_bs_option,
+            submit: capitalize(data_bs_option)
+        };
+    }
+    /**
+     * Set react info vars
+     * :param event: click event
+     * :param ids: object with keys matching those returned by get_react_info()
+     *             and values as ids of element to be set
+     * :param baseUrl: base url to prepend to url value
+     */
+    function set_react_info_vars(event, ids, baseUrl = undefined) {
+        const reaction = get_react_info(event)
+        for (const [key, selector] of Object.entries(ids)) {
+            let value = reaction[key];
+            if (key === 'url' && baseUrl !== undefined) {
+                value = baseUrl + value;
+            }
+            $(selector).text(value);
+        }
+    }
+
+    /**
+     * Update like/unlike status of current opinion
+     * :param event: click event
+     */
+    function updateOnOffReaction(event) {
+        updateReactStatus(event, redirect_rewrite_response_handler);
+    }
+
+    // Reaction buttons have the general form: "id--react-<action>-<type>-<id>"
+    // where: action is [agree|disagree|comment|follow|unfollow|share|hide|unhide|pin|unpin|report]
+    //        type is [opinion|comment]
+    //        id is id of target opinion/comment
+
+    // Reaction buttons for comments are named 'id--react-comment-....'
+    const commentReactionsSelector = "button[id^='id--react-comment']";
+    // Reaction buttons for like are named 'id--react-agree-....'
+    const likeReactionsSelector = "button[id^='id--react-agree']";
+    // Reaction buttons for unlike are named 'id--react-disagree-....'
+    const unlikeReactionsSelector = "button[id^='id--react-disagree']";
+    // Reaction buttons for hide are named 'id--react-hide-....'
+    const hideReactionsSelector = "button[id^='id--react-hide']";
+    // Reaction buttons for hide are named 'id--react-show-....'
+    const showReactionsSelector = "button[id^='id--react-show']";
+    // Reaction buttons for pin are named 'id--react-pin-....'
+    const pinReactionsSelector = "button[id^='id--react-pin']";
+    // Reaction buttons for unpin are named 'id--react-unpin-....'
+    const unpinReactionsSelector = "button[id^='id--react-unpin']";
+    // Reaction buttons for follow are named 'id--react-follow-....'
+    const followReactionsSelector = "button[id^='id--react-follow']";
+    // Reaction buttons for unfollow are named 'id--react-unfollow-....'
+    const unfollowReactionsSelector = "button[id^='id--react-unfollow']";
+    // Reaction buttons for report are named 'id--react-report-....'
+    const reportReactionsSelector = "button[id^='id--react-report']";
+    // Reaction buttons for share are named 'id--react-share-....'
+    const shareReactionsSelector = "button[id^='id--react-share']";
+    // Reaction buttons for delete are named 'id--react-delete-....'
+    const deleteReactionsSelector = "button[id^='id--react-delete']";
+    // Reaction buttons for comments are named 'id--react-edit-....'
+    const editCommentReactionsSelector = "button[id^='id--react-edit']";
+
+    /* Set the click handlers for reactions */
+    function setReactionHandlers() {
+        /* TODO removing and adding all the handlers is unnecessary */
+
+        // remove old handlers to prevent duplicates
+        for (let selector of [
+                commentReactionsSelector, likeReactionsSelector, unlikeReactionsSelector,
+                hideReactionsSelector, showReactionsSelector,
+                pinReactionsSelector, unpinReactionsSelector,
+                followReactionsSelector, unfollowReactionsSelector,
+                reportReactionsSelector, shareReactionsSelector,
+                deleteReactionsSelector, editCommentReactionsSelector
+        ]) {
+            $(selector).off();
+        }
+
+        // add new handlers
+        $(commentReactionsSelector).on('click', (event) => {
+            // set the submit url for comments
+            set_react_info_vars(event, {
+                url: commentSubmitUrlSelector
+            });
+        });
+        $(reportReactionsSelector).on('click', (event) => {
+            // set the submit url for reports
+            set_react_info_vars(event, {
+                url: reportSubmitUrlSelector
+            });
+        });
+        $(deleteReactionsSelector).on('click', (event) => {
+            // set the delete url for comments
+            set_react_info_vars(event, {
+                url: commentDeleteUrlSelector
+            });
+
+            // display confirmation modal
+            $(commentDeleteConfirmModalSelector).modal('show');
+        });
+        $(editCommentReactionsSelector).on('click', (event) => {
+            getCommentEdit(event, function(data) {
+                /* TODO handle edit in comment modal */
+            });
+        });
+        $(shareReactionsSelector).on('click', (event) => {
+            // set the share url for share
+            const baseUrl = window.location.href.slice(0, window.location.href.indexOf(window.location.pathname))
+            set_react_info_vars(event, {
+                url: "#id--share-url",
+                title: "#id--share-modal-heading"
+            }, baseUrl);
+        });
+        for (let selector of [
+            // update like/unlike status
+            likeReactionsSelector, unlikeReactionsSelector,
+            // update pin/unpin status
+            pinReactionsSelector, unpinReactionsSelector,
+            // update follow/unfollow status
+            followReactionsSelector, unfollowReactionsSelector,
+        ]) {
+            $(selector).on('click', (event) => {
+                updateOnOffReaction(event);
+            });
+        }
+        for (let selector of [hideReactionsSelector, showReactionsSelector]) {
+            $(selector).on('click', (event) => {
+                // set the submit url/option/title for hide/show
+                set_react_info_vars(event, {
+                    // keys are value names, values are ids of tags to update
+                    url: hideSubmitUrlSelector,
+                    option: hideSubmitOptionSelector,
+                    title: "#id--hide-modal-heading",
+                    type: "#id--hide-modal-element",
+                    action: "#id--hide-modal-action",
+                    submit: "#id--submit-btn-hide-modal",
+                });
+            });
+        }
+    }
+
+    $(document).ready(function () {
+        // set click handlers for reactions
+        setReactionHandlers();
+    });
+</script>
+<!-- reactions_js.html end -->
+
+    
+
+
+    <script>
+        /* Enable Bootstrap tooltips */
+        function enableTooltips() {
+            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+            const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+        }
+
+        const REDIRECT_PROP = 'redirect';
+        const REWRITES_PROP = 'rewrites';
+        const ELEMENT_ID_PROP = 'element_id';
+        const HTML_PROP = 'html';
+
+        const replaceHtml = (data) => $("#" + data[ELEMENT_ID_PROP]).replaceWith(data[HTML_PROP]);
+
+        /**
+         * Handle a redirect/rewrite response
+         * :param data: json data
+         */
+        function redirect_rewrite_response_handler(data) {
+            if (data !== undefined) {
+                if (data.hasOwnProperty(REDIRECT_PROP)) {
+                    // redirect to new url
+                    document.location.href = data[REDIRECT_PROP];
+                } else if (data.hasOwnProperty(ELEMENT_ID_PROP)) {
+                    // replace single element's html
+                    replaceHtml(data);
+                } else if (data.hasOwnProperty(REWRITES_PROP)) {
+                    // replace multiple element's html
+                    for (let element of data[REWRITES_PROP]) {
+                        replaceHtml(element);
+                    }
+                }
+            }
+        }
+
+        enableTooltips();
+    </script>
+
+</body></html>

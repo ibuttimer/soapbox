@@ -1,6 +1,33 @@
-# Testing 
+# Testing
 
 Test release: [Release ??](https://github.com/ibuttimer/soapbox/releases/tag/??? )
+
+## Pre-test setup
+### Users
+Manually created the following users required for testing purposes:
+
+| Username | Group     |
+|----------|-----------|
+| user1    | Author    |
+| user2    | Author    |
+| user3    | Author    |
+| mod1     | Moderator |
+
+Login as [site administrator](README.md#create-a-superuser) and assign `mod1` to the Moderators group via their profile page, or
+alternatively via the [Django administration site](https://soapbox-opinions.herokuapp.com/admin/login/?next=/admin/)
+
+### Database
+Populate the database with predefined opinions and comment via the [populate.py](data/populate.py) script.
+When run using [run_populate.py](run_populate.py) it will load the opinion from [opinions.csv](data/opinions.csv) and generate comments.
+
+From the project root folder run the following
+```bash
+# Help listing
+python run_populate.py -h
+
+# E.g. populated the remote database (replace 'password' as appropriate) 
+python run_populate.py -up password -mp password -dv REMOTE_DATABASE_URL
+```
 
 ## Environment
 If using a [Virtual Environment](../../README.md#virtual-environment), ensure it is activated. Please see [Activating a virtual environment](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#activating-a-virtual-environment).
@@ -26,8 +53,8 @@ Run an individual test, e.g.
 ```
 Alternatively, if using:
 * Visual Studio Code
- 
-    The [Test Explorer UI](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer) or Visual Studio Code's native testing UI<sup>*</sup>, allows tests to be run from the sidebar of Visual Studio Code.
+
+  The [Test Explorer UI](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer) or Visual Studio Code's native testing UI<sup>*</sup>, allows tests to be run from the sidebar of Visual Studio Code.
 * IntelliJ IDEA
 
   The allows tests to be run from the Project Explorer of IntelliJ IDEA.
@@ -44,7 +71,7 @@ The [.test-env](../../.test-env) is used to set up the environment.
 **Note 2:** Running the test full suite can take 5-6 minutes
 
 **It is necessary to specify a number of environment variables prior to running tests.**
-The [.test-env](.test-env) configuration file provides the necessary settings, and may be utilised by setting the `ENV_FILE` environment variable. 
+The [.test-env](.test-env) configuration file provides the necessary settings, and may be utilised by setting the `ENV_FILE` environment variable.
 ```shell
 Powershell
 > $env:ENV_FILE='.test-env'
@@ -111,7 +138,7 @@ For Linux and Mac:                            For Windows:
 $ export SKIP_PEP8=y                          > set SKIP_PEP8=y
 ```
 
-## Manual 
+## Manual
 The site was manually tested in the following browsers:
 
 |     | Browser                                   | OS                          | 
@@ -126,7 +153,7 @@ Testing undertaken:
 |-----------------------------------------------------|-----------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------|-----------------------------------------------------|
 
 Test coverage:
- | Framework
+| Framework
 
 ## Responsiveness Testing
 
@@ -139,18 +166,61 @@ Test coverage:
 ## User
 
 
-## Validator Testing 
+## Validator Testing
 
 The [W3C Nu Html Checker](https://validator.w3.org/nu/) was utilised to check the HTML validity, while the [W3C CSS Validation Service](https://jigsaw.w3.org/css-validator/) was utilised to check the CSS validity with respect to [CSS level 3 + SVG](https://www.w3.org/Style/CSS/current-work.html.)
 
-The
+> **Note:** The following third party artifacts fail the W3C Validator tests: 
+> - [W3C CSS Validation Service](https://jigsaw.w3.org/css-validator/) checks
+>   - [Bootstrap v5.2.3](https://www.jsdelivr.com/package/npm/bootstrap) minified css files
+>   - [Font Awesome](https://github.com/FortAwesome/Font-Awesome) minified css files
+> - [W3C Nu Html Checker](https://validator.w3.org/nu/)
+>   - [django-summernote](https://pypi.org/project/django-summernote/) HTML
+> 
+> Consequently, these elements have been excluded (via test-specific urls) from the page content tested to produce the results in the following table.
 
-node .\scrape.js -b http://127.0.0.1:8000/ -u user1 -p contrib1 -v user-profile
+Where possible content was validated via the URI methods provided by the validators. However this was not possible for pages which required the client to be logged in.
+In this case, the content (accessed via special test urls to exclude Bootstrap and Font Awesome css files) was scraped using [scrape.js](data/scrape.js) and saved in the [doc/test/generated](doc/test/generated) folder.
+The resultant file was used to validate the content via the file upload methods provided by the validators.
 
+| Page                                 | HTML                                                                                                                                                 | HTML Result                                         | CSS                                                                                                                                                                                                       | Scrape args <sup>**</sup><br>(Excluding host & credentials) | Scraped file                                                                                           | CSS Result                                          |
+|--------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|-----------------------------------------------------|
+| Landing                              | [W3C validator](https://validator.w3.org/nu/?doc=https%3A%2F%2Fsoapbox-opinions.herokuapp.com%2F&showsource=yes&showoutline=yes)                     | ![pass](https://badgen.net/badge/checks/Pass/green) | [(Jigsaw) validator](https://jigsaw.w3.org/css-validator/validator?uri=https%3A%2F%2Fsoapbox-opinions.herokuapp.com%2Fval-test&profile=css3svg&usermedium=all&warning=1&vextwarning=&lang=en)             | n/a                                                         | n/a                                                                                                    | ![pass](https://badgen.net/badge/checks/Pass/green) |
+| Signin                               | [W3C validator](https://validator.w3.org/nu/?showsource=yes&showoutline=yes&doc=https%3A%2F%2Fsoapbox-opinions.herokuapp.com%2Faccounts%2Flogin%2F)  | ![pass](https://badgen.net/badge/checks/Pass/green) | [(Jigsaw) validator](https://jigsaw.w3.org/css-validator/validator?uri=https%3A%2F%2Fsoapbox-opinions.herokuapp.com%2Fval-test%2Flogin%2F&profile=css3svg&usermedium=all&warning=1&vextwarning=&lang=en)  | n/a                                                         | n/a                                                                                                    | ![pass](https://badgen.net/badge/checks/Pass/green) |
+| Register                             | [W3C validator](https://validator.w3.org/nu/?showsource=yes&showoutline=yes&doc=https%3A%2F%2Fsoapbox-opinions.herokuapp.com%2Faccounts%2Fsignup%2F) | ![pass](https://badgen.net/badge/checks/Pass/green) | [(Jigsaw) validator](https://jigsaw.w3.org/css-validator/validator?uri=https%3A%2F%2Fsoapbox-opinions.herokuapp.com%2Fval-test%2Fsignup%2F&profile=css3svg&usermedium=all&warning=1&vextwarning=&lang=en) | n/a                                                         | n/a                                                                                                    | ![pass](https://badgen.net/badge/checks/Pass/green) |
+| User profile                         | W3C validator <sup>*</sup>                                                                                                                           | ![pass](https://badgen.net/badge/checks/Pass/green) | (Jigsaw) validator <sup>*</sup>                                                                                                                                                                           | -v user-profile-val-test                                    | [user-profile-val-test.html](generated/user-profile-val-test.html)                                     | ![pass](https://badgen.net/badge/checks/Pass/green) |
+| Logout                               | W3C validator <sup>*</sup>                                                                                                                           | ![pass](https://badgen.net/badge/checks/Pass/green) | (Jigsaw) validator <sup>*</sup>                                                                                                                                                                           | -v logout-val-test                                          | [logout-val-test.html](generated/logout-val-test.html)                                                 | ![pass](https://badgen.net/badge/checks/Pass/green) |
+| Following feed                       | W3C validator <sup>*</sup>                                                                                                                           | ![pass](https://badgen.net/badge/checks/Pass/green) | (Jigsaw) validator <sup>*</sup>                                                                                                                                                                           | -v following-val-test                                       | [following-val-test.html](generated/following-val-test.html)                                           | ![pass](https://badgen.net/badge/checks/Pass/green) |
+| Category feed                        | W3C validator <sup>*</sup>                                                                                                                           | ![pass](https://badgen.net/badge/checks/Pass/green) | (Jigsaw) validator <sup>*</sup>                                                                                                                                                                           | -v category-val-test                                        | [category-val-test.html](generated/category-val-test.html)                                             | ![pass](https://badgen.net/badge/checks/Pass/green) |
+| Read opinion                         | W3C validator <sup>*</sup>                                                                                                                           | ![pass](https://badgen.net/badge/checks/Pass/green) | (Jigsaw) validator <sup>*</sup>                                                                                                                                                                           | -v opinion-read-val-test --io 40                            | [opinion-read-val-test.html](generated/opinion-read-val-test.html)                                     | ![pass](https://badgen.net/badge/checks/Pass/green) |
+| Opinion list                         | W3C validator <sup>*</sup>                                                                                                                           | ![pass](https://badgen.net/badge/checks/Pass/green) | (Jigsaw) validator <sup>*</sup>                                                                                                                                                                           | -v opinions-all-val-test                                    | [opinions-all-val-test.html](generated/opinions-all-val-test.html)                                     | ![pass](https://badgen.net/badge/checks/Pass/green) |
+| New opinion                          | W3C validator <sup>*</sup>                                                                                                                           | ![pass](https://badgen.net/badge/checks/Pass/green) | (Jigsaw) validator <sup>*</sup>                                                                                                                                                                           | -v opinion-new-val-test                                     | [opinion-new-val-test.html](generated/opinion-new-val-test.html)                                       | ![pass](https://badgen.net/badge/checks/Pass/green) |
+| Edit opinion                         | W3C validator <sup>*</sup>                                                                                                                           | ![pass](https://badgen.net/badge/checks/Pass/green) | (Jigsaw) validator <sup>*</sup>                                                                                                                                                                           | -v opinion-edit-val-test --io 33                            | [opinion-edit-val-test.html](generated/opinion-edit-val-test.html)                                     | ![pass](https://badgen.net/badge/checks/Pass/green) |
+| Comment list                         | W3C validator <sup>*</sup>                                                                                                                           | ![pass](https://badgen.net/badge/checks/Pass/green) | (Jigsaw) validator <sup>*</sup>                                                                                                                                                                           | -v comments-all-val-test                                    | [comments-all-val-test.html](generated/comments-all-val-test.html)                                     | ![pass](https://badgen.net/badge/checks/Pass/green) |
+| Moderator review pending list        | W3C validator <sup>*</sup>                                                                                                                           | ![pass](https://badgen.net/badge/checks/Pass/green) | (Jigsaw) validator <sup>*</sup>                                                                                                                                                                           | -v mod-opinions-pending-val-test                            | [mod-opinions-pending-val-test.html](generated/mod-opinions-pending-val-test.html)                     | ![pass](https://badgen.net/badge/checks/Pass/green) |
+| Moderator review pending pre-assign  | W3C validator <sup>*</sup>                                                                                                                           | ![pass](https://badgen.net/badge/checks/Pass/green) | (Jigsaw) validator <sup>*</sup>                                                                                                                                                                           | -v mod-opinion-review-pre-assign-val-test --po 51           | [mod-opinion-review-pre-assign-val-test.html](generated/mod-opinion-review-pre-assign-val-test.html)   | ![pass](https://badgen.net/badge/checks/Pass/green) |
+| Moderator review pending post-assign | W3C validator <sup>*</sup>                                                                                                                           | ![pass](https://badgen.net/badge/checks/Pass/green) | (Jigsaw) validator <sup>*</sup>                                                                                                                                                                           | -v mod-opinion-review-post-assign-val-test --uo 55          | [mod-opinion-review-post-assign-val-test.html](generated/mod-opinion-review-post-assign-val-test.html) | ![pass](https://badgen.net/badge/checks/Pass/green) |
 
-| Page    | HTML                                                                                            | HTML Result                                         | CSS                                                                                                                                                                                 | CSS Result                                          |
-|---------|-------------------------------------------------------------------------------------------------|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------|
-| Landing | [W3C validator](https://validator.w3.org/nu/?doc=https%3A%2F%soapbox-opinions.herokuapp.com%2F) | ![pass](https://badgen.net/badge/checks/Pass/green) | [(Jigsaw) validator](https://jigsaw.w3.org/css-validator/validator?uri=https%3A%2F%soapbox-opinions.herokuapp.com%2F&profile=css3svg&usermedium=all&warning=1&vextwarning=&lang=en) | ![pass](https://badgen.net/badge/checks/Pass/green) |
+<sup>*</sup> Link not available as not being logged results in redirect to login page 
+
+<sup>**</sup> See [Content scraping](#content-scraping) 
+
+### Content scraping
+
+The [scrape.js](data/scrape.js) script may be used to scrape page content.
+It is provided so that content requiring the client to be logged in may be retrieved quickly with minimal manual user input.
+
+From the [data](data) folder run the following
+```bash
+# Help listing
+node .\scrape.js --help
+ 
+# List if views which may be scraped 
+node .\scrape.js -l
+
+# E.g. scrape logout page (replace 'user' and 'password' as appropriate 
+node .\scrape.js -b https://soapbox-opinions.herokuapp.com/ -u user -p password -v logout-val-test
+```
 
 ## Issues
 
