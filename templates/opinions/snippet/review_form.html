@@ -27,8 +27,8 @@
         </div>
 
         <fieldset>
+            <legend>{{ review_form.review_result.label }}</legend>
             <div class="row mb-3">
-                <legend>{{ review_form.review_result.label }}</legend>
                 {% calc 12 '/' review_form.review_result.field.choices as width %}
                 {% for radio in review_form.review_result %}
                     {% array_value review_form.review_result.field.choices forloop.counter0 as radio_choice %}
