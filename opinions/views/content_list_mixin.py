@@ -22,7 +22,7 @@
 #
 from datetime import datetime
 from http import HTTPStatus
-from typing import Type, Callable, Tuple, Optional, List
+from typing import Type, Callable, Tuple, Optional, List, Any
 
 from django.core.paginator import Paginator
 from django.db.models.functions import Lower
@@ -34,7 +34,7 @@ from opinions.constants import (
     OPINION_PAGINATION_ON_EACH_SIDE, OPINION_PAGINATION_ON_ENDS, AUTHOR_QUERY,
     FILTER_QUERY, REORDER_QUERY
 )
-from opinions.enums import SortOrder, QueryArg, PerPage, FilterMode
+from opinions.enums import SortOrder, QueryArg, PerPage, FilterMode, QueryType
 from opinions.query_params import QuerySetParams
 from opinions.views.utils import (
     get_query_args, QueryOption, REORDER_REQ_QUERY_ARGS
@@ -53,6 +53,9 @@ class ContentListMixin(generic.ListView):
         # query args sent for list request which are not always sent with
         # a reorder request
         self.non_reorder_query_args = None
+        # query type
+        self.query_type = QueryType.UNKNOWN
+        self.sub_query_type = None
 
     def initialise(self, non_reorder_args: List[str] = None):
         """
@@ -311,14 +314,44 @@ class ContentListMixin(generic.ListView):
             "'is_list_only_template' method must be overridden by sub "
             "classes")
 
+    @staticmethod
+    def query_value_was_set_as_value(
+            query_params: dict[str, QueryArg], query: str,
+            value: Any) -> bool:
+        """
+        Check if the specified query was set to the specified value
+        :param query_params: query params
+        :param query: query to check
+        :param value: value to check
+        :return: True if query was set to the specified value
+        """
+        query_arg = query_params.get(query, None)
+        return query_arg is not None and query_arg.was_set_to(value)
+
     def is_query_own(self, query_params: dict[str, QueryArg]) -> bool:
         """
-        Check if query is for rhe current user
+        Check if query is for the current user
         :param query_params: query params
         :return: True is current user is author in query
         """
-        author = query_params.get(AUTHOR_QUERY, None)
-        return author is not None and author.value == self.user.username
+        return self.query_value_was_set_as_value(
+            query_params, AUTHOR_QUERY, self.user.username)
+
+    @staticmethod
+    def query_param_was_set(query_params: dict[str, QueryArg]) -> bool:
+        """
+        Check if any query params were set
+        :param query_params: query params
+        :return: True at least 1 query param was set
+        """
+        was_set = True
+        for query, query_arg in query_params.items():
+            was_set = isinstance(query_arg, QueryArg) and query_arg.was_set
+            if was_set:
+                break
+        else:
+            was_set = False
+        return was_set
 
     def get_since(
             self, query_params: dict[str, QueryArg]) -> Optional[datetime]:

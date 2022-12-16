@@ -218,17 +218,21 @@ TAGGED_COUNT_CTX = "tagged_count"
 IS_FOLLOWING_FEED_CTX = "is_following_feed"
 IS_CATEGORY_FEED_CTX = "is_category_feed"
 FOLLOWED_CATEGORIES_CTX = "followed_categories"
+CATEGORY_CTX = 'category'
 
 # general
 TITLE_CTX = 'title'                             # page title
 PAGE_HEADING_CTX = 'page_heading'               # page heading display
 LIST_HEADING_CTX = 'list_heading'               # list heading display
 REPEAT_SEARCH_TERM_CTX = 'repeat_search_term'   # search term for query
+NO_CONTENT_MSG_CTX = 'no_content_msg'           # no content message
+NO_CONTENT_HELP_CTX = 'no_content_help'         # help text when no content
 REDIRECT_CTX = "redirect"
 
 REWRITES_PROP_CTX = 'rewrites'
 ELEMENT_ID_CTX = 'element_id'
 HTML_CTX = 'html'
+MESSAGE_CTX = 'msg'
 
 COMMENT_DATA_CTX = "comment_data"
 COMMENT_OFFSET_CTX = "comment_offset"

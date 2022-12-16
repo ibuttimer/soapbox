@@ -20,7 +20,7 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from enum import Enum
+from enum import Enum, auto
 from string import capwords
 from typing import Any, Callable, TypeVar, Optional
 
@@ -597,3 +597,19 @@ class FilterMode(ChoiceArg):
 
 
 FilterMode.DEFAULT = FilterMode.ALL
+
+
+class QueryType(Enum):
+    """ Enum representing different query types """
+    UNKNOWN = auto()
+
+    DRAFT_OPINIONS = auto()
+    PREVIEW_OPINIONS = auto()
+    IN_REVIEW_OPINIONS = auto()
+    ALL_USERS_OPINIONS = auto()
+    PINNED_OPINIONS = auto()
+    FOLLOWED_NEW_OPINIONS = auto()
+    FOLLOWED_ALL_OPINIONS = auto()
+    ALL_OPINIONS = auto()
+    CATEGORY_FEED_OPINIONS = auto()
+    FOLLOWED_FEED_OPINIONS = auto()

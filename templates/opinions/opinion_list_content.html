@@ -17,18 +17,7 @@
     <var id="var--repeat-search-term" hidden>{{ repeat_search_term }}</var>
 
     {% if paginator.count == 0 %}
-        <div class="row mb-3">
-            <div class="col-12 mt-2 d-flex justify-content-center">
-                <div class="card div__no-content-card">
-                    <div class="text-center">
-                        <img src="{% static 'img/no-speak-monkey-148893.png' %}" class="card-img-top img__no-content" alt="speak no evil monkey image">
-                    </div>
-                    <div class="card-body">
-                        <h4 class="card-text text-center">No opinions found.</h4>
-                    </div>
-                </div>
-            </div>
-        </div>
+        {% include "opinions/snippet/no_content.html" %}
     {% else %}
         <div class="row">
             <div class="col-12 mt-2">
@@ -48,8 +37,8 @@
                                                 </h4>
                                             </a>
                                             {% if is_development and not is_test %}
-                                            {# display id for dev purposes #}
-                                            <span class="badge rounded-pill text-bg-warning">{{ opinion.id }}</span>
+                                                {# display id for dev purposes #}
+                                                <span class="badge rounded-pill text-bg-warning">{{ opinion.id }}</span>
                                             {% endif %}
                                         </div>
                                         <div id="categories_{{ forloop.counter }}" class="col-sm-3 col-10 mt-0 mb-0">

@@ -27,6 +27,7 @@ from string import capwords
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import QuerySet
 from django.http import HttpRequest
+from django.template.loader import render_to_string
 
 from opinions.comment_data import get_popularity_levels
 from opinions.constants import (
@@ -35,12 +36,13 @@ from opinions.constants import (
     REPEAT_SEARCH_TERM_CTX, LIST_HEADING_CTX, PAGE_HEADING_CTX, TITLE_CTX,
     POPULARITY_CTX, OPINION_LIST_CTX, STATUS_BG_CTX, FILTER_QUERY,
     REVIEW_QUERY, IS_REVIEW_CTX, IS_FOLLOWING_FEED_CTX, IS_CATEGORY_FEED_CTX,
-    FOLLOWED_CATEGORIES_CTX, CATEGORY_QUERY, ALL_CATEGORIES
+    FOLLOWED_CATEGORIES_CTX, CATEGORY_QUERY, ALL_CATEGORIES,
+    NO_CONTENT_HELP_CTX, NO_CONTENT_MSG_CTX, USER_CTX, CATEGORY_CTX
 )
 from opinions.data_structures import OpinionData
 from opinions.enums import (
     QueryArg, QueryStatus, OpinionSortOrder, Pinned,
-    SortOrder, FilterMode
+    SortOrder, FilterMode, QueryType
 )
 from opinions.models import Opinion
 from opinions.queries import (
@@ -85,6 +87,7 @@ class OpinionList(LoginRequiredMixin, ContentListMixin):
     model = Opinion
 
     def __init__(self):
+        super().__init__()
         # response template to use
         self.response_template = ListTemplate.FULL_TEMPLATE
 
@@ -104,6 +107,35 @@ class OpinionList(LoginRequiredMixin, ContentListMixin):
         :return: dict of query args
         """
         return OPINION_LIST_QUERY_ARGS
+
+    def validate_queryset(self, query_params: dict[str, QueryArg]):
+        """
+        Validate the query params to get the list of items for this view.
+        (Subclasses may validate and modify the query params by overriding
+         this function)
+        :param query_params: request query
+        """
+        self.query_type = QueryType.UNKNOWN
+        if self.is_query_own(query_params):
+            # check author=<current user>&status=<?>
+            for value, query, query_type in [
+                (QueryStatus.DRAFT, STATUS_QUERY, QueryType.DRAFT_OPINIONS),
+                (QueryStatus.PREVIEW, STATUS_QUERY, QueryType.PREVIEW_OPINIONS),
+                (QueryStatus.ALL, STATUS_QUERY, QueryType.ALL_USERS_OPINIONS),
+            ]:
+                if self.query_value_was_set_as_value(
+                        query_params, STATUS_QUERY, value):
+                    self.query_type = query_type
+                    break
+
+        # check pinned=<?>
+        elif self.query_value_was_set_as_value(
+                    query_params, PINNED_QUERY, Pinned.YES):
+            self.query_type = QueryType.PINNED_OPINIONS
+
+        elif not self.query_param_was_set(query_params):
+            # no query params, basic all opinions query
+            self.query_type = QueryType.ALL_OPINIONS
 
     def set_extra_context(self, query_params: dict[str, QueryArg]):
         """
@@ -265,6 +297,53 @@ class OpinionList(LoginRequiredMixin, ContentListMixin):
             context[PAGE_HEADING_CTX] = context[LIST_HEADING_CTX]
             del context[LIST_HEADING_CTX]
 
+        return self.add_no_content_context(context)
+
+    def add_no_content_context(self, context: dict) -> dict:
+        """
+        Add no content-specific info to context
+        :param context: context
+        :return: context
+        """
+        if len(context[OPINION_LIST_CTX]) == 0:
+            context[NO_CONTENT_MSG_CTX] = 'No opinions found.'
+
+            template = None
+            template_ctx = None
+            if self.query_type == QueryType.ALL_OPINIONS:
+                template = "all_opinions_no_content_msg.html"
+            elif self.query_type == QueryType.ALL_USERS_OPINIONS:
+                template = "my_opinions_no_content_msg.html"
+            elif self.query_type == QueryType.DRAFT_OPINIONS:
+                template = "draft_opinions_no_content_msg.html"
+            elif self.query_type == QueryType.PREVIEW_OPINIONS:
+                template = "preview_opinions_no_content_msg.html"
+                template_ctx = {
+                    USER_CTX: self.user
+                }
+            elif self.query_type == QueryType.PINNED_OPINIONS:
+                template = "pinned_no_content.html"
+
+            self.render_no_content_help(
+                context, template, template_ctx=template_ctx)
+
+        return context
+
+    @staticmethod
+    def render_no_content_help(
+            context: dict, template: str, template_ctx: dict = None) -> dict:
+        """
+        Add no content-specific help to context
+        :param context: context
+        :param template: template filename
+        :param template_ctx: template context
+        :return: context
+        """
+        if template:
+            context[NO_CONTENT_HELP_CTX] = render_to_string(
+                app_template_path(
+                    OPINIONS_APP_NAME, "messages", template),
+                context=template_ctx)
         return context
 
     def is_list_only_template(self) -> bool:
@@ -467,6 +546,38 @@ class OpinionFollowed(OpinionList):
             # not following anyone
             self.queryset = Opinion.objects.none()
 
+    def validate_queryset(self, query_params: dict[str, QueryArg]):
+        """
+        Validate the query params to get the list of items for this view.
+        (Subclasses may validate and modify the query params by overriding
+         this function)
+        :param query_params: request query
+        """
+        self.query_type = QueryType.UNKNOWN
+        for value, query, query_type in [
+            (FilterMode.NEW, FILTER_QUERY, QueryType.FOLLOWED_NEW_OPINIONS),
+            (FilterMode.ALL, FILTER_QUERY, QueryType.FOLLOWED_ALL_OPINIONS),
+        ]:
+            if self.query_value_was_set_as_value(
+                    query_params, FILTER_QUERY, value):
+                self.query_type = query_type
+                break
+
+    def add_no_content_context(self, context: dict) -> dict:
+        """
+        Add no content-specific info to context
+        :param context: context
+        :return: context
+        """
+        super().add_no_content_context(context)
+        if len(context[OPINION_LIST_CTX]) == 0:
+            self.render_no_content_help(
+                context, "followed_new_opinions_no_content_msg.html"
+                if self.query_type == QueryType.FOLLOWED_NEW_OPINIONS else
+                "followed_all_opinions_no_content_msg.html"
+            )
+
+        return context
 
 class OpinionInReview(OpinionFollowed):
     """
@@ -524,6 +635,30 @@ class OpinionInReview(OpinionFollowed):
         return review_content_by_status(Opinion, statuses, since=since,
                                         as_params=True)
 
+    def validate_queryset(self, query_params: dict[str, QueryArg]):
+        """
+        Validate the query params to get the list of items for this view.
+        (Subclasses may validate and modify the query params by overriding
+         this function)
+        :param query_params: request query
+        """
+        self.query_type = QueryType.UNKNOWN
+        if self.is_query_own(query_params):
+            self.query_type = QueryType.PREVIEW_OPINIONS
+
+    def add_no_content_context(self, context: dict) -> dict:
+        """
+        Add no content-specific info to context
+        :param context: context
+        :return: context
+        """
+        super().add_no_content_context(context)
+        if len(context[OPINION_LIST_CTX]) == 0:
+            self.render_no_content_help(
+                context, "review_opinions_no_content_msg.html")
+
+        return context
+
 
 class OpinionFollowedFeed(OpinionFollowed):
     """
@@ -573,6 +708,28 @@ class OpinionFollowedFeed(OpinionFollowed):
             IS_CATEGORY_FEED_CTX: False
         })
 
+    def validate_queryset(self, query_params: dict[str, QueryArg]):
+        """
+        Validate the query params to get the list of items for this view.
+        (Subclasses may validate and modify the query params by overriding
+         this function)
+        :param query_params: request query
+        """
+        self.query_type = QueryType.UNKNOWN
+        if self.is_query_own(query_params):
+            self.query_type = QueryType.FOLLOWED_FEED_OPINIONS
+
+    def add_no_content_context(self, context: dict) -> dict:
+        """
+        Add no content-specific info to context
+        :param context: context
+        :return: context
+        """
+        super().add_no_content_context(context)
+        if len(context[OPINION_LIST_CTX]) == 0:
+            self.render_no_content_help(context, "following_no_content.html")
+
+        return context
 
 class OpinionCategoryFeed(OpinionList):
     """
@@ -643,6 +800,8 @@ class OpinionCategoryFeed(OpinionList):
         if not selected_category:
             selected_category = ALL_CATEGORIES.lower()
 
+        self.sub_query_type = selected_category
+
         def cat_obj(name: str) -> object:
             return {
                 'name': name,
@@ -659,3 +818,34 @@ class OpinionCategoryFeed(OpinionList):
             IS_CATEGORY_FEED_CTX: True,
             FOLLOWED_CATEGORIES_CTX: categories,
         })
+
+    def validate_queryset(self, query_params: dict[str, QueryArg]):
+        """
+        Validate the query params to get the list of items for this view.
+        (Subclasses may validate and modify the query params by overriding
+         this function)
+        :param query_params: request query
+        """
+        self.query_type = QueryType.CATEGORY_FEED_OPINIONS
+
+    def add_no_content_context(self, context: dict) -> dict:
+        """
+        Add no content-specific info to context
+        :param context: context
+        :return: context
+        """
+        super().add_no_content_context(context)
+        if len(context[OPINION_LIST_CTX]) == 0:
+            if self.query_type == QueryType.CATEGORY_FEED_OPINIONS:
+                if self.sub_query_type == ALL_CATEGORIES.lower():
+                    template = "all_opinions_no_content_msg.html"
+                    template_ctx = None
+                else:
+                    template = "category_opinions_no_content_msg.html"
+                    template_ctx = {
+                        CATEGORY_CTX: capwords(self.sub_query_type)
+                    }
+                self.render_no_content_help(
+                    context, template, template_ctx=template_ctx)
+
+        return context
