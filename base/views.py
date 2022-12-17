@@ -47,3 +47,18 @@ def get_home(request: HttpRequest) -> HttpResponse:
     return render(request, app_template_path(BASE_APP_NAME, "home.html")) \
         if request.user and request.user.is_authenticated else \
         get_landing(request)
+
+def get_help(request: HttpRequest) -> HttpResponse:
+    """
+    Render help page
+    :param request: request
+    :return: response
+    """
+    from opinions.help import get_search_terms_help
+
+    context = {}
+    context.update(get_search_terms_help())
+    return render(
+        request, app_template_path(BASE_APP_NAME, "help.html"),
+        context=context
+    )

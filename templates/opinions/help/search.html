@@ -1,0 +1,55 @@
+{% load i18n %}
+
+<section>
+    <div class="row mt-2">
+        <div class="col-12">
+            <h3 id="id--search-help">{% trans "Search" %}</h3>
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-12">
+            <h4 id="basic-search-help">{% trans "Basic Search" %}</h4>
+            <p>
+                Enter a word or phrase in the search box in the navigation bar at the top of the screen,
+                and click <em>Search</em> to find opinions containing the word or phrase.
+            </p>
+        </div>
+    </div>
+    <div class="row mt-2">
+        <div class="col-12">
+            <h4 id="advanced-search-help">{% trans "Advanced Search" %}</h4>
+            <p>
+                Enter search parameters in the search box in the navigation bar at the top of the screen,
+                and click <em>Search</em> to find opinions matching the entered parameters.
+            </p>
+            <p>
+                <b>Note:</b> The search term must be enclosed in quotes, e.g. <em>"seeking this"</em>.
+            </p>
+            <p>
+                <b>Note:</b> Date search term must be in day-month-year format and may be separated by {{ date_separators }}, e.g. <em>"{{ date }}"</em>.
+            </p>
+            <p>The supported search parameters are:</p>
+            <div class="table-responsive-md">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Parameter</th>
+                            <th scope="col">Description</th>
+                            <th scope="col">Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for term_row in search_terms %}
+                        <tr>
+                            <th scope="row">{{ term_row.term }}</th>
+                            <td>{{ term_row.desc }}</td>
+                            <td>{{ term_row.example }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>

@@ -86,17 +86,17 @@ class ContentListMixin(generic.ListView):
         query_params = self.req_query_args()(request)
         self.validate_queryset(query_params)
 
-        # set context extra content
-        self.set_extra_context(query_params)
-
-        # select sort order options to display
-        self.set_sort_order_options(query_params)
-
         # set queryset
         query_set_params, query_kwargs = \
             self.set_queryset(query_params)
         self.apply_queryset_param(
             query_set_params, **query_kwargs if query_kwargs else {})
+
+        # set context extra content
+        self.set_extra_context(query_params, query_set_params)
+
+        # select sort order options to display
+        self.set_sort_order_options(query_params)
 
         # set ordering
         self.set_ordering(query_params)
@@ -152,10 +152,12 @@ class ContentListMixin(generic.ListView):
         """
         pass
 
-    def set_extra_context(self, query_params: dict[str, QueryArg]):
+    def set_extra_context(self, query_params: dict[str, QueryArg],
+                          query_set_params: QuerySetParams):
         """
         Set the context extra content to be added to context
         :param query_params: request query
+        :param query_set_params: QuerySetParams
         """
         raise NotImplementedError(
             "'set_extra_content' method must be overridden by sub classes")

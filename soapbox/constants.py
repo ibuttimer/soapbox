@@ -40,9 +40,11 @@ DELETE = 'DELETE'
 
 # Base routes related
 HOME_URL = "/"
+HELP_URL = append_slash("help")
 FEED_URL = append_slash("feed")
 
 HOME_ROUTE_NAME = "home"
+HELP_ROUTE_NAME = "help"
 LANDING_ROUTE_NAME = "landing"
 
 # Admin routes related

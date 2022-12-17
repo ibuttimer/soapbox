@@ -14,18 +14,8 @@
     <var id="var--repeat-search-term" hidden>{{ repeat_search_term }}</var>
 
     {% if paginator.count == 0 %}
-        <div class="row">
-            <div class="col-12 mt-2 d-flex justify-content-center">
-                <div class="card div__no-content-card">
-                    <img src="{% static 'img/no-speak-monkey-148893.png' %}" class="card-img-top" alt="speak no evil monkey image">
-                    <div class="card-body">
-                        <h4 class="card-text text-center">No comments found.</h4>
-                    </div>
-                </div>
-            </div>
-        </div>
+        {% include "opinions/snippet/no_content.html" %}
     {% else %}
-
         {% for comment_data in comment_list %}
             <div class="row">
                 <div class="col-12 mt-2">

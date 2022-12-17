@@ -611,5 +611,6 @@ class QueryType(Enum):
     FOLLOWED_NEW_OPINIONS = auto()
     FOLLOWED_ALL_OPINIONS = auto()
     ALL_OPINIONS = auto()
+    SEARCH_OPINIONS = auto()
     CATEGORY_FEED_OPINIONS = auto()
     FOLLOWED_FEED_OPINIONS = auto()

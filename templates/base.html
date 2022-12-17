@@ -79,7 +79,7 @@
                 <div class="collapse navbar-collapse" id="navbarToggler">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link active" aria-current="page" href="/">Home</a>
+                            <a class="nav-link active" aria-current="page" href="{% url 'home' %}">Home</a>
                         </li>
                         {% if user.is_authenticated %}
                             {# --- opinion menu --- #}
@@ -193,6 +193,10 @@
                                 </li>
                             {% endif %}
                         {% endif %}
+                        {# --- help --- #}
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="{% url 'help' %}">Help</a>
+                        </li>
                     </ul>
                     <form class="d-flex" role="search" method="get" action="{% url 'opinions:opinion_search' %}">
                         <input class="form-control me-2" type="search" placeholder="Search opinions" aria-label="Search" name="search">

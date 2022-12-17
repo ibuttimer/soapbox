@@ -37,7 +37,8 @@ from opinions.constants import (
     POPULARITY_CTX, OPINION_LIST_CTX, STATUS_BG_CTX, FILTER_QUERY,
     REVIEW_QUERY, IS_REVIEW_CTX, IS_FOLLOWING_FEED_CTX, IS_CATEGORY_FEED_CTX,
     FOLLOWED_CATEGORIES_CTX, CATEGORY_QUERY, ALL_CATEGORIES,
-    NO_CONTENT_HELP_CTX, NO_CONTENT_MSG_CTX, USER_CTX, CATEGORY_CTX
+    NO_CONTENT_HELP_CTX, NO_CONTENT_MSG_CTX, USER_CTX, CATEGORY_CTX,
+    LIST_SUB_HEADING_CTX, MESSAGE_CTX
 )
 from opinions.data_structures import OpinionData
 from opinions.enums import (
@@ -137,10 +138,12 @@ class OpinionList(LoginRequiredMixin, ContentListMixin):
             # no query params, basic all opinions query
             self.query_type = QueryType.ALL_OPINIONS
 
-    def set_extra_context(self, query_params: dict[str, QueryArg]):
+    def set_extra_context(self, query_params: dict[str, QueryArg],
+                          query_set_params: QuerySetParams):
         """
         Set the context extra content to be added to context
         :param query_params: request query
+        :param query_set_params: QuerySetParams
         """
         # build search term string from values that were set
         # inherited from ContextMixin via ListView
@@ -366,19 +369,39 @@ class OpinionSearch(OpinionList):
         """
         return OPTION_SEARCH_QUERY_ARGS
 
-    def set_extra_context(self, query_params: dict[str, QueryArg]):
+    def set_extra_context(self, query_params: dict[str, QueryArg],
+                          query_set_params: QuerySetParams):
         """
         Set the context extra content to be added to context
         :param query_params: request query
+        :param query_set_params: QuerySetParams
         """
         # build search term string from values that were set
-        search_term = ', '.join([
-            f'{q}: {v.value}'
-            for q, v in query_params.items() if v.was_set
-        ])
+
+        # build search term string from used terms
+        search_term = ', '.join(query_set_params.search_terms)
+        invalid_terms = None if not query_set_params.invalid_terms else \
+            ', '.join(query_set_params.invalid_terms)
+
+        if not invalid_terms:
+            invalid_terms = query_params[SEARCH_QUERY].value
+            for term in query_set_params.search_terms:
+                invalid_terms = invalid_terms.replace(term, '')
+            invalid_terms = invalid_terms.strip()
+
+        if invalid_terms:
+            invalid_terms = render_to_string(
+                app_template_path(
+                    OPINIONS_APP_NAME, "messages",
+                    "invalid_search_terms_msg.html"),
+                context={
+                    MESSAGE_CTX: invalid_terms,
+                })
+
         self.extra_context = {
             TITLE_CTX: 'Opinion search',
-            LIST_HEADING_CTX: f"Results of {search_term}",
+            LIST_HEADING_CTX: f"Results of <em>{search_term}</em>",
+            LIST_SUB_HEADING_CTX: invalid_terms,
             REPEAT_SEARCH_TERM_CTX:
                 f'{SEARCH_QUERY}='
                 f'{query_params[SEARCH_QUERY].value}'
@@ -457,6 +480,28 @@ class OpinionSearch(OpinionList):
         else:
             # invalid query term entered
             self.queryset = Opinion.objects.none()
+
+    def validate_queryset(self, query_params: dict[str, QueryArg]):
+        """
+        Validate the query params to get the list of items for this view.
+        (Subclasses may validate and modify the query params by overriding
+         this function)
+        :param query_params: request query
+        """
+        self.query_type = QueryType.SEARCH_OPINIONS
+
+    def add_no_content_context(self, context: dict) -> dict:
+        """
+        Add no content-specific info to context
+        :param context: context
+        :return: context
+        """
+        super().add_no_content_context(context)
+        if len(context[OPINION_LIST_CTX]) == 0:
+            self.render_no_content_help(
+                context, "see_search_terms_help_msg.html")
+
+        return context
 
 
 class OpinionFollowed(OpinionList):
@@ -591,12 +636,14 @@ class OpinionInReview(OpinionFollowed):
         """
         return REVIEW_OPINION_LIST_QUERY_ARGS
 
-    def set_extra_context(self, query_params: dict[str, QueryArg]):
+    def set_extra_context(self, query_params: dict[str, QueryArg],
+                          query_set_params: QuerySetParams):
         """
         Set the context extra content to be added to context
         :param query_params: request query
+        :param query_set_params: QuerySetParams
         """
-        super().set_extra_context(query_params)
+        super().set_extra_context(query_params, query_set_params)
         self.extra_context[IS_REVIEW_CTX] = True
 
     def get_title_heading(self, query_params: dict[str, QueryArg]) -> dict:
@@ -697,12 +744,14 @@ class OpinionFollowedFeed(OpinionFollowed):
             LIST_HEADING_CTX: "Following Feed",
         }
 
-    def set_extra_context(self, query_params: dict[str, QueryArg]):
+    def set_extra_context(self, query_params: dict[str, QueryArg],
+                          query_set_params: QuerySetParams):
         """
         Set the context extra content to be added to context
+        :param query_set_params:
         :param query_params: request query
         """
-        super().set_extra_context(query_params)
+        super().set_extra_context(query_params, None)
         self.extra_context.update({
             IS_FOLLOWING_FEED_CTX: True,
             IS_CATEGORY_FEED_CTX: False
@@ -789,12 +838,14 @@ class OpinionCategoryFeed(OpinionList):
             LIST_HEADING_CTX: "Category Feed",
         }
 
-    def set_extra_context(self, query_params: dict[str, QueryArg]):
+    def set_extra_context(self, query_params: dict[str, QueryArg],
+                          query_set_params: QuerySetParams):
         """
         Set the context extra content to be added to context
+        :param query_set_params:
         :param query_params: request query
         """
-        super().set_extra_context(query_params)
+        super().set_extra_context(query_params, None)
 
         selected_category = self.category_name_lower(query_params)
         if not selected_category:

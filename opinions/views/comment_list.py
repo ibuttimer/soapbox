@@ -45,7 +45,8 @@ from opinions.constants import (
     PAGE_HEADING_CTX, TITLE_CTX, HTML_CTX, TEMPLATE_COMMENT_REACTIONS,
     TEMPLATE_REACTION_CTRLS, REVIEW_QUERY, IS_REVIEW_CTX, COMMENT_OFFSET_CTX,
     COMMENT_ID_ROUTE_NAME, COMMENT_SLUG_ROUTE_NAME,
-    OPINION_ID_ROUTE_NAME, REFERENCE_QUERY, PK_PARAM_NAME, SLUG_PARAM_NAME
+    OPINION_ID_ROUTE_NAME, REFERENCE_QUERY, PK_PARAM_NAME, SLUG_PARAM_NAME,
+    NO_CONTENT_MSG_CTX, NO_CONTENT_HELP_CTX, MESSAGE_CTX
 )
 from opinions.contexts.comment import comments_list_context_for_opinion
 from opinions.enums import QueryArg, QueryStatus, CommentSortOrder, SortOrder
@@ -91,6 +92,7 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
     model = Comment
 
     def __init__(self):
+        super().__init__()
         # response template to use
         self.response_template = ListTemplate.FULL_TEMPLATE
 
@@ -111,10 +113,12 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
         """
         return COMMENT_LIST_QUERY_ARGS
 
-    def set_extra_context(self, query_params: dict[str, QueryArg]):
+    def set_extra_context(self, query_params: dict[str, QueryArg],
+                          query_set_params: QuerySetParams):
         """
         Set the context extra content to be added to context
         :param query_params: request query
+        :param query_set_params: QuerySetParams
         """
         # build search term string from values that were set
         # inherited from ContextMixin via ListView
@@ -259,6 +263,17 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
             context[PAGE_HEADING_CTX] = context[LIST_HEADING_CTX]
             del context[LIST_HEADING_CTX]
 
+        return self.add_no_content_context(context)
+
+    def add_no_content_context(self, context: dict) -> dict:
+        """
+        Add no content-specific info to context
+        :param context: context
+        :return: context
+        """
+        if len(context[COMMENT_LIST_CTX]) == 0:
+            context[NO_CONTENT_MSG_CTX] = 'No comments found.'
+
         return context
 
     def is_list_only_template(self) -> bool:
@@ -281,10 +296,12 @@ class CommentSearch(CommentList):
         """
         return COMMENT_SEARCH_QUERY_ARGS
 
-    def set_extra_context(self, query_params: dict[str, QueryArg]):
+    def set_extra_context(self, query_params: dict[str, QueryArg],
+                          query_set_params: QuerySetParams):
         """
         Set the context extra content to be added to context
         :param query_params: request query
+        :param query_set_params: QuerySetParams
         """
         # build search term string from values that were set
         search_term = ', '.join([
@@ -386,12 +403,14 @@ class CommentInReview(CommentList):
         """
         return REVIEW_COMMENT_LIST_QUERY_ARGS
 
-    def set_extra_context(self, query_params: dict[str, QueryArg]):
+    def set_extra_context(self, query_params: dict[str, QueryArg],
+                          query_set_params: QuerySetParams):
         """
         Set the context extra content to be added to context
         :param query_params: request query
+        :param query_set_params: QuerySetParams
         """
-        super().set_extra_context(query_params)
+        super().set_extra_context(query_params, query_set_params)
         self.extra_context[IS_REVIEW_CTX] = True
 
     def get_title_heading(self, query_params: dict[str, QueryArg]) -> dict:
@@ -468,6 +487,24 @@ class CommentInReview(CommentList):
         else:
             # not following anyone
             self.queryset = Comment.objects.none()
+
+    def add_no_content_context(self, context: dict) -> dict:
+        """
+        Add no content-specific info to context
+        :param context: context
+        :return: context
+        """
+        super().add_no_content_context(context)
+        if len(context[COMMENT_LIST_CTX]) == 0:
+            context[NO_CONTENT_HELP_CTX] = render_to_string(
+                app_template_path(
+                    OPINIONS_APP_NAME, "messages",
+                    "any_message.html"),
+                context={
+                    MESSAGE_CTX: 'Nothing to do here.'
+                })
+
+        return context
 
 
 @login_required
