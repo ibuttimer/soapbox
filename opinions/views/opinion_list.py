@@ -512,10 +512,10 @@ class OpinionFollowed(OpinionList):
     QS_PARAMS = 'qs_params'
 
     title_headings = {
-        FilterMode.ALL: ('Tagged author opinions',
-                         'All Opinions By Tagged Authors'),
-        FilterMode.NEW: ('New tagged author opinions',
-                         'New Opinions By Tagged Authors')
+        FilterMode.ALL: ('Followed Author Opinions',
+                         'All Opinions By Followed Authors'),
+        FilterMode.NEW: ('New Followed Author Opinions',
+                         'New Opinions By Followed Authors')
     }
 
     def valid_req_query_args(self) -> List[QueryOption]:

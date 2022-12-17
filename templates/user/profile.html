@@ -89,7 +89,7 @@
                 {% form_field form 'categories' as categories_field %}
                 <div class="row mb-3">
                     <div class="col-sm-2 text-start">
-                        <label for="{{ categories_field.auto_id }}" class="form-label">{{ categories_field.label }}</label>
+                        <label id="followed-categories" for="{{ categories_field.auto_id }}" class="form-label">{{ categories_field.label }}</label>
                     </div>
                     <div class="col-sm-10">
                         {% if read_only %}

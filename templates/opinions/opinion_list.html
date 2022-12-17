@@ -20,13 +20,13 @@
 {% endblock extra_css %}
 
 {% block content %}
-{% if page_heading %}
 <div class="row mt-2">
+{% if page_heading %}
     <div class="col-12 text-center">
         <h3>{{ page_heading | safe }}</h3>
     </div>
-</div>
 {% endif %}
+</div>
 
 <div class="row flex-grow-1 overflow-auto d-flex justify-content-center">
     {# sort order select #}

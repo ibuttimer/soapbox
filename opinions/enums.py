@@ -52,6 +52,7 @@ TypeViewMode = TypeVar("ViewMode", bound="ViewMode")
 TypeQueryArg = TypeVar("QueryArg", bound="QueryArg")
 
 
+# https://www.compart.com/en/unicode/block/U+2190
 _ARROW_UP = "\N{Upwards Paired Arrows}"
 _ARROW_DOWN = "\N{Downwards Paired Arrows}"
 

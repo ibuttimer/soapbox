@@ -62,6 +62,8 @@ class ReactionsList:
     pin: Reaction          # pin reaction
     unpin: Reaction        # unpin reaction
     report: Reaction       # report reaction
+    delete: Reaction       # delete reaction
+    edit: Reaction         # edit reaction
 
     AGREE_FIELD = ReactionStatus.AGREE.arg
     DISAGREE_FIELD = ReactionStatus.DISAGREE.arg

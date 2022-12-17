@@ -28,8 +28,12 @@ from opinions.constants import (
     STATUS_QUERY, SEARCH_TERMS_CTX, TITLE_QUERY, CONTENT_QUERY, AUTHOR_QUERY,
     CATEGORY_QUERY, PINNED_QUERY, HIDDEN_QUERY, ON_OR_AFTER_QUERY,
     ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY, EQUAL_QUERY,
-    DATE_SEPARATORS_CTX, DATE_CTX
+    DATE_SEPARATORS_CTX, DATE_CTX, REACTION_ITEMS_CTX
 )
+
+# https://www.compart.com/en/unicode/block/U+2700
+_CHECK_MARK = "\N{Heavy Check Mark}"
+_X_MARK = "\N{Heavy Ballot X}"
 
 
 @dataclass
@@ -129,4 +133,61 @@ def get_search_terms_help() -> dict:
         DATE_SEPARATORS_CTX:
             f"{', '.join(date_separators[:-1])} or {date_separators[-1]}",
         DATE_CTX: format_now(DATE_SEPARATORS[0])
+    }
+
+
+@dataclass
+class ReactionItem:
+    item: str
+    desc: str
+    opinion: str
+    comment: str
+
+
+def get_reactions_help() -> dict:
+    """
+    Get the reactions help
+    :return:
+    """
+    from opinions.reactions import \
+        OPINION_REACTIONS_LIST, COMMENT_REACTIONS_LIST, \
+        ReactionsList
+
+    def get_list(field):
+        return OPINION_REACTIONS_LIST \
+            if not getattr(OPINION_REACTIONS_LIST, field).is_empty else \
+            COMMENT_REACTIONS_LIST
+
+    def get_attr(field: str, listing: ReactionsList = None):
+        return getattr(listing if listing else get_list(field), field, None)
+
+    def get_icon(field: str, listing: ReactionsList = None):
+        reaction = get_attr(field, listing if listing else get_list(field))
+        return getattr(reaction, 'icon')
+
+    def get_desc(field: str):
+        opinion = get_attr(field, OPINION_REACTIONS_LIST)
+        comment = get_attr(field, COMMENT_REACTIONS_LIST)
+        if opinion:
+            opinion = getattr(opinion, 'aria')
+        if comment:
+            comment = getattr(comment, 'aria')
+        return f'{opinion} / {comment}' if opinion and comment else \
+            opinion if opinion else comment
+
+    def get_mark(field: str, listing: ReactionsList = None):
+        return _X_MARK if getattr(
+            listing if listing else get_list(field), field).is_empty \
+            else _CHECK_MARK
+
+    reactions = [
+        ReactionItem(
+            get_icon(reaction), get_desc(reaction),
+            get_mark(reaction, OPINION_REACTIONS_LIST),
+            get_mark(reaction, COMMENT_REACTIONS_LIST),
+        ) for reaction in ReactionsList.ALL_FIELDS
+    ]
+
+    return {
+        REACTION_ITEMS_CTX: reactions
     }

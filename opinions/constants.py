@@ -224,6 +224,7 @@ CATEGORY_CTX = 'category'
 SEARCH_TERMS_CTX = 'search_terms'
 DATE_SEPARATORS_CTX = 'date_separators'
 DATE_CTX = 'date'
+REACTION_ITEMS_CTX = 'reaction_items'
 
 # general
 TITLE_CTX = 'title'                             # page title

@@ -54,10 +54,11 @@ def get_help(request: HttpRequest) -> HttpResponse:
     :param request: request
     :return: response
     """
-    from opinions.help import get_search_terms_help
+    from opinions.help import get_search_terms_help, get_reactions_help
 
     context = {}
     context.update(get_search_terms_help())
+    context.update(get_reactions_help())
     return render(
         request, app_template_path(BASE_APP_NAME, "help.html"),
         context=context
