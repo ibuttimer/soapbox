@@ -38,7 +38,8 @@ from opinions.models import Opinion, HideStatus, PinStatus
 from opinions.query_params import QuerySetParams, choice_arg_query
 from opinions.search import (
     regex_matchers, TERM_GROUP, DATE_QUERY_YR_GROUP, DATE_QUERY_MTH_GROUP,
-    DATE_QUERY_DAY_GROUP, MARKER_CHARS, DATE_QUERY_GROUP, regex_date_matchers
+    DATE_QUERY_DAY_GROUP, MARKER_CHARS, DATE_QUERY_GROUP, regex_date_matchers,
+    KEY_TERM_GROUP, DATE_KEY_TERM_GROUP
 )
 from opinions.views.utils import DATE_QUERIES, SEARCH_ONLY_QUERIES
 from user.models import User
@@ -84,13 +85,13 @@ NON_LOOKUP_ARGS = [
 ]
 
 SEARCH_REGEX = [
-    # regex,            query param, regex match group
-    (REGEX_MATCHERS[q], q,           TERM_GROUP)
+    # regex,            query param, regex match group, key & regex match grp
+    (REGEX_MATCHERS[q], q,           TERM_GROUP,        KEY_TERM_GROUP)
     for q in NON_DATE_QUERIES
 ]
 SEARCH_REGEX.extend([
-    # regex,            query param, regex match group
-    (REGEX_MATCHERS[q], q,           DATE_QUERY_GROUP)
+    # regex,            query param, regex match group, key & regex match grp
+    (REGEX_MATCHERS[q], q,           DATE_QUERY_GROUP,  DATE_KEY_TERM_GROUP)
     for q in DATE_QUERIES
 ])
 
@@ -159,9 +160,10 @@ def get_search_term(
     if value is None:
         return query_set_params
 
-    for regex, query, group in SEARCH_REGEX:
+    for regex, query, group, key_val_group in SEARCH_REGEX:
         match = regex.match(value)
         if match:
+            success = True
             if query == CATEGORY_QUERY:
                 # need inner queryset to get list of categories with names
                 # like the search term and then look for opinions with those
@@ -180,14 +182,14 @@ def get_search_term(
                 # need to filter/exclude by list of opinions that the user has
                 # hidden
                 hidden = Hidden.from_arg(match.group(group).lower())
-                get_hidden_query(query_set_params, hidden, user)
+                success = get_hidden_query(query_set_params, hidden, user)
             elif query == PINNED_QUERY:
                 # need to filter/exclude by list of opinions that the user has
                 # pinned
                 pinned = Pinned.from_arg(match.group(group).lower())
-                get_pinned_query(query_set_params, pinned, user)
+                success = get_pinned_query(query_set_params, pinned, user)
             elif query in DATE_QUERIES:
-                get_date_query(query_set_params, query, *[
+                success = get_date_query(query_set_params, query, *[
                     match.group(idx) for idx in [
                         DATE_QUERY_YR_GROUP, DATE_QUERY_MTH_GROUP,
                         DATE_QUERY_DAY_GROUP
@@ -196,7 +198,13 @@ def get_search_term(
             elif query not in NON_LOOKUP_ARGS:
                 query_set_params.add_and_lookup(
                     query, FIELD_LOOKUPS[query], match.group(group))
-            # else complex query term handled elsewhere
+            else:
+                # complex query term handled elsewhere
+                success = False
+
+            save_term_func = query_set_params.add_search_term if success \
+                else query_set_params.add_invalid_term
+            save_term_func(match.group(key_val_group))
 
     if query_set_params.is_empty and value:
         if not any(
@@ -240,7 +248,7 @@ def get_yes_no_ignore_query(
             ignore: [ChoiceArg, list[ChoiceArg]],
             choice: ChoiceArg, clazz: Type[ChoiceArg],
             chosen_qs: QuerySet
-        ):
+        ) -> bool:
     """
     Get a choice status query
     :param query_set_params: query params to update
@@ -251,8 +259,9 @@ def get_yes_no_ignore_query(
     :param choice: choice from request
     :param clazz: ChoiceArg class
     :param chosen_qs: query to get chosen item from db
-    :return: function to apply query
+    :return: True if successfully added
     """
+    success = True
     if choice in ensure_list(ignore):
         query_set_params.add_all_inclusive(query)
     elif isinstance(choice, clazz):
@@ -276,7 +285,10 @@ def get_yes_no_ignore_query(
 
         if query_set:
             query_set_params.add_qs_func(query, query_set)
+        else:
+            success = False
 
+    return success
 
 def get_category_query(query_set_params: QuerySetParams,
                        name: str) -> None:
@@ -297,7 +309,7 @@ def get_category_query(query_set_params: QuerySetParams,
 
 
 def get_date_query(query_set_params: QuerySetParams,
-                   query: str, year: str, month: str, day: str) -> None:
+                   query: str, year: str, month: str, day: str) -> bool:
     """
     Get the date query
     :param query_set_params: query params to update
@@ -305,7 +317,9 @@ def get_date_query(query_set_params: QuerySetParams,
     :param year: year
     :param month: month
     :param day: day
+    :return: True if successfully added
     """
+    success = True
     try:
         date = datetime(
             int(year), int(month), int(day), tzinfo=ZoneInfo("UTC")
@@ -316,18 +330,20 @@ def get_date_query(query_set_params: QuerySetParams,
         # ignore invalid date
         # TODO add errors to QuerySetParams
         # so they can be returned to user
-        pass
+        success = False
+    return success
 
 
 def get_hidden_query(query_set_params: QuerySetParams,
-                     hidden: Hidden, user: User) -> None:
+                     hidden: Hidden, user: User) -> bool:
     """
     Get the hidden status query
     :param query_set_params: query params to update
     :param hidden: hidden status
     :param user: current user
+    :return: True if successfully added
     """
-    get_yes_no_ignore_query(
+    return get_yes_no_ignore_query(
         query_set_params, HIDDEN_QUERY, Hidden.YES, Hidden.NO, Hidden.IGNORE,
         hidden, Hidden, HideStatus.objects.filter(**{
             HideStatus.USER_FIELD: user,
@@ -337,15 +353,15 @@ def get_hidden_query(query_set_params: QuerySetParams,
 
 
 def get_pinned_query(query_set_params: QuerySetParams,
-                     pinned: Pinned, user: User) -> None:
+                     pinned: Pinned, user: User) -> bool:
     """
     Get the pinned status query
     :param query_set_params: query params to update
     :param pinned: pinned status
     :param user: current user
-    :return: function to apply query
+    :return: True if successfully added
     """
-    get_yes_no_ignore_query(
+    return get_yes_no_ignore_query(
         query_set_params, PINNED_QUERY, Pinned.YES, Pinned.NO, Pinned.IGNORE,
         pinned, Pinned, PinStatus.objects.filter(**{
             PinStatus.USER_FIELD: user,

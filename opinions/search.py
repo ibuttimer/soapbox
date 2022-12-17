@@ -28,7 +28,8 @@ from opinions.views.utils import DATE_QUERIES
 MARKER_CHARS = ['=', '"', "'"]
 
 
-TERM_GROUP = 2     # match group of required text of non-date terms
+KEY_TERM_GROUP = 1  # match group of required text & key of non-date terms
+TERM_GROUP = 3      # match group of required text of non-date terms
 
 
 def regex_matchers(queries: list[str]) -> dict:
@@ -38,9 +39,10 @@ def regex_matchers(queries: list[str]) -> dict:
     :return: matchers
     """
     return {
-        # match single/double-quoted text after 'xxx:'
+        # match single/double-quoted text after 'xxx='
+        # if 'xxx=' is not preceded by a non-space
         q: re.compile(
-            rf'.*{mark}=(?P<quote>[\'\"])(.*?)(?P=quote)\s*.*', re.IGNORECASE)
+            rf'.*(?<!\S)({mark}=(?P<quote>[\'\"])(.*?)(?P=quote))\s*.*', re.IGNORECASE)
         for q, mark in [
             # use query term as marker
             (qm, qm) for qm in queries
@@ -52,14 +54,18 @@ DATE_SEP = '-'
 SLASH_SEP = '/'
 DOT_SEP = '.'
 SPACE_SEP = ' '
-SEP_REGEX = rf'[{DATE_SEP}{SLASH_SEP}{DOT_SEP}{SPACE_SEP}]'
+DATE_SEPARATORS = [
+    DATE_SEP, SLASH_SEP, DOT_SEP, SPACE_SEP
+]
+SEP_REGEX = rf'[{"".join(DATE_SEPARATORS)}]'
 DMY_REGEX = r'(\d+)(?P<sep>[-/. ])(\d+)(?P=sep)(\d*)'
 
 
-DATE_QUERY_GROUP = 2         # match group of required text
-DATE_QUERY_DAY_GROUP = 3     # match group of day text
-DATE_QUERY_MTH_GROUP = 5     # match group of month text
-DATE_QUERY_YR_GROUP = 6      # match group of year text
+DATE_KEY_TERM_GROUP = 1     # match group of required text & key of date terms
+DATE_QUERY_GROUP = 2        # match group of required text
+DATE_QUERY_DAY_GROUP = 4    # match group of day text
+DATE_QUERY_MTH_GROUP = 6    # match group of month text
+DATE_QUERY_YR_GROUP = 7     # match group of year text
 
 
 def regex_date_matchers() -> dict:
@@ -68,9 +74,10 @@ def regex_date_matchers() -> dict:
     :return: matchers
     """
     return {
-        # match single/double-quoted date after 'xxx:'
+        # match single/double-quoted date after 'xxx='
+        # if 'xxx=' is not preceded by a non-space
         q: re.compile(
-            rf'.*{mark}=(?P<quote>[\'\"])({DMY_REGEX})(?P=quote)\s*.*',
+            rf'.*(?<!\S)({mark}=(?P<quote>[\'\"])({DMY_REGEX})(?P=quote))\s*.*',
             re.IGNORECASE)
         for q, mark in [
             # use query term as marker

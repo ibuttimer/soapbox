@@ -47,6 +47,10 @@ class QuerySetParams:
     """
     is_none: bool
     """ Empty query set flag """
+    search_terms: [str]
+    """ List of search terms in set """
+    invalid_terms: [str]
+    """ List of invalid search terms in set """
 
     def __init__(self):
         self.and_lookups = {}
@@ -55,6 +59,8 @@ class QuerySetParams:
         self.params = set()
         self.all_inclusive = 0
         self.is_none = False
+        self.search_terms = []
+        self.invalid_terms = []
 
     def clear(self):
         """ Clear the query set params """
@@ -64,6 +70,8 @@ class QuerySetParams:
         self.params.clear()
         self.all_inclusive = 0
         self.is_none = False
+        self.search_terms = []
+        self.invalid_terms = []
 
     @property
     def and_count(self):
@@ -117,6 +125,8 @@ class QuerySetParams:
             self.qs_funcs.extend(query_set_param.qs_funcs)
             self.all_inclusive += query_set_param.all_inclusive
             self.params.update(query_set_param.params)
+            self.search_terms.extend(query_set_param.search_terms)
+            self.invalid_terms.extend(query_set_param.invalid_terms)
 
     def add_or_lookup(self, key: str, value: Any):
         """
@@ -145,6 +155,20 @@ class QuerySetParams:
         """
         self.all_inclusive += 1
         self.params.add(key)
+
+    def add_search_term(self, term: str):
+        """
+        Add a search term
+        :param term: term to add
+        """
+        self.search_terms.append(term)
+
+    def add_invalid_term(self, term: str):
+        """
+        Add an invalid search term
+        :param term: term to add
+        """
+        self.invalid_terms.append(term)
 
     def key_in_set(self, key):
         """

@@ -127,8 +127,8 @@ ID_QUERY: str = 'id'                        # search id
 STATUS_QUERY: str = 'status'                # search status
 CONTENT_QUERY: str = 'content'              # search content
 AUTHOR_QUERY: str = 'author'                # search author
-ON_OR_AFTER_QUERY: str = 'after-or-on'      # search >= date
-ON_OR_BEFORE_QUERY: str = 'before-or-on'    # search <= date
+ON_OR_AFTER_QUERY: str = 'on-or-after'      # search >= date
+ON_OR_BEFORE_QUERY: str = 'on-or-before'    # search <= date
 AFTER_QUERY: str = 'after'                  # search > date
 BEFORE_QUERY: str = 'before'                # search < date
 EQUAL_QUERY: str = 'date'                   # search == date
@@ -220,10 +220,16 @@ IS_CATEGORY_FEED_CTX = "is_category_feed"
 FOLLOWED_CATEGORIES_CTX = "followed_categories"
 CATEGORY_CTX = 'category'
 
+# templates/opinions/help/search.html
+SEARCH_TERMS_CTX = 'search_terms'
+DATE_SEPARATORS_CTX = 'date_separators'
+DATE_CTX = 'date'
+
 # general
 TITLE_CTX = 'title'                             # page title
 PAGE_HEADING_CTX = 'page_heading'               # page heading display
 LIST_HEADING_CTX = 'list_heading'               # list heading display
+LIST_SUB_HEADING_CTX = 'list_sub_heading'       # list sub heading display
 REPEAT_SEARCH_TERM_CTX = 'repeat_search_term'   # search term for query
 NO_CONTENT_MSG_CTX = 'no_content_msg'           # no content message
 NO_CONTENT_HELP_CTX = 'no_content_help'         # help text when no content
