@@ -37,7 +37,7 @@
     </article>
 </div>
 
-{% include "opinions/snippet/modal_common.html" %}
+<script src="{% static 'js/modal_common.js' %}"></script>
 <!-- Modal to share opinion/comment -->
 <div id="id--share-modal-container">
     {% include "opinions/snippet/share_modal.html" %}
@@ -50,7 +50,7 @@
 {% endblock content %}
 
 {% block extra_js_body %}
-    {% include "opinions/snippet/page_content_js.html" %}
-    {% include "opinions/snippet/reactions_js.html" %}
+    <script src="{% static 'js/page_content.js' %}"></script>
+    <script src="{% static 'js/reactions.js' %}"></script>
 {% endblock extra_js_body %}
 <!-- comment_list.html end -->

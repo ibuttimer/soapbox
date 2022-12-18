@@ -318,43 +318,9 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
     {% block extra_js_body %}
     {% endblock extra_js_body %}
-
+    <script src="{% static 'js/base.js' %}"></script>
     <script>
-        /* Enable Bootstrap tooltips */
-        function enableTooltips() {
-            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-            const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
-        }
-
-        const REDIRECT_PROP = 'redirect';
-        const REWRITES_PROP = 'rewrites';
-        const ELEMENT_ID_PROP = 'element_id';
-        const HTML_PROP = 'html';
-
-        const replaceHtml = (data) => $("#" + data[ELEMENT_ID_PROP]).replaceWith(data[HTML_PROP]);
-
-        /**
-         * Handle a redirect/rewrite response
-         * :param data: json data
-         */
-        function redirect_rewrite_response_handler(data) {
-            if (data !== undefined) {
-                if (data.hasOwnProperty(REDIRECT_PROP)) {
-                    // redirect to new url
-                    document.location.href = data[REDIRECT_PROP];
-                } else if (data.hasOwnProperty(ELEMENT_ID_PROP)) {
-                    // replace single element's html
-                    replaceHtml(data);
-                } else if (data.hasOwnProperty(REWRITES_PROP)) {
-                    // replace multiple element's html
-                    for (let element of data[REWRITES_PROP]) {
-                        replaceHtml(element);
-                    }
-                }
-            }
-        }
-
-        enableTooltips();
+        const csrfToken = () => '{{ csrf_token }}';
     </script>
 </body>
 </html>

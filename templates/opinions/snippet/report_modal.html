@@ -81,12 +81,12 @@
                 method: 'post',
                 url: url,
                 headers: {
-                    'X-CSRFTOKEN': '{{ csrf_token }}'
+                    'X-CSRFTOKEN': csrfToken()
                 },
                 data: formData,
             }).done(function(data) {
                 // update html
-                $("#" + data[ELEMENT_ID_PROP]).replaceWith(data.html);
+                redirect_rewrite_response_handler(data);
 
                 // close modal
                 $(reportModalSelector).modal('hide');

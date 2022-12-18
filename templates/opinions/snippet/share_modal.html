@@ -55,8 +55,8 @@
             navigator.clipboard.writeText(url).then(
                 () => {
                     /* clipboard successfully set */
-                    const toastLiveExample = document.getElementById('id--shared-toast')
-                    const toast = new bootstrap.Toast(toastLiveExample)
+                    const sharedToast = document.getElementById('id--shared-toast')
+                    const toast = new bootstrap.Toast(sharedToast)
                     toast.show()
                 },
                 () => {

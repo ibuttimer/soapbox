@@ -62,7 +62,7 @@
                 method: 'delete',
                 url: `${url}?ref=${window.location.pathname}`,
                 headers: {
-                    'X-CSRFTOKEN': '{{ csrf_token }}'
+                    'X-CSRFTOKEN': csrfToken()
             },
             }).done(function(data) {
 

@@ -53,7 +53,7 @@
                 url: url + "?status=" + option,
                 method: 'patch',
                 headers: {
-                    'X-CSRFTOKEN': '{{ csrf_token }}'
+                    'X-CSRFTOKEN': csrfToken()
                 }
             }).done(function(data) {
                 redirect_rewrite_response_handler(data);

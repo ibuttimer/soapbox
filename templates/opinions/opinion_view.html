@@ -150,7 +150,7 @@
     {% endif %}
 
     {% if view_ok and not is_review %}
-        {% include "opinions/snippet/modal_common.html" %}
+        <script src="{% static 'js/modal_common.js' %}"></script>
         <!-- Modal to create comments -->
         <div id="id--comment-modal-container">
             {% include "opinions/snippet/comment_modal.html" %}
@@ -182,7 +182,7 @@
 {% endblock content %}
 
 {% block extra_js_body %}
-    {% include "opinions/snippet/view_js.html" %}
+    <script src="{% static 'js/view.js' %}"></script>
     <script>
         /**
          * Update status of current opinion
@@ -207,7 +207,7 @@
 
     {% if not is_review %}
         {# no comments or reactions in review mode #}
-        {% include "opinions/snippet/more_placeholder_js.html" %}
-        {% include "opinions/snippet/reactions_js.html" %}
+        <script src="{% static 'js/more_placeholder.js' %}"></script>
+        <script src="{% static 'js/reactions.js' %}"></script>
     {% endif %}
 {% endblock extra_js_body %}

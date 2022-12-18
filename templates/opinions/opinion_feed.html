@@ -114,7 +114,7 @@
 {% endblock content %}
 
 {% block extra_js_body %}
-    {% include "opinions/snippet/page_content_js.html" %}
-    {% include "opinions/snippet/reactions_js.html" %}
+    <script src="{% static 'js/page_content.js' %}"></script>
+    <script src="{% static 'js/reactions.js' %}"></script>
 {% endblock extra_js_body %}
 <!-- opinion_feed.html end -->

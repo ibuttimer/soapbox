@@ -85,7 +85,7 @@
                 method: 'post',
                 url: url,
                 headers: {
-                    'X-CSRFTOKEN': '{{ csrf_token }}'
+                    'X-CSRFTOKEN': csrfToken()
                 },
                 data: formData,
             }).done(function(data) {

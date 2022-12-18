@@ -113,7 +113,7 @@
                     <div class="col-sm-10 container flex-grow-1 overflow-auto">
                         {% if read_only %}
                         <div id="readonly_content" class="text-start">
-                            <!-- content replaced -->
+                            {# content replaced #}
                         </div>
                         {% else %}
                         <div>
@@ -136,7 +136,7 @@
 </article>
 
 {% if not read_only and opinion.id %}
-    {% include "opinions/snippet/modal_common.html" %}
+    <script src="{% static 'js/modal_common.js' %}"></script>
     <!-- Modal to delete comment -->
     <div id="id--delete-modal-container">
         {% include "opinions/snippet/comment_delete_modal.html" %}
