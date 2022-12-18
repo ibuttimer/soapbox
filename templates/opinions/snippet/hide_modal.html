@@ -56,7 +56,7 @@
                     'X-CSRFTOKEN': '{{ csrf_token }}'
                 }
             }).done(function(data) {
-                react_response_handler(data);
+                redirect_rewrite_response_handler(data);
 
                 // close modal
                 $(hideModalSelector).modal('hide');
