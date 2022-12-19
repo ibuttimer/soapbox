@@ -345,6 +345,8 @@ If any other settings vary from the defaults outlined in [Table 1: Configuration
 
 The live website is available at [https://soapbox-opinions.herokuapp.com/](https://soapbox-opinions.herokuapp.com//)
 
+## Test
+The tests information and results are available in [test.md](doc/test/test.md).
 
 
 

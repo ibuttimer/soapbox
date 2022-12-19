@@ -204,7 +204,7 @@ def process():
     regex = re.compile(rf'.*://(\w+):([\w_-]+)@([\w.]+)/(\w+).*', re.IGNORECASE)
     match = regex.match(db_url)
     if not match:
-        print("Credentials not found")
+        print("Credentials not found. Did you set the env_file?")
         exit(1)
 
     db_name = match.group(4)

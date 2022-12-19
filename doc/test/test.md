@@ -1,7 +1,5 @@
 # Testing
 
-Test release: [Release ??](https://github.com/ibuttimer/soapbox/releases/tag/??? )
-
 ## Pre-test setup
 ### Users
 Manually created the following users required for testing purposes:
@@ -13,12 +11,12 @@ Manually created the following users required for testing purposes:
 | user3    | Author    |
 | mod1     | Moderator |
 
-Login as [site administrator](README.md#create-a-superuser) and assign `mod1` to the Moderators group via their profile page, or
+Login as [site administrator](../../README.md#create-a-superuser) and assign `mod1` to the Moderators group via their profile page, or
 alternatively via the [Django administration site](https://soapbox-opinions.herokuapp.com/admin/login/?next=/admin/)
 
 ### Database
 Populate the database with predefined opinions and comment via the [populate.py](data/populate.py) script.
-When run using [run_populate.py](run_populate.py) it will load the opinion from [opinions.csv](data/opinions.csv) and generate comments.
+When run using [run_populate.py](run_populate.py) it will load the opinions from [opinions.csv](data/opinions.csv) and generate comments.
 
 From the project root folder run the following
 ```bash
@@ -32,8 +30,11 @@ python run_populate.py -up password -mp password -dv REMOTE_DATABASE_URL
 ## Environment
 If using a [Virtual Environment](../../README.md#virtual-environment), ensure it is activated. Please see [Activating a virtual environment](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#activating-a-virtual-environment).
 
-> **Note:** Two separate testing frameworks are utilised [unittest](#unittest-unit-testing) and [Django Test Tools](#django-test-tools-unit-testing).
-> Tests are _**not**_ interoperable between test frameworks. See [Unit Testing Summary](#unittest-unit-testing) for comparison.
+## Testing
+Three separate testing frameworks are utilised [unittest](#unittest-unit-testing), [Django Test Tools](#django-test-tools-unit-testing)
+and [Jest Unit Testing](#jest-unit-testing).
+
+> **Note:** Tests are _**not**_ interoperable between test frameworks. See [Unit Testing Summary](#unittest-unit-testing) for comparison.
 
 The site was tested using the following methods:
 
@@ -64,7 +65,6 @@ Alternatively, if using:
 ## Django Test Tools Unit Testing
 Unit testing of views was undertaken using [Django Test Tools](https://docs.djangoproject.com/en/4.1/topics/testing/tools/).
 The test scripts are located in the [django_tests](../../django_tests/) folder, and the naming format is `test_*.py`.
-The [.test-env](../../.test-env) is used to set up the environment.
 
 **Note 1:** [Environment](#environment)
 
@@ -91,6 +91,24 @@ Run an individual test, e.g.
 > python manage.py test django_tests.base.test_landing_view
 ```
 
+## Jest Unit Testing
+Javascript unit testing was undertaken using [Jest](https://jestjs.io/), combined with [Puppeteer](https://pptr.dev/) to 
+provide the browser automation to retrieve the page content.
+
+The test scripts are located in the [jest_tests](../../jest_tests/) folder, and the naming format is `*.spec.js`.
+
+**Note 1:** [Environment](#environment)
+
+**Note 2:** The test server need to be running prior to executing tests.
+
+Create a configuration file called `test_config.json` in the [jest_tests](../../jest_tests/) folder, based on [sample_test_config.json](../../jest_tests/sample_test_config.json)
+
+The tests may be run from the project root folder:
+```shell
+Run all tests
+> npm test
+```
+
 ## Test Coverage
 Test coverage reports are generated using the [coverage](https://pypi.org/project/coverage/) utility, ands its configuration is specified in [.coveragerc](../../.coveragerc).
 See [Unit Testing Summary](#unittest-unit-testing) for usage.
@@ -101,16 +119,17 @@ See [Unit Testing Summary](#unittest-unit-testing) for usage.
 |------------------------------------------------------|----------------------------------------------------------------------|
 | [unittest](#unittest-unit-testing)                   | [Unittest test coverage report](doc/test/unittest_report/index.html) |
 | [Django Test Tools](#django-test-tools-unit-testing) | [Django test coverage report](doc/test/django_report/index.html)     |
+| [Jest Unit Testing](#jest-unit-testing)              | n/a as testing was performed using automated browser interaction     |
 
 ## Unit Testing Summary
 
-| Environment                 | [unittest](https://docs.python.org/3/library/unittest.html)                         | [Django Test Tools](https://docs.djangoproject.com/en/4.1/topics/testing/tools/) |
-|-----------------------------|-------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
-| **Location**                | [tests](../../tests/)                                                               | [django_tests](../../django_tests/)                                              |
-| **Naming style**            | `*_test.py`                                                                         | `test_*.py`                                                                      |
-| **Command**                 | `python -m unittest discover -p "*_test.py"`                                        | `python manage.py test`                                                          |
-| **Coverage command**        | `coverage run -m unittest discover -p "*_test.py"`                                  | `coverage run manage.py test`                                                    |
-| **Coverage report command** | `coverage html -d doc/test/unittest_report --title="Unittest test coverage report"` | `coverage html -d doc/test/django_report --title="Django test coverage report"`  |
+| Environment                 | [unittest](https://docs.python.org/3/library/unittest.html)                         | [Django Test Tools](https://docs.djangoproject.com/en/4.1/topics/testing/tools/) | [Jest Unit Testing](#jest-unit-testing) |
+|-----------------------------|-------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|-----------------------------------------|
+| **Location**                | [tests](../../tests/)                                                               | [django_tests](../../django_tests/)                                              | [jest_tests](../../jest_tests/)         |
+| **Naming style**            | `*_test.py`                                                                         | `test_*.py`                                                                      | `*.spec.js`                             |
+| **Command**                 | `python -m unittest discover -p "*_test.py"`                                        | `python manage.py test`                                                          | `npm test`                              |
+| **Coverage command**        | `coverage run -m unittest discover -p "*_test.py"`                                  | `coverage run manage.py test`                                                    | n/a                                     |
+| **Coverage report command** | `coverage html -d doc/test/unittest_report --title="Unittest test coverage report"` | `coverage html -d doc/test/django_report --title="Django test coverage report"`  | n/a                                     |
 
 
 

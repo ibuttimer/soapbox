@@ -36,8 +36,6 @@ from .permissions import add_to_authors
 
 @receiver(user_logged_in)
 def user_logged_in_callback(sender, **kwargs):
-    print("user_logged_in!")
-
     # by the time this signal is received the 'last_login' field in
     # AbstractBaseUser has already been updated to the current login
 
@@ -48,8 +46,6 @@ def user_logged_in_callback(sender, **kwargs):
 
 @receiver(user_logged_out)
 def user_logged_out_callback(sender, **kwargs):
-    print("user_logged_out!")
-
     user: User = kwargs.get('user', None)
     if user:
         # update previous login
@@ -59,25 +55,24 @@ def user_logged_out_callback(sender, **kwargs):
 
 @receiver(user_signed_up)
 def user_signed_up_callback(sender, **kwargs):
-    print("user_signed_up!")
     add_to_authors(kwargs['user'])
 
 
 @receiver(pre_social_login)
 def pre_social_login_callback(sender, **kwargs):
-    print("pre_social_login!")
+    pass
 
 
 @receiver(social_account_added)
 def social_account_added_callback(sender, **kwargs):
-    print("social_account_added!")
+    pass
 
 
 @receiver(social_account_updated)
 def social_account_updated_callback(sender, **kwargs):
-    print("social_account_updated!")
+    pass
 
 
 @receiver(social_account_removed)
 def social_account_removed_callback(sender, **kwargs):
-    print("social_account_removed!")
+    pass

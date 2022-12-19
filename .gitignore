@@ -132,6 +132,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+/jest_tests/test_config.json
 
 # Spyder project settings
 .spyderproject

@@ -1,0 +1,9 @@
+{
+  "host_url": "http://127.0.0.1:8000/",
+
+  "username": "user",
+  "password": "password",
+
+  "opinion_id": 1,
+  "opinion_title": "I can eat fish for the first time in life!"
+}
