@@ -1,0 +1,12 @@
+<!-- new_user_notification.html start -->
+
+{% load i18n %}
+
+{# --- template variable defines for includes --- #}
+{# new user notification template expects: 'user' as User #}
+
+<div>
+    <p>Welcome {{ user.first_name }}, why not have a look at the <a class="link-primary" href="{% url 'help' %}">help page</a>
+        to familiarise yourself with how things work.</p>
+</div>
+<!-- new_user_notification.html end -->

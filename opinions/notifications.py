@@ -32,7 +32,7 @@ from opinions.models import Opinion, Comment
 from opinions.queries import (
     followed_author_publications, own_content_status_changes
 )
-from soapbox import OPINIONS_APP_NAME
+from soapbox import OPINIONS_APP_NAME, USER_APP_NAME
 from user.models import User
 from utils import app_template_path
 
@@ -41,6 +41,8 @@ TAGGED_AUTHOR_TEMPLATE = app_template_path(
     OPINIONS_APP_NAME, "snippet", "tagged_author_opinions.html")
 CONTENT_UPDATES_TEMPLATE = app_template_path(
     OPINIONS_APP_NAME, "snippet", "content_updates_message.html")
+NEW_USER_TEMPLATE = app_template_path(
+    USER_APP_NAME, "snippet", "new_user_notification.html")
 
 
 def process_login_opinions(request: HttpRequest, user: User):
@@ -77,3 +79,17 @@ def process_login_opinions(request: HttpRequest, user: User):
                 messages.info(
                     request, render_to_string(template, context=context)
                 )
+
+
+def process_register_new_user(request: HttpRequest, user: User):
+    """
+    Process registration of a new user
+    :param user: user which logged in
+    :param request: http request
+    """
+    if user:
+        messages.info(
+            request, render_to_string(NEW_USER_TEMPLATE, context={
+                USER_CTX: user,
+            })
+        )
