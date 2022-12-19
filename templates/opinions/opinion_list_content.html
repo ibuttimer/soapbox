@@ -30,12 +30,16 @@
                                     <div class="row">
                                         <div class="col-sm-8 col-12 mt-0 mb-0">
                                             <!-- title -->
-                                            <a {% if status.view_ok %} href="{% url 'opinions:opinion_id' opinion.id %}?mode=read-only" {% endif %}
-                                               class="post-link">
+                                            {% if status.view_ok %}
+                                            <a href="{% url 'opinions:opinion_id' opinion.id %}?mode=read-only" class="post-link"
+                                               aria-label="read {{ opinion.title }}">
+                                            {% endif %}
                                                 <h4 id="id--title-{{ forloop.counter }}" class="card-title">
                                                     {% if status.review_no_show %}{{ under_review_title }}{% else %}{{ opinion.title }}{% endif %}
                                                 </h4>
+                                            {% if status.view_ok %}
                                             </a>
+                                            {% endif %}
                                             {% if is_development and not is_test %}
                                                 {# display id for dev purposes #}
                                                 <span class="badge rounded-pill text-bg-warning">{{ opinion.id }}</span>
@@ -82,8 +86,8 @@
                                                 <a
                                                     {% if status.view_ok %}
                                                     class="btn btn-primary mb-2" href="{% url 'opinions:opinion_id' opinion.id %}?mode=read-only" aria-label="read {{ opinion.title }}"
-                                                    {% else %}}
-                                                    class="btn btn-primary mb-2 disabled" aria-label="Not available for reading" aria-disabled="true"
+                                                    {% else %}
+                                                    class="btn btn-primary mb-2 disabled" href="#" aria-label="Not available for reading" aria-disabled="true"
                                                     {% endif %}
                                                 >
                                                     <i class="fa-solid fa-book-open"></i>
@@ -108,7 +112,7 @@
                                         </div>
                                         <div class="col-sm-6 col-8 mt-0 mb-0">
                                             <div class="row mt-0 mb-0">
-                                                <div class="col-md-6 mt-0 mb-0">
+                                                <div class="col-md-6 mt-2 mb-2">
                                                     <a href="{% url 'user:user_id' opinion.user_id %}" aria-label="view author's profile">{{ opinion.username }}</a>
                                                 </div>
                                                 <div class="col-md-6 mt-0 mb-0">

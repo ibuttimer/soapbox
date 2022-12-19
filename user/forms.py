@@ -128,6 +128,14 @@ class NoCurrentClearableFileInput(forms.ClearableFileInput):
     """ Customised ClearableFileInput form with different template """
     template_name = "widgets/clearable_file_input.html"
 
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        context["widget"].update(
+            {
+                "file_input_id": f"id_{name}",
+            }
+        )
+        return context
 
 class UserForm(forms.ModelForm):
     """

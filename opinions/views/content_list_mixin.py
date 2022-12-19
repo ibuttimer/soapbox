@@ -274,7 +274,7 @@ class ContentListMixin(generic.ListView):
                 'page_num': page,
                 'disabled': page == Paginator.ELLIPSIS,
                 'href':
-                    f"?page={page}" if page != Paginator.ELLIPSIS else '',
+                    f"?page={page}" if page != Paginator.ELLIPSIS else '#',
                 'label':
                     f"page {page}" if page != Paginator.ELLIPSIS else '',
                 'hidden': f'{str(bool(page != Paginator.ELLIPSIS)).lower()}',

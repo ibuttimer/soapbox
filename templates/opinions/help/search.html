@@ -3,7 +3,7 @@
 <section>
     <div class="row mt-2">
         <div class="col-12">
-            <h3 id="following-feed-help">{% trans "Following Feed" %}</h3>
+            <h2 id="following-feed-help">{% trans "Following Feed" %}</h2>
             <p>
                 Opinions from authors you follow appear in the following feed.
                 Click on <i class="fa-solid fa-user-tag"></i> when viewing content to follow the author and their content will appear in your following feed.
@@ -14,7 +14,7 @@
 <section>
     <div class="row mt-2">
         <div class="col-12">
-            <h3 id="category-feed-help">{% trans "Category Feed" %}</h3>
+            <h2 id="category-feed-help">{% trans "Category Feed" %}</h2>
             <p>
                 Opinions from the categories followed in your user profile appear in the category feed.
                 {% if user.is_authenticated %}
@@ -27,12 +27,12 @@
 <section>
     <div class="row mt-2">
         <div class="col-12">
-            <h3 id="search-help">{% trans "Search" %}</h3>
+            <h2 id="search-help">{% trans "Search" %}</h2>
         </div>
     </div>
     <div class="row mt-2">
         <div class="col-12">
-            <h4 id="basic-search-help">{% trans "Basic Search" %}</h4>
+            <h3 id="basic-search-help">{% trans "Basic Search" %}</h3>
             <p>
                 Enter a word or phrase in the search box in the navigation bar at the top of the screen,
                 and click <em>Search</em> to find opinions containing the word or phrase.
@@ -41,7 +41,7 @@
     </div>
     <div class="row mt-2">
         <div class="col-12">
-            <h4 id="advanced-search-help">{% trans "Advanced Search" %}</h4>
+            <h3 id="advanced-search-help">{% trans "Advanced Search" %}</h3>
             <p>
                 Enter search parameters in the search box in the navigation bar at the top of the screen,
                 and click <em>Search</em> to find opinions matching the entered parameters.
@@ -79,12 +79,12 @@
 <section>
     <div class="row mt-2">
         <div class="col-12">
-            <h3 id="opinions-help">{% trans "Opinions Menu" %}</h3>
+            <h2 id="opinions-help">{% trans "Opinions Menu" %}</h2>
         </div>
     </div>
     <div class="row mt-2">
         <div class="col-12">
-            <h4 id="new-opinion-help">{% trans "New Opinion" %}</h4>
+            <h3 id="new-opinion-help">{% trans "New Opinion" %}</h3>
             <p>
                 Create a <a href="{% url 'opinions:opinion_new' %}">new opinion</a>, with a title and content, and assign an appropriate category or categories.
                 Save as <em>Draft</em> to finish it later, <em>Preview</em> to see what it will look like or <em>Publish</em> to send it out into the world.
@@ -93,7 +93,7 @@
     </div>
     <div class="row mt-2">
         <div class="col-12">
-            <h4 id="draft-opinion-help">{% trans "Draft Opinions" %}</h4>
+            <h3 id="draft-opinion-help">{% trans "Draft Opinions" %}</h3>
             <p>
                 Displays the list of your <a href="{% url 'opinions:opinions' %}?author={{ user.username }}&status=draft">opinions in draft</a> status.
             </p>
@@ -101,7 +101,7 @@
     </div>
     <div class="row mt-2">
         <div class="col-12">
-            <h4 id="preview-opinion-help">{% trans "Preview Opinions" %}</h4>
+            <h3 id="preview-opinion-help">{% trans "Preview Opinions" %}</h3>
             <p>
                 Displays the list of your <a href="{% url 'opinions:opinions' %}?author={{ user.username }}&status=preview">opinions in preview</a> status.
             </p>
@@ -109,7 +109,7 @@
     </div>
     <div class="row mt-2">
         <div class="col-12">
-            <h4 id="review-opinion-help">{% trans "Review Opinions" %}</h4>
+            <h3 id="review-opinion-help">{% trans "Review Opinions" %}</h3>
             <p>
                 Displays the list of your <a href="{% url 'opinions:opinion_in_review' %}?author={{ user.username }}">opinions in any review</a> status.
             </p>
@@ -117,7 +117,7 @@
     </div>
     <div class="row mt-2">
         <div class="col-12">
-            <h4 id="all-mine-opinion-help">{% trans "All My Opinions" %}</h4>
+            <h3 id="all-mine-opinion-help">{% trans "All My Opinions" %}</h3>
             <p>
                 Displays the list of all your <a href="{% url 'opinions:opinions' %}?author={{ user.username }}&status=all">opinions in any</a> status.
             </p>
@@ -125,7 +125,7 @@
     </div>
     <div class="row mt-2">
         <div class="col-12">
-            <h4 id="new-author-opinion-help">{% trans "New Followed Author Opinions" %}</h4>
+            <h3 id="new-author-opinion-help">{% trans "New Followed Author Opinions" %}</h3>
             <p>
                 Displays the list of new opinions, by <a href="{% url 'opinions:opinion_followed' %}?filter=new">authors you follow</a>, since your last login.
                 See <a href="#following-feed-help">Following Feed</a> for more information.
@@ -134,7 +134,7 @@
     </div>
     <div class="row mt-2">
         <div class="col-12">
-            <h4 id="all-author-opinion-help">{% trans "All Followed Author Opinions" %}</h4>
+            <h3 id="all-author-opinion-help">{% trans "All Followed Author Opinions" %}</h3>
             <p>
                 Displays the list of all opinions, by <a href="{% url 'opinions:opinion_followed' %}?filter=all">authors you follow</a>.
                 See <a href="#following-feed-help">Following Feed</a> for more information.
@@ -143,7 +143,7 @@
     </div>
     <div class="row mt-2">
         <div class="col-12">
-            <h4 id="all-opinion-help">{% trans "All Opinions" %}</h4>
+            <h3 id="all-opinion-help">{% trans "All Opinions" %}</h3>
             <p>
                 Displays the list of all <a href="{% url 'opinions:opinions' %}">published opinions</a>.
             </p>
@@ -153,7 +153,7 @@
 <section>
     <div class="row mt-2">
         <div class="col-12">
-            <h3 id="view-content-help">{% trans "Viewing Content" %}</h3>
+            <h2 id="view-content-help">{% trans "Viewing Content" %}</h2>
             <p>
                 When viewing opinions or comments there are a number of ways you can interact with the content:
             </p>
