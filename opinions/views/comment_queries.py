@@ -43,7 +43,8 @@ from opinions.search import (
     DATE_QUERY_DAY_GROUP, MARKER_CHARS
 )
 from opinions.views.utils import (
-    NON_REORDER_COMMENT_LIST_QUERY_ARGS, DATE_QUERIES
+    NON_REORDER_COMMENT_LIST_QUERY_ARGS, DATE_QUERIES,
+    COMMENT_APPLIED_DEFAULTS_QUERY_ARGS
 )
 from opinions.enums import QueryArg, QueryStatus
 
@@ -79,7 +80,7 @@ COMMENT_FILTERS_ORDER = [
 ]
 COMMENT_ALWAYS_FILTERS = [
     # always applied items
-    STATUS_QUERY, HIDDEN_QUERY
+    option.query for option in COMMENT_APPLIED_DEFAULTS_QUERY_ARGS
 ]
 COMMENT_FILTERS_ORDER.extend(
     [q for q in FIELD_LOOKUPS.keys() if q not in COMMENT_FILTERS_ORDER]

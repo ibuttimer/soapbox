@@ -168,10 +168,11 @@ view_options[modCommentReviewUnacceptableView] = commentNgId
 VIEW_ARG_MARKER = '<view_arg>'
 HOST_ARG_MARKER = '<host_arg>'
 
+
 def parse_args():
     parser = argparse.ArgumentParser(
-        prog = 'populate',
-        description = 'Populate generated views for analysis of html')
+        prog='populate',
+        description='Populate generated views for analysis of html')
     parser.add_argument('-up', '--user_password',
                         help='User password', default='password')
     parser.add_argument('-mp', '--mod_password',
@@ -187,6 +188,7 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+
 def process():
     env = environ.Env()
     # Take environment variables from .env file
@@ -201,7 +203,8 @@ def process():
     db_url = env(args.db_var)
 
     # ElephantSQL db names are chars, passwords can contain - and _
-    regex = re.compile(rf'.*://(\w+):([\w_-]+)@([\w.]+)/(\w+).*', re.IGNORECASE)
+    regex = re.compile(
+        rf'.*://(\w+):([\w_-]+)@([\w.]+)/(\w+).*', re.IGNORECASE)
     match = regex.match(db_url)
     if not match:
         print("Credentials not found. Did you set the env_file?")

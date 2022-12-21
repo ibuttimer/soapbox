@@ -61,4 +61,3 @@ urlpatterns = [
     path(CATEGORY_FEED_URL, OpinionCategoryFeed.as_view(),
          name=CATEGORY_FEED_ROUTE_NAME),
 ]
-

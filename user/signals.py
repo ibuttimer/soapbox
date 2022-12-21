@@ -62,6 +62,7 @@ def user_signed_up_callback(sender, **kwargs):
         add_to_authors(user)
         process_register_new_user(kwargs.get('request', None), user)
 
+
 @receiver(pre_social_login)
 def pre_social_login_callback(sender, **kwargs):
     pass

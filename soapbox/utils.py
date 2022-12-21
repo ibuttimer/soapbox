@@ -32,6 +32,7 @@ def val_test_route_name(route: str):
     """
     return f'{route}_{VAL_TEST_PATH_PREFIX}'
 
+
 def val_test_url(url: str):
     """
     Generate a css test url
@@ -39,4 +40,3 @@ def val_test_url(url: str):
     :return:
     """
     return url_path(VAL_TEST_PATH_PREFIX, url)
-

@@ -115,8 +115,8 @@ class QueryOption:
         return cls(query=query, clazz=None, default=default)
 
 
-# request arguments with always applied defaults
-APPLIED_DEFAULTS_QUERY_ARGS = [
+# request arguments with always applied defaults for opinions
+OPINION_APPLIED_DEFAULTS_QUERY_ARGS: List[QueryOption] = [
     # status included as default is to only show published opinions
     QueryOption(STATUS_QUERY, QueryStatus, QueryStatus.DEFAULT),
     # hidden included as default is to only show visible opinions
@@ -140,7 +140,7 @@ OPINION_LIST_QUERY_ARGS.extend([
     QueryOption.of_no_cls_dflt(AUTHOR_QUERY),
     QueryOption(PINNED_QUERY, Pinned, Pinned.DEFAULT),
 ])
-OPINION_LIST_QUERY_ARGS.extend(APPLIED_DEFAULTS_QUERY_ARGS)
+OPINION_LIST_QUERY_ARGS.extend(OPINION_APPLIED_DEFAULTS_QUERY_ARGS)
 # request arguments for followed authors list and followed feed requests
 # (replace pinned with filter)
 FOLLOWED_OPINION_LIST_QUERY_ARGS = OPINION_LIST_QUERY_ARGS.copy()
@@ -164,6 +164,11 @@ REVIEW_OPINION_LIST_QUERY_ARGS.extend([
     QueryOption(REVIEW_QUERY, QueryStatus, QueryStatus.REVIEW_QUERY_DEFAULT),
 ])
 
+# request arguments with always applied defaults for comments
+COMMENT_APPLIED_DEFAULTS_QUERY_ARGS: List[QueryOption] = [
+    # comments only have published or deleted status, both of which are needed
+    # (deleted to maintain comment tree structure)
+]
 # args for a comment reorder/next page/etc. request
 COMMENT_REORDER_QUERY_ARGS = [
     QueryOption(ORDER_QUERY, CommentSortOrder, CommentSortOrder.DEFAULT),
@@ -184,7 +189,7 @@ COMMENT_LIST_QUERY_ARGS.extend([
     QueryOption.of_no_cls(PARENT_ID_QUERY, 0),
     QueryOption.of_no_cls_dflt(ID_QUERY),
 ])
-COMMENT_LIST_QUERY_ARGS.extend(APPLIED_DEFAULTS_QUERY_ARGS)
+COMMENT_LIST_QUERY_ARGS.extend(COMMENT_APPLIED_DEFAULTS_QUERY_ARGS)
 # request arguments for a review comments list request
 REVIEW_COMMENT_LIST_QUERY_ARGS = COMMENT_LIST_QUERY_ARGS.copy()
 REVIEW_COMMENT_LIST_QUERY_ARGS.extend([

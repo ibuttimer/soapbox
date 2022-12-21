@@ -137,6 +137,7 @@ class NoCurrentClearableFileInput(forms.ClearableFileInput):
         )
         return context
 
+
 class UserForm(forms.ModelForm):
     """
     Form to update a user.

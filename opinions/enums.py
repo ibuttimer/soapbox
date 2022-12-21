@@ -211,6 +211,9 @@ class QueryArg:
         return f'{self.value}, was_set {self.was_set}'
 
 
+QueryArg.NONE = QueryArg.of(None)
+
+
 class QueryStatus(ChoiceArg):
     """ Enum representing status query params """
     # statuses corresponding to statues in the database

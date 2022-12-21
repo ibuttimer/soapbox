@@ -121,7 +121,8 @@ class OpinionList(LoginRequiredMixin, ContentListMixin):
             # check author=<current user>&status=<?>
             for value, query, query_type in [
                 (QueryStatus.DRAFT, STATUS_QUERY, QueryType.DRAFT_OPINIONS),
-                (QueryStatus.PREVIEW, STATUS_QUERY, QueryType.PREVIEW_OPINIONS),
+                (QueryStatus.PREVIEW, STATUS_QUERY,
+                 QueryType.PREVIEW_OPINIONS),
                 (QueryStatus.ALL, STATUS_QUERY, QueryType.ALL_USERS_OPINIONS),
             ]:
                 if self.query_value_was_set_as_value(
@@ -624,6 +625,7 @@ class OpinionFollowed(OpinionList):
 
         return context
 
+
 class OpinionInReview(OpinionFollowed):
     """
     Opinions in review list response
@@ -779,6 +781,7 @@ class OpinionFollowedFeed(OpinionFollowed):
             self.render_no_content_help(context, "following_no_content.html")
 
         return context
+
 
 class OpinionCategoryFeed(OpinionList):
     """

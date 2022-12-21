@@ -117,7 +117,8 @@ describe(
         };
 
         const getElementClass = (elementId) => {
-            return getElementAttribute(elementId, 'class');
+            const element = document.getElementById(elementId);
+            return element.getAttribute('class');
         };
 
         const getElementOuterHtml = (elementId) => {
@@ -156,7 +157,7 @@ describe(
             return page.evaluate(getElementClass, elementId);
         }
 
-        it.skip('Toggle opinion agree', async () => {
+        it('Toggle opinion agree', async () => {
             // toggle the agree button and, it's class attribute should update to have/not have 'reactions-selected'
             const ids = reactIds(globalThis.OPINION_ID);
 
@@ -169,7 +170,7 @@ describe(
             await expect(isSelected === expected).toBeTruthy();
         }, timeout);
 
-        it.skip('Change opinion agree to disagree', async () => {
+        it('Change opinion agree to disagree', async () => {
             // select the disagree button and the class attribute 'reactions-selected' should move from agree to disagree button
             const ids = reactIds(globalThis.OPINION_ID);
 

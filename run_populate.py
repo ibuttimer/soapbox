@@ -26,5 +26,3 @@
 from data.populate import process
 
 process()
-
-

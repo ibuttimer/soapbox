@@ -159,6 +159,10 @@
         <div id="id--share-modal-container">
             {% include "opinions/snippet/share_modal.html" %}
         </div>
+        <!-- Modal to delete comment -->
+        <div id="id--delete-modal-container">
+            {% include "opinions/snippet/comment_delete_modal.html" %}
+        </div>
     {% endif %}
 
     {% url 'opinions:review_decision_comment_id' comment.id as action %}

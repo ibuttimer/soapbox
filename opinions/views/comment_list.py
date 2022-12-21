@@ -192,16 +192,21 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
         """
         # select sort order options to display
         excludes = []
-        if query_params[AUTHOR_QUERY].was_set_to(self.user.username):
+
+        query = query_params.get(AUTHOR_QUERY, QueryArg.NONE)
+        if query.was_set_to(self.user.username):
             # no need for sort by author if only one author
             excludes.extend([
                 CommentSortOrder.AUTHOR_AZ, CommentSortOrder.AUTHOR_ZA
             ])
-        if not query_params[STATUS_QUERY].value == QueryStatus.ALL:
+
+        query = query_params.get(AUTHOR_QUERY, QueryArg.of(QueryStatus.ALL))
+        if not query.value == QueryStatus.ALL:
             # no need for sort by status if only one status
             excludes.extend([
                 CommentSortOrder.STATUS_AZ, CommentSortOrder.STATUS_ZA
             ])
+
         self.sort_order = [
             so for so in CommentSortOrder if so not in excludes
         ]

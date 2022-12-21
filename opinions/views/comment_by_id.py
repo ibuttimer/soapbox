@@ -31,7 +31,6 @@ from django.http import (
 )
 from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
-from django.urls import resolve
 from django.views import View
 from django.views.decorators.http import require_http_methods
 
@@ -48,7 +47,7 @@ from opinions.constants import (
     COMMENT_DATA_CTX, CONTENT_STATUS_CTX, OPINION_ID_ROUTE_NAME,
     OPINION_SLUG_ROUTE_NAME, MODE_QUERY, READ_ONLY_CTX, IS_ASSIGNED_CTX,
     REVIEW_RECORD_CTX, STATUS_BG_CTX, IS_PREVIEW_CTX, IS_REVIEW_CTX,
-    OPINION_CONTENT_STATUS_CTX, SUBMIT_URL_CTX
+    OPINION_CONTENT_STATUS_CTX, SUBMIT_URL_CTX, COMMENT_OFFSET_CTX
 )
 from opinions.enums import ReactionStatus, ViewMode
 from opinions.forms import CommentForm, ReportForm
@@ -60,6 +59,7 @@ from opinions.queries import (
     content_status_check, effective_content_status, content_review_records_list
 )
 from opinions.reactions import COMMENT_REACTIONS, get_reaction_status
+from opinions.views.comment_create import get_comment_offset
 from opinions.views.opinion_by_id import (
     like_patch, report_post, hide_patch, follow_patch, review_status_patch,
     review_decision_post, TITLE_UPDATE
@@ -80,7 +80,7 @@ from utils import (
 
 class CommentTemplate(Enum):
     """ Enum representing possible response templates for comments """
-    OPINION_LIST_TEMPLATE = \
+    BUNDLE_TEMPLATE = \
         app_template_path(
             OPINIONS_APP_NAME, "snippet", "comment_bundle.html"),
     """ Template for individual comments in view opinion, comment list """
@@ -92,7 +92,7 @@ class CommentTemplate(Enum):
     """ Template for comments by id/slug """
 
 
-CommentTemplate.DEFAULT = CommentTemplate.OPINION_LIST_TEMPLATE
+CommentTemplate.DEFAULT = CommentTemplate.BUNDLE_TEMPLATE
 
 
 COMMENT_DETAIL_QUERY_ARGS = [
@@ -290,13 +290,14 @@ class CommentDetail(LoginRequiredMixin, View):
         called_by = resolve_ref(request)
         if called_by:
             if called_by.url_name in [
-                COMMENTS_ROUTE_NAME, COMMENT_ID_ROUTE_NAME
+                COMMENTS_ROUTE_NAME
             ]:
                 template = CommentTemplate.COMMENT_LIST_TEMPLATE
             elif called_by.url_name in [
-                OPINION_ID_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME
+                OPINION_ID_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME,
+                COMMENT_ID_ROUTE_NAME
             ]:
-                template = CommentTemplate.OPINION_LIST_TEMPLATE
+                template = CommentTemplate.BUNDLE_TEMPLATE
             else:
                 raise ValueError(
                     f'Unknown {REFERENCE_QUERY} query value: '
@@ -574,7 +575,10 @@ def get_render_comment_response(
             default CommentTemplate.DEFAULT
     :return: response
     """
-    if template == CommentTemplate.OPINION_LIST_TEMPLATE:
+    comment = Comment.objects.get(**{
+        f'{Comment.id_field()}': pk
+    })
+    if template == CommentTemplate.BUNDLE_TEMPLATE:
         element_id = f'id--comment-section-{pk}'
         context = get_comment_bundle_context(pk, request.user, depth=depth)
     else:
@@ -592,6 +596,9 @@ def get_render_comment_response(
             CONTENT_STATUS_CTX: comments_review_status,
         }
         add_content_no_show_markers(context=context)
+
+    comment_offset, top_level = get_comment_offset(request, comment)
+    context[COMMENT_OFFSET_CTX] = comment_offset
 
     return JsonResponse({
         ELEMENT_ID_CTX: element_id,

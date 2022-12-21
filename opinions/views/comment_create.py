@@ -21,6 +21,7 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 from http import HTTPStatus
+from typing import Tuple
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import (
@@ -34,7 +35,7 @@ from categories import STATUS_PUBLISHED
 from categories.models import Status
 from opinions.constants import (
     HTML_CTX, COMMENT_OFFSET_CTX, PK_PARAM_NAME, REFERENCE_QUERY,
-    COMMENT_ID_ROUTE_NAME, OPINION_ID_ROUTE_NAME
+    COMMENT_ID_ROUTE_NAME, OPINION_ID_ROUTE_NAME, COMMENTS_ROUTE_NAME
 )
 from opinions.contexts.comment import get_comment_bundle_context
 from soapbox import (
@@ -91,28 +92,8 @@ class CommentCreate(LoginRequiredMixin, View):
                 comment.id, request.user, depth=0, is_dynamic_insert=True
             )
 
-            # top level display comment if comment on opinion
-            top_level = comment.parent == Comment.NO_PARENT
-
-            comment_offset = 0
-            called_by = resolve_ref(request)
-            if called_by:
-                if called_by.url_name == OPINION_ID_ROUTE_NAME:
-                    pass
-                elif called_by.url_name == COMMENT_ID_ROUTE_NAME:
-                    get_param = {
-                        Comment.id_field(): called_by.kwargs.get(PK_PARAM_NAME)
-                    }
-                    view_comment = get_object_or_404(Comment, **get_param)
-                    comment_offset = view_comment.level + 1
-
-                    # top level if comment is 1 level below viewing comment
-                    top_level = comment.parent == view_comment.id
-                else:
-                    raise ValueError(
-                        f'Unknown {REFERENCE_QUERY} query value: '
-                        f'{request.GET[REFERENCE_QUERY]}')
-                context[COMMENT_OFFSET_CTX] = comment_offset
+            comment_offset, top_level = get_comment_offset(request, comment)
+            context[COMMENT_OFFSET_CTX] = comment_offset
 
             # container for new comment display is the collapse
             # container of the parent comment if comment-on-comment
@@ -144,6 +125,41 @@ class CommentCreate(LoginRequiredMixin, View):
         """
         raise NotImplementedError(
             "'comment_hierarchy' method must be overridden by sub classes")
+
+
+def get_comment_offset(
+        request: HttpRequest, comment: Comment) -> Tuple[int, bool]:
+    """
+    Get the comment inset offset for display
+    :param request: http request
+    :param comment: comment
+    :return: tuple of offset and top level flag
+    """
+    # top level display comment if comment on opinion
+    top_level = comment.parent == Comment.NO_PARENT
+
+    comment_offset = 0
+    called_by = resolve_ref(request)
+    if called_by:
+        if called_by.url_name in [
+            OPINION_ID_ROUTE_NAME, COMMENTS_ROUTE_NAME
+        ]:
+            pass
+        elif called_by.url_name == COMMENT_ID_ROUTE_NAME:
+            get_param = {
+                Comment.id_field(): called_by.kwargs.get(PK_PARAM_NAME)
+            }
+            view_comment = get_object_or_404(Comment, **get_param)
+            comment_offset = view_comment.level + 1
+
+            # top level if comment is 1 level below viewing comment
+            top_level = comment.parent == view_comment.id
+        else:
+            raise ValueError(
+                f'Unknown {REFERENCE_QUERY} query value: '
+                f'{request.GET[REFERENCE_QUERY]}')
+
+    return comment_offset, top_level
 
 
 class OpinionCommentCreate(CommentCreate):

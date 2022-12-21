@@ -116,12 +116,14 @@ def get_search_terms_help() -> dict:
     search_terms.extend([
         SearchTermItem(
             query,
-            f'Opinions with {capwords(Opinion.SEARCH_DATE_FIELD)} date {test_text[query]} search date.',
+            f'Opinions with {capwords(Opinion.SEARCH_DATE_FIELD)} '
+            f'date {test_text[query]} search date.',
             f'{query}="{format_now(sep)}"'
         ) for query, sep in [
             (qterm, DATE_SEPARATORS[idx % len(DATE_SEPARATORS)])
             for idx, qterm in enumerate([
-                ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY, EQUAL_QUERY
+                ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY,
+                BEFORE_QUERY, EQUAL_QUERY
             ])
         ]
     ])

@@ -48,6 +48,7 @@ def get_home(request: HttpRequest) -> HttpResponse:
         if request.user and request.user.is_authenticated else \
         get_landing(request)
 
+
 def get_help(request: HttpRequest) -> HttpResponse:
     """
     Render help page

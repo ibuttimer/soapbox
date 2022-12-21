@@ -41,7 +41,9 @@ from opinions.search import (
     DATE_QUERY_DAY_GROUP, MARKER_CHARS, DATE_QUERY_GROUP, regex_date_matchers,
     KEY_TERM_GROUP, DATE_KEY_TERM_GROUP
 )
-from opinions.views.utils import DATE_QUERIES, SEARCH_ONLY_QUERIES
+from opinions.views.utils import (
+    DATE_QUERIES, SEARCH_ONLY_QUERIES, OPINION_APPLIED_DEFAULTS_QUERY_ARGS
+)
 from user.models import User
 from utils import ensure_list
 
@@ -74,7 +76,7 @@ FILTERS_ORDER = [
 ]
 ALWAYS_FILTERS = [
     # always applied items
-    STATUS_QUERY, HIDDEN_QUERY
+    option.query for option in OPINION_APPLIED_DEFAULTS_QUERY_ARGS
 ]
 FILTERS_ORDER.extend(
     [q for q in FIELD_LOOKUPS if q not in FILTERS_ORDER]
@@ -289,6 +291,7 @@ def get_yes_no_ignore_query(
             success = False
 
     return success
+
 
 def get_category_query(query_set_params: QuerySetParams,
                        name: str) -> None:

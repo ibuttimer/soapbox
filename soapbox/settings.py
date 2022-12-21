@@ -322,8 +322,10 @@ USE_TZ = True
 
 # !!
 # https://github.com/klis87/django-cloudinary-storage
-# Please note that you must set DEBUG to False to fetch static files from Cloudinary.
-# With DEBUG equal to True, Django staticfiles app will use your local files for easier and faster development
+# Please note that you must set DEBUG to False to fetch static files from
+# Cloudinary.
+# With DEBUG equal to True, Django staticfiles app will use your local files
+# for easier and faster development
 # (unless you use cloudinary_static template tag).
 # !!
 

@@ -21,6 +21,8 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 import re
+from re import Pattern
+from typing import Any
 
 from opinions.views.utils import DATE_QUERIES
 
@@ -32,6 +34,20 @@ KEY_TERM_GROUP = 1  # match group of required text & key of non-date terms
 TERM_GROUP = 3      # match group of required text of non-date terms
 
 
+def regex_pattern(mark: str, pattern: str) -> Pattern[Any]:
+    """
+    Compile a regex pattern for query params
+    :param mark: query key
+    :param pattern: value pattern
+    :return: compiled regex
+    """
+    return re.compile(
+        # match single/double-quoted text after 'mark='
+        # if 'mark=' is not preceded by a non-space
+        rf'.*(?<!\S)({mark}=(?P<quote>[\'\"])({pattern})(?P=quote))\s*.*',
+        re.IGNORECASE)
+
+
 def regex_matchers(queries: list[str]) -> dict:
     """
     Generate regex matchers for specified query terms
@@ -39,11 +55,7 @@ def regex_matchers(queries: list[str]) -> dict:
     :return: matchers
     """
     return {
-        # match single/double-quoted text after 'xxx='
-        # if 'xxx=' is not preceded by a non-space
-        q: re.compile(
-            rf'.*(?<!\S)({mark}=(?P<quote>[\'\"])(.*?)(?P=quote))\s*.*', re.IGNORECASE)
-        for q, mark in [
+        q: regex_pattern(mark, r'.*?') for q, mark in [
             # use query term as marker
             (qm, qm) for qm in queries
         ]
@@ -76,10 +88,7 @@ def regex_date_matchers() -> dict:
     return {
         # match single/double-quoted date after 'xxx='
         # if 'xxx=' is not preceded by a non-space
-        q: re.compile(
-            rf'.*(?<!\S)({mark}=(?P<quote>[\'\"])({DMY_REGEX})(?P=quote))\s*.*',
-            re.IGNORECASE)
-        for q, mark in [
+        q: regex_pattern(mark, DMY_REGEX) for q, mark in [
             # use query term as marker
             (qm, qm) for qm in DATE_QUERIES
         ]
