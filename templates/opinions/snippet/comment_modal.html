@@ -79,7 +79,7 @@
                 content: $(commentContentSelector).val(),
             };
 
-            const url = $(commentSubmitUrlSelector).text();
+            const url = `${$(commentSubmitUrlSelector).text()}?ref=${window.location.pathname}`;
 
             $.ajax({
                 method: 'post',

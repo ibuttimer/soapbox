@@ -207,6 +207,9 @@
 
     {% if not is_review %}
         {# no comments or reactions in review mode #}
+        <script>
+            const COMMENT_MORE_URL = "{% url 'opinions:comment_more' %}";
+        </script>
         <script src="{% static 'js/more_placeholder.js' %}"></script>
         <script src="{% static 'js/reactions.js' %}"></script>
     {% endif %}

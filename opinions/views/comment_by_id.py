@@ -48,7 +48,7 @@ from opinions.constants import (
     COMMENT_DATA_CTX, CONTENT_STATUS_CTX, OPINION_ID_ROUTE_NAME,
     OPINION_SLUG_ROUTE_NAME, MODE_QUERY, READ_ONLY_CTX, IS_ASSIGNED_CTX,
     REVIEW_RECORD_CTX, STATUS_BG_CTX, IS_PREVIEW_CTX, IS_REVIEW_CTX,
-    OPINION_CONTENT_STATUS_CTX, SUBMIT_URL_CTX,
+    OPINION_CONTENT_STATUS_CTX, SUBMIT_URL_CTX
 )
 from opinions.enums import ReactionStatus, ViewMode
 from opinions.forms import CommentForm, ReportForm
@@ -59,7 +59,7 @@ from opinions.contexts.comment import (
 from opinions.queries import (
     content_status_check, effective_content_status, content_review_records_list
 )
-from opinions.reactions import COMMENT_REACTIONS
+from opinions.reactions import COMMENT_REACTIONS, get_reaction_status
 from opinions.views.opinion_by_id import (
     like_patch, report_post, hide_patch, follow_patch, review_status_patch,
     review_decision_post, TITLE_UPDATE
@@ -182,7 +182,11 @@ class CommentDetail(LoginRequiredMixin, View):
             comments_list_context_for_opinion(
                 get_comment_query_args(
                     opinion=opinion_obj, parent=comment_obj),
-                request.user, context=render_args
+                request.user,
+                reaction_ctrls=get_reaction_status(
+                    request.user, comment_data
+                ),
+                context=render_args
             )
 
         if read_only:

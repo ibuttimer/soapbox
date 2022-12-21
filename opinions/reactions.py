@@ -348,18 +348,23 @@ def get_reaction_status(
                     get_reaction_status(user, cmt, **reaction_kwargs)
             else:
                 entry_is_opinion = isinstance(entry, Opinion)
+                target = entry
                 if entry_is_opinion:
                     # get status for opinion
                     content_field = AgreementStatus.OPINION_FIELD
                     reaction_fields = OPINION_REACTION_FIELDS
                     pin_field = PinStatus.OPINION_FIELD
                     reactions_list = OPINION_REACTIONS_LIST
-                else:
+                elif isinstance(entry, (Comment, CommentData)):
                     # get status for comment
                     content_field = AgreementStatus.COMMENT_FIELD
                     reaction_fields = COMMENT_REACTION_FIELDS
                     pin_field = None    # no pin in COMMENT_REACTIONS_LIST
                     reactions_list = COMMENT_REACTIONS_LIST
+                    if isinstance(entry, CommentData):
+                        target = entry.comment
+                else:
+                    raise ValueError(f'Unknown content {content}')
 
                 if reactions is None:
                     reactions = reaction_fields
@@ -367,15 +372,15 @@ def get_reaction_status(
                     reactions = [reactions]
 
                 def enablers_check(fld: str):
-                    return field_check(enablers, entry, fld)
+                    return field_check(enablers, target, fld)
 
                 def visibility_check(fld: str):
-                    return field_check(visibility, entry, fld)
+                    return field_check(visibility, target, fld)
 
                 # set enabled and visibility conditions for reactions
                 enabled = {}
                 displayer = {}
-                deleted = is_content_deleted(entry.lookup_clazz(), entry.id)
+                deleted = is_content_deleted(target.lookup_clazz(), target.id)
 
                 def two_icon_single_display(
                     ctrl_param: list[tuple[ReactionsList, bool, bool]],
@@ -391,7 +396,7 @@ def get_reaction_status(
                     :param inactive_field: reaction inactive field
                     :param check_func: function to check status
                     """
-                    active = check_func(entry, user=user) \
+                    active = check_func(target, user=user) \
                         if any_true(displayer, [
                             active_field, inactive_field
                         ]) else False
@@ -418,7 +423,7 @@ def get_reaction_status(
                         # comment author
                         enabled[field] = \
                             False if entry_is_opinion or deleted else \
-                            entry.user == user
+                            target.user == user
                         displayer[field] = enabled[field]
                     else:
                         # False if deleted or,
@@ -428,12 +433,12 @@ def get_reaction_status(
                         enabled[field] = \
                             False if deleted else \
                             field_check(
-                                status_by_id, entry, entry.id,
+                                status_by_id, target, target.id,
                                 default=ContentStatus.VIEW_OK).view_ok \
                             if status_by_id else \
                             enablers_check(field) if enablers else \
                             True if field in ALWAYS_AVAILABLE else \
-                            entry.user != user
+                            target.user != user
 
                         # visibility if specified or, True for fields in
                         # reactions
@@ -455,7 +460,7 @@ def get_reaction_status(
                     # need to display agree/disagree
                     query = AgreementStatus.objects.filter(**{
                         AgreementStatus.USER_FIELD: user,
-                        content_field: entry
+                        content_field: target
                     })
                     if query.exists():
                         agreement = query.first()
@@ -503,7 +508,7 @@ def get_reaction_status(
                 reported = False
                 if any_true(displayer, ReactionsList.REPORT_FIELD):
                     reported = get_content_status(
-                        entry, StatusCheck.REPORTED, user=user,
+                        target, StatusCheck.REPORTED, user=user,
                         current_user=user
                     ).reported
 
@@ -515,7 +520,7 @@ def get_reaction_status(
 
                 statuses.update({
                     # key is button id, value is Reaction
-                    reaction_button_id(reaction, entry.id):
+                    reaction_button_id(reaction, target.id):
                         ReactionCtrl(
                             selected=selected,
                             disabled=not enabled[reaction.field],

@@ -32,7 +32,10 @@ from django.views import View
 
 from categories import STATUS_PUBLISHED
 from categories.models import Status
-from opinions.constants import HTML_CTX
+from opinions.constants import (
+    HTML_CTX, COMMENT_OFFSET_CTX, PK_PARAM_NAME, REFERENCE_QUERY,
+    COMMENT_ID_ROUTE_NAME, OPINION_ID_ROUTE_NAME
+)
 from opinions.contexts.comment import get_comment_bundle_context
 from soapbox import (
     OPINIONS_APP_NAME
@@ -44,7 +47,8 @@ from opinions.comment_data import CommentBundle
 from opinions.forms import CommentForm
 from opinions.models import Opinion, Comment
 from opinions.views.utils import (
-    comment_permission_check, timestamp_content, form_errors_response
+    comment_permission_check, timestamp_content, form_errors_response,
+    resolve_ref
 )
 
 COMMENTS_CONTAINER_ID = 'id--comments-container'
@@ -83,17 +87,38 @@ class CommentCreate(LoginRequiredMixin, View):
             # django autocommits changes
             # https://docs.djangoproject.com/en/4.1/topics/db/transactions/#autocommit
 
-            # container for new comment display is the collapse
-            # container of the parent comment if comment-on-comment
-            # else comments container for comment-on-opinion
-            parent_container = \
-                CommentBundle.generate_collapse_id(comment.parent) \
-                if comment.parent != Comment.NO_PARENT else \
-                COMMENTS_CONTAINER_ID
-
             context = get_comment_bundle_context(
                 comment.id, request.user, depth=0, is_dynamic_insert=True
             )
+
+            # top level display comment if comment on opinion
+            top_level = comment.parent == Comment.NO_PARENT
+
+            comment_offset = 0
+            called_by = resolve_ref(request)
+            if called_by:
+                if called_by.url_name == OPINION_ID_ROUTE_NAME:
+                    pass
+                elif called_by.url_name == COMMENT_ID_ROUTE_NAME:
+                    get_param = {
+                        Comment.id_field(): called_by.kwargs.get(PK_PARAM_NAME)
+                    }
+                    view_comment = get_object_or_404(Comment, **get_param)
+                    comment_offset = view_comment.level + 1
+
+                    # top level if comment is 1 level below viewing comment
+                    top_level = comment.parent == view_comment.id
+                else:
+                    raise ValueError(
+                        f'Unknown {REFERENCE_QUERY} query value: '
+                        f'{request.GET[REFERENCE_QUERY]}')
+                context[COMMENT_OFFSET_CTX] = comment_offset
+
+            # container for new comment display is the collapse
+            # container of the parent comment if comment-on-comment
+            # else comments container for comment-on-opinion
+            parent_container = COMMENTS_CONTAINER_ID if top_level else \
+                CommentBundle.generate_collapse_id(comment.parent)
 
             response = JsonResponse({
                 HTML_CTX: render_to_string(

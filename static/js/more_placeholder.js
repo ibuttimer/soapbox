@@ -71,7 +71,7 @@ function subLevelCommentsClickHandler(event) {
     if (event.currentTarget.hasAttribute(DATA_COMMENT_QUERY)) {
         const query = event.currentTarget.attributes[DATA_COMMENT_QUERY].textContent;
 
-        const url = "{% url 'opinions:comment_more' %}?" + `${query}&ref=${window.location.pathname}`;
+        const url = `${COMMENT_MORE_URL}?${query}&ref=${window.location.pathname}`;
 
         $.ajax({
             method: 'get',
