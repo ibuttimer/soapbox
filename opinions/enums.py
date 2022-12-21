@@ -32,7 +32,7 @@ from categories.constants import (
     REACTION_AGREE, REACTION_DISAGREE, REACTION_HIDE, REACTION_SHOW,
     REACTION_PIN, REACTION_UNPIN, REACTION_FOLLOW, REACTION_UNFOLLOW,
     REACTION_REPORT, REACTION_SHARE, REACTION_COMMENT, REACTION_DELETE,
-    REACTION_EDIT,
+    REACTION_EDIT, STATUS_DELETED,
 )
 from categories.models import Status
 from opinions.models import Opinion, Comment
@@ -217,6 +217,8 @@ class QueryStatus(ChoiceArg):
     DRAFT = (STATUS_DRAFT, 'draft')
     PUBLISH = (STATUS_PUBLISHED, 'publish')
     PREVIEW = (STATUS_PREVIEW, 'preview')
+    DELETED = (STATUS_DELETED, 'deleted')
+
     WITHDRAWN = (STATUS_WITHDRAWN, 'withdrawn')
     PENDING_REVIEW = (STATUS_PENDING_REVIEW, 'pending-review')
     UNDER_REVIEW = (STATUS_UNDER_REVIEW, 'under-review')

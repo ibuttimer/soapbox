@@ -143,22 +143,28 @@ class CommentDetail(LoginRequiredMixin, View):
         # ok to view check
         content_status = content_status_check(
             comment_obj, current_user=request.user)
+        if content_status.deleted:
+            read_only = True
         opinion_content_status = content_status_check(
             opinion_obj, current_user=request.user)
         # users can always view their own comments
         view_ok = is_own \
             if not content_status.view_ok else content_status.view_ok
         effective_status = effective_content_status(comment_obj)
+        comment_data = CommentData(comment_obj)
+        comments_review_status = get_comments_review_status(
+            comment_data, current_user=request.user)
 
         render_args = {
             READ_ONLY_CTX: read_only,
             VIEW_OK_CTX: view_ok,
-            COMMENT_CTX: CommentData(comment_obj),
+            COMMENT_CTX: comment_data,
             OPINION_CTX: opinion_obj,
             STATUS_CTX: effective_status.display,
             IS_PREVIEW_CTX: is_preview,
             IS_REVIEW_CTX: is_review,
-            OPINION_CONTENT_STATUS_CTX: opinion_content_status
+            OPINION_CONTENT_STATUS_CTX: opinion_content_status,
+            CONTENT_STATUS_CTX: comments_review_status,
         }
         if is_review:
             is_assigned = content_status.assigned_view
@@ -279,7 +285,9 @@ class CommentDetail(LoginRequiredMixin, View):
         template = CommentTemplate.DEFAULT
         called_by = resolve_ref(request)
         if called_by:
-            if called_by.url_name == COMMENTS_ROUTE_NAME:
+            if called_by.url_name in [
+                COMMENTS_ROUTE_NAME, COMMENT_ID_ROUTE_NAME
+            ]:
                 template = CommentTemplate.COMMENT_LIST_TEMPLATE
             elif called_by.url_name in [
                 OPINION_ID_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME
@@ -573,7 +581,7 @@ def get_render_comment_response(
         comment_data = CommentData(comment)
         # get review status of comments
         comments_review_status = get_comments_review_status(
-            [comment_data], current_user=request.user)
+            comment_data, current_user=request.user)
 
         context = {
             COMMENT_DATA_CTX: comment_data,

@@ -256,9 +256,9 @@ def get_content_context(title: str, context_form_key: str, **kwargs) -> dict:
         STATUS_BG_CTX: STATUS_BADGES.get(status),
     }
 
-    opinion_form = kwargs.get(context_form_key, None)
-    if opinion_form is not None:
-        context[context_form_key] = opinion_form
+    context_form = kwargs.get(context_form_key, None)
+    if context_form is not None:
+        context[context_form_key] = context_form
         context[SUBMIT_URL_CTX] = kwargs.get(SUBMIT_URL_CTX, None)
 
     for key, value in kwargs.items():
