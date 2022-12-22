@@ -174,7 +174,8 @@ function setReactionHandlers() {
     $(reportReactionsSelector).on('click', (event) => {
         // set the submit url for reports
         set_react_info_vars(event, {
-            url: reportSubmitUrlSelector
+            url: reportSubmitUrlSelector,
+            title: "#id--report-modal-heading"
         });
     });
     $(deleteReactionsSelector).on('click', (event) => {
