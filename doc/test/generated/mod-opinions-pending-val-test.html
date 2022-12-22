@@ -14,10 +14,10 @@
     <meta name="google-site-verification" content="nSLaF9fnDohng9nLW2_KvEKKAdIk40-RHsQEQsY8-GI">
 
     
-    <link href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/css/styles.b2224c8a1d4d.css" rel="stylesheet" type="text/css">
+    <link href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/css/styles.0a394c593910.css" rel="stylesheet" type="text/css">
 
     
-<link href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/css/styles-opinion.97b5ca478420.css" rel="stylesheet" type="text/css">
+<link href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/css/styles-opinion.c27ff17ed3af.css" rel="stylesheet" type="text/css">
 
 
     
@@ -63,13 +63,15 @@
                 <div class="collapse navbar-collapse" id="navbarToggler">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link active" aria-current="page" href="/">Home</a>
+                            <a class="nav-link" href="/">
+                                <span>Home</span>
+                            </a>
                         </li>
                         
                             
                             <li class="nav-item dropdown">
-                                <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="nav-link dropdown-toggle">
-                                    Opinion
+                                <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="nav-link dropdown-toggle active" aria-current="page">
+                                    <span class="active_page">Opinion</span>
                                 </a>
                                 <ul class="dropdown-menu">
                                     
@@ -104,7 +106,7 @@
                             
                             <li class="nav-item dropdown">
                                 <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="nav-link dropdown-toggle">
-                                    Comment
+                                    <span>Comment</span>
                                 </a>
                                 <ul class="dropdown-menu">
                                     
@@ -125,7 +127,7 @@
                             
                                 <li class="nav-item dropdown">
                                     <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="nav-link dropdown-toggle">
-                                        Moderate
+                                        <span>Moderate</span>
                                     </a>
                                     <ul class="dropdown-menu">
                                         
@@ -152,6 +154,12 @@
                                 </li>
                             
                         
+                        
+                        <li class="nav-item">
+                            <a class="nav-link" href="/help/">
+                                <span>Help</span>
+                            </a>
+                        </li>
                     </ul>
                     <form class="d-flex" role="search" method="get" action="/opinions/search/">
                         <input class="form-control me-2" type="search" placeholder="Search opinions" aria-label="Search" name="search">
@@ -161,13 +169,15 @@
                         
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    
-                                        <i class="fa-solid fa-user-plus"></i>
-                                    
-                                    &nbsp;
-                                    
-                                        Mod1
-                                    
+                                    <span>
+                                        
+                                            <i class="fa-solid fa-user-plus"></i>
+                                        
+                                        &nbsp;
+                                        
+                                            Mod1
+                                        
+                                    </span>
                                 </a>
                                 <ul class="dropdown-menu">
                                     <li>
@@ -191,7 +201,9 @@
 
         <div class="container">
             
+<div class="row mt-2">
 
+</div>
 
 <div class="row flex-grow-1 overflow-auto d-flex justify-content-center">
     
@@ -203,10 +215,12 @@
 
 
 
+
 <div class="row d-flex justify-content-center">
     <div class="row d-flex justify-content-center">
         <div class="col-xxl-10 col-lg-9 col-md-8 col-sm-6 col-auto mt-2 text-center">
             <h3>All Pending Review Opinions</h3>
+            
         </div>
         <div class="col-xxl-2 col-lg-3 col-md-4 col-sm-6 col-auto mt-2">
             <!-- sort order selection -->
@@ -275,11 +289,15 @@
                                     <div class="row">
                                         <div class="col-sm-8 col-12 mt-0 mb-0">
                                             <!-- title -->
-                                            <a href="/opinions/51/?mode=read-only" class="post-link">
+                                            
+                                            <a href="/opinions/51/?mode=read-only" class="post-link" aria-label="read Very contentious according to user2 - Pending Review">
+                                            
                                                 <h4 id="id--title-1" class="card-title">
                                                     Very contentious according to user2 - Pending Review
                                                 </h4>
+                                            
                                             </a>
+                                            
                                             
                                         </div>
                                         <div id="categories_1" class="col-sm-3 col-10 mt-0 mb-0">
@@ -597,7 +615,7 @@
                                         </div>
                                         <div class="col-sm-6 col-8 mt-0 mb-0">
                                             <div class="row mt-0 mb-0">
-                                                <div class="col-md-6 mt-0 mb-0">
+                                                <div class="col-md-6 mt-2 mb-2">
                                                     <a href="/users/2/" aria-label="view author's profile">user1</a>
                                                 </div>
                                                 <div class="col-md-6 mt-0 mb-0">
@@ -608,7 +626,7 @@
                                             <p class="card-text text-muted mt-0 mb-0">
                                                 
                                                 <br>
-                                                <i class="fa-solid fa-pen-to-square"></i> 1&nbsp;week, 6&nbsp;days from now
+                                                <i class="fa-solid fa-pen-to-square"></i> 6&nbsp;days, 23&nbsp;hours from now
                                             </p>
                                         </div>
                                         <div class="col-sm-3 col-4 mt-0 mb-0">
@@ -741,348 +759,12 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
     
-    
+    <script src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/js/page_content.401db8002a5a.js"></script>
+    <script src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/js/reactions.3cb97822c737.js"></script>
 
-
-<script>
-  /**
-   * Update sort order/per page
-   * :param event: change event
-   */
-  function update_content(order, per_page, page) {
-
-    if (page === undefined) {
-      page = "?page=1"
-    }
-
-    // remove per page and page handlers as new elements will be returned with the response
-    $('#per-page-select').off();
-    $('.page-item').off();
-
-    const repeat_search = $('#var--repeat-search-term').text().trim();
-    const query_args = [
-      "order=" + order, "per-page=" + per_page, "reorder=1"
-    ];
-    if (repeat_search.length > 0) {
-      query_args.push(repeat_search)
-    }
-
-    $.ajax({
-      url: page + "&" + query_args.join("&")
-    }).done(function(data) {
-      $('#article-content').html(data);
-
-      setReactionHandlers();
-      enableTooltips();
-
-      $('#per-page-select').ready(function(event) {
-        add_page_content_handlers();
-      });
-    });
-  }
-
-  /** Get current per page value */
-  function get_per_page() {
-    return $('#per-page-select').find(":selected").val();
-  }
-
-  /** Get current order value */
-  function get_order() {
-    return $('#id--sort-order-select').find(":selected").val()
-  }
-
-  /** Get current page value */
-  function get_page() {
-    const page = $('#current-page').find("a");
-    return page.length ? "?page=" + page.text().trim() : undefined
-  }
-
-  /**
-   * Add change handler for per page selector and pages
-   */
-  function add_page_content_handlers() {
-    /**
-     * Change handler for per page
-     * :param event: change event
-     */
-    $('#per-page-select').on( "change", function(event) {
-      update_content(get_order(), event.target.value, get_page())
-    });
-    /**
-     * Click handler for page request
-     * :param event: change event
-     */
-    $('.page-item').on( "click", function(event) {
-      event.preventDefault();
-      update_content(get_order(), get_per_page(), event.currentTarget.firstElementChild.href)
-    });
-  }
-
-
-  $(document).ready(function() {
-    /**
-     * Change handler for sort order
-     * :param event: change event
-     */
-    $('#id--sort-order-select').on( "change", function(event) {
-      update_content(event.target.value, get_per_page(), get_page())
-    });
-
-    add_page_content_handlers();
-  });
-</script>
-
-    <!-- reactions_js.html start -->
-<script>
-    /**
-     * Update react status of current opinion
-     * :param event: click event
-     * :param done_func: reaction specific done handler function
-     */
-    function updateReactStatus(event, done_func) {
-        // hide tooltip
-        $("#" + event.currentTarget.id).tooltip("hide");
-
-        const reaction = get_react_info(event)
-
-        $.ajax({
-            url: reaction.url + "?status=" + reaction.option,
-            method: 'patch',
-            headers: {
-                'X-CSRFTOKEN': 'EdUKRgW5NcshnWfUndwbRMNRDEqelM7NfG1vnwUkJBjaEXZs34Xwdf8iMLk3cCnc'
-            }
-        }).done(function(data) {
-            done_func(data);
-
-            // set click handlers for reactions
-            setReactionHandlers();
-            enableTooltips();
-        });
-    }
-
-    /**
-     * Update react status of current opinion
-     * :param event: click event
-     * :param done_func: reaction specific done handler function
-     */
-    function getCommentEdit(event, done_func) {
-        // hide tooltip
-        $("#" + event.currentTarget.id).tooltip("hide");
-
-        const reaction = get_react_info(event)
-
-        document.location.href = `${reaction.url}?mode=edit`;
-    }
-
-    const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
-
-    /**
-     * Get react info
-     * :param event: click event
-     */
-    function get_react_info(event) {
-        // ids are of the form 'id--react-<action>-<type>-<id>' e.g. 'id--react-agree-opinion-1'
-        const split = event.currentTarget.attributes['id'].textContent.split('-')
-        let data_bs_option = '';
-        if (event.currentTarget.firstElementChild.attributes.hasOwnProperty('data-bs-option')) {
-            data_bs_option = event.currentTarget.firstElementChild.attributes['data-bs-option'].textContent
-        }
-        return {
-            // href is on the button
-            url: event.currentTarget.attributes['data-bs-href'].textContent,
-            // title is on the button
-            title: event.currentTarget.attributes['data-bs-title'].textContent,
-            // type is taken from the button id
-            type: split[4],
-            // status option is on the span in the button (see reactions.html)
-            option: data_bs_option,
-            // status option is the action to perform, e.g. 'show'/'hide'/etc. i.e. ReactionStatus.XXX.arg
-            action: data_bs_option,
-            submit: capitalize(data_bs_option)
-        };
-    }
-    /**
-     * Set react info vars
-     * :param event: click event
-     * :param ids: object with keys matching those returned by get_react_info()
-     *             and values as ids of element to be set
-     * :param baseUrl: base url to prepend to url value
-     */
-    function set_react_info_vars(event, ids, baseUrl = undefined) {
-        const reaction = get_react_info(event)
-        for (const [key, selector] of Object.entries(ids)) {
-            let value = reaction[key];
-            if (key === 'url' && baseUrl !== undefined) {
-                value = baseUrl + value;
-            }
-            $(selector).text(value);
-        }
-    }
-
-    /**
-     * Update like/unlike status of current opinion
-     * :param event: click event
-     */
-    function updateOnOffReaction(event) {
-        updateReactStatus(event, redirect_rewrite_response_handler);
-    }
-
-    // Reaction buttons have the general form: "id--react-<action>-<type>-<id>"
-    // where: action is [agree|disagree|comment|follow|unfollow|share|hide|unhide|pin|unpin|report]
-    //        type is [opinion|comment]
-    //        id is id of target opinion/comment
-
-    // Reaction buttons for comments are named 'id--react-comment-....'
-    const commentReactionsSelector = "button[id^='id--react-comment']";
-    // Reaction buttons for like are named 'id--react-agree-....'
-    const likeReactionsSelector = "button[id^='id--react-agree']";
-    // Reaction buttons for unlike are named 'id--react-disagree-....'
-    const unlikeReactionsSelector = "button[id^='id--react-disagree']";
-    // Reaction buttons for hide are named 'id--react-hide-....'
-    const hideReactionsSelector = "button[id^='id--react-hide']";
-    // Reaction buttons for hide are named 'id--react-show-....'
-    const showReactionsSelector = "button[id^='id--react-show']";
-    // Reaction buttons for pin are named 'id--react-pin-....'
-    const pinReactionsSelector = "button[id^='id--react-pin']";
-    // Reaction buttons for unpin are named 'id--react-unpin-....'
-    const unpinReactionsSelector = "button[id^='id--react-unpin']";
-    // Reaction buttons for follow are named 'id--react-follow-....'
-    const followReactionsSelector = "button[id^='id--react-follow']";
-    // Reaction buttons for unfollow are named 'id--react-unfollow-....'
-    const unfollowReactionsSelector = "button[id^='id--react-unfollow']";
-    // Reaction buttons for report are named 'id--react-report-....'
-    const reportReactionsSelector = "button[id^='id--react-report']";
-    // Reaction buttons for share are named 'id--react-share-....'
-    const shareReactionsSelector = "button[id^='id--react-share']";
-    // Reaction buttons for delete are named 'id--react-delete-....'
-    const deleteReactionsSelector = "button[id^='id--react-delete']";
-    // Reaction buttons for comments are named 'id--react-edit-....'
-    const editCommentReactionsSelector = "button[id^='id--react-edit']";
-
-    /* Set the click handlers for reactions */
-    function setReactionHandlers() {
-        /* TODO removing and adding all the handlers is unnecessary */
-
-        // remove old handlers to prevent duplicates
-        for (let selector of [
-                commentReactionsSelector, likeReactionsSelector, unlikeReactionsSelector,
-                hideReactionsSelector, showReactionsSelector,
-                pinReactionsSelector, unpinReactionsSelector,
-                followReactionsSelector, unfollowReactionsSelector,
-                reportReactionsSelector, shareReactionsSelector,
-                deleteReactionsSelector, editCommentReactionsSelector
-        ]) {
-            $(selector).off();
-        }
-
-        // add new handlers
-        $(commentReactionsSelector).on('click', (event) => {
-            // set the submit url for comments
-            set_react_info_vars(event, {
-                url: commentSubmitUrlSelector
-            });
-        });
-        $(reportReactionsSelector).on('click', (event) => {
-            // set the submit url for reports
-            set_react_info_vars(event, {
-                url: reportSubmitUrlSelector
-            });
-        });
-        $(deleteReactionsSelector).on('click', (event) => {
-            // set the delete url for comments
-            set_react_info_vars(event, {
-                url: commentDeleteUrlSelector
-            });
-
-            // display confirmation modal
-            $(commentDeleteConfirmModalSelector).modal('show');
-        });
-        $(editCommentReactionsSelector).on('click', (event) => {
-            getCommentEdit(event, function(data) {
-                /* TODO handle edit in comment modal */
-            });
-        });
-        $(shareReactionsSelector).on('click', (event) => {
-            // set the share url for share
-            const baseUrl = window.location.href.slice(0, window.location.href.indexOf(window.location.pathname))
-            set_react_info_vars(event, {
-                url: "#id--share-url",
-                title: "#id--share-modal-heading"
-            }, baseUrl);
-        });
-        for (let selector of [
-            // update like/unlike status
-            likeReactionsSelector, unlikeReactionsSelector,
-            // update pin/unpin status
-            pinReactionsSelector, unpinReactionsSelector,
-            // update follow/unfollow status
-            followReactionsSelector, unfollowReactionsSelector,
-        ]) {
-            $(selector).on('click', (event) => {
-                updateOnOffReaction(event);
-            });
-        }
-        for (let selector of [hideReactionsSelector, showReactionsSelector]) {
-            $(selector).on('click', (event) => {
-                // set the submit url/option/title for hide/show
-                set_react_info_vars(event, {
-                    // keys are value names, values are ids of tags to update
-                    url: hideSubmitUrlSelector,
-                    option: hideSubmitOptionSelector,
-                    title: "#id--hide-modal-heading",
-                    type: "#id--hide-modal-element",
-                    action: "#id--hide-modal-action",
-                    submit: "#id--submit-btn-hide-modal",
-                });
-            });
-        }
-    }
-
-    $(document).ready(function () {
-        // set click handlers for reactions
-        setReactionHandlers();
-    });
-</script>
-<!-- reactions_js.html end -->
-
-
-
+    <script src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/js/base.6a5075062b6d.js"></script>
     <script>
-        /* Enable Bootstrap tooltips */
-        function enableTooltips() {
-            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-            const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
-        }
-
-        const REDIRECT_PROP = 'redirect';
-        const REWRITES_PROP = 'rewrites';
-        const ELEMENT_ID_PROP = 'element_id';
-        const HTML_PROP = 'html';
-
-        const replaceHtml = (data) => $("#" + data[ELEMENT_ID_PROP]).replaceWith(data[HTML_PROP]);
-
-        /**
-         * Handle a redirect/rewrite response
-         * :param data: json data
-         */
-        function redirect_rewrite_response_handler(data) {
-            if (data !== undefined) {
-                if (data.hasOwnProperty(REDIRECT_PROP)) {
-                    // redirect to new url
-                    document.location.href = data[REDIRECT_PROP];
-                } else if (data.hasOwnProperty(ELEMENT_ID_PROP)) {
-                    // replace single element's html
-                    replaceHtml(data);
-                } else if (data.hasOwnProperty(REWRITES_PROP)) {
-                    // replace multiple element's html
-                    for (let element of data[REWRITES_PROP]) {
-                        replaceHtml(element);
-                    }
-                }
-            }
-        }
-
-        enableTooltips();
+        const csrfToken = () => 'JRorF2vchcYHvk9BsUfZqPHH5WbRFrgAk35qlFKHW7RAkizzPC4zLGafWVXGubGv';
     </script>
 
 </body></html>

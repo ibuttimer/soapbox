@@ -1,5 +1,28 @@
 # Testing
 
+- [Testing](#testing)
+  - [Pre-test setup](#pre-test-setup)
+    - [Users](#users)
+    - [Database](#database)
+  - [Environment](#environment)
+  - [Testing](#testing-1)
+  - [Unittest Unit Testing](#unittest-unit-testing)
+  - [Django Test Tools Unit Testing](#django-test-tools-unit-testing)
+  - [Jest Unit Testing](#jest-unit-testing)
+  - [Test Coverage](#test-coverage)
+    - [Test Coverage Reports](#test-coverage-reports)
+  - [Unit Testing Summary](#unit-testing-summary)
+  - [PEP8 Testing](#pep8-testing)
+  - [Manual](#manual)
+  - [Responsiveness Testing](#responsiveness-testing)
+  - [Lighthouse](#lighthouse)
+  - [Accessibility](#accessibility)
+  - [User](#user)
+  - [Validator Testing](#validator-testing)
+    - [Content scraping](#content-scraping)
+  - [Issues](#issues)
+      - [Bug](#bug)
+
 ## Pre-test setup
 ### Users
 Manually created the following users required for testing purposes:

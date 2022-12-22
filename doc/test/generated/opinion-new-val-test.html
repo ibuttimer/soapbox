@@ -14,7 +14,7 @@
     <meta name="google-site-verification" content="nSLaF9fnDohng9nLW2_KvEKKAdIk40-RHsQEQsY8-GI">
 
     
-    <link href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/css/styles.b2224c8a1d4d.css" rel="stylesheet" type="text/css">
+    <link href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/css/styles.0a394c593910.css" rel="stylesheet" type="text/css">
 
     
     
@@ -64,13 +64,15 @@
                 <div class="collapse navbar-collapse" id="navbarToggler">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link active" aria-current="page" href="/">Home</a>
+                            <a class="nav-link" href="/">
+                                <span>Home</span>
+                            </a>
                         </li>
                         
                             
                             <li class="nav-item dropdown">
-                                <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="nav-link dropdown-toggle">
-                                    Opinion
+                                <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="nav-link dropdown-toggle active" aria-current="page">
+                                    <span class="active_page">Opinion</span>
                                 </a>
                                 <ul class="dropdown-menu">
                                     
@@ -97,10 +99,10 @@
                                     </li>
                                     
                                         <li>
-                                            <a class="dropdown-item" tabindex="-1" href="/opinions/followed/?filter=new">New tagged author opinions</a>
+                                            <a class="dropdown-item" tabindex="-1" href="/opinions/followed/?filter=new">New Followed Author Opinions</a>
                                         </li>
                                         <li>
-                                            <a class="dropdown-item" tabindex="-1" href="/opinions/followed/?filter=all">All tagged author opinions</a>
+                                            <a class="dropdown-item" tabindex="-1" href="/opinions/followed/?filter=all">All Followed Author Opinions</a>
                                         </li>
                                     
                                     <li>
@@ -112,7 +114,7 @@
                             
                             <li class="nav-item dropdown">
                                 <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="nav-link dropdown-toggle">
-                                    Comment
+                                    <span>Comment</span>
                                 </a>
                                 <ul class="dropdown-menu">
                                     
@@ -132,6 +134,12 @@
                             
                             
                         
+                        
+                        <li class="nav-item">
+                            <a class="nav-link" href="/help/">
+                                <span>Help</span>
+                            </a>
+                        </li>
                     </ul>
                     <form class="d-flex" role="search" method="get" action="/opinions/search/">
                         <input class="form-control me-2" type="search" placeholder="Search opinions" aria-label="Search" name="search">
@@ -141,13 +149,15 @@
                         
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    
-                                        <i class="fa-solid fa-user"></i>
-                                    
-                                    &nbsp;
-                                    
-                                        User1
-                                    
+                                    <span>
+                                        
+                                            <i class="fa-solid fa-user"></i>
+                                        
+                                        &nbsp;
+                                        
+                                            User1
+                                        
+                                    </span>
                                 </a>
                                 <ul class="dropdown-menu">
                                     <li>
@@ -182,7 +192,7 @@
 
         <form method="post" action="/opinions/new/?status=publish" enctype="multipart/form-data">
             
-                <input type="hidden" name="csrfmiddlewaretoken" value="tCtiLK49zojDuYnlYWk8RSvYWoOAS1NQTcOB5BjTN6EiuEP7W8Qd0TEyQdzjpRYT">
+                <input type="hidden" name="csrfmiddlewaretoken" value="llB3Easl8ozfauz3ljo2YT4WLQbqrOcmKCCfhr4usqTR5Ilc4IfiJr8qCiRLhavR">
             
 
             <div id="id--opinion-form-errors-container">
@@ -417,43 +427,9 @@
 
     
 
-
+    <script src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/js/base.6a5075062b6d.js"></script>
     <script>
-        /* Enable Bootstrap tooltips */
-        function enableTooltips() {
-            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-            const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
-        }
-
-        const REDIRECT_PROP = 'redirect';
-        const REWRITES_PROP = 'rewrites';
-        const ELEMENT_ID_PROP = 'element_id';
-        const HTML_PROP = 'html';
-
-        const replaceHtml = (data) => $("#" + data[ELEMENT_ID_PROP]).replaceWith(data[HTML_PROP]);
-
-        /**
-         * Handle a redirect/rewrite response
-         * :param data: json data
-         */
-        function redirect_rewrite_response_handler(data) {
-            if (data !== undefined) {
-                if (data.hasOwnProperty(REDIRECT_PROP)) {
-                    // redirect to new url
-                    document.location.href = data[REDIRECT_PROP];
-                } else if (data.hasOwnProperty(ELEMENT_ID_PROP)) {
-                    // replace single element's html
-                    replaceHtml(data);
-                } else if (data.hasOwnProperty(REWRITES_PROP)) {
-                    // replace multiple element's html
-                    for (let element of data[REWRITES_PROP]) {
-                        replaceHtml(element);
-                    }
-                }
-            }
-        }
-
-        enableTooltips();
+        const csrfToken = () => 'llB3Easl8ozfauz3ljo2YT4WLQbqrOcmKCCfhr4usqTR5Ilc4IfiJr8qCiRLhavR';
     </script>
 
 </body></html>
