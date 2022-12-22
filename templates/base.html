@@ -84,7 +84,9 @@
                                {% else %}
                                 class="nav-link"
                                {% endif %}
-                               href="{% url 'home' %}">Home</a>
+                               href="{% url 'home' %}">
+                                <span {% if home_menu %}class="active_page"{% endif %}>Home</span>
+                            </a>
                         </li>
                         {% if user.is_authenticated %}
                             {# --- opinion menu --- #}
@@ -100,7 +102,7 @@
                                         class="nav-link dropdown-toggle disabled"
                                    {% endif %}
                                 >
-                                    Opinion
+                                    <span {% if opinion_menu %}class="active_page"{% endif %}>Opinion</span>
                                 </a>
                                 <ul class="dropdown-menu">
                                     {% if opinion_create %}
@@ -152,7 +154,7 @@
                                         class="nav-link dropdown-toggle disabled"
                                    {% endif %}
                                 >
-                                    Comment
+                                    <span {% if comment_menu %}class="active_page"{% endif %}>Comment</span>
                                 </a>
                                 <ul class="dropdown-menu">
                                     {% if comment_read %}
@@ -183,7 +185,7 @@
                                        class="nav-link dropdown-toggle disabled"
                                        {% endif %}
                                     >
-                                        Moderate
+                                        <span {% if moderator_menu %}class="active_page"{% endif %}>Moderate</span>
                                     </a>
                                     <ul class="dropdown-menu">
                                         {% if review_read %}
@@ -217,7 +219,9 @@
                                {% else %}
                                 class="nav-link"
                                {% endif %}
-                               href="{% url 'help' %}">Help</a>
+                               href="{% url 'help' %}">
+                                <span {% if help_menu %}class="active_page"{% endif %}>Help</span>
+                            </a>
                         </li>
                     </ul>
                     <form class="d-flex" role="search" method="get" action="{% url 'opinions:opinion_search' %}">
@@ -233,19 +237,21 @@
                                    class="nav-link dropdown-toggle"
                                    {% endif %}
                                    href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    {% if is_super %}
-                                        <i class="fa-solid fa-user-ninja"></i>
-                                    {% elif is_moderator %}
-                                        <i class="fa-solid fa-user-plus"></i>
-                                    {% elif is_author %}
-                                        <i class="fa-solid fa-user"></i>
-                                    {% endif %}
-                                    &nbsp;
-                                    {% if user.first_name %}
-                                        {{ user.first_name }}
-                                    {% else %}
-                                        {{ user.username }}
-                                    {% endif %}
+                                    <span {% if user_menu %}class="active_page"{% endif %}>
+                                        {% if is_super %}
+                                            <i class="fa-solid fa-user-ninja"></i>
+                                        {% elif is_moderator %}
+                                            <i class="fa-solid fa-user-plus"></i>
+                                        {% elif is_author %}
+                                            <i class="fa-solid fa-user"></i>
+                                        {% endif %}
+                                        &nbsp;
+                                        {% if user.first_name %}
+                                            {{ user.first_name }}
+                                        {% else %}
+                                            {{ user.username }}
+                                        {% endif %}
+                                    </span>
                                 </a>
                                 <ul class="dropdown-menu">
                                     <li>
@@ -264,7 +270,9 @@
                                    {% else %}
                                     class="nav-link"
                                    {% endif %}
-                                   href="{% url 'account_signup' %}">Register</a>
+                                   href="{% url 'account_signup' %}">
+                                    <span {% if register_menu %}class="active_page"{% endif %}>Register</span>
+                                </a>
                             </li>
                             <li class="nav-item">
                                 <a {% if sign_in_menu %}
@@ -272,7 +280,9 @@
                                    {% else %}
                                     class="nav-link"
                                    {% endif %}
-                                   href="{% url 'account_login' %}">Sign In</a>
+                                   href="{% url 'account_login' %}">
+                                    <span {% if sign_in_menu %}class="active_page"{% endif %}>Sign In</span>
+                                </a>
                             </li>
                         {% endif %}
                     </ul>
