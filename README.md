@@ -6,13 +6,156 @@ Depending on a users' role they may post opinions and comment on other's opinion
 
 The site is aimed at people seeking a platform in which to express opinions and engage in debate.
 
+###### Fig 1: Responsive Mockup
+![Responsive Mockup](doc/media/responsive.png)
+
+Section links
+- [Features](#features)
+- [Design](#design)
+- [Development](#development-and-local-deployment)
+- [Test](#test)
+- [Cloud-based Deployment](#cloud-based-deployment)
+- [Credits](#credits)
+
 ## Features 
 
+### Existing Features
+#### Common Features
+
+##### Navigation Bar
+The fully responsive navigation bar provides access to the content pages (`Opinion`/`Comment`) and `Moderator` pages, and `User` menu. The current page is highlighted for easy identification and users can easily navigate to the other pages.
+
+###### Fig 2: Navigation Bar
+![Nav Bar](doc/media/nav-bar-images.png)
+
+### User registration and authentication
+Users may register for an account or alternatively use OAuth to sign in via their Google or Twitter accounts.
+
+###### Fig 3: User registration and authentication
+|               User registration                |             User authentication              |
+|:----------------------------------------------:|:--------------------------------------------:|
+| ![User register/login](doc/media/register.png) | ![User register/login](doc/media/signin.png) | 
+
+### User roles
+There are three user roles:
+- Author
+
+    Authors may create and read content. This is the default role for new users.
+
+- Moderator
+
+    Moderators have the same abilities as Authors and in addition are responsible for reviewing content which has been reported by other users.
+
+- Site administrator
+
+  The site administrator may perform all functions on the site, including assigning Moderators.
+
+### User notifications
+Users receive notifications following sign in. These include a new user notification, content changes notification
+
+###### Fig 4: User notifications
+|                       New user notification                       |                   Login notification                    |
+|:-----------------------------------------------------------------:|:-------------------------------------------------------:|
+|   ![New user notification](doc/media/notification-new-user.png)   | ![Login notification](doc/media/notification-login.png) | 
+|                          **New content**                          |                                                         |
+| ![New user notification](doc/media/notification-new-content.png)  |                                                         | 
+
+### Content CRUD
+#### Content creation
+Users may create and publish opinions, comments on opinions and comments on comments.
+#### Content view
+All users may view opinions and their associated comments.
+#### Content edit
+Authors may edit their opinions and comments.
+#### Content delete
+Authors may delete their opinions, resulting in the opinion and associated comments being deleted.
+Comment's may be pseudo deleted, i.e. the comment will be marked as deleted and it's contents deleted the content. A comment placeholder will remain to ensure the comment tree structure.
+
+###### Fig 5: Content CRUD
+|                  Create opinion                   |                      Create comment                       |
+|:-------------------------------------------------:|:---------------------------------------------------------:|
+| ![Opinion creation](doc/media/create-opinion.png) | ![Comment creation](doc/media/create-opinion-comment.png) | 
+|                 **Opinion view**                  |                     **Comment view**                      |
+|    ![Opinion view](doc/media/view-opinion.png)    |    ![Comment view](doc/media/multi-level-comments.png)    | 
+|                 **Opinion edit**                  |                     **Comment edit**                      |
+|    ![Opinion edit](doc/media/edit-opinion.png)    |        ![Comment edit](doc/media/edit-comment.png)        | 
+|                **Opinion delete**                 |                    **Comment delete**                     |
+|  ![Opinion delete](doc/media/delete-opinion.png)  |      ![Comment delete](doc/media/delete-comment.png)      | 
+
+### Content interaction
+Users may interact with content via the reactions bar, allowing them to:
+- mark content as agree/disagree
+- follow content authors to receive notifications of new opinions they create
+- pin opinions for easy retrieval vis the `Opinion -> Pinned` listing
+- share content via short urls
+- hide opinions, so they don't appear in opinion listings and, hide comment's content
+- report content to be reviewed by a moderator
+- comment pseudo delete, see [Content delete](#content-delete)
+- edit their own comments
+
+###### Fig 6: Content interaction
+|              Agree opinion/comment              |              Disagree opinion/comment               |
+|:-----------------------------------------------:|:---------------------------------------------------:|
+|  ![Agree opinion/comment](doc/media/agree.png)  | ![Disagree opinion/comment](doc/media/disagree.png) | 
+|           **Follow content authors**            |                   **Pin opinion**                   |
+|      ![Hide opinion](doc/media/follow.png)      |         ![Hide comment](doc/media/pin.png)          | 
+|                **Hide opinion**                 |                  **Hide comment**                   |
+|   ![Hide opinion](doc/media/hide-opinion.png)   |     ![Hide comment](doc/media/hide-comment.png)     | 
+|               **Report opinion**                |                 **Report comment**                  |
+| ![Report opinion](doc/media/report-opinion.png) |   ![Report comment](doc/media/report-comment.png)   | 
+|               **Delete comment**                |                  **Edit comment**                   |
+| See [Fig 5: Content CRUD](#fig-5-content-crud)  |   See [Fig 5: Content CRUD](#fig-5-content-crud)    | 
+
+### Content search
+Users may search for opinions via search box in the navbar at the top of the screen.
+Please see [Advanced Search](https://soapbox-opinions.herokuapp.com/help/#advanced-search-help) for full list of search terms.
+
+###### Fig 6: Content search
+|                    Search opinion by author                    |                       Search opinion by author and title                        |
+|:--------------------------------------------------------------:|:-------------------------------------------------------------------------------:|
+| ![Search opinion by author](doc/media/search-opinion-user.png) | ![Search opinion by author and title](doc/media/search-opinion-user-title.png)  | 
+
+### Opinion feeds
+There are two opinion feeds available to the user on the home page:
+- Following
+
+  A feed of opinion from authors which the user is following.
+
+- Category
+
+  A feed of opinions from categories which the user has selected to follow in their profile.
+
+
+###### Fig 7: Opinion feeds
+|                 Following feed                  |                 Category feed                 |              All feed               |
+|:-----------------------------------------------:|:---------------------------------------------:|:-----------------------------------:|
+| ![Following feed](doc/media/following-feed.png) | ![Category feed](doc/media/category-feed.png) | ![All feed](doc/media/all-feed.png) | 
+
+
+### Moderate
+Moderators have access to the moderator menu which allows them to:
+- Self-assign content (opinions/comments) pending review
+- Submit a review finding on content under review
+
+  Acceptable content will appear in public listings and, unacceptable content is not displayed.
+
+- View content unacceptable content
+
+###### Fig 8: Moderate
+|                      Pending review                      |                        Under review                        |                        Unacceptable                         |
+|:--------------------------------------------------------:|:----------------------------------------------------------:|:-----------------------------------------------------------:|
+| ![Pending review](doc/media/moderate-review-pending.png) | ![Under review](doc/media/moderate-review-in-progress.png) | ![Unacceptable](doc/media/moderate-review-unacceptable.png) | 
+
+
+### Future enhancements
+- Add user listing and search capabilities
+- Add comment search
+- Add advanced search page
 
 ## Design
 The design specification is available in [design.md](doc/design/design.md).
 
-## Development/Local Deployment
+## Development and Local Deployment
 ### Environment
 The development environment requires:
 
@@ -203,6 +346,7 @@ The application structure is as follows:
 ├─ base                 - base Django application
 ├─ categories           - categories Django application
 ├─ django_tests         - Django Test Tools test scripts
+├─ jest_tests           - Jest javascript tests
 ├─ opinions             - opinions Django application
 ├─ user                 - user Django application
 ├─ staticfiles          - static files
@@ -210,7 +354,7 @@ The application structure is as follows:
 │  ├─ img               - images
 │  └─ js                - custom JavaScript
 ├─ templates            - application templates
-├─ tests                - test scripts
+├─ tests                - unittest test scripts
 └─ utils                - utility function scripts
 ```
 
@@ -363,6 +507,7 @@ The following resources were used to build the website.
 - Landing page [bullhorn image](static/img/free-speech-6249234_1280.png) by [Gordon Johnson](https://pixabay.com/users/gdj-1086657/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=6249234") from [Pixabay](https://pixabay.com//?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=6249234)
 - [Speech balloons image](static/img/balloons-1187260_1280.png) by [Sabine Kroschel](https://pixabay.com/users/pixaline-1569622/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=1187260) from [Pixabay](https://pixabay.com//?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=1187260), opacity modified
 - [No speak monkey image](static/img/no-speak-monkey-148893.png) by [OpenClipart-Vectors](https://pixabay.com/users/openclipart-vectors-30363/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=148893) from [Pixabay](https://pixabay.com//?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=148893), cropped
+- The [Responsive Mockup](#fig-1-responsive-mockup) image was generated courtesy of [Website Mockup Generator](https://websitemockupgenerator.com/)
 
 ### Code
 

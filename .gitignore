@@ -10,7 +10,7 @@ __pycache__/
 local_settings.py
 *.sqlite3
 *.sqlite3-journal
-media
+/media
 
 # If your build process includes running collectstatic, then you probably don't need or want to include staticfiles/
 # in your Git repository. Update and uncomment the following line accordingly.
@@ -186,7 +186,7 @@ cloudinary_python.txt
 ### VS Code ###
 *.code-workspace
 
-### VS Code ###
+### Draw.io ###
 /doc/design/*.drawio.bkp
 /doc/design/*.dtmp
 
