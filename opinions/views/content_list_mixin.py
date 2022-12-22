@@ -22,7 +22,7 @@
 #
 from datetime import datetime
 from http import HTTPStatus
-from typing import Type, Callable, Tuple, Optional, List
+from typing import Type, Callable, Tuple, Optional, List, Any
 
 from django.core.paginator import Paginator
 from django.db.models.functions import Lower
@@ -32,9 +32,9 @@ from django.views import generic
 from opinions.constants import (
     ORDER_QUERY, UPDATED_FIELD, PER_PAGE_QUERY,
     OPINION_PAGINATION_ON_EACH_SIDE, OPINION_PAGINATION_ON_ENDS, AUTHOR_QUERY,
-    FILTER_QUERY
+    FILTER_QUERY, REORDER_QUERY
 )
-from opinions.enums import SortOrder, QueryArg, PerPage, FilterMode
+from opinions.enums import SortOrder, QueryArg, PerPage, FilterMode, QueryType
 from opinions.query_params import QuerySetParams
 from opinions.views.utils import (
     get_query_args, QueryOption, REORDER_REQ_QUERY_ARGS
@@ -53,6 +53,9 @@ class ContentListMixin(generic.ListView):
         # query args sent for list request which are not always sent with
         # a reorder request
         self.non_reorder_query_args = None
+        # query type
+        self.query_type = QueryType.UNKNOWN
+        self.sub_query_type = None
 
     def initialise(self, non_reorder_args: List[str] = None):
         """
@@ -81,18 +84,19 @@ class ContentListMixin(generic.ListView):
         # TODO currently '/"/= can't be used in content
         # as search depends on them
         query_params = self.req_query_args()(request)
-
-        # set context extra content
-        self.set_extra_context(query_params)
-
-        # select sort order options to display
-        self.set_sort_order_options(query_params)
+        self.validate_queryset(query_params)
 
         # set queryset
         query_set_params, query_kwargs = \
             self.set_queryset(query_params)
         self.apply_queryset_param(
             query_set_params, **query_kwargs if query_kwargs else {})
+
+        # set context extra content
+        self.set_extra_context(query_params, query_set_params)
+
+        # select sort order options to display
+        self.set_sort_order_options(query_params)
 
         # set ordering
         self.set_ordering(query_params)
@@ -139,10 +143,21 @@ class ContentListMixin(generic.ListView):
         """
         return self.non_reorder_query_args
 
-    def set_extra_context(self, query_params: dict[str, QueryArg]):
+    def validate_queryset(self, query_params: dict[str, QueryArg]):
+        """
+        Validate the query params to get the list of items for this view.
+        (Subclasses may validate and modify the query params by overriding
+         this function)
+        :param query_params: request query
+        """
+        pass
+
+    def set_extra_context(self, query_params: dict[str, QueryArg],
+                          query_set_params: QuerySetParams):
         """
         Set the context extra content to be added to context
         :param query_params: request query
+        :param query_set_params: QuerySetParams
         """
         raise NotImplementedError(
             "'set_extra_content' method must be overridden by sub classes")
@@ -259,10 +274,10 @@ class ContentListMixin(generic.ListView):
                 'page_num': page,
                 'disabled': page == Paginator.ELLIPSIS,
                 'href':
-                    f"?page={page}" if page != Paginator.ELLIPSIS else '',
+                    f"?page={page}" if page != Paginator.ELLIPSIS else '#',
                 'label':
                     f"page {page}" if page != Paginator.ELLIPSIS else '',
-                'hidden': f'{bool(page != Paginator.ELLIPSIS)}',
+                'hidden': f'{str(bool(page != Paginator.ELLIPSIS)).lower()}',
             } for page in context['paginator'].get_elided_page_range(
                 number=context['page_obj'].number,
                 on_each_side=OPINION_PAGINATION_ON_EACH_SIDE,
@@ -301,14 +316,44 @@ class ContentListMixin(generic.ListView):
             "'is_list_only_template' method must be overridden by sub "
             "classes")
 
+    @staticmethod
+    def query_value_was_set_as_value(
+            query_params: dict[str, QueryArg], query: str,
+            value: Any) -> bool:
+        """
+        Check if the specified query was set to the specified value
+        :param query_params: query params
+        :param query: query to check
+        :param value: value to check
+        :return: True if query was set to the specified value
+        """
+        query_arg = query_params.get(query, None)
+        return query_arg is not None and query_arg.was_set_to(value)
+
     def is_query_own(self, query_params: dict[str, QueryArg]) -> bool:
         """
-        Check if query is for rhe current user
+        Check if query is for the current user
         :param query_params: query params
         :return: True is current user is author in query
         """
-        author = query_params.get(AUTHOR_QUERY, None)
-        return author is not None and author.value == self.user.username
+        return self.query_value_was_set_as_value(
+            query_params, AUTHOR_QUERY, self.user.username)
+
+    @staticmethod
+    def query_param_was_set(query_params: dict[str, QueryArg]) -> bool:
+        """
+        Check if any query params were set
+        :param query_params: query params
+        :return: True at least 1 query param was set
+        """
+        was_set = True
+        for query, query_arg in query_params.items():
+            was_set = isinstance(query_arg, QueryArg) and query_arg.was_set
+            if was_set:
+                break
+        else:
+            was_set = False
+        return was_set
 
     def get_since(
             self, query_params: dict[str, QueryArg]) -> Optional[datetime]:
@@ -320,3 +365,8 @@ class ContentListMixin(generic.ListView):
         return None if \
             query_params.get(FILTER_QUERY, FilterMode.DEFAULT).value == \
             FilterMode.ALL else self.user.previous_login
+
+    @staticmethod
+    def is_reorder(query_params: dict[str, QueryArg]):
+        return query_params[REORDER_QUERY].value \
+            if REORDER_QUERY in query_params else False

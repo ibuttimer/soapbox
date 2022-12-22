@@ -39,7 +39,7 @@ from opinions.constants import (
 )
 from opinions.forms import OpinionForm
 from opinions.views.utils import (
-    opinion_permission_check, opinion_save_query_args, timestamp_content,
+    opinion_permission_check, content_save_query_args, timestamp_content,
     render_opinion_form, generate_excerpt
 )
 
@@ -85,7 +85,7 @@ class OpinionCreate(LoginRequiredMixin, View):
 
         if form.is_valid():
             # save new object
-            status, query = opinion_save_query_args(request)
+            status, query = content_save_query_args(request)
 
             form.instance.user = request.user
             form.instance.status = status

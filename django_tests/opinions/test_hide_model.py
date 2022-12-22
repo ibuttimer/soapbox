@@ -23,7 +23,7 @@
 from datetime import datetime, timezone
 
 from opinions.models import HideStatus
-from .base_opinion_test import BaseOpinionTest
+from .base_opinion_test_cls import BaseOpinionTest
 
 
 class TestHideModel(BaseOpinionTest):

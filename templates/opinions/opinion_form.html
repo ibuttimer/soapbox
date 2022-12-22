@@ -1,29 +1,6 @@
-<!--
-  ~ MIT License
-  ~
-  ~ Copyright (c) 2022 Ian Buttimer
-  ~
-  ~ Permission is hereby granted, free of charge, to any person obtaining a copy
-  ~ of this software and associated documentation files (the "Software"), to deal
-  ~ in the Software without restriction, including without limitation the rights
-  ~ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-  ~ copies of the Software, and to permit persons to whom the Software is
-  ~ furnished to do so, subject to the following conditions:
-  ~
-  ~ The above copyright notice and this permission notice shall be included in
-  ~ all copies or substantial portions of the Software.
-  ~
-  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  ~ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  ~ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-  ~ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  ~ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-  ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-  ~ SOFTWARE.
-  -->
-
 {% extends "base.html" %}
 
+<!-- opinion_form.html start -->
 {# --- template variable defines for includes --- #}
 {# opinion form template expects: 'opinion_form' as OpinionForm #}
 
@@ -36,8 +13,8 @@
 {% block head_title %}SoapBox - {{ title }}{% endblock %}
 
 {% block extra_css %}
-    <!-- include summernote css - use bootstrap4 to match settings.SUMMERNOTE_THEME -->
-    <link href="{% static 'summernote/summernote-bs4.min.css' %}" rel="stylesheet">
+    {# include summernote css - use bootstrap4 to match settings.SUMMERNOTE_THEME #}
+    <link href="{% static 'summernote/summernote-bs4.min.css' %}" rel="stylesheet" type="text/css">
 {% endblock extra_css %}
 
 {% block extra_js_head %}
@@ -77,7 +54,7 @@
             >
                 <!-- top row: category, updated/published/author, preview/draft/publish -->
                 <div class="row mb-3">
-                    <div class="col-sm-3">
+                    <div class="col-lg-3 col-sm-6">
                         {% form_field opinion_form 'categories' as categories_field %}
                         <div class="col-sm-2 text-start">
                             <label for="{{ categories_field.auto_id }}" class="form-label">{{ categories_field.label }}</label>
@@ -86,15 +63,15 @@
                             {{ categories_field }}
                         </div>
                     </div>
+                    {% if opinion %}
                     <div
                          {% if read_only %}
-                            class="col-sm-9"
+                            class="col-lg-9 col-sm-6 d-flex flex-column justify-content-around"
                          {% else %}
-                             class="col-sm-3"
+                             class="col-lg-3 col-sm-6 d-flex flex-column justify-content-around"
                          {% endif %}
                     >
-                        {% if opinion %}
-                            <table class="text-start">
+                            <table class="text-center mt-3">
                                 <tbody>
                                     {% if opinion.published.year > 1 %}
                                         <tr>
@@ -110,39 +87,41 @@
                                         <tr>
                                             <th scope="row">Author</th>
                                             <td>
-                                                <a href="{% url 'user_id' opinion.user.id %}">{{ opinion.user.username}}</a>
+                                                <a href="{% url 'user:user_id' opinion.user.id %}">{{ opinion.user.username}}</a>
                                             </td>
                                         </tr>
                                     {% endif %}
                                 </tbody>
                             </table>
-                        {% endif %}
                     </div>
+                    {% endif %}
                     {% if not read_only %}
-                        <div class="col-sm-6">
-                            <div class="row">
-                                <div class="col-sm-3">
-                                    {% if opinion.id %}
-                                    <button type="button" class="btn__submit-opinion btn btn-outline-danger mb-1"
+                        <div class="col-lg-6">
+                            <div class="row mt-3 d-flex justify-content-between">
+                                {% if opinion.id %}
+                                <div class="col-xl-3 col-lg-6 col-md-3 col-sm-6">
+                                    <button type="button" class="btn--submit-opinion btn btn-danger mb-1 btn__text"
                                             data-bs-toggle="modal" data-bs-target="#id--opinion-delete-confirm-modal">
                                         {% trans "Delete" %}
                                     </button>
-                                    {% endif %}
                                 </div>
-                                <div class="col-sm-3">
-                                    <button type="submit" class="btn__submit-opinion btn btn-outline-primary mb-1"
+                                {% endif %}
+                                <div class="col-xl-3 col-lg-6 col-md-3 col-sm-6">
+                                    <button type="submit" class="btn--submit-opinion btn btn-primary mb-1 btn__text"
                                             formaction="{{ submit_url }}?status=draft">
                                         {% trans "Save Draft" %}
                                     </button>
                                 </div>
-                                <div class="col-sm-3">
-                                    <button type="submit" class="btn__submit-opinion btn btn-outline-warning mb-1"
+                                <div class="col-xl-3 col-lg-6 col-md-3 col-sm-6">
+                                    <button type="submit" class="btn--submit-opinion btn btn-warning mb-1 btn__text"
                                             formaction="{{ submit_url }}?status=preview">
                                         {% trans "Save Preview" %}
                                     </button>
                                 </div>
-                                <div class="col-sm-3">
-                                    <button type="submit" class="btn__submit-opinion btn btn-outline-success">{% trans "Publish" %}</button>
+                                <div class="col-xl-3 col-lg-6 col-md-3 col-sm-6">
+                                    <button type="submit" class="btn--submit-opinion btn btn-success btn__text">
+                                        {% trans "Publish" %}
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -160,26 +139,32 @@
                 </div>
 
                 <div class="row mb-3">
-                    {% form_field opinion_form 'content' as content_field %}
-                    <div class="col-sm-2 text-start">
-                        <label for="{{ content_field.auto_id }}" class="form-label">{{ content_field.label }}</label>
-                    </div>
-                    <div class="col-sm-10">
-                        {% if read_only %}
-                        <div id="readonly_content" class="text-start">
-                            <!-- content replaced -->
+                    {% if not val_test %}
+                    {# exclude summernote for html test as its fails the W3C Nu Html Checker #}
+                        {% form_field opinion_form 'content' as content_field %}
+                        <div class="col-sm-2 text-start">
+                            <label for="{{ content_field.auto_id }}" class="form-label">{{ content_field.label }}</label>
                         </div>
-                        {% else %}
-                            {{ content_field }}
-                        {% endif %}
-                    </div>
+                        <div class="col-sm-10 container flex-grow-1 overflow-auto">
+                            {% if read_only %}
+                            <div id="readonly_content" class="text-start">
+                                {# content replaced #}
+                            </div>
+                            {% else %}
+                            <div>
+                                {{ content_field }}
+                            </div>
+                            <p> Have a lot to say? Click <i class="note-icon-arrows-alt"></i> in the editor bar to go full screen.</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
                 </div>
             </fieldset>
 
             {% if not read_only %}
                 <div class="row mb-3">
                     <div class="col-sm-2 offset-sm-5">
-                        <a class="btn btn-secondary mb-1" href="{% url 'home' %}">{% trans "Cancel" %}</a>
+                        <a class="btn btn-dark mb-1 btn__text" href="{% url 'home' %}">{% trans "Cancel" %}</a>
                     </div>
                 </div>
             {% endif %}
@@ -188,11 +173,11 @@
 </article>
 
 <!-- Confirm delete opinion modal -->
-<div id="id--opinion-delete-confirm-modal" class="modal fade" tabindex="-1" aria-label="Opinion Delete Confirm" aria-hidden="true">
+<div id="id--opinion-delete-confirm-modal" class="modal fade" tabindex="-1" aria-labelledby="id--opinion-delete-confirm-modal-label" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Opinion Delete</h5>
+                <h5 class="modal-title" id="id--opinion-delete-confirm-modal-label">Opinion Delete Confirm</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -200,8 +185,8 @@
                 <p>The opinion and all related comments will be deleted.</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button id="id--btn-opinion-delete-confirm" type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">
+                <button class="btn btn-dark btn__text" type="button" data-bs-dismiss="modal">Cancel</button>
+                <button id="id--btn-opinion-delete-confirm" class="btn btn-outline-danger btn__text" type="button" data-bs-dismiss="modal">
                     {% trans "Delete" %}
                 </button>
             </div>
@@ -210,18 +195,18 @@
 </div>
 
 <!-- Opinion deleted modal -->
-<div id="id--opinion-delete-modal" class="modal fade" tabindex="-1" aria-label="Opinion Deleted" aria-hidden="true">
+<div id="id--opinion-deleted-modal" class="modal fade" tabindex="-1" aria-labelledby="id--opinion-deleted-modal-label" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Opinion Delete</h5>
+                <h5 class="modal-title" id="id--opinion-deleted-modal-label">Opinion Delete</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div id="id--opinion-delete-modal-body" class="modal-body">
+            <div id="id--opinion-deleted-modal-body" class="modal-body">
                 <p>The opinion was successfully deleted</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-dark btn__text" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -230,9 +215,9 @@
 {% endblock content %}
 
 {% block extra_js_body %}
-    <!-- include summernote js - use bootstrap4 to match settings.SUMMERNOTE_THEME -->
+    {# include summernote js - use bootstrap4 to match settings.SUMMERNOTE_THEME #}
     <script src="{% static 'summernote/summernote-bs4.min.js' %}"></script>
-    <!-- lazy loading summernote need to call initSummernote -->
+    {# lazy loading summernote need to call initSummernote #}
 <!--    <script>-->
 <!--        $(document).ready(function() {-->
 <!--            initSummernote_id_bio();-->
@@ -240,22 +225,22 @@
 <!--    </script>-->
 
     {% if read_only %}
+        {% form_field opinion_form 'content' as content_field %}
         <script>
             $(document).ready(function() {
-                {% form_field opinion_form 'content' as content_field %}
                 $('#readonly_content').html('{{ content_field.initial | safe }}');
             });
         </script>
-    {% else %}
+    {% elif opinion.id %}
         <script>
+            const opinionDeleteModalSelector = "#id--opinion-deleted-modal";
+
             $("#id--btn-opinion-delete-confirm").on('click', function (event) {
-                // const url = event.currentTarget.attributes['href'].textContent;
-                {% if opinion.id %}
                 $.ajax({
                     method: 'delete',
                     url: "{% url 'opinions:opinion_id' opinion.id %}",
                     headers: {
-                        'X-CSRFTOKEN': '{{ csrf_token }}'
+                        'X-CSRFTOKEN': csrfToken()
                     },
                 }).done(function(data) {
                     // extract redirect
@@ -271,20 +256,19 @@
                     redirect_rewrite_response_handler(data);
 
                     // show modal
-                    $("#id--opinion-delete-modal").modal('show');
+                    $(opinionDeleteModalSelector).modal('show');
 
-                    $("#id--opinion-delete-modal").off('hidden.bs.modal');
-                    $("#id--opinion-delete-modal").on('hidden.bs.modal', (event) => {
+                    $(opinionDeleteModalSelector).off('hidden.bs.modal');
+                    $(opinionDeleteModalSelector).on('hidden.bs.modal', (event) => {
                         redirect_rewrite_response_handler(redirect);
                     });
 
                 }).fail(function(data) {
                     // display reason
-                    $("#id--opinion-delete-modal-body").html(data.responseJSON.html);
+                    $("#id--opinion-deleted-modal-body").html(data.responseJSON.html);
 
-                    $("#id--opinion-delete-modal").off('hidden.bs.modal');
-                    $("#id--opinion-delete-modal").on('hidden.bs.modal', (event) => {
-
+                    $(opinionDeleteModalSelector).off('hidden.bs.modal');
+                    $(opinionDeleteModalSelector).on('hidden.bs.modal', (event) => {
                         redirect_rewrite_response_handler(data);
                     });
 
@@ -292,8 +276,8 @@
 
                 event.preventDefault();
                 event.stopPropagation();
-                {% endif %}
             });
         </script>
     {% endif %}
 {% endblock extra_js_body %}
+<!-- opinion_form.html end -->

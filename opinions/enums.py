@@ -20,7 +20,8 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-from enum import Enum
+from enum import Enum, auto
+from string import capwords
 from typing import Any, Callable, TypeVar, Optional
 
 from categories.constants import (
@@ -31,6 +32,7 @@ from categories.constants import (
     REACTION_AGREE, REACTION_DISAGREE, REACTION_HIDE, REACTION_SHOW,
     REACTION_PIN, REACTION_UNPIN, REACTION_FOLLOW, REACTION_UNFOLLOW,
     REACTION_REPORT, REACTION_SHARE, REACTION_COMMENT, REACTION_DELETE,
+    REACTION_EDIT, STATUS_DELETED,
 )
 from categories.models import Status
 from opinions.models import Opinion, Comment
@@ -47,6 +49,12 @@ TypeOpinionSortOrder = \
 TypeCommentSortOrder = \
     TypeVar("TypeCommentSortOrder", bound="CommentSortOrder")
 TypeViewMode = TypeVar("ViewMode", bound="ViewMode")
+TypeQueryArg = TypeVar("QueryArg", bound="QueryArg")
+
+
+# https://www.compart.com/en/unicode/block/U+2190
+_ARROW_UP = "\N{Upwards Paired Arrows}"
+_ARROW_DOWN = "\N{Downwards Paired Arrows}"
 
 
 class ChoiceArg(Enum):
@@ -171,7 +179,7 @@ class QueryArg:
         return self.was_set and chk_value == value
 
     @property
-    def value_arg_or_value(self):
+    def value_arg_or_value(self) -> Any:
         """
         Get the arg value if this object's value is a ChoiceArg, otherwise
         this object's value
@@ -181,7 +189,7 @@ class QueryArg:
             if isinstance(self.value, ChoiceArg) else self.value
 
     @staticmethod
-    def value_arg_or_object(obj):
+    def value_arg_or_object(obj) -> Any:
         """
         Get the arg value if `obj` is a ChoiceArg, otherwise `obj`
         :param obj: object to get value of
@@ -190,8 +198,20 @@ class QueryArg:
         return ChoiceArg.arg_if_choice_arg(obj.value) \
             if isinstance(obj, QueryArg) else obj
 
+    @staticmethod
+    def of(obj) -> TypeQueryArg:
+        """
+        Get an unset QueryArg with the value 0f `obj`
+        :param obj: value
+        :return: new QueryArg
+        """
+        return QueryArg(obj, False)
+
     def __str__(self):
         return f'{self.value}, was_set {self.was_set}'
+
+
+QueryArg.NONE = QueryArg.of(None)
 
 
 class QueryStatus(ChoiceArg):
@@ -200,6 +220,8 @@ class QueryStatus(ChoiceArg):
     DRAFT = (STATUS_DRAFT, 'draft')
     PUBLISH = (STATUS_PUBLISHED, 'publish')
     PREVIEW = (STATUS_PREVIEW, 'preview')
+    DELETED = (STATUS_DELETED, 'deleted')
+
     WITHDRAWN = (STATUS_WITHDRAWN, 'withdrawn')
     PENDING_REVIEW = (STATUS_PENDING_REVIEW, 'pending-review')
     UNDER_REVIEW = (STATUS_UNDER_REVIEW, 'under-review')
@@ -352,6 +374,7 @@ class ReactionStatus(ChoiceArg):
     REPORT = (REACTION_REPORT, 'report')
     COMMENT = (REACTION_COMMENT, 'comment')
     DELETE = (REACTION_DELETE, 'delete')
+    EDIT = (REACTION_EDIT, 'edit')
 
     def __init__(self, display: str, arg: str):
         super().__init__(display, arg)
@@ -367,10 +390,13 @@ class SortOrder(ChoiceArg):
 
 class OpinionSortOrder(SortOrder):
     """ Enum representing opinion sort orders """
-    NEWEST = ('Newest first', 'new',
-              f'{DATE_NEWEST_LOOKUP}{Opinion.SEARCH_DATE_FIELD}')
-    OLDEST = ('Oldest first', 'old',
-              f'{DATE_OLDEST_LOOKUP}{Opinion.SEARCH_DATE_FIELD}')
+    NEWEST = (f'{capwords(Opinion.SEARCH_DATE_FIELD)} Date {_ARROW_DOWN}',
+              'new', f'{DATE_NEWEST_LOOKUP}{Opinion.SEARCH_DATE_FIELD}')
+    OLDEST = (f'{capwords(Opinion.SEARCH_DATE_FIELD)} Date {_ARROW_UP}',
+              'old', f'{DATE_OLDEST_LOOKUP}{Opinion.SEARCH_DATE_FIELD}')
+
+    # TODO add sort by updated option
+
     AUTHOR_AZ = ('Author A-Z', 'aaz',
                  f'{Opinion.USER_FIELD}__{User.USERNAME_FIELD}')
     AUTHOR_ZA = ('Author Z-A', 'aza',
@@ -438,10 +464,10 @@ OpinionSortOrder.DEFAULT = OpinionSortOrder.NEWEST
 
 class CommentSortOrder(SortOrder):
     """ Enum representing opinion sort orders """
-    NEWEST = ('Newest first', 'new',
-              f'{DATE_NEWEST_LOOKUP}{Comment.SEARCH_DATE_FIELD}')
-    OLDEST = ('Oldest first', 'old',
-              f'{DATE_OLDEST_LOOKUP}{Comment.SEARCH_DATE_FIELD}')
+    NEWEST = (f'{capwords(Comment.SEARCH_DATE_FIELD)} Date {_ARROW_DOWN}',
+              'new', f'{DATE_NEWEST_LOOKUP}{Comment.SEARCH_DATE_FIELD}')
+    OLDEST = (f'{capwords(Comment.SEARCH_DATE_FIELD)} Date {_ARROW_UP}',
+              'old', f'{DATE_OLDEST_LOOKUP}{Comment.SEARCH_DATE_FIELD}')
     AUTHOR_AZ = ('Author A-Z', 'aaz',
                  f'{Comment.USER_FIELD}__{User.USERNAME_FIELD}')
     AUTHOR_ZA = ('Author Z-A', 'aza',
@@ -571,9 +597,26 @@ ViewMode.DEFAULT = ViewMode.READ_ONLY
 
 
 class FilterMode(ChoiceArg):
-    """ Enum representing view mode opinions """
+    """ Enum representing view mode options """
     NEW = ('New', 'new')
     ALL = ('All', 'all')
 
 
 FilterMode.DEFAULT = FilterMode.ALL
+
+
+class QueryType(Enum):
+    """ Enum representing different query types """
+    UNKNOWN = auto()
+
+    DRAFT_OPINIONS = auto()
+    PREVIEW_OPINIONS = auto()
+    IN_REVIEW_OPINIONS = auto()
+    ALL_USERS_OPINIONS = auto()
+    PINNED_OPINIONS = auto()
+    FOLLOWED_NEW_OPINIONS = auto()
+    FOLLOWED_ALL_OPINIONS = auto()
+    ALL_OPINIONS = auto()
+    SEARCH_OPINIONS = auto()
+    CATEGORY_FEED_OPINIONS = auto()
+    FOLLOWED_FEED_OPINIONS = auto()

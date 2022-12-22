@@ -20,6 +20,7 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
+from enum import Enum, auto
 from typing import Callable, Any, Type, TypeVar, Union
 
 from django.db.models import Q, QuerySet, Model
@@ -29,6 +30,14 @@ from utils import ModelMixin
 
 # workaround for self type hints from https://peps.python.org/pep-0673/
 TypeQuerySetParams = TypeVar("TypeQuerySetParams", bound="QuerySetParams")
+
+
+class SearchType(Enum):
+    """ Enum represent different search result types """
+    NONE = auto()
+    VALID = auto()
+    FREE = auto()       # Free search (no keys specified)
+    UNKNOWN = auto()    # Couldn't determine what to search with
 
 
 class QuerySetParams:
@@ -47,6 +56,12 @@ class QuerySetParams:
     """
     is_none: bool
     """ Empty query set flag """
+    search_terms: [str]
+    """ List of search terms in set """
+    invalid_terms: [str]
+    """ List of invalid search terms in set """
+    search_type: SearchType
+    """ Search result type """
 
     def __init__(self):
         self.and_lookups = {}
@@ -55,6 +70,9 @@ class QuerySetParams:
         self.params = set()
         self.all_inclusive = 0
         self.is_none = False
+        self.search_terms = []
+        self.invalid_terms = []
+        self.search_type = SearchType.NONE
 
     def clear(self):
         """ Clear the query set params """
@@ -64,6 +82,9 @@ class QuerySetParams:
         self.params.clear()
         self.all_inclusive = 0
         self.is_none = False
+        self.search_terms = []
+        self.invalid_terms = []
+        self.search_type = SearchType.NONE
 
     @property
     def and_count(self):
@@ -85,6 +106,16 @@ class QuerySetParams:
         """ Check if empty i.e. no query terms """
         return self.and_count + self.or_count + self.qs_func_count \
             + self.all_inclusive == 0
+
+    @property
+    def is_free_search(self):
+        """ Check if free search i.e. value but no query terms """
+        return self.search_type == SearchType.FREE
+
+    @property
+    def is_unknown_search(self):
+        """ Check if unknown search i.e. couldn't determine search criteria """
+        return self.search_type == SearchType.UNKNOWN
 
     def add_and_lookup(self, key, lookup: str, value: Any):
         """
@@ -117,6 +148,8 @@ class QuerySetParams:
             self.qs_funcs.extend(query_set_param.qs_funcs)
             self.all_inclusive += query_set_param.all_inclusive
             self.params.update(query_set_param.params)
+            self.search_terms.extend(query_set_param.search_terms)
+            self.invalid_terms.extend(query_set_param.invalid_terms)
 
     def add_or_lookup(self, key: str, value: Any):
         """
@@ -145,6 +178,20 @@ class QuerySetParams:
         """
         self.all_inclusive += 1
         self.params.add(key)
+
+    def add_search_term(self, term: str):
+        """
+        Add a search term
+        :param term: term to add
+        """
+        self.search_terms.append(term)
+
+    def add_invalid_term(self, term: str):
+        """
+        Add an invalid search term
+        :param term: term to add
+        """
+        self.invalid_terms.append(term)
 
     def key_in_set(self, key):
         """
@@ -226,5 +273,4 @@ def choice_arg_query(
             )
 
     if inner_qs is not None:
-        query_set_params.add_and_lookup(
-            query, and_lookup, inner_qs)
+        query_set_params.add_and_lookup(query, and_lookup, inner_qs)

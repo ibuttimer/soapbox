@@ -20,63 +20,42 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
-import os
 from http import HTTPStatus
 
-import django
+from bs4 import BeautifulSoup
 from django.http import HttpResponse
 from django.urls import reverse
-from bs4 import BeautifulSoup
 
-from soapbox import BASE_APP_NAME
-from user.models import User
-
-# 'allauth' checks for 'django.contrib.sites', so django must be setup before
-# test
-os.environ.setdefault("ENV_FILE", ".test-env")
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "soapbox.settings")
-django.setup()
-
-from django.test import TestCase    # noqa
+from django_tests.user.base_user_test_cls import BaseUserTest
+from soapbox import OPINIONS_APP_NAME
 
 
-class TestHome(TestCase):
+class TestHome(BaseUserTest):
     """
     Test profile page view
     https://docs.djangoproject.com/en/4.1/topics/testing/tools/
     """
-    USER_INFO = {
-        User.FIRST_NAME_FIELD: "Joe",
-        User.LAST_NAME_FIELD: "Know_it_all",
-        User.USERNAME_FIELD: "joe.knowledge.all",
-        User.PASSWORD_FIELD: "more-than-8-not-like-user",
-    }
 
-    @classmethod
-    def setUpTestData(cls):
-        """ Set up data for the whole TestCase """
-        cls.user = User.objects.create(**TestHome.USER_INFO)
-
-    def login_user(self):
+    def user_login(self):
         """ Login user """
-        self.assertIsNotNone(TestHome.user)
-        self.client.force_login(TestHome.user)
+        user, _ = self.get_user_by_index(0)
+        self.login_user(self, user)
 
     def get_home(self) -> HttpResponse:
         """ Get the home page """
-        self.assertIsNotNone(TestHome.user)
-        return self.client.get('/')
+        return self.client.get('/', follow=True)
 
     def test_get_home(self):
         """ Test home page uses correct template """
-        self.login_user()
+        self.user_login()
         response = self.get_home()
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertTemplateUsed(response, f'{BASE_APP_NAME}/home.html')
+        self.assertTemplateUsed(response,
+                                f'{OPINIONS_APP_NAME}/opinion_feed.html')
 
     def test_home_content(self):
         """ Test home page content """
-        self.login_user()
+        self.user_login()
         response = self.get_home()
         self.assertEqual(response.status_code, HTTPStatus.OK)
 

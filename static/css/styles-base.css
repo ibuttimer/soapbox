@@ -25,3 +25,19 @@
 .theme-colour {
     color: var(--orange-yellow);
 }
+
+.site-warning-lead {
+    color: red;
+}
+
+html {
+    height: 100%;
+}
+
+.no-padding {
+    padding: 0;
+}
+
+.btn__text {
+    width: 7em;
+}

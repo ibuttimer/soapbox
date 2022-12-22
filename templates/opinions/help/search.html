@@ -1,0 +1,195 @@
+{% load i18n %}
+
+<section>
+    <div class="row mt-2">
+        <div class="col-12">
+            <h2 id="all-feed-help">{% trans "All Feed" %}</h2>
+            <p>
+                The All opinions feed is where the complete list of opinions is available.
+            </p>
+        </div>
+    </div>
+</section>
+<section>
+    <div class="row mt-2">
+        <div class="col-12">
+            <h2 id="following-feed-help">{% trans "Following Feed" %}</h2>
+            <p>
+                Opinions from authors you follow appear in the following feed.
+                Click on <i class="fa-solid fa-user-tag"></i> when viewing content to follow the author and their content will appear in your following feed.
+            </p>
+        </div>
+    </div>
+</section>
+<section>
+    <div class="row mt-2">
+        <div class="col-12">
+            <h2 id="category-feed-help">{% trans "Category Feed" %}</h2>
+            <p>
+                Opinions from the categories followed in your user profile appear in the category feed.
+                {% if user.is_authenticated %}
+                Update your followed categories on your <a href="{% url 'user:user_id' user.id %}#followed-categories" aria-label="view profile">profile page</a>.
+                {% endif %}
+            </p>
+        </div>
+    </div>
+</section>
+<section>
+    <div class="row mt-2">
+        <div class="col-12">
+            <h2 id="search-help">{% trans "Search" %}</h2>
+        </div>
+    </div>
+    <div class="row mt-2">
+        <div class="col-12">
+            <h3 id="basic-search-help">{% trans "Basic Search" %}</h3>
+            <p>
+                Enter a word or phrase in the search box in the navigation bar at the top of the screen,
+                and click <em>Search</em> to find opinions containing the word or phrase.
+            </p>
+        </div>
+    </div>
+    <div class="row mt-2">
+        <div class="col-12">
+            <h3 id="advanced-search-help">{% trans "Advanced Search" %}</h3>
+            <p>
+                Enter search parameters in the search box in the navigation bar at the top of the screen,
+                and click <em>Search</em> to find opinions matching the entered parameters.
+            </p>
+            <p>
+                <b>Note:</b> The search term must be enclosed in quotes, e.g. <em>"seeking this"</em>.
+            </p>
+            <p>
+                <b>Note:</b> Date search term must be in day-month-year format and may be separated by {{ date_separators }}, e.g. <em>"{{ date }}"</em>.
+            </p>
+            <p>The supported search parameters are:</p>
+            <div class="table-responsive-md">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Parameter</th>
+                            <th scope="col">Description</th>
+                            <th scope="col">Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for term_row in search_terms %}
+                        <tr>
+                            <th scope="row">{{ term_row.term }}</th>
+                            <td>{{ term_row.desc }}</td>
+                            <td>{{ term_row.example }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+<section>
+    <div class="row mt-2">
+        <div class="col-12">
+            <h2 id="opinions-help">{% trans "Opinions Menu" %}</h2>
+        </div>
+    </div>
+    <div class="row mt-2">
+        <div class="col-12">
+            <h3 id="new-opinion-help">{% trans "New Opinion" %}</h3>
+            <p>
+                Create a <a href="{% url 'opinions:opinion_new' %}">new opinion</a>, with a title and content, and assign an appropriate category or categories.
+                Save as <em>Draft</em> to finish it later, <em>Preview</em> to see what it will look like or <em>Publish</em> to send it out into the world.
+            </p>
+        </div>
+    </div>
+    <div class="row mt-2">
+        <div class="col-12">
+            <h3 id="draft-opinion-help">{% trans "Draft Opinions" %}</h3>
+            <p>
+                Displays the list of your <a href="{% url 'opinions:opinions' %}?author={{ user.username }}&status=draft">opinions in draft</a> status.
+            </p>
+        </div>
+    </div>
+    <div class="row mt-2">
+        <div class="col-12">
+            <h3 id="preview-opinion-help">{% trans "Preview Opinions" %}</h3>
+            <p>
+                Displays the list of your <a href="{% url 'opinions:opinions' %}?author={{ user.username }}&status=preview">opinions in preview</a> status.
+            </p>
+        </div>
+    </div>
+    <div class="row mt-2">
+        <div class="col-12">
+            <h3 id="review-opinion-help">{% trans "Review Opinions" %}</h3>
+            <p>
+                Displays the list of your <a href="{% url 'opinions:opinion_in_review' %}?author={{ user.username }}">opinions in any review</a> status.
+            </p>
+        </div>
+    </div>
+    <div class="row mt-2">
+        <div class="col-12">
+            <h3 id="all-mine-opinion-help">{% trans "All My Opinions" %}</h3>
+            <p>
+                Displays the list of all your <a href="{% url 'opinions:opinions' %}?author={{ user.username }}&status=all">opinions in any</a> status.
+            </p>
+        </div>
+    </div>
+    <div class="row mt-2">
+        <div class="col-12">
+            <h3 id="new-author-opinion-help">{% trans "New Followed Author Opinions" %}</h3>
+            <p>
+                Displays the list of new opinions, by <a href="{% url 'opinions:opinion_followed' %}?filter=new">authors you follow</a>, since your last login.
+                See <a href="#following-feed-help">Following Feed</a> for more information.
+            </p>
+        </div>
+    </div>
+    <div class="row mt-2">
+        <div class="col-12">
+            <h3 id="all-author-opinion-help">{% trans "All Followed Author Opinions" %}</h3>
+            <p>
+                Displays the list of all opinions, by <a href="{% url 'opinions:opinion_followed' %}?filter=all">authors you follow</a>.
+                See <a href="#following-feed-help">Following Feed</a> for more information.
+            </p>
+        </div>
+    </div>
+    <div class="row mt-2">
+        <div class="col-12">
+            <h3 id="all-opinion-help">{% trans "All Opinions" %}</h3>
+            <p>
+                Displays the list of all <a href="{% url 'opinions:opinions' %}">published opinions</a>.
+            </p>
+        </div>
+    </div>
+</section>
+<section>
+    <div class="row mt-2">
+        <div class="col-12">
+            <h2 id="view-content-help">{% trans "Viewing Content" %}</h2>
+            <p>
+                When viewing opinions or comments there are a number of ways you can interact with the content:
+            </p>
+            <div class="table-responsive-md">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Icon</th>
+                            <th scope="col">Description</th>
+                            <th scope="col">Opinion</th>
+                            <th scope="col">Comment</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for reaction in reaction_items %}
+                        <tr>
+                            <th scope="row">{{ reaction.item | safe }}</th>
+                            <td>{{ reaction.desc }}</td>
+                            <td>{{ reaction.opinion }}</td>
+                            <td>{{ reaction.comment }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+

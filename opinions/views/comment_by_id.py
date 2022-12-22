@@ -31,7 +31,6 @@ from django.http import (
 )
 from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
-from django.urls import resolve
 from django.views import View
 from django.views.decorators.http import require_http_methods
 
@@ -45,10 +44,10 @@ from opinions.constants import (
     TEMPLATE_COMMENT_REACTIONS, COMMENT_ID_ROUTE_NAME,
     COMMENT_SLUG_ROUTE_NAME, OPINION_CTX, COMMENT_FORM_CTX, REPORT_FORM_CTX,
     ELEMENT_ID_CTX, HTML_CTX, REFERENCE_QUERY, COMMENTS_ROUTE_NAME,
-    COMMENT_DATA_CTX, CONTENT_STATUS_CTX, OPINION_ID_ROUTE_NAME,
-    OPINION_SLUG_ROUTE_NAME, MODE_QUERY, READ_ONLY_CTX, IS_ASSIGNED_CTX,
+    COMMENT_DATA_CTX, CONTENT_STATUS_CTX, SINGLE_CONTENT_ROUTE_NAMES,
+    MODE_QUERY, READ_ONLY_CTX, IS_ASSIGNED_CTX,
     REVIEW_RECORD_CTX, STATUS_BG_CTX, IS_PREVIEW_CTX, IS_REVIEW_CTX,
-    OPINION_CONTENT_STATUS_CTX,
+    OPINION_CONTENT_STATUS_CTX, SUBMIT_URL_CTX, COMMENT_OFFSET_CTX
 )
 from opinions.enums import ReactionStatus, ViewMode
 from opinions.forms import CommentForm, ReportForm
@@ -59,7 +58,8 @@ from opinions.contexts.comment import (
 from opinions.queries import (
     content_status_check, effective_content_status, content_review_records_list
 )
-from opinions.reactions import COMMENT_REACTIONS
+from opinions.reactions import COMMENT_REACTIONS, get_reaction_status
+from opinions.views.comment_create import get_comment_offset
 from opinions.views.opinion_by_id import (
     like_patch, report_post, hide_patch, follow_patch, review_status_patch,
     review_decision_post, TITLE_UPDATE
@@ -68,17 +68,19 @@ from opinions.views.utils import (
     opinion_permission_check, comment_permission_check, DEFAULT_COMMENT_DEPTH,
     published_check, own_content_check, add_content_no_show_markers,
     get_query_args, QueryOption, STATUS_BADGES, get_comment_context,
-    add_review_form_context
+    add_review_form_context, timestamp_content, content_save_query_args,
+    resolve_ref
 )
-from soapbox import PATCH, POST, OPINIONS_APP_NAME
+from soapbox import PATCH, POST, OPINIONS_APP_NAME, HOME_ROUTE_NAME
 from utils import (
-    Crud, app_template_path, reverse_q, namespaced_url
+    Crud, app_template_path, reverse_q, namespaced_url,
+    redirect_on_success_or_render
 )
 
 
 class CommentTemplate(Enum):
     """ Enum representing possible response templates for comments """
-    OPINION_LIST_TEMPLATE = \
+    BUNDLE_TEMPLATE = \
         app_template_path(
             OPINIONS_APP_NAME, "snippet", "comment_bundle.html"),
     """ Template for individual comments in view opinion, comment list """
@@ -90,7 +92,12 @@ class CommentTemplate(Enum):
     """ Template for comments by id/slug """
 
 
-CommentTemplate.DEFAULT = CommentTemplate.OPINION_LIST_TEMPLATE
+CommentTemplate.DEFAULT = CommentTemplate.BUNDLE_TEMPLATE
+
+
+COMMENT_DETAIL_QUERY_ARGS = [
+    QueryOption(MODE_QUERY, ViewMode, ViewMode.DEFAULT),
+]
 
 
 class CommentDetail(LoginRequiredMixin, View):
@@ -114,8 +121,7 @@ class CommentDetail(LoginRequiredMixin, View):
         opinion_obj = comment_obj.opinion
 
         # get query params
-        query_params = get_query_args(
-            request, QueryOption(MODE_QUERY, ViewMode, ViewMode.DEFAULT))
+        query_params = get_query_args(request, COMMENT_DETAIL_QUERY_ARGS)
         mode = query_params.get(MODE_QUERY).value
 
         # perform own comment check
@@ -137,22 +143,28 @@ class CommentDetail(LoginRequiredMixin, View):
         # ok to view check
         content_status = content_status_check(
             comment_obj, current_user=request.user)
+        if content_status.deleted:
+            read_only = True
         opinion_content_status = content_status_check(
             opinion_obj, current_user=request.user)
         # users can always view their own comments
         view_ok = is_own \
             if not content_status.view_ok else content_status.view_ok
         effective_status = effective_content_status(comment_obj)
+        comment_data = CommentData(comment_obj)
+        comments_review_status = get_comments_review_status(
+            comment_data, current_user=request.user)
 
         render_args = {
             READ_ONLY_CTX: read_only,
             VIEW_OK_CTX: view_ok,
-            COMMENT_CTX: CommentData(comment_obj),
+            COMMENT_CTX: comment_data,
             OPINION_CTX: opinion_obj,
             STATUS_CTX: effective_status.display,
             IS_PREVIEW_CTX: is_preview,
             IS_REVIEW_CTX: is_review,
-            OPINION_CONTENT_STATUS_CTX: opinion_content_status
+            OPINION_CONTENT_STATUS_CTX: opinion_content_status,
+            CONTENT_STATUS_CTX: comments_review_status,
         }
         if is_review:
             is_assigned = content_status.assigned_view
@@ -170,7 +182,11 @@ class CommentDetail(LoginRequiredMixin, View):
             comments_list_context_for_opinion(
                 get_comment_query_args(
                     opinion=opinion_obj, parent=comment_obj),
-                request.user, context=render_args
+                request.user,
+                reaction_ctrls=get_reaction_status(
+                    request.user, comment_data
+                ),
+                context=render_args
             )
 
         if read_only:
@@ -190,18 +206,66 @@ class CommentDetail(LoginRequiredMixin, View):
             )
         else:
             # updating comment
-            raise NotImplementedError("comment update not implemented")
-            # renderer = render_opinion_form
-            # render_args.update({
-            #     SUBMIT_URL_CTX: self.url(opinion_obj),
-            #     OPINION_FORM_CTX: OpinionForm(instance=opinion_obj),
-            # })
+            renderer = _render_comment_form
+            render_args.update({
+                SUBMIT_URL_CTX: self.url(comment_obj),
+                COMMENT_FORM_CTX: CommentForm(instance=comment_obj),
+            })
 
         template_path, context = renderer(
             f'Comment on {opinion_obj.title}' if read_only else TITLE_UPDATE,
             **render_args
         )
         return render(request, template_path, context=context)
+
+    def post(self, request: HttpRequest,
+             identifier: [int, str], *args, **kwargs) -> HttpResponse:
+        """
+        POST method to update Comment
+        :param request: http request
+        :param identifier: id or slug of comment to update
+        :param args: additional arbitrary arguments
+        :param kwargs: additional keyword arguments
+        :return: http response
+        """
+        comment_permission_check(request, Crud.UPDATE)
+
+        comment_obj = self._get_comment(identifier)
+        success = True                      # default to success
+        success_route = HOME_ROUTE_NAME     # on success default route
+        success_args = []                   # on success route args
+
+        # perform own comment check
+        own_content_check(request, comment_obj)
+
+        form = CommentForm(data=request.POST, files=request.FILES,
+                           instance=comment_obj)
+
+        if form.is_valid():
+            status, query = content_save_query_args(request)
+            comment_obj.status = status
+
+            timestamp_content(comment_obj)
+
+            # save updated object
+            comment_obj.save()
+            # django autocommits changes
+            # https://docs.djangoproject.com/en/4.1/topics/db/transactions/#autocommit
+
+            template_path, context = None, None
+        else:
+            template_path, context = _render_comment_form(
+                TITLE_UPDATE, **{
+                    SUBMIT_URL_CTX: self.url(comment_obj),
+                    COMMENT_FORM_CTX: form,
+                    OPINION_CTX: comment_obj,
+                    STATUS_CTX: comment_obj.status
+                })
+            success = False
+
+        return redirect_on_success_or_render(
+            request, success, success_route, *success_args,
+            template_path=template_path, context=context)
 
     def delete(self, request: HttpRequest,
                identifier: [int, str], *args, **kwargs) -> HttpResponse:
@@ -223,26 +287,30 @@ class CommentDetail(LoginRequiredMixin, View):
         own_content_check(request, comment_obj, raise_ex=True)
 
         template = CommentTemplate.DEFAULT
-        if REFERENCE_QUERY in request.GET:
-            ref = request.GET[REFERENCE_QUERY].lower()
-            called_by = resolve(ref)
-            if called_by.url_name == COMMENTS_ROUTE_NAME:
+        called_by = resolve_ref(request)
+        if called_by:
+            if called_by.url_name in [
+                COMMENTS_ROUTE_NAME
+            ]:
                 template = CommentTemplate.COMMENT_LIST_TEMPLATE
-            elif called_by.url_name == OPINION_ID_ROUTE_NAME or \
-                    called_by.url_name == OPINION_SLUG_ROUTE_NAME:
-                template = CommentTemplate.OPINION_LIST_TEMPLATE
+            elif called_by.url_name in SINGLE_CONTENT_ROUTE_NAMES:
+                template = CommentTemplate.BUNDLE_TEMPLATE
             else:
                 raise ValueError(
-                    f'Unknown {REFERENCE_QUERY} query value: {ref}')
+                    f'Unknown {REFERENCE_QUERY} query value: '
+                    f'{request.GET[REFERENCE_QUERY]}')
 
         comment_obj.content = ""
-        comment_obj.status = Status.objects.get(name=STATUS_DELETED)
+        comment_obj.status = Status.objects.get(**{
+            f'{Status.NAME_FIELD}': STATUS_DELETED
+        })
         comment_obj.save()
 
         return get_render_comment_response(
             request, comment_obj.id, template=template)
 
-    def _get_comment(self, identifier: [int, str]) -> Comment:
+    @staticmethod
+    def _get_comment(identifier: [int, str]) -> Comment:
         """
         Get opinion for specified identifier
         :param identifier: id or slug of opinion to get
@@ -285,6 +353,19 @@ def _render_view(title: str, **kwargs):
         OPINIONS_APP_NAME, "comment_view.html"), context
 
 
+def _render_comment_form(title: str, **kwargs) -> tuple[
+        str, dict[str, Comment | list[str] | CommentForm | bool]]:
+    """
+    Render the comment template
+    :param title: title
+    :param kwargs: context keyword values, see get_opinion_context()
+    :return: tuple of template path and context
+    """
+    context = get_comment_context(title, **kwargs)
+
+    return app_template_path(OPINIONS_APP_NAME, "comment_form.html"), context
+
+
 class CommentDetailById(CommentDetail):
     """
     Class-based view for individual comment view/update/delete by id
@@ -301,6 +382,18 @@ class CommentDetailById(CommentDetail):
         :return: http response
         """
         return super().get(request, pk, *args, **kwargs)
+
+    def post(self, request: HttpRequest, pk: int,
+             *args, **kwargs) -> HttpResponse:
+        """
+        POST method to update Comment
+        :param request: http request
+        :param pk: id of comment to get
+        :param args: additional arbitrary arguments
+        :param kwargs: additional keyword arguments
+        :return: http response
+        """
+        return super().post(request, pk, *args, **kwargs)
 
     def delete(self, request: HttpRequest, pk: int,
                *args, **kwargs) -> HttpResponse:
@@ -343,6 +436,18 @@ class CommentDetailBySlug(CommentDetail):
         :return: http response
         """
         return super().get(request, slug, *args, **kwargs)
+
+    def post(self, request: HttpRequest, slug: str,
+             *args, **kwargs) -> HttpResponse:
+        """
+        POST method to update Comment
+        :param request: http request
+        :param slug: slug of comment to update
+        :param args: additional arbitrary arguments
+        :param kwargs: additional keyword arguments
+        :return: http response
+        """
+        return super().post(request, slug, *args, **kwargs)
 
     def delete(self, request: HttpRequest, slug: str,
                *args, **kwargs) -> HttpResponse:
@@ -469,7 +574,10 @@ def get_render_comment_response(
             default CommentTemplate.DEFAULT
     :return: response
     """
-    if template == CommentTemplate.OPINION_LIST_TEMPLATE:
+    comment = Comment.objects.get(**{
+        f'{Comment.id_field()}': pk
+    })
+    if template == CommentTemplate.BUNDLE_TEMPLATE:
         element_id = f'id--comment-section-{pk}'
         context = get_comment_bundle_context(pk, request.user, depth=depth)
     else:
@@ -480,13 +588,16 @@ def get_render_comment_response(
         comment_data = CommentData(comment)
         # get review status of comments
         comments_review_status = get_comments_review_status(
-            [comment_data], current_user=request.user)
+            comment_data, current_user=request.user)
 
         context = {
             COMMENT_DATA_CTX: comment_data,
             CONTENT_STATUS_CTX: comments_review_status,
         }
         add_content_no_show_markers(context=context)
+
+    comment_offset, top_level = get_comment_offset(request, comment)
+    context[COMMENT_OFFSET_CTX] = comment_offset
 
     return JsonResponse({
         ELEMENT_ID_CTX: element_id,

@@ -40,15 +40,42 @@ DELETE = 'DELETE'
 
 # Base routes related
 HOME_URL = "/"
+HELP_URL = append_slash("help")
+FEED_URL = append_slash("feed")
 
 HOME_ROUTE_NAME = "home"
+HELP_ROUTE_NAME = "help"
+LANDING_ROUTE_NAME = "landing"
+
+HOME_MENU_CTX = "home_menu"
+OPINION_MENU_CTX = "opinion_menu"
+COMMENT_MENU_CTX = "comment_menu"
+MODERATOR_MENU_CTX = "moderator_menu"
+USER_MENU_CTX = "user_menu"
+SIGN_IN_MENU_CTX = "sign_in_menu"
+REGISTER_MENU_CTX = "register_menu"
+HELP_MENU_CTX = "help_menu"
+
+IS_SUPER_CTX = "is_super"
+IS_MODERATOR_CTX = "is_moderator"
+IS_AUTHOR_CTX = "is_author"
+IS_DEVELOPMENT_CTX = "is_development"
+IS_TEST_CTX = "is_test"
+
 
 # Admin routes related
 ADMIN_URL = append_slash("admin")
 
 # Accounts routes related
 ACCOUNTS_URL = append_slash("accounts")
+
+# mounting allauth on 'accounts' and copying paths from
+# allauth/account/urls.py
 LOGIN_URL = url_path(ACCOUNTS_URL, "login")
+REGISTER_URL = url_path(ACCOUNTS_URL, "signup")
+# copying route names from allauth/account/urls.py
+LOGIN_ROUTE_NAME = "account_login"
+REGISTER_ROUTE_NAME = "account_signup"
 
 # Summernote routes related
 SUMMERNOTE_URL = append_slash("summernote")
@@ -58,6 +85,9 @@ USERS_URL = append_slash("users")
 
 # Opinion routes related
 OPINIONS_URL = append_slash("opinions")
+
+# CSS/HTML validator test related
+VAL_TEST_PATH_PREFIX = 'val-test'
 
 # cloudinary related
 AVATAR_FOLDER = "soapbox"

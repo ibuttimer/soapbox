@@ -35,24 +35,35 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from allauth.account import views
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
-from base import get_home
 from soapbox import (
     ADMIN_URL, ACCOUNTS_URL, SUMMERNOTE_URL,
     USERS_URL, USER_APP_NAME,
     OPINIONS_URL, OPINIONS_APP_NAME,
-    settings, HOME_ROUTE_NAME
+    settings, BASE_APP_NAME, val_test_url, val_test_route_name
 )
+from soapbox.constants import FEED_URL
 
 urlpatterns = [
+    # val-test urls for allauth paths
+    path(val_test_url("signup/"), views.signup,
+         name=val_test_route_name("account_signup")),
+    path(val_test_url("login/"), views.login,
+         name=val_test_route_name("account_login")),
+    path(val_test_url("logout/"), views.logout,
+         name=val_test_route_name("account_logout")),
+
+    # standard app urls
     path(ADMIN_URL, admin.site.urls),
     path(SUMMERNOTE_URL, include('django_summernote.urls')),
     path(ACCOUNTS_URL, include('allauth.urls')),
     path(USERS_URL, include(f'{USER_APP_NAME}.urls')),
     path(OPINIONS_URL, include(f'{OPINIONS_APP_NAME}.urls')),
-    path('', get_home, name=HOME_ROUTE_NAME),
+    path(FEED_URL, include(f'{BASE_APP_NAME}.urls')),
+    path('', include(f'{BASE_APP_NAME}.root_urls')),
 ]
 
 if settings.DEBUG:

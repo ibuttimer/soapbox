@@ -26,11 +26,12 @@ from .constants import (
     GET, PATCH, POST, DELETE,
     HOME_URL, HOME_ROUTE_NAME,
     ADMIN_URL, ACCOUNTS_URL, SUMMERNOTE_URL,
-    USERS_URL, OPINIONS_URL,
+    USERS_URL, OPINIONS_URL, VAL_TEST_PATH_PREFIX,
     AVATAR_FOLDER, IMAGE_FILE_TYPES, DEV_IMAGE_FILE_TYPES,
     MIN_PASSWORD_LEN
 )
-from .settings import AVATAR_BLANK_URL, DEVELOPMENT
+from .settings import AVATAR_BLANK_URL, DEVELOPMENT, TEST
+from .utils import val_test_route_name, val_test_url
 
 __all__ = [
     'BASE_APP_NAME',
@@ -53,6 +54,7 @@ __all__ = [
     'SUMMERNOTE_URL',
     'USERS_URL',
     'OPINIONS_URL',
+    'VAL_TEST_PATH_PREFIX',
 
     'AVATAR_FOLDER',
     'IMAGE_FILE_TYPES',
@@ -61,5 +63,9 @@ __all__ = [
     'MIN_PASSWORD_LEN',
 
     'AVATAR_BLANK_URL',
-    'DEVELOPMENT'
+    'DEVELOPMENT',
+    'TEST',
+
+    'val_test_route_name',
+    'val_test_url',
 ]

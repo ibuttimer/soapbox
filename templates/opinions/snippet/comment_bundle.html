@@ -5,24 +5,27 @@
 {% load humanize %}
 {% load tz %}
 {% load dict_value %}
+{% load comment_level %}
 
 {# --- template variable defines for includes --- #}
 {# comment bundle template expects: 'bundle' as CommentBundle #}
 {#                                  'content_status' as dict with key: comment id, value: ContentStatus #}
+{#                                  'comment_offset' as comment level offset #}
 
 <div
     {% if bundle.dynamic_insert %}
         class="dynamic-insert"
     {% endif %}
     id="id--comment-section-{{ bundle.comment.id }}">
+    {% comment_level bundle.comment.level comment_offset as level %}
     <div
         {% if bundle.is_more_placeholder %}
             id="id--comment-card-more-{{ bundle.comment.id }}"
         {% else %}
             id="id--comment-card-{{ bundle.comment.id }}"
         {% endif %}
-            class="card level-{{ bundle.comment.level }}">
-        <div class="card-body">
+        class="card {{ level }}">
+    <div class="card-body">
             <div class="row">
                 {% if bundle.is_more_placeholder %}
                     <!-- more placeholder -->
@@ -37,7 +40,7 @@
                 {% else %}
                     <!-- author avatar and user link -->
                     <div class="col-sm-2 mt-0 mb-0">
-                        <img src="{{ bundle.avatar_url }}" width="40px" height="40px" alt="{{ bundle.comment.user.username }} image">
+                        <img src="{{ bundle.avatar_url }}" width="40" height="40" alt="{{ bundle.comment.user.username }} image">
                         <p class="mt-0 mb-0"><a href="{% url 'user:user_id' bundle.comment.user.id %}" aria-label="view author's profile">{{ bundle.comment.user.username }}</a></p>
                     </div>
                     <!-- comment details -->
@@ -58,7 +61,8 @@
                             <div class="col-sm-2 mt-0 mb-0">
                                 <a id="{{ bundle.collapse_id }}-toggle" class="btn btn-primary collapsed" data-bs-toggle="collapse"
                                    href="#{{ bundle.collapse_id }}" role="button" aria-expanded="false"
-                                   aria-controls="show comments"
+                                   aria-label="see or hide comments"
+                                   aria-controls="{{ bundle.collapse_id }}"
                                    {% if bundle.comment_query %}
                                       data-comment-query="{{ bundle.comment_query }}"
                                    {% endif %}
@@ -68,14 +72,24 @@
                                 >
                                     <i class="fa-solid fa-chevron-down"></i>
                                 </a>
-                                {# HACK display id for dev purposes #}
-                                <span class="badge rounded-pill text-bg-warning">c{{ bundle.comment.id }} o{{ bundle.comment.opinion.id }}</span>
+                                {% if is_development and not is_test %}
+                                {# display id for dev purposes #}
+                                <span class="badge rounded-pill text-bg-warning">
+                                    c{{ bundle.comment.id }} p{{ bundle.comment.parent }} l{{ bundle.comment.level }} o{{ bundle.comment.opinion.id }}
+                                </span>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="row">
                             <!-- comment updated info -->
                             <div class="col-sm-6 mt-0 mb-0">
-                                {{ bundle.comment.updated | localtime | naturaltime }}
+                                <p class="card-text text-muted mt-0 mb-0">
+                                    {% if bundle.comment.published.year > 1 %}
+                                        <i class="fa-solid fa-upload"></i> {{ bundle.comment.published | localtime | naturaltime  }}
+                                    {% endif %}
+                                    <br>
+                                    <i class="fa-solid fa-pen-to-square"></i> {{ bundle.comment.updated | localtime | naturaltime }}
+                                </p>
                             </div>
                             <!-- comment reactions -->
                             <div class="col-sm-6 mt-0 mb-0 justify-content-start">

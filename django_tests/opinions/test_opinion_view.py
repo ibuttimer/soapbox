@@ -42,10 +42,10 @@ from opinions.enums import QueryStatus, ViewMode
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
-from .base_opinion_test import BaseOpinionTest
-from .opinion_mixin_test import OpinionMixin, AccessBy
+from .base_opinion_test_cls import BaseOpinionTest
+from .opinion_mixin_test_cls import OpinionMixin, AccessBy
 from .test_opinion_create import is_submit_button, OPINION_FORM_TEMPLATE
-from ..category_mixin_test import CategoryMixin
+from ..category_mixin_test_cls import CategoryMixin
 from ..soup_mixin import SoupMixin, MatchTest
 
 OPINION_VIEW_TEMPLATE = f'{OPINIONS_APP_NAME}/opinion_view.html'
@@ -400,8 +400,9 @@ class TestOpinionView(
         if is_readonly:
             # check for readonly_content div
             content = SoupMixin.find_tag(
-                test_case, soup.find_all(id='readonly_content'),
-                lambda tag: True)
+                test_case, soup.find_all('div'),
+                lambda tag: SoupMixin.in_tag_attr(
+                    tag, 'class', 'readonly_content'))
             if under_review:
                 test_case.assertEqual(content.text.strip(), expected_content)
             # else can't check content as its replaced by javascript
@@ -477,4 +478,4 @@ def is_delete_button(tag: Tag):
     """
     return tag.name == 'button' \
         and SoupMixin.equal_tag_attr(tag, 'type', 'button') \
-        and SoupMixin.in_tag_attr(tag, 'class', 'btn__submit-opinion')
+        and SoupMixin.in_tag_attr(tag, 'class', 'btn--submit-opinion')

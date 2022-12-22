@@ -1,7 +1,7 @@
 <!-- hide_modal.html start -->
 {% load i18n %}
 
-<div class="modal fade" id="id--hide-modal" tabindex="-1" aria-label="Hide opinion" aria-hidden="true">
+<div class="modal fade" id="id--hide-modal" tabindex="-1" aria-labelledby="id--hide-modal-heading" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-fullscreen-md-down modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
 
@@ -15,6 +15,7 @@
             <div class="modal-header">
                 <h5 class="modal-title" id="id--hide-modal-heading">
                     {# content replaced by click handler #}
+                    Hide
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -22,8 +23,12 @@
                 <p>Are you sure you want to <span id="id--hide-modal-action">{# content replaced by click handler#}</span> this <span id="id--hide-modal-element">{# content replaced by click handler#}</span>?</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
-                <button id="id--submit-btn-hide-modal" type="submit" class="btn__save-comment btn btn-outline-success">{% trans "Hide" %}</button>
+                <button type="button" class="btn btn-dark btn__text" data-bs-dismiss="modal">
+                    {% trans "Cancel" %}
+                </button>
+                <button id="id--submit-btn-hide-modal" type="submit" class="btn__save-comment btn btn-outline-success btn__text">
+                    {% trans "Hide" %}
+                </button>
             </div>
         </div>
     </div>
@@ -36,7 +41,7 @@
 
     $(document).ready(function () {
 
-        /* Submit handler for comment modal */
+        /* Submit handler for hide modal */
         $("#id--submit-btn-hide-modal").on('click', function (event) {
 
             $("#" + event.currentTarget.id).tooltip("hide");
@@ -45,13 +50,13 @@
             const option = $(hideSubmitOptionSelector).text();
 
             $.ajax({
-                url: url + "?status=" + option,
+                url: `${url}?status=${option}&ref=${window.location.pathname}`,
                 method: 'patch',
                 headers: {
-                    'X-CSRFTOKEN': '{{ csrf_token }}'
+                    'X-CSRFTOKEN': csrfToken()
                 }
             }).done(function(data) {
-                react_response_handler(data);
+                redirect_rewrite_response_handler(data);
 
                 // close modal
                 $(hideModalSelector).modal('hide');

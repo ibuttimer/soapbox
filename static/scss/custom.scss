@@ -1,0 +1,156 @@
+/*!
+ * MIT License
+ *
+ * Copyright (c) 2022 Ian Buttimer
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to
+ * deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+ * sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ *
+ */
+/* based on:
+    - https://getbootstrap.com/docs/5.2/customize/sass/
+    - https://github.com/twbs/examples/blob/main/sass-js/scss/styles.scss
+ */
+
+// Custom.scss
+// Option B: Include parts of Bootstrap
+
+// 1. Include functions first (so you can manipulate colors, SVGs, calc, etc)
+@import "../node_modules/bootstrap/scss/functions";
+
+// 2. Include any default variable overrides here
+/* based on colours from https://huemint.com/bootstrap-basic/
+   with adjustments for contrast */
+$primary: #1c4858;
+$secondary: #E0E0E0;
+$success: #1A8044;
+$info: #b5a7af;
+$warning: #706F06;
+$danger: #C60E1B;
+$light: #f3fafa;
+$dark: #00032d;
+
+$pagination-active-bg: #1A8044;
+$pagination-active-border-color: #1A8044;
+
+// 3. Include remainder of required Bootstrap stylesheets
+@import "../../node_modules/bootstrap/scss/variables";
+
+// 4. Include any default map overrides here
+
+// 5. Include remainder of required parts
+@import "../node_modules/bootstrap/scss/maps";
+@import "../node_modules/bootstrap/scss/mixins";
+@import "../node_modules/bootstrap/scss/root";
+
+// 6. Optionally include any other parts as needed
+@import "../node_modules/bootstrap/scss/utilities";
+@import "../node_modules/bootstrap/scss/reboot";
+@import "../node_modules/bootstrap/scss/type";
+@import "../node_modules/bootstrap/scss/images";
+@import "../node_modules/bootstrap/scss/containers";
+@import "../node_modules/bootstrap/scss/grid";
+@import "../node_modules/bootstrap/scss/helpers";
+@import "../node_modules/bootstrap/scss/buttons";
+@import "../node_modules/bootstrap/scss/transitions";
+@import "../node_modules/bootstrap/scss/dropdown";
+@import "../node_modules/bootstrap/scss/button-group";
+@import "../node_modules/bootstrap/scss/nav";
+@import "../node_modules/bootstrap/scss/navbar"; // Requires nav
+@import "../node_modules/bootstrap/scss/card";
+// @import "../node_modules/bootstrap/scss/breadcrumb";
+// @import "../node_modules/bootstrap/scss/accordion";
+ @import "../node_modules/bootstrap/scss/pagination";
+@import "../node_modules/bootstrap/scss/badge";
+@import "../node_modules/bootstrap/scss/alert";
+// @import "../node_modules/bootstrap/scss/progress";
+// @import "../node_modules/bootstrap/scss/list-group";
+@import "../node_modules/bootstrap/scss/close";
+// @import "../node_modules/bootstrap/scss/toasts";
+@import "../node_modules/bootstrap/scss/modal"; // Requires transitions
+@import "../node_modules/bootstrap/scss/tooltip";
+// @import "../node_modules/bootstrap/scss/popover";
+@import "../node_modules/bootstrap/scss/carousel";
+
+
+// 7. Optionally include utilities API last to generate classes based on the Sass map in `_utilities.scss`
+@import "../node_modules/bootstrap/scss/utilities/api";
+
+// 8. Add additional custom code here
+
+/* customised mixin for .btn-outline-xxx
+    * set --bs-btn-disabled-bg and --bs-btn-bg to white
+ */
+@mixin button-outline-white_bg-variant(
+  $color,
+  $color-hover: color-contrast($color),
+  $active-background: $color,
+  $active-border: $color,
+  $active-color: color-contrast($active-background)
+) {
+  --#{$prefix}btn-color: #{$color};
+  --#{$prefix}btn-border-color: #{$color};
+  --#{$prefix}btn-hover-color: #{$color-hover};
+  --#{$prefix}btn-hover-bg: #{$active-background};
+  --#{$prefix}btn-hover-border-color: #{$active-border};
+  --#{$prefix}btn-focus-shadow-rgb: #{to-rgb($color)};
+  --#{$prefix}btn-active-color: #{$active-color};
+  --#{$prefix}btn-active-bg: #{$active-background};
+  --#{$prefix}btn-active-border-color: #{$active-border};
+  --#{$prefix}btn-active-shadow: #{$btn-active-box-shadow};
+  --#{$prefix}btn-disabled-color: #{$color};
+  --#{$prefix}btn-disabled-bg: white;
+  --#{$prefix}btn-bg: white;
+  --#{$prefix}btn-disabled-border-color: #{$color};
+  --#{$prefix}gradient: none;
+}
+
+/* customised mixin for .btn-outline-xxx
+    * set --bs-btn-disabled-bg and --bs-btn-bg to white
+ */
+@mixin bg-colour(
+  $color
+) {
+  background-color: #{$color};
+}
+
+@each $color, $value in $theme-colors {
+  // generate .btn-outline-{theme-colour}, e.g. btn-outline-primary
+  .btn-outline-#{$color} {
+    @include button-outline-white_bg-variant($value);
+  }
+
+  // generate .bg-{theme-colour}, e.g. bg-primary
+  .bg-#{$color} {
+    @include bg-colour($value);
+  }
+}
+
+@each $color, $value in $colors {
+  // generate .bg-{colour}, e.g. bg-red
+  .bg-#{$color} {
+    @include bg-colour($value);
+  }
+}
+
+@each $color, $value in $grays {
+  // generate .bg-gray-{colour}, e.g. bg-gray-100
+  .bg-gray-#{$color} {
+    @include bg-colour($value);
+  }
+}

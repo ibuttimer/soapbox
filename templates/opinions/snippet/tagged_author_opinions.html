@@ -3,7 +3,7 @@
 {% load i18n %}
 
 {# --- template variable defines for includes --- #}
-{# comment template expects: 'tagged_count' as total number of opinions from tagged authors #}
+{# tagged author opinions template expects: 'tagged_count' as total number of opinions from tagged authors #}
 
 <div>
     <p>{{ tagged_count }} <a class="link-primary" href="{% url 'opinions:opinion_followed' %}">opinion{{ tagged_count|pluralize }}</a> ha{{ count|pluralize:"s,ve" }} been published by authors you follow since your last login.</p>

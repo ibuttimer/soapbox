@@ -29,20 +29,24 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import QuerySet
 from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_http_methods
 
 from opinions.comment_data import (
     CommentData, get_comments_review_status
 )
-from opinions.comment_utils import (
-    get_comment_lookup, COMMENT_ALWAYS_FILTERS, COMMENT_FILTERS_ORDER
+from opinions.views.comment_queries import (
+    get_comment_lookup, COMMENT_ALWAYS_FILTERS, COMMENT_FILTERS_ORDER,
+    get_query_from_route
 )
 from opinions.constants import (
-    STATUS_QUERY, AUTHOR_QUERY, SEARCH_QUERY, REORDER_QUERY,
-    CONTENT_STATUS_CTX, REPEAT_SEARCH_TERM_CTX, PAGE_HEADING_CTX, TITLE_CTX,
-    HTML_CTX, TEMPLATE_COMMENT_REACTIONS, TEMPLATE_REACTION_CTRLS,
-    REVIEW_QUERY, IS_REVIEW_CTX
+    STATUS_QUERY, AUTHOR_QUERY, SEARCH_QUERY, COMMENT_LIST_CTX,
+    CONTENT_STATUS_CTX, REPEAT_SEARCH_TERM_CTX, LIST_HEADING_CTX,
+    PAGE_HEADING_CTX, TITLE_CTX, HTML_CTX, TEMPLATE_COMMENT_REACTIONS,
+    TEMPLATE_REACTION_CTRLS, REVIEW_QUERY, IS_REVIEW_CTX, COMMENT_OFFSET_CTX,
+    OPINION_ID_ROUTE_NAME, REFERENCE_QUERY, NO_CONTENT_MSG_CTX,
+    NO_CONTENT_HELP_CTX, MESSAGE_CTX, SINGLE_COMMENT_ROUTE_NAMES
 )
 from opinions.contexts.comment import comments_list_context_for_opinion
 from opinions.enums import QueryArg, QueryStatus, CommentSortOrder, SortOrder
@@ -58,7 +62,8 @@ from opinions.views.utils import (
     query_search_term, get_query_args,
     COMMENT_LIST_QUERY_ARGS, COMMENT_SEARCH_QUERY_ARGS,
     add_content_no_show_markers, QueryOption,
-    NON_REORDER_COMMENT_LIST_QUERY_ARGS, REVIEW_COMMENT_LIST_QUERY_ARGS
+    NON_REORDER_COMMENT_LIST_QUERY_ARGS, REVIEW_COMMENT_LIST_QUERY_ARGS,
+    resolve_ref
 )
 from soapbox import OPINIONS_APP_NAME, GET
 from utils import Crud, app_template_path
@@ -74,7 +79,8 @@ class ListTemplate(Enum):
 
 
 COMMENT_LIST_REACTIONS = [
-    ReactionsList.SHARE_FIELD, ReactionsList.DELETE_FIELD
+    ReactionsList.SHARE_FIELD, ReactionsList.DELETE_FIELD,
+    ReactionsList.EDIT_FIELD
 ]
 
 
@@ -86,6 +92,7 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
     model = Comment
 
     def __init__(self):
+        super().__init__()
         # response template to use
         self.response_template = ListTemplate.FULL_TEMPLATE
 
@@ -106,10 +113,12 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
         """
         return COMMENT_LIST_QUERY_ARGS
 
-    def set_extra_context(self, query_params: dict[str, QueryArg]):
+    def set_extra_context(self, query_params: dict[str, QueryArg],
+                          query_set_params: QuerySetParams):
         """
         Set the context extra content to be added to context
         :param query_params: request query
+        :param query_set_params: QuerySetParams
         """
         # build search term string from values that were set
         # inherited from ContextMixin via ListView
@@ -128,7 +137,7 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
         if self.is_query_own(query_params):
             # current users comments by status
             status = query_params.get(
-                STATUS_QUERY, QueryArg(QueryStatus.DEFAULT, False)).value
+                STATUS_QUERY, QueryArg.of(QueryStatus.DEFAULT)).value
             if isinstance(status, QueryStatus):
                 title = 'All my comments' \
                     if status.display == QueryStatus.ALL.display \
@@ -144,7 +153,7 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
 
         return {
             TITLE_CTX: title,
-            PAGE_HEADING_CTX: capwords(title)
+            LIST_HEADING_CTX: capwords(title)
         }
 
     def set_queryset(
@@ -183,16 +192,21 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
         """
         # select sort order options to display
         excludes = []
-        if query_params[AUTHOR_QUERY].was_set_to(self.user.username):
+
+        query = query_params.get(AUTHOR_QUERY, QueryArg.NONE)
+        if query.was_set_to(self.user.username):
             # no need for sort by author if only one author
             excludes.extend([
                 CommentSortOrder.AUTHOR_AZ, CommentSortOrder.AUTHOR_ZA
             ])
-        if not query_params[STATUS_QUERY].value == QueryStatus.ALL:
+
+        query = query_params.get(AUTHOR_QUERY, QueryArg.of(QueryStatus.ALL))
+        if not query.value == QueryStatus.ALL:
             # no need for sort by status if only one status
             excludes.extend([
                 CommentSortOrder.STATUS_AZ, CommentSortOrder.STATUS_ZA
             ])
+
         self.sort_order = [
             so for so in CommentSortOrder if so not in excludes
         ]
@@ -210,8 +224,7 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
         Select the template for the response
         :param query_params: request query
         """
-        reorder_query = query_params[REORDER_QUERY].value \
-            if REORDER_QUERY in query_params else False
+        reorder_query = self.is_reorder(query_params)
         self.response_template = ListTemplate.CONTENT_TEMPLATE \
             if reorder_query else ListTemplate.FULL_TEMPLATE
 
@@ -243,12 +256,29 @@ class CommentList(LoginRequiredMixin, ContentListMixin):
             enablers={key: True for key in COMMENT_LIST_REACTIONS})
 
         context.update({
-            'comment_list': comment_bundles,
+            COMMENT_LIST_CTX: comment_bundles,
             CONTENT_STATUS_CTX: comments_review_status,
             TEMPLATE_COMMENT_REACTIONS: COMMENT_REACTIONS,
             TEMPLATE_REACTION_CTRLS: reaction_ctrls,
         })
         add_content_no_show_markers(context=context)
+
+        if len(context[COMMENT_LIST_CTX]) == 0:
+            # move list heading to page heading as no content
+            context[PAGE_HEADING_CTX] = context[LIST_HEADING_CTX]
+            del context[LIST_HEADING_CTX]
+
+        return self.add_no_content_context(context)
+
+    def add_no_content_context(self, context: dict) -> dict:
+        """
+        Add no content-specific info to context
+        :param context: context
+        :return: context
+        """
+        if len(context[COMMENT_LIST_CTX]) == 0:
+            context[NO_CONTENT_MSG_CTX] = 'No comments found.'
+
         return context
 
     def is_list_only_template(self) -> bool:
@@ -271,10 +301,12 @@ class CommentSearch(CommentList):
         """
         return COMMENT_SEARCH_QUERY_ARGS
 
-    def set_extra_context(self, query_params: dict[str, QueryArg]):
+    def set_extra_context(self, query_params: dict[str, QueryArg],
+                          query_set_params: QuerySetParams):
         """
         Set the context extra content to be added to context
         :param query_params: request query
+        :param query_set_params: QuerySetParams
         """
         # build search term string from values that were set
         search_term = ', '.join([
@@ -283,7 +315,7 @@ class CommentSearch(CommentList):
         ])
         self.extra_context = {
             TITLE_CTX: 'Comment search',
-            PAGE_HEADING_CTX: f"Results of {search_term}",
+            LIST_HEADING_CTX: f"Results of {search_term}",
             REPEAT_SEARCH_TERM_CTX:
                 f'{SEARCH_QUERY}='
                 f'{query_params[SEARCH_QUERY].value}'
@@ -376,12 +408,14 @@ class CommentInReview(CommentList):
         """
         return REVIEW_COMMENT_LIST_QUERY_ARGS
 
-    def set_extra_context(self, query_params: dict[str, QueryArg]):
+    def set_extra_context(self, query_params: dict[str, QueryArg],
+                          query_set_params: QuerySetParams):
         """
         Set the context extra content to be added to context
         :param query_params: request query
+        :param query_set_params: QuerySetParams
         """
-        super().set_extra_context(query_params)
+        super().set_extra_context(query_params, query_set_params)
         self.extra_context[IS_REVIEW_CTX] = True
 
     def get_title_heading(self, query_params: dict[str, QueryArg]) -> dict:
@@ -401,7 +435,7 @@ class CommentInReview(CommentList):
 
         return {
             TITLE_CTX: title,
-            PAGE_HEADING_CTX: heading,
+            LIST_HEADING_CTX: heading,
         }
 
     def set_queryset(
@@ -459,6 +493,24 @@ class CommentInReview(CommentList):
             # not following anyone
             self.queryset = Comment.objects.none()
 
+    def add_no_content_context(self, context: dict) -> dict:
+        """
+        Add no content-specific info to context
+        :param context: context
+        :return: context
+        """
+        super().add_no_content_context(context)
+        if len(context[COMMENT_LIST_CTX]) == 0:
+            context[NO_CONTENT_HELP_CTX] = render_to_string(
+                app_template_path(
+                    OPINIONS_APP_NAME, "messages",
+                    "any_message.html"),
+                context={
+                    MESSAGE_CTX: 'Nothing to do here.'
+                })
+
+        return context
+
 
 @login_required
 @require_http_methods([GET])
@@ -474,6 +526,21 @@ def opinion_comments(request: HttpRequest) -> HttpResponse:
     query_params = comment_list_query_args(request)
 
     context = comments_list_context_for_opinion(query_params, request.user)
+
+    comment_offset = 0
+    called_by = resolve_ref(request)
+    if called_by:
+        if called_by.url_name == OPINION_ID_ROUTE_NAME:
+            pass
+        elif called_by.url_name in SINGLE_COMMENT_ROUTE_NAMES:
+            get_param, _ = get_query_from_route(request, called_by=called_by)
+            parent = get_object_or_404(Comment, **get_param)
+            comment_offset = parent.level + 1
+        else:
+            raise ValueError(
+                f'Unknown {REFERENCE_QUERY} query value: '
+                f'{request.GET[REFERENCE_QUERY]}')
+    context[COMMENT_OFFSET_CTX] = comment_offset
 
     return JsonResponse({
         HTML_CTX: render_to_string(

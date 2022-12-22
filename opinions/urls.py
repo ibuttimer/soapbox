@@ -23,7 +23,7 @@
 
 from django.urls import path
 
-from soapbox import OPINIONS_APP_NAME
+from soapbox import OPINIONS_APP_NAME, val_test_url, val_test_route_name
 
 from opinions.constants import (
     OPINIONS_URL, OPINIONS_ROUTE_NAME,
@@ -82,6 +82,19 @@ from opinions.views.comment_by_id import (
 app_name = OPINIONS_APP_NAME
 
 urlpatterns = [
+    # val-test urls
+    path(val_test_url(OPINIONS_URL), OpinionList.as_view(),
+         name=val_test_route_name(OPINIONS_ROUTE_NAME)),
+    path(val_test_url(OPINION_ID_URL), OpinionDetailById.as_view(),
+         name=val_test_route_name(OPINION_ID_ROUTE_NAME)),
+    path(val_test_url(OPINION_NEW_URL), OpinionCreate.as_view(),
+         name=val_test_route_name(OPINION_NEW_ROUTE_NAME)),
+    path(val_test_url(COMMENTS_URL), CommentList.as_view(),
+         name=val_test_route_name(COMMENTS_ROUTE_NAME)),
+    path(val_test_url(OPINION_IN_REVIEW_URL), OpinionInReview.as_view(),
+         name=val_test_route_name(OPINION_IN_REVIEW_ROUTE_NAME)),
+
+    # standard app urls
     # list opinions
     path(OPINIONS_URL, OpinionList.as_view(), name=OPINIONS_ROUTE_NAME),
     # search opinions

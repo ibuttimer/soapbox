@@ -1,0 +1,2971 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/hrcj5dv7b/image/upload/v1/static/apple-touch-icon.05bae240b98e.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://res.cloudinary.com/hrcj5dv7b/image/upload/v1/static/favicon-32x32.0489f17023fe.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://res.cloudinary.com/hrcj5dv7b/image/upload/v1/static/favicon-16x16.24eb55e0fd3e.png">
+    <link rel="manifest" href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/site.fb74105a5f88.webmanifest">
+    <link rel="mask-icon" href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/safari-pinned-tab.bf8bc2e456d1.svg" color="#ffc43d">
+    <meta name="msapplication-TileColor" content="#ffc43d">
+    <meta name="theme-color" content="#ffc43d">
+    <meta name="description" content="SoapBox is a community platform that allows users to post opinions and engage in online discussions.">
+    <meta name="google-site-verification" content="nSLaF9fnDohng9nLW2_KvEKKAdIk40-RHsQEQsY8-GI">
+
+    
+    <link href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/css/styles.b2224c8a1d4d.css" rel="stylesheet" type="text/css">
+
+    
+<link href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/css/styles-opinion.97b5ca478420.css" rel="stylesheet" type="text/css">
+
+
+    
+<script src="https://code.jquery.com/jquery-3.6.1.min.js" integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous"></script>
+<script>window.jQuery || document.write('<script type="text/javascript" src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/jquery/jquery-3.6.1.min.00727d1d5d9c.js"><\/script>')</script>
+
+
+    <script src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/js/script.8683d7058d68.js"></script>
+
+    <title>SoapBox - Category Feed</title>
+    
+    
+
+    
+    <style>
+        .main-content {
+            background-repeat: repeat;
+            background-position: center;
+            background-image: url("https://res.cloudinary.com/hrcj5dv7b/image/upload/v1/static/img/balloons-1187260_1280.dabf99bff7df.png");
+            background-image: -webkit-image-set(
+                    url("https://res.cloudinary.com/hrcj5dv7b/image/upload/v1/static/img/balloons-1187260_1280.39f5bf6c513d.webp") 1x
+            );
+            /* TODO the standard way; image-set(). This is a CSS Images Module Level 4 feature,
+                and as the W3C CSS Validator currently only supports CSS3, unable to
+                follow recommendations from https://developer.mozilla.org/en-US/docs/Web/CSS/image/image-set.
+                Also Chrome does not support type: "implementation has not been per the spec, as only URL values
+                were accepted for the image, and only resolutions with 'x' as a unit were accepted"
+                https://chromestatus.com/feature/5432024223449088 */
+        }
+    </style>
+</head>
+<body class="h-100 d-flex flex-column">
+    <header class="container no-padding">
+        <nav class="navbar navbar-expand-lg bg-light div__panel">
+            <div class="container-fluid">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggler" aria-controls="navbarToggler" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <a class="navbar-brand theme-colour-background" href="/">
+                    <img src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/img/bullhorn.995d53581847.svg" alt="SoapBox logo" width="30" height="24" class="d-inline-block align-text-top">
+                    <span class="theme-colour">SoapBox</span>
+                </a>
+                <div class="collapse navbar-collapse" id="navbarToggler">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="/">Home</a>
+                        </li>
+                        
+                            
+                            <li class="nav-item dropdown">
+                                <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="nav-link dropdown-toggle">
+                                    Opinion
+                                </a>
+                                <ul class="dropdown-menu">
+                                    
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/new/">New</a>
+                                    </li>
+                                    
+                                    
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/?author=user1&amp;status=draft">Drafts</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/?author=user1&amp;status=preview">Previews</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/in_review/?author=user1">Reviews</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/?author=user1&amp;status=all">All mine</a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/?pinned=yes">Pinned</a>
+                                    </li>
+                                    
+                                        <li>
+                                            <a class="dropdown-item" tabindex="-1" href="/opinions/followed/?filter=new">New tagged author opinions</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" tabindex="-1" href="/opinions/followed/?filter=all">All tagged author opinions</a>
+                                        </li>
+                                    
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/">All</a>
+                                    </li>
+                                    
+                                </ul>
+                            </li>
+                            
+                            <li class="nav-item dropdown">
+                                <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="nav-link dropdown-toggle">
+                                    Comment
+                                </a>
+                                <ul class="dropdown-menu">
+                                    
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/comments/in_review/?author=user1">Reviews</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/comments/?author=user1&amp;status=all">Mine</a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="/opinions/comments/">All</a>
+                                    </li>
+                                    
+                                </ul>
+                            </li>
+                            
+                            
+                        
+                    </ul>
+                    <form class="d-flex" role="search" method="get" action="/opinions/search/">
+                        <input class="form-control me-2" type="search" placeholder="Search opinions" aria-label="Search" name="search">
+                        <button class="btn btn-outline-success btn__text" type="submit">Search</button>
+                    </form>
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                        
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    
+                                        <i class="fa-solid fa-user"></i>
+                                    
+                                    &nbsp;
+                                    
+                                        User1
+                                    
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="/users/2/" aria-label="view profile">Profile</a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="/accounts/logout/">Sign Out</a>
+                                    </li>
+                                </ul>
+                            </li>
+                        
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container flex-shrink-0 flex-grow-1 overflow-auto main-content no-padding">
+        
+
+        <div class="container">
+            
+
+
+<div class="row flex-grow-1 overflow-auto">
+    
+    <div class="col-lg-10 col-md-9 div__left-panel">
+        
+        
+            <div class="btn-group flex-wrap">
+            
+                <a href="/feed/category/?category=All" class="btn btn-success active" aria-current="page">
+                    All
+                </a>
+            
+                <a href="/feed/category/?category=Architecture" class="btn btn-outline-success">
+                    Architecture
+                </a>
+            
+                <a href="/feed/category/?category=Art" class="btn btn-outline-success">
+                    Art
+                </a>
+            
+                <a href="/feed/category/?category=Cooking" class="btn btn-outline-success">
+                    Cooking
+                </a>
+            
+                <a href="/feed/category/?category=Film" class="btn btn-outline-success">
+                    Film
+                </a>
+            
+            </div>
+        
+
+        
+        <!-- sort_order_select.html start -->
+
+
+
+
+
+
+
+<div class="row d-flex justify-content-center">
+    <div class="row d-flex justify-content-center">
+        <div class="col-xxl-10 col-lg-9 col-md-8 col-sm-6 col-auto mt-2 text-center">
+            <h3>Category Feed</h3>
+        </div>
+        <div class="col-xxl-2 col-lg-3 col-md-4 col-sm-6 col-auto mt-2">
+            <!-- sort order selection -->
+            <select id="id--sort-order-select" class="form-select" aria-label="Sort by">
+                
+                <option value="new" selected="">
+                    Published Date ⇊
+                </option>
+                
+                <option value="old">
+                    Published Date ⇈
+                </option>
+                
+                <option value="aaz">
+                    Author A-Z
+                </option>
+                
+                <option value="aza">
+                    Author Z-A
+                </option>
+                
+                <option value="taz">
+                    Title A-Z
+                </option>
+                
+                <option value="tza">
+                    Title Z-A
+                </option>
+                
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- sort_order_select.html end -->
+
+
+        <article id="article-content" class="row d-flex justify-content-center">
+            <!-- opinion_list_content.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <var id="var--repeat-search-term" hidden=""></var>
+
+    
+        <div class="row">
+            <div class="col-12 mt-2">
+                <div class="row d-flex align-items-center">
+                    
+                        
+                        <div class="col-lg-6">
+                            <div class="card mb-4">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-sm-8 col-12 mt-0 mb-0">
+                                            <!-- title -->
+                                            <a href="/opinions/63/?mode=read-only" class="post-link">
+                                                <h4 id="id--title-1" class="card-title">
+                                                    agag
+                                                </h4>
+                                            </a>
+                                            
+                                        </div>
+                                        <div id="categories_1" class="col-sm-3 col-10 mt-0 mb-0">
+                                            
+                                            <span class="badge rounded-pill text-bg-info fs-6">Trains</span>
+                                            
+                                        </div>
+                                        <div id="pinned_1" class="col-sm-1 col-2 mt-0 mb-0">
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                                
+                                                    
+                                                        
+                                                            
+                                                                <!-- reactions.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<ul id="id--react-ul-opinion-63" class="nav list-unstyled d-flex">
+    
+        
+        <li id="id--react-li-agree-opinion-63">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-disagree-opinion-63">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-comment-opinion-63">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-follow-opinion-63">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-unfollow-opinion-63">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-share-opinion-63">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-hide-opinion-63">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-show-opinion-63">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-pin-opinion-63">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-unpin-opinion-63">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-report-opinion-63">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+</ul>
+<!-- reactions.html end -->
+
+                                                            
+                                                        
+                                                    
+                                                
+                                            
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <!-- excerpt -->
+                                        <p id="excerpt_1" class="card-text text-muted">
+                                            xjsxkjkj
+                                        </p>
+                                    </div>
+                                    <hr>
+                                    <div class="row">
+                                        <div class="col-sm-3 col-12 mt-0 mb-0">
+                                            
+                                            <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Read">
+                                            
+                                                <a class="btn btn-primary mb-2" href="/opinions/63/?mode=read-only" aria-label="read agag">
+                                                    <i class="fa-solid fa-book-open"></i>
+                                                </a>
+                                            
+                                            </span>
+                                            
+                                            
+                                            <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Edit">
+                                                <a class="btn btn-warning mb-2" href="/opinions/63/?mode=edit" aria-label="edit agag">
+                                                    <i class="fa-solid fa-pen"></i>
+                                                </a>
+                                            </span>
+                                            
+                                            
+                                        </div>
+                                        <div class="col-sm-6 col-8 mt-0 mb-0">
+                                            <div class="row mt-0 mb-0">
+                                                <div class="col-md-6 mt-0 mb-0">
+                                                    <a href="/users/2/" aria-label="view author's profile">user1</a>
+                                                </div>
+                                                <div class="col-md-6 mt-0 mb-0">
+                                                    
+                                                    <span id="status_1" class="badge rounded-pill bg-success text-white fs-6">Published</span>
+                                                </div>
+                                            </div>
+                                            <p class="card-text text-muted mt-0 mb-0">
+                                                
+                                                <i class="fa-solid fa-upload"></i> 20&nbsp;hours ago
+                                                
+                                                <br>
+                                                <i class="fa-solid fa-pen-to-square"></i> 20&nbsp;hours ago
+                                            </p>
+                                        </div>
+                                        <div class="col-sm-3 col-4 mt-0 mb-0">
+                                            
+                                            
+                                            <p class="mt-0 mb-0"><i class="fa-solid fa-hands-clapping"></i>&nbsp;0</p>
+                                            <p class="mt-0 mb-0"><i class="fa-solid fa-comments"></i>&nbsp;0</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    
+                        
+                        <div class="col-lg-6">
+                            <div class="card mb-4">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-sm-8 col-12 mt-0 mb-0">
+                                            <!-- title -->
+                                            <a href="/opinions/41/?mode=read-only" class="post-link">
+                                                <h4 id="id--title-2" class="card-title">
+                                                    Recommend a good film.
+                                                </h4>
+                                            </a>
+                                            
+                                        </div>
+                                        <div id="categories_2" class="col-sm-3 col-10 mt-0 mb-0">
+                                            
+                                            <span class="badge rounded-pill text-bg-info fs-6">Film</span>
+                                            
+                                        </div>
+                                        <div id="pinned_2" class="col-sm-1 col-2 mt-0 mb-0">
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                                
+                                                    
+                                                        
+                                                            
+                                                                <!-- reactions.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<ul id="id--react-ul-opinion-41" class="nav list-unstyled d-flex">
+    
+        
+        <li id="id--react-li-agree-opinion-41">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-disagree-opinion-41">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-comment-opinion-41">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-follow-opinion-41">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-unfollow-opinion-41">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-share-opinion-41">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-hide-opinion-41">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-show-opinion-41">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-pin-opinion-41">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-unpin-opinion-41">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-report-opinion-41">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+</ul>
+<!-- reactions.html end -->
+
+                                                            
+                                                        
+                                                    
+                                                
+                                            
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <!-- excerpt -->
+                                        <p id="excerpt_2" class="card-text text-muted">
+                                            Some of the movies that I like include the green mile, mother, parasite, Edward scissorhands, Forrest Gump, Jennifer's body and the Shawshank redempt…
+                                        </p>
+                                    </div>
+                                    <hr>
+                                    <div class="row">
+                                        <div class="col-sm-3 col-12 mt-0 mb-0">
+                                            
+                                            <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Read">
+                                            
+                                                <a class="btn btn-primary mb-2" href="/opinions/41/?mode=read-only" aria-label="read Recommend a good film.">
+                                                    <i class="fa-solid fa-book-open"></i>
+                                                </a>
+                                            
+                                            </span>
+                                            
+                                            
+                                            
+                                        </div>
+                                        <div class="col-sm-6 col-8 mt-0 mb-0">
+                                            <div class="row mt-0 mb-0">
+                                                <div class="col-md-6 mt-0 mb-0">
+                                                    <a href="/users/4/" aria-label="view author's profile">user3</a>
+                                                </div>
+                                                <div class="col-md-6 mt-0 mb-0">
+                                                    
+                                                    <span id="status_2" class="badge rounded-pill bg-success text-white fs-6">Published</span>
+                                                </div>
+                                            </div>
+                                            <p class="card-text text-muted mt-0 mb-0">
+                                                
+                                                <i class="fa-solid fa-upload"></i> 1&nbsp;day, 13&nbsp;hours ago
+                                                
+                                                <br>
+                                                <i class="fa-solid fa-pen-to-square"></i> 1&nbsp;day, 13&nbsp;hours ago
+                                            </p>
+                                        </div>
+                                        <div class="col-sm-3 col-4 mt-0 mb-0">
+                                            
+                                            
+                                            <p class="mt-0 mb-0"><i class="fa-solid fa-hands-clapping"></i>&nbsp;0</p>
+                                            <p class="mt-0 mb-0"><i class="fa-solid fa-comments"></i>&nbsp;4</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                </div>
+                <div class="row d-flex align-items-center">
+                        
+                    
+                        
+                        <div class="col-lg-6">
+                            <div class="card mb-4">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-sm-8 col-12 mt-0 mb-0">
+                                            <!-- title -->
+                                            <a href="/opinions/40/?mode=read-only" class="post-link">
+                                                <h4 id="id--title-3" class="card-title">
+                                                    I can eat fish for the first time in life! What should I make/eat/buy?
+                                                </h4>
+                                            </a>
+                                            
+                                        </div>
+                                        <div id="categories_3" class="col-sm-3 col-10 mt-0 mb-0">
+                                            
+                                            <span class="badge rounded-pill text-bg-info fs-6">Cooking</span>
+                                            
+                                        </div>
+                                        <div id="pinned_3" class="col-sm-1 col-2 mt-0 mb-0">
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                                
+                                                    
+                                                        
+                                                            
+                                                                <!-- reactions.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<ul id="id--react-ul-opinion-40" class="nav list-unstyled d-flex">
+    
+        
+        <li id="id--react-li-agree-opinion-40">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-disagree-opinion-40">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-comment-opinion-40">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-follow-opinion-40">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-unfollow-opinion-40">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-share-opinion-40">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-hide-opinion-40">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-show-opinion-40">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-pin-opinion-40">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-unpin-opinion-40">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-report-opinion-40">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+</ul>
+<!-- reactions.html end -->
+
+                                                            
+                                                        
+                                                    
+                                                
+                                            
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <!-- excerpt -->
+                                        <p id="excerpt_3" class="card-text text-muted">
+                                            I’ve suffered from a severe allergy to fish since childhood. If I ate any type of fish (excluding shellfish, I’ve been eating that my whole life) I’d…
+                                        </p>
+                                    </div>
+                                    <hr>
+                                    <div class="row">
+                                        <div class="col-sm-3 col-12 mt-0 mb-0">
+                                            
+                                            <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Read">
+                                            
+                                                <a class="btn btn-primary mb-2" href="/opinions/40/?mode=read-only" aria-label="read I can eat fish for the first time in life! What should I make/eat/buy?">
+                                                    <i class="fa-solid fa-book-open"></i>
+                                                </a>
+                                            
+                                            </span>
+                                            
+                                            
+                                            
+                                        </div>
+                                        <div class="col-sm-6 col-8 mt-0 mb-0">
+                                            <div class="row mt-0 mb-0">
+                                                <div class="col-md-6 mt-0 mb-0">
+                                                    <a href="/users/6/" aria-label="view author's profile">user2</a>
+                                                </div>
+                                                <div class="col-md-6 mt-0 mb-0">
+                                                    
+                                                    <span id="status_3" class="badge rounded-pill bg-success text-white fs-6">Published</span>
+                                                </div>
+                                            </div>
+                                            <p class="card-text text-muted mt-0 mb-0">
+                                                
+                                                <i class="fa-solid fa-upload"></i> 1&nbsp;day, 13&nbsp;hours ago
+                                                
+                                                <br>
+                                                <i class="fa-solid fa-pen-to-square"></i> 1&nbsp;day, 13&nbsp;hours ago
+                                            </p>
+                                        </div>
+                                        <div class="col-sm-3 col-4 mt-0 mb-0">
+                                            
+                                            
+                                            <p class="mt-0 mb-0"><i class="fa-solid fa-hands-clapping"></i>&nbsp;0</p>
+                                            <p class="mt-0 mb-0"><i class="fa-solid fa-comments"></i>&nbsp;3</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    
+                        
+                        <div class="col-lg-6">
+                            <div class="card mb-4">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-sm-8 col-12 mt-0 mb-0">
+                                            <!-- title -->
+                                            <a href="/opinions/39/?mode=read-only" class="post-link">
+                                                <h4 id="id--title-4" class="card-title">
+                                                    Beginner cook needing dishes starting with R
+                                                </h4>
+                                            </a>
+                                            
+                                        </div>
+                                        <div id="categories_4" class="col-sm-3 col-10 mt-0 mb-0">
+                                            
+                                            <span class="badge rounded-pill text-bg-info fs-6">Cooking</span>
+                                            
+                                        </div>
+                                        <div id="pinned_4" class="col-sm-1 col-2 mt-0 mb-0">
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                                
+                                                    
+                                                        
+                                                            
+                                                                <!-- reactions.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<ul id="id--react-ul-opinion-39" class="nav list-unstyled d-flex">
+    
+        
+        <li id="id--react-li-agree-opinion-39">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-disagree-opinion-39">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-comment-opinion-39">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-follow-opinion-39">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-unfollow-opinion-39">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-share-opinion-39">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-hide-opinion-39">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-show-opinion-39">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-pin-opinion-39">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-unpin-opinion-39">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-report-opinion-39">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+</ul>
+<!-- reactions.html end -->
+
+                                                            
+                                                        
+                                                    
+                                                
+                                            
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <!-- excerpt -->
+                                        <p id="excerpt_4" class="card-text text-muted">
+                                            A group of my buddies are doing a potluck where everybody brings a dish that starts with the first letter of their first name. I'm an okay cook, so I…
+                                        </p>
+                                    </div>
+                                    <hr>
+                                    <div class="row">
+                                        <div class="col-sm-3 col-12 mt-0 mb-0">
+                                            
+                                            <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Read">
+                                            
+                                                <a class="btn btn-primary mb-2" href="/opinions/39/?mode=read-only" aria-label="read Beginner cook needing dishes starting with R">
+                                                    <i class="fa-solid fa-book-open"></i>
+                                                </a>
+                                            
+                                            </span>
+                                            
+                                            
+                                            <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Edit">
+                                                <a class="btn btn-warning mb-2" href="/opinions/39/?mode=edit" aria-label="edit Beginner cook needing dishes starting with R">
+                                                    <i class="fa-solid fa-pen"></i>
+                                                </a>
+                                            </span>
+                                            
+                                            
+                                        </div>
+                                        <div class="col-sm-6 col-8 mt-0 mb-0">
+                                            <div class="row mt-0 mb-0">
+                                                <div class="col-md-6 mt-0 mb-0">
+                                                    <a href="/users/2/" aria-label="view author's profile">user1</a>
+                                                </div>
+                                                <div class="col-md-6 mt-0 mb-0">
+                                                    
+                                                    <span id="status_4" class="badge rounded-pill bg-success text-white fs-6">Published</span>
+                                                </div>
+                                            </div>
+                                            <p class="card-text text-muted mt-0 mb-0">
+                                                
+                                                <i class="fa-solid fa-upload"></i> 1&nbsp;day, 13&nbsp;hours ago
+                                                
+                                                <br>
+                                                <i class="fa-solid fa-pen-to-square"></i> 1&nbsp;day, 13&nbsp;hours ago
+                                            </p>
+                                        </div>
+                                        <div class="col-sm-3 col-4 mt-0 mb-0">
+                                            
+                                            
+                                            <p class="mt-0 mb-0"><i class="fa-solid fa-hands-clapping"></i>&nbsp;0</p>
+                                            <p class="mt-0 mb-0"><i class="fa-solid fa-comments"></i>&nbsp;3</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                </div>
+                <div class="row d-flex align-items-center">
+                        
+                    
+                        
+                        <div class="col-lg-6">
+                            <div class="card mb-4">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-sm-8 col-12 mt-0 mb-0">
+                                            <!-- title -->
+                                            <a href="/opinions/38/?mode=read-only" class="post-link">
+                                                <h4 id="id--title-5" class="card-title">
+                                                    US scientists set to announce fusion energy breakthrough
+                                                </h4>
+                                            </a>
+                                            
+                                        </div>
+                                        <div id="categories_5" class="col-sm-3 col-10 mt-0 mb-0">
+                                            
+                                            <span class="badge rounded-pill text-bg-info fs-6">Technology</span>
+                                            
+                                        </div>
+                                        <div id="pinned_5" class="col-sm-1 col-2 mt-0 mb-0">
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                                
+                                                    
+                                                        
+                                                            
+                                                                <!-- reactions.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<ul id="id--react-ul-opinion-38" class="nav list-unstyled d-flex">
+    
+        
+        <li id="id--react-li-agree-opinion-38">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-disagree-opinion-38">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-comment-opinion-38">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-follow-opinion-38">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-unfollow-opinion-38">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-share-opinion-38">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-hide-opinion-38">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-show-opinion-38">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-pin-opinion-38">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-unpin-opinion-38">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-report-opinion-38">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+</ul>
+<!-- reactions.html end -->
+
+                                                            
+                                                        
+                                                    
+                                                
+                                            
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <!-- excerpt -->
+                                        <p id="excerpt_5" class="card-text text-muted">
+                                            apnews.com/articl...Original post courtesy of&nbsp;Reddit.com
+                                        </p>
+                                    </div>
+                                    <hr>
+                                    <div class="row">
+                                        <div class="col-sm-3 col-12 mt-0 mb-0">
+                                            
+                                            <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Read">
+                                            
+                                                <a class="btn btn-primary mb-2" href="/opinions/38/?mode=read-only" aria-label="read US scientists set to announce fusion energy breakthrough">
+                                                    <i class="fa-solid fa-book-open"></i>
+                                                </a>
+                                            
+                                            </span>
+                                            
+                                            
+                                            
+                                        </div>
+                                        <div class="col-sm-6 col-8 mt-0 mb-0">
+                                            <div class="row mt-0 mb-0">
+                                                <div class="col-md-6 mt-0 mb-0">
+                                                    <a href="/users/4/" aria-label="view author's profile">user3</a>
+                                                </div>
+                                                <div class="col-md-6 mt-0 mb-0">
+                                                    
+                                                    <span id="status_5" class="badge rounded-pill bg-success text-white fs-6">Published</span>
+                                                </div>
+                                            </div>
+                                            <p class="card-text text-muted mt-0 mb-0">
+                                                
+                                                <i class="fa-solid fa-upload"></i> 1&nbsp;day, 13&nbsp;hours ago
+                                                
+                                                <br>
+                                                <i class="fa-solid fa-pen-to-square"></i> 1&nbsp;day, 13&nbsp;hours ago
+                                            </p>
+                                        </div>
+                                        <div class="col-sm-3 col-4 mt-0 mb-0">
+                                            
+                                            
+                                            <p class="mt-0 mb-0"><i class="fa-solid fa-hands-clapping"></i>&nbsp;0</p>
+                                            <p class="mt-0 mb-0"><i class="fa-solid fa-comments"></i>&nbsp;3</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    
+                        
+                        <div class="col-lg-6">
+                            <div class="card mb-4">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-sm-8 col-12 mt-0 mb-0">
+                                            <!-- title -->
+                                            <a href="/opinions/37/?mode=read-only" class="post-link">
+                                                <h4 id="id--title-6" class="card-title">
+                                                    FTX founder Sam Bankman-Fried arrested in the Bahamas after U.S. files criminal charges
+                                                </h4>
+                                            </a>
+                                            
+                                        </div>
+                                        <div id="categories_6" class="col-sm-3 col-10 mt-0 mb-0">
+                                            
+                                            <span class="badge rounded-pill text-bg-info fs-6">Technology</span>
+                                            
+                                        </div>
+                                        <div id="pinned_6" class="col-sm-1 col-2 mt-0 mb-0">
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                                
+                                                    
+                                                        
+                                                            
+                                                                <!-- reactions.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<ul id="id--react-ul-opinion-37" class="nav list-unstyled d-flex">
+    
+        
+        <li id="id--react-li-agree-opinion-37">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-disagree-opinion-37">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-comment-opinion-37">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-follow-opinion-37">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-unfollow-opinion-37">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-share-opinion-37">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-hide-opinion-37">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-show-opinion-37">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-pin-opinion-37">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-unpin-opinion-37">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+        
+        <li id="id--react-li-report-opinion-37">
+            <!-- reaction.html start -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- reaction.html end -->
+
+        </li>
+    
+</ul>
+<!-- reactions.html end -->
+
+                                                            
+                                                        
+                                                    
+                                                
+                                            
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <!-- excerpt -->
+                                        <p id="excerpt_6" class="card-text text-muted">
+                                            cnbc.com/2022/1...Original post courtesy of&nbsp;Reddit.com
+                                        </p>
+                                    </div>
+                                    <hr>
+                                    <div class="row">
+                                        <div class="col-sm-3 col-12 mt-0 mb-0">
+                                            
+                                            <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Read">
+                                            
+                                                <a class="btn btn-primary mb-2" href="/opinions/37/?mode=read-only" aria-label="read FTX founder Sam Bankman-Fried arrested in the Bahamas after U.S. files criminal charges">
+                                                    <i class="fa-solid fa-book-open"></i>
+                                                </a>
+                                            
+                                            </span>
+                                            
+                                            
+                                            
+                                        </div>
+                                        <div class="col-sm-6 col-8 mt-0 mb-0">
+                                            <div class="row mt-0 mb-0">
+                                                <div class="col-md-6 mt-0 mb-0">
+                                                    <a href="/users/6/" aria-label="view author's profile">user2</a>
+                                                </div>
+                                                <div class="col-md-6 mt-0 mb-0">
+                                                    
+                                                    <span id="status_6" class="badge rounded-pill bg-success text-white fs-6">Published</span>
+                                                </div>
+                                            </div>
+                                            <p class="card-text text-muted mt-0 mb-0">
+                                                
+                                                <i class="fa-solid fa-upload"></i> 1&nbsp;day, 13&nbsp;hours ago
+                                                
+                                                <br>
+                                                <i class="fa-solid fa-pen-to-square"></i> 1&nbsp;day, 13&nbsp;hours ago
+                                            </p>
+                                        </div>
+                                        <div class="col-sm-3 col-4 mt-0 mb-0">
+                                            
+                                            
+                                            <p class="mt-0 mb-0"><i class="fa-solid fa-hands-clapping"></i>&nbsp;0</p>
+                                            <p class="mt-0 mb-0"><i class="fa-solid fa-comments"></i>&nbsp;3</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                </div>
+                <div class="row d-flex align-items-center">
+                        
+                    
+                </div>
+            </div>
+        </div>
+
+        
+        
+            <!-- per_page_pagination_select.html start -->
+
+
+
+
+
+
+
+
+
+<div class="row d-flex justify-content-between mb-2">
+    <div class="col-xxl-2 col-lg-3 col-md-4 col-sm-6 col-auto mt-2">
+        <!-- per page selection -->
+        <select id="per-page-select" class="form-select" aria-label="Opinions per page">
+            
+            <option value="6" selected="">
+                6 per page
+            </option>
+            
+            <option value="9">
+                9 per page
+            </option>
+            
+            <option value="12">
+                12 per page
+            </option>
+            
+            <option value="15">
+                15 per page
+            </option>
+            
+        </select>
+    </div>
+    <div class="col-xxl-10 col-lg-9 col-md-8 col-sm-6 col-auto mt-2 d-flex justify-content-end float-end">
+        <!-- pagination -->
+        <!-- pagination.html start -->
+
+
+
+
+
+
+
+
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        <li class="page-item disabled disable-link">
+            <a href="" class="page-link disable-link" aria-label="Previous">
+                <span aria-hidden="true">«</span>
+            </a>
+        </li>
+        
+            
+            
+            
+            
+            
+            <li class="page-item active" aria-current="page" id="current-page">
+                <a href="?page=1" class="page-link" aria-label="page 1">
+                    <span aria-hidden="true">1</span>
+                </a>
+            </li>
+        
+            
+            
+            
+            
+            
+            <li class="page-item">
+                <a href="?page=2" class="page-link" aria-label="page 2">
+                    <span aria-hidden="true">2</span>
+                </a>
+            </li>
+        
+            
+            
+            
+            
+            
+            <li class="page-item">
+                <a href="?page=3" class="page-link" aria-label="page 3">
+                    <span aria-hidden="true">3</span>
+                </a>
+            </li>
+        
+            
+            
+            
+            
+            
+            <li class="page-item">
+                <a href="?page=4" class="page-link" aria-label="page 4">
+                    <span aria-hidden="true">4</span>
+                </a>
+            </li>
+        
+        <li class="page-item">
+            <a href="?page=2" class="page-link" aria-label="Next">
+                <span aria-hidden="true">»</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+
+<!-- pagination.html end -->
+
+    </div>
+</div>
+<!-- per_page_pagination_select.html end -->
+
+        
+    
+
+<!-- opinion_list_content.html end -->
+
+        </article>
+    </div>
+    
+    <div class="col-lg-2 col-md-3 bg-light div__panel div__right-panel ">
+        <nav class="mt-2">
+            <div class="col-12">
+                <h3>Feeds</h3>
+            </div>
+            <div class="mb-2">
+                <a href="/feed/following/" class="btn btn-outline-success btn__text">
+                    Following
+                </a>
+            </div>
+            <div class="mb-2">
+                <a href="/feed/category/" class="btn btn-success btn__text">
+                    Category
+                </a>
+            </div>
+            
+            <div class="mt-2">
+                <h3>Opinions</h3>
+            </div>
+            
+            
+            <div class="mb-2">
+                <a class="btn btn-outline-warning btn__text" href="/opinions/new/">
+                    New Opinion
+                </a>
+            </div>
+            
+            
+            <div class="mb-2">
+                <a class="btn btn-outline-warning btn__text" href="/opinions/?author=user1&amp;status=all">
+                    My Opinions
+                </a>
+            </div>
+            <div class="mb-2">
+                <a class="btn btn-outline-warning btn__text" href="/opinions/?author=user1&amp;status=draft">
+                    Draft Opinions
+                </a>
+            </div>
+            
+        </nav>
+    </div>
+</div>
+
+
+        </div>
+    </main>
+
+    
+    <footer class="container d-flex flex-wrap justify-content-between align-items-center py-3 border-top bg-white div__panel">
+        <div class="col-md-4 d-flex align-items-center">
+            <a href="/" class="ms-2 me-2 mb-md-0 text-muted text-decoration-none lh-1">
+                <img class="bi" width="24" height="24" src="https://res.cloudinary.com/hrcj5dv7b/image/upload/v1/static/favicon-32x32-gray.37dde23947e1.png" alt="SoapBox logo">
+            </a>
+            <span class="mb-md-0 text-muted">© 2022 Ian Buttimer</span>
+        </div>
+
+        <div class="col-md-4 d-flex align-items-center justify-content-center">
+            <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Admin">
+                <a href="/admin" target="_blank" rel="noopener" aria-label="visit admin page in another tab" class="socials">
+                    <i class="fa-solid fa-screwdriver-wrench text-muted"></i>
+                </a>
+            </span>
+        </div>
+
+        <ul class="nav col-md-4 justify-content-end list-unstyled d-flex">
+            
+                <li>
+                    <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Facebook">
+                        <a href="https://facebook.com" target="_blank" rel="noopener" aria-label="visit our Facebook page in another tab" class="socials">
+                            <i class="fa-brands fa-square-facebook text-muted"></i>
+                        </a>
+                    </span>
+                </li>
+            
+                <li>
+                    <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Twitter">
+                        <a href="https://twitter.com" target="_blank" rel="noopener" aria-label="visit our Twitter page in another tab" class="socials">
+                            <i class="fa-brands fa-square-twitter text-muted"></i>
+                        </a>
+                    </span>
+                </li>
+            
+                <li>
+                    <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Instagram">
+                        <a href="https://instagram.com" target="_blank" rel="noopener" aria-label="visit our Instagram page in another tab" class="socials">
+                            <i class="fa-brands fa-square-instagram text-muted"></i>
+                        </a>
+                    </span>
+                </li>
+            
+        </ul>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
+    
+    
+
+
+<script>
+  /**
+   * Update sort order/per page
+   * :param event: change event
+   */
+  function update_content(order, per_page, page) {
+
+    if (page === undefined) {
+      page = "?page=1"
+    }
+
+    // remove per page and page handlers as new elements will be returned with the response
+    $('#per-page-select').off();
+    $('.page-item').off();
+
+    const repeat_search = $('#var--repeat-search-term').text().trim();
+    const query_args = [
+      "order=" + order, "per-page=" + per_page, "reorder=1"
+    ];
+    if (repeat_search.length > 0) {
+      query_args.push(repeat_search)
+    }
+
+    $.ajax({
+      url: page + "&" + query_args.join("&")
+    }).done(function(data) {
+      $('#article-content').html(data);
+
+      setReactionHandlers();
+      enableTooltips();
+
+      $('#per-page-select').ready(function(event) {
+        add_page_content_handlers();
+      });
+    });
+  }
+
+  /** Get current per page value */
+  function get_per_page() {
+    return $('#per-page-select').find(":selected").val();
+  }
+
+  /** Get current order value */
+  function get_order() {
+    return $('#id--sort-order-select').find(":selected").val()
+  }
+
+  /** Get current page value */
+  function get_page() {
+    const page = $('#current-page').find("a");
+    return page.length ? "?page=" + page.text().trim() : undefined
+  }
+
+  /**
+   * Add change handler for per page selector and pages
+   */
+  function add_page_content_handlers() {
+    /**
+     * Change handler for per page
+     * :param event: change event
+     */
+    $('#per-page-select').on( "change", function(event) {
+      update_content(get_order(), event.target.value, get_page())
+    });
+    /**
+     * Click handler for page request
+     * :param event: change event
+     */
+    $('.page-item').on( "click", function(event) {
+      event.preventDefault();
+      update_content(get_order(), get_per_page(), event.currentTarget.firstElementChild.href)
+    });
+  }
+
+
+  $(document).ready(function() {
+    /**
+     * Change handler for sort order
+     * :param event: change event
+     */
+    $('#id--sort-order-select').on( "change", function(event) {
+      update_content(event.target.value, get_per_page(), get_page())
+    });
+
+    add_page_content_handlers();
+  });
+</script>
+
+    <!-- reactions_js.html start -->
+<script>
+    /**
+     * Update react status of current opinion
+     * :param event: click event
+     * :param done_func: reaction specific done handler function
+     */
+    function updateReactStatus(event, done_func) {
+        // hide tooltip
+        $("#" + event.currentTarget.id).tooltip("hide");
+
+        const reaction = get_react_info(event)
+
+        $.ajax({
+            url: reaction.url + "?status=" + reaction.option,
+            method: 'patch',
+            headers: {
+                'X-CSRFTOKEN': 'Vc0dQ56LAqdp0rqNFzLlfYVvr7nO8iFQTBr0ZKXftUTfkkKH9A4wP1HACrXUz8Qk'
+            }
+        }).done(function(data) {
+            done_func(data);
+
+            // set click handlers for reactions
+            setReactionHandlers();
+            enableTooltips();
+        });
+    }
+
+    /**
+     * Update react status of current opinion
+     * :param event: click event
+     * :param done_func: reaction specific done handler function
+     */
+    function getCommentEdit(event, done_func) {
+        // hide tooltip
+        $("#" + event.currentTarget.id).tooltip("hide");
+
+        const reaction = get_react_info(event)
+
+        document.location.href = `${reaction.url}?mode=edit`;
+    }
+
+    const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+
+    /**
+     * Get react info
+     * :param event: click event
+     */
+    function get_react_info(event) {
+        // ids are of the form 'id--react-<action>-<type>-<id>' e.g. 'id--react-agree-opinion-1'
+        const split = event.currentTarget.attributes['id'].textContent.split('-')
+        let data_bs_option = '';
+        if (event.currentTarget.firstElementChild.attributes.hasOwnProperty('data-bs-option')) {
+            data_bs_option = event.currentTarget.firstElementChild.attributes['data-bs-option'].textContent
+        }
+        return {
+            // href is on the button
+            url: event.currentTarget.attributes['data-bs-href'].textContent,
+            // title is on the button
+            title: event.currentTarget.attributes['data-bs-title'].textContent,
+            // type is taken from the button id
+            type: split[4],
+            // status option is on the span in the button (see reactions.html)
+            option: data_bs_option,
+            // status option is the action to perform, e.g. 'show'/'hide'/etc. i.e. ReactionStatus.XXX.arg
+            action: data_bs_option,
+            submit: capitalize(data_bs_option)
+        };
+    }
+    /**
+     * Set react info vars
+     * :param event: click event
+     * :param ids: object with keys matching those returned by get_react_info()
+     *             and values as ids of element to be set
+     * :param baseUrl: base url to prepend to url value
+     */
+    function set_react_info_vars(event, ids, baseUrl = undefined) {
+        const reaction = get_react_info(event)
+        for (const [key, selector] of Object.entries(ids)) {
+            let value = reaction[key];
+            if (key === 'url' && baseUrl !== undefined) {
+                value = baseUrl + value;
+            }
+            $(selector).text(value);
+        }
+    }
+
+    /**
+     * Update like/unlike status of current opinion
+     * :param event: click event
+     */
+    function updateOnOffReaction(event) {
+        updateReactStatus(event, redirect_rewrite_response_handler);
+    }
+
+    // Reaction buttons have the general form: "id--react-<action>-<type>-<id>"
+    // where: action is [agree|disagree|comment|follow|unfollow|share|hide|unhide|pin|unpin|report]
+    //        type is [opinion|comment]
+    //        id is id of target opinion/comment
+
+    // Reaction buttons for comments are named 'id--react-comment-....'
+    const commentReactionsSelector = "button[id^='id--react-comment']";
+    // Reaction buttons for like are named 'id--react-agree-....'
+    const likeReactionsSelector = "button[id^='id--react-agree']";
+    // Reaction buttons for unlike are named 'id--react-disagree-....'
+    const unlikeReactionsSelector = "button[id^='id--react-disagree']";
+    // Reaction buttons for hide are named 'id--react-hide-....'
+    const hideReactionsSelector = "button[id^='id--react-hide']";
+    // Reaction buttons for hide are named 'id--react-show-....'
+    const showReactionsSelector = "button[id^='id--react-show']";
+    // Reaction buttons for pin are named 'id--react-pin-....'
+    const pinReactionsSelector = "button[id^='id--react-pin']";
+    // Reaction buttons for unpin are named 'id--react-unpin-....'
+    const unpinReactionsSelector = "button[id^='id--react-unpin']";
+    // Reaction buttons for follow are named 'id--react-follow-....'
+    const followReactionsSelector = "button[id^='id--react-follow']";
+    // Reaction buttons for unfollow are named 'id--react-unfollow-....'
+    const unfollowReactionsSelector = "button[id^='id--react-unfollow']";
+    // Reaction buttons for report are named 'id--react-report-....'
+    const reportReactionsSelector = "button[id^='id--react-report']";
+    // Reaction buttons for share are named 'id--react-share-....'
+    const shareReactionsSelector = "button[id^='id--react-share']";
+    // Reaction buttons for delete are named 'id--react-delete-....'
+    const deleteReactionsSelector = "button[id^='id--react-delete']";
+    // Reaction buttons for comments are named 'id--react-edit-....'
+    const editCommentReactionsSelector = "button[id^='id--react-edit']";
+
+    /* Set the click handlers for reactions */
+    function setReactionHandlers() {
+        /* TODO removing and adding all the handlers is unnecessary */
+
+        // remove old handlers to prevent duplicates
+        for (let selector of [
+                commentReactionsSelector, likeReactionsSelector, unlikeReactionsSelector,
+                hideReactionsSelector, showReactionsSelector,
+                pinReactionsSelector, unpinReactionsSelector,
+                followReactionsSelector, unfollowReactionsSelector,
+                reportReactionsSelector, shareReactionsSelector,
+                deleteReactionsSelector, editCommentReactionsSelector
+        ]) {
+            $(selector).off();
+        }
+
+        // add new handlers
+        $(commentReactionsSelector).on('click', (event) => {
+            // set the submit url for comments
+            set_react_info_vars(event, {
+                url: commentSubmitUrlSelector
+            });
+        });
+        $(reportReactionsSelector).on('click', (event) => {
+            // set the submit url for reports
+            set_react_info_vars(event, {
+                url: reportSubmitUrlSelector
+            });
+        });
+        $(deleteReactionsSelector).on('click', (event) => {
+            // set the delete url for comments
+            set_react_info_vars(event, {
+                url: commentDeleteUrlSelector
+            });
+
+            // display confirmation modal
+            $(commentDeleteConfirmModalSelector).modal('show');
+        });
+        $(editCommentReactionsSelector).on('click', (event) => {
+            getCommentEdit(event, function(data) {
+                /* TODO handle edit in comment modal */
+            });
+        });
+        $(shareReactionsSelector).on('click', (event) => {
+            // set the share url for share
+            const baseUrl = window.location.href.slice(0, window.location.href.indexOf(window.location.pathname))
+            set_react_info_vars(event, {
+                url: "#id--share-url",
+                title: "#id--share-modal-heading"
+            }, baseUrl);
+        });
+        for (let selector of [
+            // update like/unlike status
+            likeReactionsSelector, unlikeReactionsSelector,
+            // update pin/unpin status
+            pinReactionsSelector, unpinReactionsSelector,
+            // update follow/unfollow status
+            followReactionsSelector, unfollowReactionsSelector,
+        ]) {
+            $(selector).on('click', (event) => {
+                updateOnOffReaction(event);
+            });
+        }
+        for (let selector of [hideReactionsSelector, showReactionsSelector]) {
+            $(selector).on('click', (event) => {
+                // set the submit url/option/title for hide/show
+                set_react_info_vars(event, {
+                    // keys are value names, values are ids of tags to update
+                    url: hideSubmitUrlSelector,
+                    option: hideSubmitOptionSelector,
+                    title: "#id--hide-modal-heading",
+                    type: "#id--hide-modal-element",
+                    action: "#id--hide-modal-action",
+                    submit: "#id--submit-btn-hide-modal",
+                });
+            });
+        }
+    }
+
+    $(document).ready(function () {
+        // set click handlers for reactions
+        setReactionHandlers();
+    });
+</script>
+<!-- reactions_js.html end -->
+
+
+
+    <script>
+        /* Enable Bootstrap tooltips */
+        function enableTooltips() {
+            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+            const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+        }
+
+        const REDIRECT_PROP = 'redirect';
+        const REWRITES_PROP = 'rewrites';
+        const ELEMENT_ID_PROP = 'element_id';
+        const HTML_PROP = 'html';
+
+        const replaceHtml = (data) => $("#" + data[ELEMENT_ID_PROP]).replaceWith(data[HTML_PROP]);
+
+        /**
+         * Handle a redirect/rewrite response
+         * :param data: json data
+         */
+        function redirect_rewrite_response_handler(data) {
+            if (data !== undefined) {
+                if (data.hasOwnProperty(REDIRECT_PROP)) {
+                    // redirect to new url
+                    document.location.href = data[REDIRECT_PROP];
+                } else if (data.hasOwnProperty(ELEMENT_ID_PROP)) {
+                    // replace single element's html
+                    replaceHtml(data);
+                } else if (data.hasOwnProperty(REWRITES_PROP)) {
+                    // replace multiple element's html
+                    for (let element of data[REWRITES_PROP]) {
+                        replaceHtml(element);
+                    }
+                }
+            }
+        }
+
+        enableTooltips();
+    </script>
+
+</body></html>

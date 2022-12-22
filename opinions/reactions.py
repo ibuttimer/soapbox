@@ -62,6 +62,8 @@ class ReactionsList:
     pin: Reaction          # pin reaction
     unpin: Reaction        # unpin reaction
     report: Reaction       # report reaction
+    delete: Reaction       # delete reaction
+    edit: Reaction         # edit reaction
 
     AGREE_FIELD = ReactionStatus.AGREE.arg
     DISAGREE_FIELD = ReactionStatus.DISAGREE.arg
@@ -75,6 +77,7 @@ class ReactionsList:
     UNPIN_FIELD = ReactionStatus.UNPIN.arg
     REPORT_FIELD = ReactionStatus.REPORT.arg
     DELETE_FIELD = ReactionStatus.DELETE.arg
+    EDIT_FIELD = ReactionStatus.EDIT.arg
 
     AGREE_FIELDS = [AGREE_FIELD, DISAGREE_FIELD]
     FOLLOW_FIELDS = [FOLLOW_FIELD, UNFOLLOW_FIELD]
@@ -83,7 +86,7 @@ class ReactionsList:
     ALL_FIELDS = [
         AGREE_FIELD, DISAGREE_FIELD, COMMENT_FIELD, FOLLOW_FIELD,
         UNFOLLOW_FIELD, SHARE_FIELD, HIDE_FIELD, SHOW_FIELD, PIN_FIELD,
-        UNPIN_FIELD, REPORT_FIELD, DELETE_FIELD
+        UNPIN_FIELD, REPORT_FIELD, DELETE_FIELD, EDIT_FIELD
     ]
 
     def __init__(self, **kwargs):
@@ -264,6 +267,13 @@ COMMENT_REACTIONS_LIST = ReactionsList(
         url=namespaced_url(OPINIONS_APP_NAME, COMMENT_ID_ROUTE_NAME),
         option=ReactionStatus.DELETE.arg, field=ReactionsList.DELETE_FIELD
     ).set_icon(HtmlTag.i(clazz="fa-solid fa-trash-can")),
+    edit=Reaction.ajax_of(
+        name="Edit comment",
+        identifier=f"{ReactionStatus.EDIT.arg}-comment",
+        icon="", aria="Edit comment", url_type=UrlType.ID,
+        url=namespaced_url(OPINIONS_APP_NAME, COMMENT_ID_ROUTE_NAME),
+        option=ReactionStatus.EDIT.arg, field=ReactionsList.EDIT_FIELD
+    ).set_icon(HtmlTag.i(clazz="fa-solid fa-pen")),
 )
 
 # list of comment reaction fields in display order
@@ -272,7 +282,8 @@ COMMENT_REACTION_FIELDS = [
     ReactionsList.COMMENT_FIELD, ReactionsList.FOLLOW_FIELD,
     ReactionsList.UNFOLLOW_FIELD, ReactionsList.SHARE_FIELD,
     ReactionsList.HIDE_FIELD, ReactionsList.SHOW_FIELD,
-    ReactionsList.REPORT_FIELD, ReactionsList.DELETE_FIELD
+    ReactionsList.REPORT_FIELD, ReactionsList.DELETE_FIELD,
+    ReactionsList.EDIT_FIELD
 ]
 # list of comment reactions in display order
 COMMENT_REACTIONS = [
@@ -284,11 +295,13 @@ COMMENT_REACTIONS = [
 ALWAYS_AVAILABLE = [
     ReactionsList.COMMENT_FIELD, ReactionsList.SHARE_FIELD
 ]
+# only available to author reactions
+AUTHOR_ONLY = [
+    ReactionsList.DELETE_FIELD, ReactionsList.EDIT_FIELD
+]
 # reactions which don't reflect selected status
 NON_SELECTABLE = ALWAYS_AVAILABLE.copy()
-NON_SELECTABLE.extend([
-    ReactionsList.DELETE_FIELD
-])
+NON_SELECTABLE.extend(AUTHOR_ONLY)
 
 
 def get_reaction_status(
@@ -335,18 +348,23 @@ def get_reaction_status(
                     get_reaction_status(user, cmt, **reaction_kwargs)
             else:
                 entry_is_opinion = isinstance(entry, Opinion)
+                target = entry
                 if entry_is_opinion:
                     # get status for opinion
                     content_field = AgreementStatus.OPINION_FIELD
                     reaction_fields = OPINION_REACTION_FIELDS
                     pin_field = PinStatus.OPINION_FIELD
                     reactions_list = OPINION_REACTIONS_LIST
-                else:
+                elif isinstance(entry, (Comment, CommentData)):
                     # get status for comment
                     content_field = AgreementStatus.COMMENT_FIELD
                     reaction_fields = COMMENT_REACTION_FIELDS
                     pin_field = None    # no pin in COMMENT_REACTIONS_LIST
                     reactions_list = COMMENT_REACTIONS_LIST
+                    if isinstance(entry, CommentData):
+                        target = entry.comment
+                else:
+                    raise ValueError(f'Unknown content {content}')
 
                 if reactions is None:
                     reactions = reaction_fields
@@ -354,15 +372,15 @@ def get_reaction_status(
                     reactions = [reactions]
 
                 def enablers_check(fld: str):
-                    return field_check(enablers, entry, fld)
+                    return field_check(enablers, target, fld)
 
                 def visibility_check(fld: str):
-                    return field_check(visibility, entry, fld)
+                    return field_check(visibility, target, fld)
 
                 # set enabled and visibility conditions for reactions
                 enabled = {}
                 displayer = {}
-                deleted = is_content_deleted(entry.lookup_clazz(), entry.id)
+                deleted = is_content_deleted(target.lookup_clazz(), target.id)
 
                 def two_icon_single_display(
                     ctrl_param: list[tuple[ReactionsList, bool, bool]],
@@ -378,7 +396,7 @@ def get_reaction_status(
                     :param inactive_field: reaction inactive field
                     :param check_func: function to check status
                     """
-                    active = check_func(entry, user=user) \
+                    active = check_func(target, user=user) \
                         if any_true(displayer, [
                             active_field, inactive_field
                         ]) else False
@@ -400,12 +418,12 @@ def get_reaction_status(
                     elif field in ALWAYS_AVAILABLE:
                         enabled[field] = not deleted
                         displayer[field] = True
-                    elif field == ReactionsList.DELETE_FIELD:
-                        # delete comment via reactions only available to
+                    elif field in AUTHOR_ONLY:
+                        # delete/edit comment via reactions only available to
                         # comment author
                         enabled[field] = \
                             False if entry_is_opinion or deleted else \
-                            entry.user == user
+                            target.user == user
                         displayer[field] = enabled[field]
                     else:
                         # False if deleted or,
@@ -415,12 +433,12 @@ def get_reaction_status(
                         enabled[field] = \
                             False if deleted else \
                             field_check(
-                                status_by_id, entry, entry.id,
+                                status_by_id, target, target.id,
                                 default=ContentStatus.VIEW_OK).view_ok \
                             if status_by_id else \
                             enablers_check(field) if enablers else \
                             True if field in ALWAYS_AVAILABLE else \
-                            entry.user != user
+                            target.user != user
 
                         # visibility if specified or, True for fields in
                         # reactions
@@ -442,7 +460,7 @@ def get_reaction_status(
                     # need to display agree/disagree
                     query = AgreementStatus.objects.filter(**{
                         AgreementStatus.USER_FIELD: user,
-                        content_field: entry
+                        content_field: target
                     })
                     if query.exists():
                         agreement = query.first()
@@ -490,7 +508,7 @@ def get_reaction_status(
                 reported = False
                 if any_true(displayer, ReactionsList.REPORT_FIELD):
                     reported = get_content_status(
-                        entry, StatusCheck.REPORTED, user=user,
+                        target, StatusCheck.REPORTED, user=user,
                         current_user=user
                     ).reported
 
@@ -502,7 +520,7 @@ def get_reaction_status(
 
                 statuses.update({
                     # key is button id, value is Reaction
-                    reaction_button_id(reaction, entry.id):
+                    reaction_button_id(reaction, target.id):
                         ReactionCtrl(
                             selected=selected,
                             disabled=not enabled[reaction.field],

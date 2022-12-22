@@ -48,13 +48,15 @@ AUTHOR_FIELD = 'author'
 REVIEW_RESULT_FIELD = 'review_result'
 
 # Opinion routes related
+PK_PARAM_NAME = "pk"
+SLUG_PARAM_NAME = "slug"
 OPINIONS_URL = ""
 OPINION_NEW_URL = append_slash("new")
 OPINION_SEARCH_URL = append_slash("search")
 OPINION_FOLLOWED_URL = append_slash("followed")
 OPINION_IN_REVIEW_URL = append_slash("in_review")
-OPINION_ID_URL = append_slash("<int:pk>")
-OPINION_SLUG_URL = append_slash("<slug:slug>")
+OPINION_ID_URL = append_slash(f"<int:{PK_PARAM_NAME}>")
+OPINION_SLUG_URL = append_slash(f"<slug:{SLUG_PARAM_NAME}>")
 OPINION_PREVIEW_ID_URL = url_path(OPINION_ID_URL, "preview")
 OPINION_STATUS_ID_URL = url_path(OPINION_ID_URL, "status")
 OPINION_LIKE_ID_URL = url_path(OPINION_ID_URL, "like")
@@ -70,8 +72,8 @@ COMMENTS_URL = append_slash("comments")
 COMMENT_SEARCH_URL = url_path(COMMENTS_URL, "search")
 COMMENT_MORE_URL = url_path(COMMENTS_URL, "more")
 COMMENT_IN_REVIEW_URL = url_path(COMMENTS_URL, "in_review")
-COMMENT_ID_URL = url_path(COMMENTS_URL, "<int:pk>")
-COMMENT_SLUG_URL = url_path(COMMENTS_URL, "<slug:slug>")
+COMMENT_ID_URL = url_path(COMMENTS_URL, f"<int:{PK_PARAM_NAME}>")
+COMMENT_SLUG_URL = url_path(COMMENTS_URL, f"<slug:{SLUG_PARAM_NAME}>")
 COMMENT_LIKE_ID_URL = url_path(COMMENT_ID_URL, "like")
 COMMENT_HIDE_ID_URL = url_path(COMMENT_ID_URL, "hide")
 COMMENT_REPORT_ID_URL = url_path(COMMENT_ID_URL, "report")
@@ -80,6 +82,7 @@ COMMENT_FOLLOW_ID_URL = url_path(COMMENT_ID_URL, "follow")
 COMMENT_REVIEW_STATUS_ID_URL = url_path(COMMENT_ID_URL, "review_status")
 COMMENT_REVIEW_DECISION_ID_URL = url_path(COMMENT_ID_URL, "review_decision")
 
+# convention is opinion route names begin with 'opinion'
 OPINIONS_ROUTE_NAME = "opinions"
 OPINION_NEW_ROUTE_NAME = "opinion_new"
 OPINION_SEARCH_ROUTE_NAME = "opinion_search"
@@ -87,32 +90,39 @@ OPINION_FOLLOWED_ROUTE_NAME = "opinion_followed"
 OPINION_IN_REVIEW_ROUTE_NAME = "opinion_in_review"
 OPINION_ID_ROUTE_NAME = "opinion_id"
 OPINION_SLUG_ROUTE_NAME = "opinion_slug"
-OPINION_PREVIEW_ID_ROUTE_NAME = f"preview_{OPINION_ID_ROUTE_NAME}"
-OPINION_STATUS_ID_ROUTE_NAME = f"status_{OPINION_ID_ROUTE_NAME}"
-OPINION_LIKE_ID_ROUTE_NAME = f"like_{OPINION_ID_ROUTE_NAME}"
-OPINION_HIDE_ID_ROUTE_NAME = f"hide_{OPINION_ID_ROUTE_NAME}"
-OPINION_PIN_ID_ROUTE_NAME = f"pin_{OPINION_ID_ROUTE_NAME}"
-OPINION_REPORT_ID_ROUTE_NAME = f"report_{OPINION_ID_ROUTE_NAME}"
-OPINION_COMMENT_ID_ROUTE_NAME = f"comment_{OPINION_ID_ROUTE_NAME}"
-OPINION_FOLLOW_ID_ROUTE_NAME = f"follow_{OPINION_ID_ROUTE_NAME}"
-OPINION_REVIEW_STATUS_ID_ROUTE_NAME = f"review_status_{OPINION_ID_ROUTE_NAME}"
+SINGLE_OPINION_ROUTE_NAMES = [OPINION_ID_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME]
+OPINION_PREVIEW_ID_ROUTE_NAME = f"{OPINION_ID_ROUTE_NAME}_preview"
+OPINION_STATUS_ID_ROUTE_NAME = f"{OPINION_ID_ROUTE_NAME}_status"
+OPINION_LIKE_ID_ROUTE_NAME = f"{OPINION_ID_ROUTE_NAME}_like"
+OPINION_HIDE_ID_ROUTE_NAME = f"{OPINION_ID_ROUTE_NAME}_hide"
+OPINION_PIN_ID_ROUTE_NAME = f"{OPINION_ID_ROUTE_NAME}_pin"
+OPINION_REPORT_ID_ROUTE_NAME = f"{OPINION_ID_ROUTE_NAME}_report"
+OPINION_COMMENT_ID_ROUTE_NAME = f"{OPINION_ID_ROUTE_NAME}_comment"
+OPINION_FOLLOW_ID_ROUTE_NAME = f"{OPINION_ID_ROUTE_NAME}_follow"
+OPINION_REVIEW_STATUS_ID_ROUTE_NAME = f"{OPINION_ID_ROUTE_NAME}_review_status"
 OPINION_REVIEW_DECISION_ID_ROUTE_NAME = \
-    f"review_decision_{OPINION_ID_ROUTE_NAME}"
+    f"{OPINION_ID_ROUTE_NAME}_review_decision"
 
+# convention is comment route names begin with 'comment'
 COMMENTS_ROUTE_NAME = "comments"
 COMMENT_ID_ROUTE_NAME = "comment_id"
 COMMENT_SLUG_ROUTE_NAME = "comment_slug"
+SINGLE_COMMENT_ROUTE_NAMES = [COMMENT_ID_ROUTE_NAME, COMMENT_SLUG_ROUTE_NAME]
 COMMENT_SEARCH_ROUTE_NAME = "comment_search"
 COMMENT_MORE_ROUTE_NAME = "comment_more"
 COMMENT_IN_REVIEW_ROUTE_NAME = "comment_in_review"
-COMMENT_LIKE_ID_ROUTE_NAME = f"like_{COMMENT_ID_ROUTE_NAME}"
-COMMENT_HIDE_ID_ROUTE_NAME = f"hide_{COMMENT_ID_ROUTE_NAME}"
-COMMENT_REPORT_ID_ROUTE_NAME = f"report_{COMMENT_ID_ROUTE_NAME}"
-COMMENT_COMMENT_ID_ROUTE_NAME = f"comment_{COMMENT_ID_ROUTE_NAME}"
-COMMENT_FOLLOW_ID_ROUTE_NAME = f"follow_{COMMENT_ID_ROUTE_NAME}"
-COMMENT_REVIEW_STATUS_ID_ROUTE_NAME = f"review_status_{COMMENT_ID_ROUTE_NAME}"
+COMMENT_LIKE_ID_ROUTE_NAME = f"{COMMENT_ID_ROUTE_NAME}_like"
+COMMENT_HIDE_ID_ROUTE_NAME = f"{COMMENT_ID_ROUTE_NAME}_hide"
+COMMENT_REPORT_ID_ROUTE_NAME = f"{COMMENT_ID_ROUTE_NAME}_report"
+COMMENT_COMMENT_ID_ROUTE_NAME = f"{COMMENT_ID_ROUTE_NAME}_comment"
+COMMENT_FOLLOW_ID_ROUTE_NAME = f"{COMMENT_ID_ROUTE_NAME}_follow"
+COMMENT_REVIEW_STATUS_ID_ROUTE_NAME = f"{COMMENT_ID_ROUTE_NAME}_review_status"
 COMMENT_REVIEW_DECISION_ID_ROUTE_NAME = \
-    f"review_decision_{COMMENT_ID_ROUTE_NAME}"
+    f"{COMMENT_ID_ROUTE_NAME}_review_decision"
+
+SINGLE_CONTENT_ROUTE_NAMES = SINGLE_OPINION_ROUTE_NAMES.copy()
+SINGLE_CONTENT_ROUTE_NAMES.extend(SINGLE_COMMENT_ROUTE_NAMES)
+
 
 ORDER_QUERY: str = 'order'              # opinion order
 PAGE_QUERY: str = 'page'                # page number
@@ -125,8 +135,8 @@ ID_QUERY: str = 'id'                        # search id
 STATUS_QUERY: str = 'status'                # search status
 CONTENT_QUERY: str = 'content'              # search content
 AUTHOR_QUERY: str = 'author'                # search author
-ON_OR_AFTER_QUERY: str = 'after-or-on'      # search >= date
-ON_OR_BEFORE_QUERY: str = 'before-or-on'    # search <= date
+ON_OR_AFTER_QUERY: str = 'on-or-after'      # search >= date
+ON_OR_BEFORE_QUERY: str = 'on-or-before'    # search <= date
 AFTER_QUERY: str = 'after'                  # search > date
 BEFORE_QUERY: str = 'before'                # search < date
 EQUAL_QUERY: str = 'date'                   # search == date
@@ -192,6 +202,7 @@ DELETED_CONTENT_CTX = "deleted_content"
 HIDDEN_CONTENT_CTX = "hidden_content"
 POPULARITY_CTX = "popularity"
 OPINION_LIST_CTX = "opinion_list"
+COMMENT_LIST_CTX = 'comment_list'
 STATUS_BG_CTX = "status_bg"
 REVIEW_BUTTON_CTX = "review_button"
 REVIEW_BUTTON_TIPS_CTX = "review_button_tips"
@@ -211,20 +222,40 @@ COMMENT_REVIEWS_CTX = "comment_reviews"
 # templates/opinions/snippet/tagged_author_opinions.html
 TAGGED_COUNT_CTX = "tagged_count"
 
+# templates/opinions/opinion_feed.html
+IS_FOLLOWING_FEED_CTX = "is_following_feed"
+IS_CATEGORY_FEED_CTX = "is_category_feed"
+IS_ALL_FEED_CTX = "is_all_feed"
+FOLLOWED_CATEGORIES_CTX = "followed_categories"
+CATEGORY_CTX = 'category'
+
+# templates/opinions/help/search.html
+SEARCH_TERMS_CTX = 'search_terms'
+DATE_SEPARATORS_CTX = 'date_separators'
+DATE_CTX = 'date'
+REACTION_ITEMS_CTX = 'reaction_items'
+
 # general
 TITLE_CTX = 'title'                             # page title
 PAGE_HEADING_CTX = 'page_heading'               # page heading display
+LIST_HEADING_CTX = 'list_heading'               # list heading display
+LIST_SUB_HEADING_CTX = 'list_sub_heading'       # list sub heading display
 REPEAT_SEARCH_TERM_CTX = 'repeat_search_term'   # search term for query
+NO_CONTENT_MSG_CTX = 'no_content_msg'           # no content message
+NO_CONTENT_HELP_CTX = 'no_content_help'         # help text when no content
 REDIRECT_CTX = "redirect"
 
 REWRITES_PROP_CTX = 'rewrites'
 ELEMENT_ID_CTX = 'element_id'
 HTML_CTX = 'html'
+MESSAGE_CTX = 'msg'
 
 COMMENT_DATA_CTX = "comment_data"
+COMMENT_OFFSET_CTX = "comment_offset"
 
 # miscellaneous
 ALL_FIELDS = 'all_fields'
+ALL_CATEGORIES = 'All'
 
 UNDER_REVIEW_TITLE = 'Under Review'
 UNDER_REVIEW_EXCERPT = 'Content not available'

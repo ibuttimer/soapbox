@@ -23,10 +23,11 @@
 
 from django.urls import path
 
-from soapbox import USER_APP_NAME
+from soapbox import USER_APP_NAME, val_test_url, val_test_route_name
 
 from .constants import (
-    USER_ID_URL, USER_ID_ROUTE_NAME
+    USER_ID_URL, USER_ID_ROUTE_NAME, USER_USERNAME_URL,
+    USER_USERNAME_ROUTE_NAME
 )
 from . import views
 
@@ -35,5 +36,13 @@ from . import views
 app_name = USER_APP_NAME
 
 urlpatterns = [
-    path(USER_ID_URL, views.UserDetail.as_view(), name=USER_ID_ROUTE_NAME),
+    # val-test urls
+    path(val_test_url(USER_USERNAME_URL),
+         views.UserDetailByUsername.as_view(),
+         name=val_test_route_name(USER_USERNAME_ROUTE_NAME)),
+
+    # standard app urls
+    path(USER_ID_URL, views.UserDetailById.as_view(), name=USER_ID_ROUTE_NAME),
+    path(USER_USERNAME_URL, views.UserDetailByUsername.as_view(),
+         name=USER_USERNAME_ROUTE_NAME),
 ]

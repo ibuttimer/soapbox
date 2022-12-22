@@ -15,7 +15,7 @@
         <div class="row">
             <!-- author avatar and user link -->
             <div class="col-sm-2 mt-0 mb-0">
-                <img src="{{ comment_data.avatar_url }}" width="40px" height="40px" alt="{{ comment_data.user.username }} image"
+                <img src="{{ comment_data.avatar_url }}" width="40" height="40" alt="{{ comment_data.user.username }} image"
                      id="id--comment-avatar-{{ comment_data.id }}">
                 <p class="mt-0 mb-0">
                     <a id="id--comment-avatar-link-{{ comment_data.id }}" aria-label="view author's profile"
@@ -26,8 +26,8 @@
             </div>
             <!-- comment details -->
             <div class="col-sm-10 mt-0 mb-0">
-                <div class="row">
-                    <div class="col-sm-10 mt-0 mb-0" id="id--comment-content-{{ comment_data.id }}">
+                <div class="row mb-2">
+                    <div class="col-sm-12 mt-0 mb-0" id="id--comment-content-{{ comment_data.id }}">
                         {% dict_value content_status comment_data.id as status %}
                         {% if status.deleted %}
                             <em>{{ deleted_content }}</em>
@@ -38,18 +38,33 @@
                         {% else %}
                             {{ comment_data.content | safe }}
                         {% endif %}
-                    </div>
-                    <div class="col-sm-2 mt-0 mb-0">
-                        {# HACK display id for dev purposes #}
-                        <span class="badge rounded-pill text-bg-warning">c{{ comment_data.id }} o{{ comment_data.opinion.id }}</span>
+                        {% if is_development and not is_test %}
+                        {# display id for dev purposes #}
+                            <span class="badge rounded-pill text-bg-warning">c{{ comment_data.id }} p{{ comment_data.parent }} o{{ comment_data.opinion.id }}</span>
+                        {% endif %}
                     </div>
                 </div>
-                <div class="row">
+                <div class="row mb-2">
                     <!-- review info -->
-                    <div class="col-sm-2 mt-0 mb-0">
+                    <div class="col-sm-2 mt-0 mb-2">
+                        {% if status.view_ok %}
+                        <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Read">
+                        {% endif %}
+                            <a
+                                {% if status.view_ok %}
+                                class="btn btn-primary mb-2" href="{% url 'opinions:comment_id' comment_data.id %}?mode=read-only" aria-label="read comment thread"
+                                {% else %}}
+                                class="btn btn-primary mb-2 disabled" aria-label="Not available for reading" aria-disabled="true"
+                                {% endif %}
+                            >
+                                <i class="fa-solid fa-book-open"></i>
+                            </a>
+                        {% if status.view_ok %}
+                        </span>
+                        {% endif %}
                         {% if is_review and is_moderator %}
                             <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Review">
-                                <a class="btn btn-info mt-2" href="{% url 'opinions:comment_id' comment_data.id %}?mode=review" aria-label="review comment">
+                                <a class="btn btn-info mb-2" href="{% url 'opinions:comment_id' comment_data.id %}?mode=review" aria-label="review comment">
                                     <i class="fa-solid fa-magnifying-glass"></i>
                                 </a>
                             </span>
@@ -57,7 +72,13 @@
                     </div>
                     <!-- comment updated info -->
                     <div class="col-sm-5 mt-0 mb-0">
-                        {{ comment_data.updated | localtime | naturaltime }}
+                        <p class="card-text text-muted mt-0 mb-0">
+                            {% if comment_data.published.year > 1 %}
+                            <i class="fa-solid fa-upload"></i> {{ comment_data.published | localtime | naturaltime  }}
+                            {% endif %}
+                            <br>
+                            <i class="fa-solid fa-pen-to-square"></i> {{ comment_data.updated | localtime | naturaltime }}
+                        </p>
                     </div>
                     <!-- comment reactions -->
                     <div class="col-sm-5 mt-0 mb-0 justify-content-start">
@@ -80,6 +101,17 @@
                                 {% endwith %}
                             {% endwith %}
                         {% endwith %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 justify-content-center">
+                        <h6>
+                            From opinion
+                            <a href="{% url 'opinions:opinion_id' comment_data.opinion.id %}?mode=read-only"
+                               class="post-link" aria-label="read opinion {{ comment_data.opinion.title }}">
+                                {{ comment_data.opinion.title }}
+                            </a>
+                        </h6>
                     </div>
                 </div>
             </div>

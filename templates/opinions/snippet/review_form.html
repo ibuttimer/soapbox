@@ -27,8 +27,8 @@
         </div>
 
         <fieldset>
+            <legend>{{ review_form.review_result.label }}</legend>
             <div class="row mb-3">
-                <legend>{{ review_form.review_result.label }}</legend>
                 {% calc 12 '/' review_form.review_result.field.choices as width %}
                 {% for radio in review_form.review_result %}
                     {% array_value review_form.review_result.field.choices forloop.counter0 as radio_choice %}
@@ -36,26 +36,26 @@
                     {% dict_value review_button radio.choice_label as label_class %}
                     {% dict_value review_button_tips radio.choice_label as label_tooltip %}
 
-                    <div class="col-sm-{{ width }}">
+                    <div class="col-sm-{{ width }} mb-2">
                         <span id="id--review-result-tip-{{ forloop.counter0 }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="{{ label_tooltip }}">
                             <input type="radio" class="btn-check" name="review_result" id="{{ radio.id_for_label }}" value="{{ radio_val }}">
-                            <label class="{{ label_class }}" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+                            <label class="{{ label_class }} btn__text" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
                         </span>
                     </div>
                 {% endfor %}
             </div>
             <div class="row mb-3">
                 {% form_field review_form 'reason' as reason_field %}
-                <div class="col-sm-2 text-start">
+                <div class="col-lg-1 col-sm-2 text-start">
                     <label for="{{ reason_field.auto_id }}" class="form-label">{{ reason_field.label }}</label>
                 </div>
-                <div class="col-sm-10">
+                <div class="col-lg-11 col-sm-10">
                     {{ reason_field }}
                 </div>
             </div>
         </fieldset>
-        <div class="">
-            <button type="submit" class="btn btn-success">{% trans "Submit" %}</button>
+        <div class="mb-3">
+            <button type="submit" class="btn btn-success btn__text">{% trans "Submit" %}</button>
         </div>
     </form>
 
@@ -66,7 +66,7 @@
             const radioSelector = "input[name='review_result']";
             const radioTipSelector = "span[id^='id--review-result-tip']";
 
-            /* Submit handler for comment modal */
+            /* Submit handler for review modal */
             $(reviewFormSelector).submit(function (event) {
 
                 event.preventDefault();
@@ -83,7 +83,7 @@
                     method: 'post',
                     url: url,
                     headers: {
-                        'X-CSRFTOKEN': '{{ csrf_token }}'
+                        'X-CSRFTOKEN': csrfToken()
                     },
                     data: data,
                 }).done(function(data) {

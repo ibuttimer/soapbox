@@ -46,7 +46,7 @@ from soapbox import (
 )
 from utils import (
     app_template_path, redirect_on_success_or_render, Crud, reverse_q,
-    namespaced_url, ensure_list
+    namespaced_url, ensure_list, ModelMixin
 )
 from opinions.constants import (
     OPINION_ID_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME,
@@ -59,9 +59,9 @@ from opinions.constants import (
     ALL_FIELDS, VIEW_OK_CTX, TEMPLATE_TARGET_SLUG, TEMPLATE_TARGET_AUTHOR,
     REDIRECT_CTX, ELEMENT_ID_CTX, HTML_CTX, OPINIONS_ROUTE_NAME, AUTHOR_QUERY,
     STATUS_QUERY, MODE_QUERY, IS_REVIEW_CTX, IS_ASSIGNED_CTX,
-    REVIEW_RECORD_CTX, REVIEW_FORM_CTX, REWRITES_PROP_CTX, STATUS_BG_CTX,
-    REVIEW_BUTTON_CTX, ACTION_URL_CTX, OPINION_REVIEW_DECISION_ID_ROUTE_NAME,
-    COMMENT_REVIEW_DECISION_ID_ROUTE_NAME, REVIEW_BUTTON_TIPS_CTX
+    REVIEW_RECORD_CTX, REWRITES_PROP_CTX, STATUS_BG_CTX, ACTION_URL_CTX,
+    OPINION_REVIEW_DECISION_ID_ROUTE_NAME,
+    COMMENT_REVIEW_DECISION_ID_ROUTE_NAME,
 )
 from opinions.forms import OpinionForm, CommentForm, ReportForm, ReviewForm
 from opinions.models import (
@@ -69,21 +69,21 @@ from opinions.models import (
     FollowStatus
 )
 from opinions.queries import (
-    content_status_check, effective_content_status, content_review_record,
-    content_review_history, content_review_records_list
+    content_status_check, effective_content_status, content_review_history,
+    content_review_records_list
 )
 from opinions.reactions import (
     OPINION_REACTIONS, COMMENT_REACTIONS, get_reaction_status
 )
 from opinions.templatetags.reaction_ul_id import reaction_ul_id
 from opinions.views.utils import (
-    opinion_permission_check, opinion_save_query_args, timestamp_content,
+    opinion_permission_check, content_save_query_args, timestamp_content,
     own_content_check, published_check, get_opinion_context,
     render_opinion_form, comment_permission_check, like_query_args,
     hide_query_args, pin_query_args, generate_excerpt, follow_query_args,
     add_content_no_show_markers, review_permission_check, QueryOption,
-    get_query_args, STATUS_BADGES, REVIEW_STATUS_BUTTONS, form_errors_response,
-    REVIEW_STATUS_BUTTON_TOOLTIPS, add_review_form_context
+    get_query_args, STATUS_BADGES, form_errors_response,
+    add_review_form_context
 )
 from opinions.enums import QueryStatus, ReactionStatus, ViewMode
 
@@ -200,7 +200,8 @@ class OpinionDetail(LoginRequiredMixin, View):
         )
         return render(request, template_path, context=context)
 
-    def _get_opinion(self, identifier: [int, str]) -> Opinion:
+    @staticmethod
+    def _get_opinion(identifier: [int, str]) -> Opinion:
         """
         Get opinion for specified identifier
         :param identifier: id or slug of opinion to get
@@ -237,12 +238,12 @@ class OpinionDetail(LoginRequiredMixin, View):
 
         if form.is_valid():
             # normal fields are updated but ManyToMany aren't
-            # copy clean data to user object
+            # copy clean data to opinion object
             opinion_obj.categories.set(
                 form.cleaned_data[OpinionForm.CATEGORIES_FF]
             )
 
-            status, query = opinion_save_query_args(request)
+            status, query = content_save_query_args(request)
             opinion_obj.status = status
 
             timestamp_content(opinion_obj)
@@ -296,7 +297,7 @@ class OpinionDetail(LoginRequiredMixin, View):
         count, _ = opinion_obj.delete()
 
         return JsonResponse({
-            ELEMENT_ID_CTX: "id--opinion-delete-modal-body",
+            ELEMENT_ID_CTX: "id--opinion-deleted-modal-body",
             HTML_CTX: render_to_string(
                 app_template_path(
                     OPINIONS_APP_NAME, "snippet", "content_delete.html"),
@@ -461,7 +462,7 @@ class OpinionDetailPreviewById(OpinionDetail):
 
     def url(self, opinion_obj: Opinion) -> str:
         """
-        Get url for opinion view/update
+        Get url for opinion preview
         :param opinion_obj: opinion
         :return: url
         """
@@ -537,9 +538,12 @@ def opinion_status_patch(request: HttpRequest, pk: int) -> HttpResponse:
 
     own_content_check(request, opinion_obj)
 
-    status, _ = opinion_save_query_args(request)
+    status, _ = content_save_query_args(request)
 
     opinion_obj.status = status
+
+    timestamp_content(opinion_obj)
+
     opinion_obj.save()
 
     return redirect_response(HOME_URL, extra={
@@ -732,7 +736,8 @@ REVIEW_UPDATE_COPY_FIELDS = [
 
 
 def review_status_patch(
-        request: HttpRequest, model: Type[Model], pk: int) -> JsonResponse:
+    request: HttpRequest, model: Type[ModelMixin], pk: int
+) -> JsonResponse:
     """
     View function to update content review status.
     :param request: http request
@@ -757,7 +762,8 @@ def review_status_patch(
         Review.STATUS_FIELD: Status.objects.get(**{
             f'{Status.NAME_FIELD}': effective_status.display
         }),
-        Review.REVIEWER_FIELD: request.user
+        Review.REVIEWER_FIELD: request.user,
+        Review.content_field(model): content
     }
 
     # create new review record for each of current_reviews

@@ -1,0 +1,35 @@
+<!-- sort_order_select.html start -->
+{# --- template variable defines for includes --- #}
+{# sort order select template expects: 'paginator' as a Paginator #}
+{#                                     'sort_order' as a list of SortOrder #}
+{#                                     'list_heading' as heading for list #}
+{#                                     'list_sub_heading' as sub-heading for list #}
+{# javascript functions in page_content_js.html #}
+
+{% if paginator.count > 0 %}
+<div class="row d-flex justify-content-center">
+    <div class="row d-flex justify-content-center">
+        <div class="col-xxl-10 col-lg-9 col-md-8 col-sm-6 col-auto mt-2 text-center">
+            <h3>{{ list_heading | safe }}</h3>
+            {% if list_sub_heading %}
+                <h5>{{ list_sub_heading | safe }}</h5>
+            {% endif %}
+        </div>
+        <div class="col-xxl-2 col-lg-3 col-md-4 col-sm-6 col-auto mt-2">
+            <!-- sort order selection -->
+            <select id="id--sort-order-select" class="form-select" aria-label="Sort by">
+                {% for sort_opt in sort_order %}
+                <option value="{{ sort_opt.arg }}"
+                        {% if sort_opt == selected_sort %}
+                        selected
+                        {% endif %}
+                >
+                    {{ sort_opt.display }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+</div>
+{% endif %}
+<!-- sort_order_select.html end -->

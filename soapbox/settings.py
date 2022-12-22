@@ -46,12 +46,17 @@ from .constants import (
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-env = environ.Env(
+# required environment variables are keys of 'scheme' plus REQUIRED_ENV_VARS
+scheme = {
     # set casting, default value
-    DEBUG=(bool, False),
-    DEVELOPMENT=(bool, False),
-    TEST=(bool, False)
-)
+    'DEBUG': (bool, False),
+    'DEVELOPMENT': (bool, False),
+    'TEST': (bool, False),
+}
+REQUIRED_ENV_VARS = [key for key, _ in scheme.items()]
+REQUIRED_ENV_VARS.extend(['SITE_ID', 'SECRET_KEY', 'DATABASE_URL'])
+
+env = environ.Env(**scheme)
 # Take environment variables from .env file
 os.environ.setdefault('ENV_FILE', '.env')
 environ.Env.read_env(
@@ -67,6 +72,7 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 DEVELOPMENT = env('DEVELOPMENT')
+TEST = env('TEST')
 
 # https://docs.djangoproject.com/en/4.1/ref/clickjacking/
 # required for Summernote editor
@@ -84,7 +90,7 @@ SUMMERNOTE_CONFIG = {
 
         # Change editor size
         'width': '100%',
-        'height': '240',
+        'height': '480',
 
         # Use proper language setting automatically (default)
         'lang': None,
@@ -98,7 +104,7 @@ SUMMERNOTE_CONFIG = {
             ['color', ['color']],
             ['para', ['ul', 'ol', 'paragraph']],
             ['table', ['table']],
-            ['insert', ['link', 'picture', 'video']],
+            ['insert', ['link', 'picture']],
             ['view', ['fullscreen', 'codeview', 'help']],
         ],
     },
@@ -116,7 +122,7 @@ if env('DEVELOPMENT'):
     ALLOWED_HOSTS = ['testserver'] \
         if env('TEST') else ['localhost', '127.0.0.1']
 else:
-    ALLOWED_HOSTS = [env('HEROKU_HOSTNAME')]
+    ALLOWED_HOSTS = env.list('HEROKU_HOSTNAME')
 
 # Application definition
 INSTALLED_APPS = [
@@ -188,6 +194,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 # soapbox context processors
                 'soapbox.context_processors.footer_context',
+                'soapbox.context_processors.test_context',
             ],
         },
     },
@@ -254,6 +261,7 @@ MESSAGE_TAGS = {
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
 # Parse database connection url strings
+# https://django-environ.readthedocs.io/en/latest/api.html#environ.Env.db_url_config
 # like psql://user:pass@127.0.0.1:8458/db
 DATABASES = {
     # read os.environ['DATABASE_URL'] and raises
@@ -265,13 +273,13 @@ DATABASES = {
     # read os.environ['REMOTE_DATABASE_URL']
     'remote': env.db_url(
         'REMOTE_DATABASE_URL',
-        default='sqlite:////tmp/my-tmp-sqlite.db'
+        default=f'sqlite:///{os.path.join(BASE_DIR, "temp-remote.sqlite3")}'
     ),
 
     # read os.environ['SQLITE_URL']
     'extra': env.db_url(
         'SQLITE_URL',
-        default='sqlite:////tmp/my-tmp-sqlite.db'
+        default=f'sqlite:///{os.path.join(BASE_DIR, "temp-sqlite.sqlite3")}'
     )
 }
 
@@ -312,6 +320,15 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
+# !!
+# https://github.com/klis87/django-cloudinary-storage
+# Please note that you must set DEBUG to False to fetch static files from
+# Cloudinary.
+# With DEBUG equal to True, Django staticfiles app will use your local files
+# for easier and faster development
+# (unless you use cloudinary_static template tag).
+# !!
+
 # URL to use when referring to static files located in STATIC_ROOT
 STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#staticfiles-storage
@@ -348,7 +365,7 @@ DEFAULT_FILE_STORAGE = \
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # url for blank avatar image
-AVATAR_BLANK_URL = env('AVATAR_BLANK_URL')
+AVATAR_BLANK_URL = env.get_value('AVATAR_BLANK_URL', default='')
 
 LOGGING = {
     'version': 1,
@@ -372,3 +389,7 @@ LOGGING = {
         }
     }
 }
+
+# Google site verification
+# https://support.google.com/webmasters/answer/9008080#meta_tag_verification&zippy=%2Chtml-tag
+GOOGLE_SITE_VERIFICATION = env('GOOGLE_SITE_VERIFICATION', default='')

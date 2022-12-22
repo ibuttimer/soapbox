@@ -32,10 +32,16 @@ from django.http import HttpRequest, JsonResponse
 from django.template.defaultfilters import truncatechars
 from django.template.loader import render_to_string
 from bs4 import BeautifulSoup
+from django.urls import ResolverMatch
 
 from opinions.queries import is_following
 from soapbox import OPINIONS_APP_NAME
-from utils import Crud, app_template_path, permission_check, find_index
+from soapbox.constants import (
+    OPINION_MENU_CTX, COMMENT_MENU_CTX, MODERATOR_MENU_CTX
+)
+from utils import (
+    Crud, app_template_path, permission_check, find_index, resolve_req
+)
 from categories import (
     STATUS_DRAFT, STATUS_PUBLISHED, CATEGORY_UNASSIGNED
 )
@@ -53,7 +59,9 @@ from opinions.constants import (
     UNDER_REVIEW_EXCERPT_CTX, UNDER_REVIEW_TITLE, UNDER_REVIEW_EXCERPT,
     UNDER_REVIEW_OPINION_CONTENT, UNDER_REVIEW_COMMENT_CTX,
     UNDER_REVIEW_OPINION_CTX, FILTER_QUERY, REVIEW_QUERY, HTML_CTX, TITLE_CTX,
-    REVIEW_FORM_CTX, IS_REVIEW_CTX, REVIEW_BUTTON_CTX, REVIEW_BUTTON_TIPS_CTX
+    REVIEW_FORM_CTX, IS_REVIEW_CTX, REVIEW_BUTTON_CTX, REVIEW_BUTTON_TIPS_CTX,
+    COMMENT_FORM_CTX, REFERENCE_QUERY, OPINION_IN_REVIEW_ROUTE_NAME,
+    COMMENT_IN_REVIEW_ROUTE_NAME, MODE_QUERY, SINGLE_CONTENT_ROUTE_NAMES
 )
 from opinions.enums import (
     ChoiceArg, QueryArg, QueryStatus, ReactionStatus, OpinionSortOrder,
@@ -68,8 +76,8 @@ STATUS_BADGES = {
     QueryStatus.DRAFT.display: "bg-light text-dark",
     QueryStatus.PUBLISH.display: "bg-success text-white",
     QueryStatus.PREVIEW.display: "bg-secondary text-white",
-    QueryStatus.PENDING_REVIEW.display: "bg-warning text-dark",
-    QueryStatus.UNDER_REVIEW.display: "bg-warning text-dark",
+    QueryStatus.PENDING_REVIEW.display: "bg-warning text-white",
+    QueryStatus.UNDER_REVIEW.display: "bg-warning text-white",
     QueryStatus.ACCEPTABLE.display: "bg-danger text-white",
     QueryStatus.UNACCEPTABLE.display: "bg-danger text-white",
     QueryStatus.WITHDRAWN.display: "bg-danger text-white",
@@ -113,8 +121,8 @@ class QueryOption:
         return cls(query=query, clazz=None, default=default)
 
 
-# request arguments with always applied defaults
-APPLIED_DEFAULTS_QUERY_ARGS = [
+# request arguments with always applied defaults for opinions
+OPINION_APPLIED_DEFAULTS_QUERY_ARGS: List[QueryOption] = [
     # status included as default is to only show published opinions
     QueryOption(STATUS_QUERY, QueryStatus, QueryStatus.DEFAULT),
     # hidden included as default is to only show visible opinions
@@ -138,14 +146,22 @@ OPINION_LIST_QUERY_ARGS.extend([
     QueryOption.of_no_cls_dflt(AUTHOR_QUERY),
     QueryOption(PINNED_QUERY, Pinned, Pinned.DEFAULT),
 ])
-OPINION_LIST_QUERY_ARGS.extend(APPLIED_DEFAULTS_QUERY_ARGS)
-# request arguments for a followed authors list request
+OPINION_LIST_QUERY_ARGS.extend(OPINION_APPLIED_DEFAULTS_QUERY_ARGS)
+# request arguments for followed authors list and followed feed requests
 # (replace pinned with filter)
 FOLLOWED_OPINION_LIST_QUERY_ARGS = OPINION_LIST_QUERY_ARGS.copy()
 find_index(
     FOLLOWED_OPINION_LIST_QUERY_ARGS, PINNED_QUERY,
     mapper=lambda item: item.query,
     replace=QueryOption(FILTER_QUERY, FilterMode, FilterMode.DEFAULT)
+)
+# request arguments for a category feed request
+# (replace pinned with category)
+CATEGORY_FEED_QUERY_ARGS = OPINION_LIST_QUERY_ARGS.copy()
+find_index(
+    CATEGORY_FEED_QUERY_ARGS, PINNED_QUERY,
+    mapper=lambda item: item.query,
+    replace=QueryOption.of_no_cls_dflt(CATEGORY_QUERY)
 )
 # request arguments for a review opinions list request
 REVIEW_OPINION_LIST_QUERY_ARGS = FOLLOWED_OPINION_LIST_QUERY_ARGS.copy()
@@ -154,6 +170,11 @@ REVIEW_OPINION_LIST_QUERY_ARGS.extend([
     QueryOption(REVIEW_QUERY, QueryStatus, QueryStatus.REVIEW_QUERY_DEFAULT),
 ])
 
+# request arguments with always applied defaults for comments
+COMMENT_APPLIED_DEFAULTS_QUERY_ARGS: List[QueryOption] = [
+    # comments only have published or deleted status, both of which are needed
+    # (deleted to maintain comment tree structure)
+]
 # args for a comment reorder/next page/etc. request
 COMMENT_REORDER_QUERY_ARGS = [
     QueryOption(ORDER_QUERY, CommentSortOrder, CommentSortOrder.DEFAULT),
@@ -170,16 +191,15 @@ COMMENT_LIST_QUERY_ARGS = COMMENT_REORDER_QUERY_ARGS.copy()
 COMMENT_LIST_QUERY_ARGS.extend([
     # non-reorder query args
     QueryOption.of_no_cls_dflt(AUTHOR_QUERY),
-    QueryOption.of_no_cls_dflt(OPINION_ID_QUERY),
-    QueryOption.of_no_cls_dflt(PARENT_ID_QUERY),
+    QueryOption.of_no_cls(OPINION_ID_QUERY, 0),
+    QueryOption.of_no_cls(PARENT_ID_QUERY, 0),
     QueryOption.of_no_cls_dflt(ID_QUERY),
 ])
-COMMENT_LIST_QUERY_ARGS.extend(APPLIED_DEFAULTS_QUERY_ARGS)
+COMMENT_LIST_QUERY_ARGS.extend(COMMENT_APPLIED_DEFAULTS_QUERY_ARGS)
 # request arguments for a review comments list request
 REVIEW_COMMENT_LIST_QUERY_ARGS = COMMENT_LIST_QUERY_ARGS.copy()
 REVIEW_COMMENT_LIST_QUERY_ARGS.extend([
     # non-reorder query args
-    QueryOption.of_no_cls_dflt(AUTHOR_QUERY),
     QueryOption(FILTER_QUERY, FilterMode, FilterMode.DEFAULT),
     QueryOption(REVIEW_QUERY, QueryStatus, QueryStatus.REVIEW_QUERY_DEFAULT),
 ])
@@ -200,6 +220,10 @@ DATE_QUERY_ARGS = [
     QueryOption.of_no_cls_dflt(query) for query in DATE_QUERIES
 ]
 
+# query terms which only appear in a search
+SEARCH_ONLY_QUERIES = [SEARCH_QUERY]
+SEARCH_ONLY_QUERIES.extend(DATE_QUERIES)
+
 # request arguments for an opinion search request
 OPTION_SEARCH_QUERY_ARGS = OPINION_LIST_QUERY_ARGS.copy()
 OPTION_SEARCH_QUERY_ARGS.extend([
@@ -219,18 +243,18 @@ COMMENT_SEARCH_QUERY_ARGS.extend([
 COMMENT_SEARCH_QUERY_ARGS.extend(DATE_QUERY_ARGS)
 
 
-def get_opinion_context(title: str, **kwargs) -> dict:
+def get_content_context(title: str, context_form_key: str, **kwargs) -> dict:
     """
-    Generate the context for the opinion template
+    Generate the context for an opinion/comment template
     :param title: title
+    :param context_form_key: key for content form
     :param kwargs: context keyword values
-        comment_submit_url: form commit url, default None
-        comment_form: form to display, default None
-        opinion: opinion object, default None
-        comments: details of comments
+        submit_url: form commit url, default None
+        opinion_form/comment_form: form to display, default None
         read_only: read only flag, default False
         status: status, default None
-    :return: tuple of template path and context
+        all additional keyword args are copied to context
+    :return: context dict
     """
     status = kwargs.get(STATUS_CTX, None)
     if status is None:
@@ -243,20 +267,36 @@ def get_opinion_context(title: str, **kwargs) -> dict:
         STATUS_BG_CTX: STATUS_BADGES.get(status),
     }
 
-    opinion_form = kwargs.get(OPINION_FORM_CTX, None)
-    if opinion_form is not None:
-        context[OPINION_FORM_CTX] = opinion_form
+    context_form = kwargs.get(context_form_key, None)
+    if context_form is not None:
+        context[context_form_key] = context_form
         context[SUBMIT_URL_CTX] = kwargs.get(SUBMIT_URL_CTX, None)
 
     for key, value in kwargs.items():
+        # copy other keyword args
         if key not in [
-            READ_ONLY_CTX, STATUS_CTX, OPINION_FORM_CTX, SUBMIT_URL_CTX
+            READ_ONLY_CTX, STATUS_CTX, context_form_key, SUBMIT_URL_CTX
         ]:
             value = kwargs.get(key, None)
             if value is not None:
                 context[key] = value
 
     return context
+
+
+def get_opinion_context(title: str, **kwargs) -> dict:
+    """
+    Generate the context for the opinion template
+    :param title: title
+    :param kwargs: context keyword values
+        submit_url: form commit url, default None
+        opinion_form/comment_form: form to display, default None
+        read_only: read only flag, default False
+        status: status, default None
+        all additional keyword args are copied to context
+    :return: context dict
+    """
+    return get_content_context(title, OPINION_FORM_CTX, **kwargs)
 
 
 def get_comment_context(title: str, **kwargs) -> dict:
@@ -264,40 +304,14 @@ def get_comment_context(title: str, **kwargs) -> dict:
     Generate the context for the comment template
     :param title: title
     :param kwargs: context keyword values
-        comment_submit_url: form commit url, default None
+        submit_url: form commit url, default None
         comment_form: form to display, default None
-        opinion: opinion object, default None
-        comments: details of comments
         read_only: read only flag, default False
         status: status, default None
-    :return: tuple of template path and context
+        all additional keyword args are copied to context
+    :return: context dict
     """
-    status = kwargs.get(STATUS_CTX, None)
-    if status is None:
-        status = STATUS_DRAFT
-
-    context = {
-        TITLE_CTX: title,
-        READ_ONLY_CTX: kwargs.get(READ_ONLY_CTX, False),
-        STATUS_CTX: status,
-        STATUS_BG_CTX: STATUS_BADGES.get(status),
-    }
-
-    # TODO ???
-    opinion_form = kwargs.get(OPINION_FORM_CTX, None)
-    if opinion_form is not None:
-        context[OPINION_FORM_CTX] = opinion_form
-        context[SUBMIT_URL_CTX] = kwargs.get(SUBMIT_URL_CTX, None)
-
-    for key, value in kwargs.items():
-        if key not in [
-            READ_ONLY_CTX, STATUS_CTX, OPINION_FORM_CTX, SUBMIT_URL_CTX
-        ]:
-            value = kwargs.get(key, None)
-            if value is not None:
-                context[key] = value
-
-    return context
+    return get_content_context(title, COMMENT_FORM_CTX, **kwargs)
 
 
 def timestamp_content(content: [Opinion, Comment]):
@@ -345,10 +359,10 @@ def query_args_status(
     return status, status_query
 
 
-def opinion_save_query_args(
+def content_save_query_args(
         request: HttpRequest) -> tuple[Status, QueryStatus]:
     """
-    Get opinion save query arguments from request query
+    Get content save query arguments from request query
     :param request: http request
     :return: tuple of Status and QueryStatus
     """
@@ -427,8 +441,7 @@ def get_query_args(
         options = [options]
 
     for option in options:
-        #                               value,   was_set
-        params[option.query] = QueryArg(option.default, False)
+        params[option.query] = QueryArg.of(option.default)
 
         if option.query in request.GET:
             param = request.GET[option.query].lower()
@@ -479,6 +492,44 @@ def opinion_permissions(request: HttpRequest, context: dict = None) -> dict:
     return context
 
 
+MODERATOR_MENU_ROUTES = [
+    OPINION_IN_REVIEW_ROUTE_NAME, COMMENT_IN_REVIEW_ROUTE_NAME
+]
+
+
+def _is_moderator_review(request: HttpRequest, route: str):
+    """ Check for moderator viewing opinion/comment in review mode """
+    return route in SINGLE_CONTENT_ROUTE_NAMES and \
+        request.GET.get(MODE_QUERY, None) == ViewMode.REVIEW.arg
+
+
+def _is_moderator_menu(request: HttpRequest, route: str):
+    """ Check if route is a moderator menu route """
+    # in review routes follow route prefix convention
+    mod_menu = route in MODERATOR_MENU_ROUTES
+    if mod_menu:
+        # but with an author query they're in opinion/comment menu
+        mod_menu = AUTHOR_QUERY not in request.GET
+    else:
+        # check moderator viewing opinion/comment in review mode
+        mod_menu = _is_moderator_review(request, route)
+    return mod_menu
+
+
+def _is_content_menu(request: HttpRequest, route: str, prefix: str):
+    """ Check if route is a content menu route """
+    # exception to route prefix convention determining menu:
+    # - in review routes are in moderator menu, but with an author query
+    #   they're in opinion/comment menu
+    # - moderator viewing opinion/comment in review mode
+    content_menu = \
+        route.startswith(prefix) and not _is_moderator_menu(request, route)
+    if content_menu:
+        # check moderator viewing opinion/comment in review mode
+        content_menu = not _is_moderator_review(request, route)
+    return content_menu
+
+
 def add_opinion_context(request: HttpRequest, context: dict = None) -> dict:
     """
     Add opinion-specific context entries
@@ -488,6 +539,18 @@ def add_opinion_context(request: HttpRequest, context: dict = None) -> dict:
     """
     if context is None:
         context = {}
+    called_by = resolve_req(request)
+    if called_by:
+        for ctx, check_func in [
+            (MODERATOR_MENU_CTX,
+             lambda name: _is_moderator_menu(request, name)),
+            (OPINION_MENU_CTX,
+             lambda name: _is_content_menu(request, name, 'opinion')),
+            (COMMENT_MENU_CTX,
+             lambda name: _is_content_menu(request, name, 'comment')),
+        ]:
+            context[ctx] = check_func(called_by.url_name)
+
     opinion_model_name = Opinion.model_name().lower()
     context.update({
         f'{opinion_model_name}_follow': is_following(request.user).exists()
@@ -576,12 +639,6 @@ def render_opinion_form(title: str, **kwargs) -> tuple[
     :return: tuple of template path and context
     """
     context = get_opinion_context(title, **kwargs)
-
-    context.update({
-        'summernote_fields': [OpinionForm.CONTENT_FF],
-        'other_fields': [OpinionForm.TITLE_FF],
-        'category_fields': [OpinionForm.CATEGORIES_FF],
-    })
 
     # set initial data
     opinion_form = context.get(OPINION_FORM_CTX, None)
@@ -688,3 +745,12 @@ def add_review_form_context(mode: ViewMode, effective_status: QueryStatus,
         })
 
     return context
+
+
+def resolve_ref(request: HttpRequest) -> Optional[ResolverMatch]:
+    """
+    Resolve any `ref` param in a request
+    :param request: http request
+    :return: resolver match or None
+    """
+    return resolve_req(request, query=REFERENCE_QUERY)

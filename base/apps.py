@@ -21,9 +21,13 @@
 #  DEALINGS IN THE SOFTWARE.
 
 from django.apps import AppConfig
+from django.utils.translation import gettext_lazy as _
+
+from soapbox import BASE_APP_NAME
 
 
 class BaseConfig(AppConfig):
     """ Config class for base application """
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'base'
+    name = BASE_APP_NAME
+    verbose_name = _("Application Base")

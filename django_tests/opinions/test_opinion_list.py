@@ -35,10 +35,10 @@ from opinions.enums import OpinionSortOrder, PerPage
 from soapbox import OPINIONS_APP_NAME
 from user.models import User
 from utils import reverse_q, namespaced_url
-from .base_opinion_test import BaseOpinionTest
-from ..category_mixin_test import CategoryMixin
+from .base_opinion_test_cls import BaseOpinionTest
+from ..category_mixin_test_cls import CategoryMixin
 from ..soup_mixin import SoupMixin
-from ..user.base_user_test import BaseUserTest
+from ..user.base_user_test_cls import BaseUserTest
 
 OPINION_LIST_TEMPLATE = f'{OPINIONS_APP_NAME}/opinion_list.html'
 OPINION_LIST_SORT_TEMPLATE = f'{OPINIONS_APP_NAME}/opinion_list_content.html'
@@ -198,6 +198,7 @@ def verify_opinion_list_content(
     tags = soup.find_all(
         lambda tag: tag.name == 'div'
         and SoupMixin.in_tag_attr(tag, 'class', 'card')
+        and not SoupMixin.in_tag_attr(tag, 'class', 'div__no-content-card')
     )
     test_case.assertEqual(
         len(expected), len(tags),

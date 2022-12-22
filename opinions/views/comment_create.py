@@ -21,6 +21,7 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 from http import HTTPStatus
+from typing import Tuple
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import (
@@ -32,8 +33,12 @@ from django.views import View
 
 from categories import STATUS_PUBLISHED
 from categories.models import Status
-from opinions.constants import HTML_CTX
+from opinions.constants import (
+    HTML_CTX, COMMENT_OFFSET_CTX, REFERENCE_QUERY,
+    OPINION_ID_ROUTE_NAME, COMMENTS_ROUTE_NAME, SINGLE_COMMENT_ROUTE_NAMES
+)
 from opinions.contexts.comment import get_comment_bundle_context
+from opinions.views.comment_queries import get_query_from_route
 from soapbox import (
     OPINIONS_APP_NAME
 )
@@ -44,7 +49,8 @@ from opinions.comment_data import CommentBundle
 from opinions.forms import CommentForm
 from opinions.models import Opinion, Comment
 from opinions.views.utils import (
-    comment_permission_check, timestamp_content, form_errors_response
+    comment_permission_check, timestamp_content, form_errors_response,
+    resolve_ref
 )
 
 COMMENTS_CONTAINER_ID = 'id--comments-container'
@@ -83,17 +89,18 @@ class CommentCreate(LoginRequiredMixin, View):
             # django autocommits changes
             # https://docs.djangoproject.com/en/4.1/topics/db/transactions/#autocommit
 
-            # container for new comment display is the collapse
-            # container of the parent comment if comment-on-comment
-            # else comments container for comment-on-opinion
-            parent_container = \
-                CommentBundle.generate_collapse_id(comment.parent) \
-                if comment.parent != Comment.NO_PARENT else \
-                COMMENTS_CONTAINER_ID
-
             context = get_comment_bundle_context(
                 comment.id, request.user, depth=0, is_dynamic_insert=True
             )
+
+            comment_offset, top_level = get_comment_offset(request, comment)
+            context[COMMENT_OFFSET_CTX] = comment_offset
+
+            # container for new comment display is the collapse
+            # container of the parent comment if comment-on-comment
+            # else comments container for comment-on-opinion
+            parent_container = COMMENTS_CONTAINER_ID if top_level else \
+                CommentBundle.generate_collapse_id(comment.parent)
 
             response = JsonResponse({
                 HTML_CTX: render_to_string(
@@ -119,6 +126,39 @@ class CommentCreate(LoginRequiredMixin, View):
         """
         raise NotImplementedError(
             "'comment_hierarchy' method must be overridden by sub classes")
+
+
+def get_comment_offset(
+        request: HttpRequest, comment: Comment) -> Tuple[int, bool]:
+    """
+    Get the comment inset offset for display
+    :param request: http request
+    :param comment: comment
+    :return: tuple of offset and top level flag
+    """
+    # top level display comment if comment on opinion
+    top_level = comment.parent == Comment.NO_PARENT
+
+    comment_offset = 0
+    called_by = resolve_ref(request)
+    if called_by:
+        if called_by.url_name in [
+            OPINION_ID_ROUTE_NAME, COMMENTS_ROUTE_NAME
+        ]:
+            pass
+        elif called_by.url_name in SINGLE_COMMENT_ROUTE_NAMES:
+            get_param, _ = get_query_from_route(request, called_by=called_by)
+            view_comment = get_object_or_404(Comment, **get_param)
+            comment_offset = view_comment.level + 1
+
+            # top level if comment is 1 level below viewing comment
+            top_level = comment.parent == view_comment.id
+        else:
+            raise ValueError(
+                f'Unknown {REFERENCE_QUERY} query value: '
+                f'{request.GET[REFERENCE_QUERY]}')
+
+    return comment_offset, top_level
 
 
 class OpinionCommentCreate(CommentCreate):

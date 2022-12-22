@@ -26,7 +26,7 @@ from categories import STATUS_DRAFT
 from categories.models import Status
 from opinions.constants import STATUS_FIELD, USER_FIELD
 from opinions.models import Opinion
-from ..user.base_user_test import BaseUserTest
+from ..user.base_user_test_cls import BaseUserTest
 
 
 class TestOpinionModel(BaseUserTest):

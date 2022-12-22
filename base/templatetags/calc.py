@@ -31,25 +31,26 @@ register = template.Library()
 
 @register.simple_tag
 def calc(
-    a: Union[int, str, list, tuple], op: str, b: Union[int, str, list, tuple]
+    left: Union[int, str, list, tuple], op: str,
+    right: Union[int, str, list, tuple]
 ) -> Union[int, float]:
     """
     Perform simple calculations. If an operation is a list or tuple, its
     length is used in the calculation.
-    :param a: first operand
+    :param left: first operand
     :param op: operation; '/', '*' etc.
-    :param b: second operand
+    :param right: second operand
     :return: int/float result
     """
-    a = _convert(a)
-    b = _convert(b)
-    result = eval(f'{a}{op}{b}')
+    left = _convert(left)
+    right = _convert(right)
+    result = eval(f'{left}{op}{right}')
     return int(result) if result == int(result) else result
 
 
 def _convert(a: Union[int, str, list, tuple]) -> Any:
     """ Convert operand """
-    if isinstance(a, list) or isinstance(a, tuple):
+    if isinstance(a, (list, tuple)):
         a = len(a)
     elif isinstance(a, str):
         if a.isdecimal():

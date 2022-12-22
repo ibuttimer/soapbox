@@ -35,7 +35,7 @@ from .constants import (
     COMMENT_MORE_ROUTE_NAME, OPINION_ID_QUERY, ID_QUERY, OPINION_CTX
 )
 from .models import Comment, Opinion, AgreementStatus, HideStatus, PinStatus
-from .comment_utils import get_comment_queryset
+from .views.comment_queries import get_comment_queryset
 from .views.utils import (
     DEFAULT_COMMENT_DEPTH, query_search_term
 )
@@ -300,7 +300,7 @@ def get_comment_tree(
     else:
         # check if there are sub-level comments for another request
         page = QueryArg.value_arg_or_object(
-            sub_query_params[PAGE_QUERY]) + 1 \
+            sub_query_params[PAGE_QUERY]) \
             if PAGE_QUERY in sub_query_params else 1
         sub_query_params[PAGE_QUERY] = page
         sub_query_params[COMMENT_DEPTH_QUERY] = DEFAULT_COMMENT_DEPTH

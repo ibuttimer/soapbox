@@ -25,7 +25,7 @@ from datetime import datetime, timezone
 
 from categories import STATUS_DRAFT
 from categories.models import Status
-from django_tests.opinions.base_opinion_test import BaseOpinionTest
+from django_tests.opinions.base_opinion_test_cls import BaseOpinionTest
 from opinions.models import Comment
 
 

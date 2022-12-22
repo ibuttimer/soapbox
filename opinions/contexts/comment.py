@@ -71,6 +71,9 @@ def comments_list_context_for_opinion(
     )
 
     # visible opinion which may have not visible under review comments
+    if CONTENT_STATUS_CTX in context:
+        # keep existing content status
+        comments_review_status.update(context[CONTENT_STATUS_CTX])
     context.update({
         COMMENTS_CTX: comment_bundles,
         CONTENT_STATUS_CTX: comments_review_status,

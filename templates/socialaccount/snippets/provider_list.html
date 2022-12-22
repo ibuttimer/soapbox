@@ -2,6 +2,7 @@
 
 {% get_providers as socialaccount_providers %}
 
+<div class="row d-flex justify-content-around">
 {% for provider in socialaccount_providers %}
     {% if provider.id == "openid" %}
         {% for brand in provider.get_brands %}
@@ -14,9 +15,9 @@
         {% endfor %}
     {% endif %}
 
-  <a title="{{provider.name}}" class="socialaccount_provider btn btn-primary btn-sm {{provider.id}}"
-     role="button" aria-label="Sign in with {{provider.id}}"
-     href="{% provider_login_url provider.id process=process scope=scope auth_params=auth_params %}">{{provider.name}}</a>
-
+    <a title="{{provider.name}}" class="socialaccount_provider btn btn-primary btn-sm btn__text {{provider.id}}"
+       role="button" aria-label="Sign in with {{provider.id}}"
+       href="{% provider_login_url provider.id process=process scope=scope auth_params=auth_params %}">{{provider.name}}</a>
 
 {% endfor %}
+</div>

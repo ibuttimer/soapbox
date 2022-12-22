@@ -14,41 +14,43 @@
 {% load reaction_popularity %}
 
 {% block opinion_list_content %}
-    <var id="var__repeat_search_term" hidden>{{ repeat_search_term }}</var>
+    <var id="var--repeat-search-term" hidden>{{ repeat_search_term }}</var>
 
     {% if paginator.count == 0 %}
-        <div class="row">
-            <div class="col-12 mt-2 text-center">
-                <h3>No opinions found</h3>
-            </div>
-        </div>
+        {% include "opinions/snippet/no_content.html" %}
     {% else %}
         <div class="row">
             <div class="col-12 mt-2">
                 <div class="row d-flex align-items-center">
                     {% for opinion in opinion_list %}
                         {% array_value content_status forloop.counter0 as status %}
-                        <div class="col-md-4">
+                        <div class="col-lg-6">
                             <div class="card mb-4">
                                 <div class="card-body">
                                     <div class="row">
-                                        <div class="col-sm-8 mt-0 mb-0">
+                                        <div class="col-sm-8 col-12 mt-0 mb-0">
                                             <!-- title -->
-                                            <a {% if status.view_ok %} href="{% url 'opinions:opinion_slug' opinion.slug %}?mode=read-only" {% endif %}
-                                               class="post-link">
+                                            {% if status.view_ok %}
+                                            <a href="{% url 'opinions:opinion_id' opinion.id %}?mode=read-only" class="post-link"
+                                               aria-label="read {{ opinion.title }}">
+                                            {% endif %}
                                                 <h4 id="id--title-{{ forloop.counter }}" class="card-title">
                                                     {% if status.review_no_show %}{{ under_review_title }}{% else %}{{ opinion.title }}{% endif %}
                                                 </h4>
+                                            {% if status.view_ok %}
                                             </a>
-                                            {# HACK display id for dev purposes #}
-                                            <span class="badge rounded-pill text-bg-warning">{{ opinion.id }}</span>
+                                            {% endif %}
+                                            {% if is_development and not is_test %}
+                                                {# display id for dev purposes #}
+                                                <span class="badge rounded-pill text-bg-warning">{{ opinion.id }}</span>
+                                            {% endif %}
                                         </div>
-                                        <div id="categories_{{ forloop.counter }}" class="col-sm-3 mt-0 mb-0">
+                                        <div id="categories_{{ forloop.counter }}" class="col-sm-3 col-10 mt-0 mb-0">
                                             {% for category in opinion.categories %}
-                                            <span class="badge rounded-pill text-bg-info">{{ category }}</span>
+                                            <span class="badge rounded-pill text-bg-info fs-6">{{ category }}</span>
                                             {% endfor %}
                                         </div>
-                                        <div id="pinned_{{ forloop.counter }}" class="col-sm-1 mt-0 mb-0">
+                                        <div id="pinned_{{ forloop.counter }}" class="col-sm-1 col-2 mt-0 mb-0">
                                             {# --- template variable defines for includes --- #}
                                             {# reactions template expects: 'target_id' as id of target opinion/comment #}
                                             {#                             'target_slug' as slug of target opinion/comment #}
@@ -77,15 +79,15 @@
                                     </div>
                                     <hr />
                                     <div class="row">
-                                        <div class="col-sm-3 mt-0 mb-0">
+                                        <div class="col-sm-3 col-12 mt-0 mb-0">
                                             {% if status.view_ok %}
                                             <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Read">
                                             {% endif %}
                                                 <a
                                                     {% if status.view_ok %}
-                                                    class="btn btn-primary" href="{% url 'opinions:opinion_slug' opinion.slug %}?mode=read-only" aria-label="read {{ opinion.title }}"
-                                                    {% else %}}
-                                                    class="btn btn-primary disabled" aria-label="Not available for reading" aria-disabled="true"
+                                                    class="btn btn-primary mb-2" href="{% url 'opinions:opinion_id' opinion.id %}?mode=read-only" aria-label="read {{ opinion.title }}"
+                                                    {% else %}
+                                                    class="btn btn-primary mb-2 disabled" href="#" aria-label="Not available for reading" aria-disabled="true"
                                                     {% endif %}
                                                 >
                                                     <i class="fa-solid fa-book-open"></i>
@@ -95,34 +97,38 @@
                                             {% endif %}
                                             {% if status.mine %}
                                             <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Edit">
-                                                <a class="btn btn-warning mt-2" href="{% url 'opinions:opinion_slug' opinion.slug %}?mode=edit" aria-label="edit {{ opinion.title }}">
+                                                <a class="btn btn-warning mb-2" href="{% url 'opinions:opinion_id' opinion.id %}?mode=edit" aria-label="edit {{ opinion.title }}">
                                                     <i class="fa-solid fa-pen"></i>
                                                 </a>
                                             </span>
                                             {% endif %}
                                             {% if is_review and is_moderator %}
                                             <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Review">
-                                                <a class="btn btn-info mt-2" href="{% url 'opinions:opinion_slug' opinion.slug %}?mode=review" aria-label="review {{ opinion.title }}">
+                                                <a class="btn btn-info mb-2" href="{% url 'opinions:opinion_id' opinion.id %}?mode=review" aria-label="review {{ opinion.title }}">
                                                     <i class="fa-solid fa-magnifying-glass"></i>
                                                 </a>
                                             </span>
                                             {% endif %}
                                         </div>
-                                        <div class="col-sm-6 mt-0 mb-0">
+                                        <div class="col-sm-6 col-8 mt-0 mb-0">
                                             <div class="row mt-0 mb-0">
-                                                <div class="col-md-6 mt-0 mb-0">
+                                                <div class="col-md-6 mt-2 mb-2">
                                                     <a href="{% url 'user:user_id' opinion.user_id %}" aria-label="view author's profile">{{ opinion.username }}</a>
                                                 </div>
                                                 <div class="col-md-6 mt-0 mb-0">
                                                     {% dict_value status_bg opinion.status as status_class %}
-                                                    <span id="status_{{ forloop.counter }}" class="badge rounded-pill {{ status_class }}">{{ opinion.status }}</span>
+                                                    <span id="status_{{ forloop.counter }}" class="badge rounded-pill {{ status_class }} fs-6">{{ opinion.status }}</span>
                                                 </div>
                                             </div>
-                                            <p class="mt-0 mb-0">
-                                                {{ opinion.updated | localtime | naturaltime }}
+                                            <p class="card-text text-muted mt-0 mb-0">
+                                                {% if opinion.published.year > 1 %}
+                                                <i class="fa-solid fa-upload"></i> {{ opinion.published | localtime | naturaltime  }}
+                                                {% endif %}
+                                                <br>
+                                                <i class="fa-solid fa-pen-to-square"></i> {{ opinion.updated | localtime | naturaltime }}
                                             </p>
                                         </div>
-                                        <div class="col-sm-3 mt-0 mb-0">
+                                        <div class="col-sm-3 col-4 mt-0 mb-0">
                                             {% reaction_popularity popularity opinion 'agree' as agree_cnt %}
                                             {% reaction_popularity popularity opinion 'comments' as comment_cnt %}
                                             <p class="mt-0 mb-0"><i class="fa-solid fa-hands-clapping"></i>&nbsp;{{ agree_cnt }}</p>
@@ -132,7 +138,7 @@
                                 </div>
                             </div>
                         </div>
-                        {% if forloop.counter|divisibleby:3 %}
+                        {% if forloop.counter|divisibleby:2 %}
                 </div>
                 <div class="row d-flex align-items-center">
                         {% endif %}
@@ -141,22 +147,10 @@
             </div>
         </div>
 
-        <div class="row">
-            <div class="col-2 mt-2">
-                <!-- per page selection -->
-                <select id="per-page-select" class="form-select" aria-label="Opinions per page">
-                    {% for opt in per_page %}
-                    <option value="{{ opt.arg }}" {% if opt.value == selected_per_page %} selected {% endif %}>
-                        {{ opt.display }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-10 mt-2">
-                <!-- pagination -->
-                {% include "opinions/snippet/pagination.html" %}
-            </div>
-        </div>
+        {# per page and page selection #}
+        {% with "Opinions per page" as per_page_aria %}
+            {% include "opinions/snippet/per_page_pagination_select.html" %}
+        {% endwith %}
     {% endif %}
 {% endblock opinion_list_content %}
 <!-- opinion_list_content.html end -->

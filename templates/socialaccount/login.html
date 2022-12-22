@@ -19,7 +19,10 @@
 
   <form method="post">
     {% csrf_token %}
-    <button class="btn btn-primary" type="submit">{% trans "Continue" %}</button>
+    <button id="id--sign-in" class="btn btn-primary" type="submit">{% trans "Continue" %}</button>
   </form>
 </div>
+
+{% include "snippet/site_warning.html" %}
+
 {% endblock content %}

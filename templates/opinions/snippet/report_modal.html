@@ -1,9 +1,9 @@
 <!-- report_modal.html start -->
 {% load i18n %}
 {% load form_field %}
-{# comment modal template expects: 'report_form' as ReportForm #}
+{# report modal template expects: 'report_form' as ReportForm #}
 
-<div class="modal fade" id="id--report-modal" tabindex="-1" aria-label="Report opinion" aria-hidden="true">
+<div class="modal fade" id="id--report-modal" tabindex="-1" aria-labelledby="id--report-modal-heading" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-fullscreen-md-down modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
 
@@ -15,7 +15,7 @@
                 <h5 class="modal-title" id="id--report-modal-heading">Report opinion</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="post" action="{% url 'opinions:report_opinion_id' opinion.id %}"
+            <form method="post" action="{% url 'opinions:opinion_id_report' opinion.id %}"
                   id="id--report-modal-form">
                 {# form action defaults to report opinion, but it is overridden by content of 'id--report-submit-url' #}
                 {# which is set by the click handlers on reaction buttons #}
@@ -42,8 +42,12 @@
                     </fieldset>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
-                    <button type="submit" class="btn__save-comment btn btn-outline-success">{% trans "Report" %}</button>
+                    <button type="button" class="btn btn-dark btn__text" data-bs-dismiss="modal">
+                        {% trans "Cancel" %}
+                    </button>
+                    <button type="submit" class="btn__save-comment btn btn-outline-success btn__text">
+                        {% trans "Report" %}
+                    </button>
                 </div>
             </form>
         </div>
@@ -65,7 +69,7 @@
         // clear form errors and entered data when modal hidden
         resetModalForm(reportModalSelector, reportFormErrorsSelector, reasonFieldSelector, false);
 
-        /* Submit handler for comment modal */
+        /* Submit handler for report modal */
         $("form[id^='id--report-modal']").submit(function (event) {
             const formData = {
                 reason: $(reasonFieldSelector).val(),
@@ -77,12 +81,12 @@
                 method: 'post',
                 url: url,
                 headers: {
-                    'X-CSRFTOKEN': '{{ csrf_token }}'
+                    'X-CSRFTOKEN': csrfToken()
                 },
                 data: formData,
             }).done(function(data) {
                 // update html
-                $("#" + data[ELEMENT_ID_PROP]).replaceWith(data.html);
+                redirect_rewrite_response_handler(data);
 
                 // close modal
                 $(reportModalSelector).modal('hide');
