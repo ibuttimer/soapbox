@@ -20,6 +20,7 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
+from enum import Enum, auto
 from typing import Callable, Any, Type, TypeVar, Union
 
 from django.db.models import Q, QuerySet, Model
@@ -29,6 +30,14 @@ from utils import ModelMixin
 
 # workaround for self type hints from https://peps.python.org/pep-0673/
 TypeQuerySetParams = TypeVar("TypeQuerySetParams", bound="QuerySetParams")
+
+
+class SearchType(Enum):
+    """ Enum represent different search result types """
+    NONE = auto()
+    VALID = auto()
+    FREE = auto()       # Free search (no keys specified)
+    UNKNOWN = auto()    # Couldn't determine what to search with
 
 
 class QuerySetParams:
@@ -51,6 +60,8 @@ class QuerySetParams:
     """ List of search terms in set """
     invalid_terms: [str]
     """ List of invalid search terms in set """
+    search_type: SearchType
+    """ Search result type """
 
     def __init__(self):
         self.and_lookups = {}
@@ -61,6 +72,7 @@ class QuerySetParams:
         self.is_none = False
         self.search_terms = []
         self.invalid_terms = []
+        self.search_type = SearchType.NONE
 
     def clear(self):
         """ Clear the query set params """
@@ -72,6 +84,7 @@ class QuerySetParams:
         self.is_none = False
         self.search_terms = []
         self.invalid_terms = []
+        self.search_type = SearchType.NONE
 
     @property
     def and_count(self):
@@ -93,6 +106,16 @@ class QuerySetParams:
         """ Check if empty i.e. no query terms """
         return self.and_count + self.or_count + self.qs_func_count \
             + self.all_inclusive == 0
+
+    @property
+    def is_free_search(self):
+        """ Check if free search i.e. value but no query terms """
+        return self.search_type == SearchType.FREE
+
+    @property
+    def is_unknown_search(self):
+        """ Check if unknown search i.e. couldn't determine search criteria """
+        return self.search_type == SearchType.UNKNOWN
 
     def add_and_lookup(self, key, lookup: str, value: Any):
         """

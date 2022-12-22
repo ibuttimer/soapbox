@@ -50,7 +50,7 @@ from opinions.queries import (
     opinion_is_pinned, content_status_check, followed_author_publications,
     review_content_by_status
 )
-from opinions.query_params import QuerySetParams
+from opinions.query_params import QuerySetParams, SearchType
 from opinions.reactions import (
     OPINION_REACTIONS, get_reaction_status, ReactionsList
 )
@@ -379,12 +379,22 @@ class OpinionSearch(OpinionList):
         """
         # build search term string from values that were set
 
-        # build search term string from used terms
-        search_term = ', '.join(query_set_params.search_terms)
+        if query_set_params.is_free_search:
+            search_term = query_params[SEARCH_QUERY].value
+        else:
+            # build search term string from used terms
+            search_term = ', '.join(query_set_params.search_terms)
+
+        # string of invalid terms
         invalid_terms = None if not query_set_params.invalid_terms else \
             ', '.join(query_set_params.invalid_terms)
 
-        if not invalid_terms:
+        if query_set_params.is_unknown_search:
+            if not search_term:
+                search_term = query_params[SEARCH_QUERY].value
+
+        if not invalid_terms and not query_set_params.is_free_search:
+            # remove valid terms to leave only invalid terms
             invalid_terms = query_params[SEARCH_QUERY].value
             for term in query_set_params.search_terms:
                 invalid_terms = invalid_terms.replace(term, '')

@@ -35,7 +35,7 @@ from opinions.constants import (
 )
 from opinions.enums import QueryStatus, Hidden, Pinned, ChoiceArg
 from opinions.models import Opinion, HideStatus, PinStatus
-from opinions.query_params import QuerySetParams, choice_arg_query
+from opinions.query_params import QuerySetParams, choice_arg_query, SearchType
 from opinions.search import (
     regex_matchers, TERM_GROUP, DATE_QUERY_YR_GROUP, DATE_QUERY_MTH_GROUP,
     DATE_QUERY_DAY_GROUP, MARKER_CHARS, DATE_QUERY_GROUP, regex_date_matchers,
@@ -209,11 +209,13 @@ def get_search_term(
             save_term_func(match.group(key_val_group))
 
     if query_set_params.is_empty and value:
-        if not any(
-                list(
-                    map(lambda x: x in value, MARKER_CHARS)
-                )
-        ):
+        query_set_params.search_type = SearchType.FREE if not any(
+            list(
+                map(lambda x: x in value, MARKER_CHARS)
+            )
+        ) else SearchType.UNKNOWN
+
+        if query_set_params.search_type == SearchType.FREE:
             # no delimiting chars, so search title & content for
             # any of the search terms
             to_query = [TITLE_QUERY, CONTENT_QUERY]
