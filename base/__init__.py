@@ -20,9 +20,8 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 
-from .views import get_landing, get_home
+from .views import get_landing
 
 __all__ = [
     'get_landing',
-    'get_home'
 ]

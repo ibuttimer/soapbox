@@ -38,12 +38,13 @@ Including another URLconf
 from django.urls import path
 
 from opinions.views.opinion_list import (
-    OpinionCategoryFeed, OpinionFollowedFeed
+    OpinionCategoryFeed, OpinionFollowedFeed, OpinionAllFeed
 )
 from soapbox import BASE_APP_NAME, val_test_url, val_test_route_name
 from .constants import (
     FOLLOWING_FEED_URL, FOLLOWING_FEED_ROUTE_NAME,
-    CATEGORY_FEED_URL, CATEGORY_FEED_ROUTE_NAME,
+    CATEGORY_FEED_URL, CATEGORY_FEED_ROUTE_NAME, ALL_FEED_URL,
+    ALL_FEED_ROUTE_NAME,
 )
 
 app_name = BASE_APP_NAME
@@ -60,4 +61,6 @@ urlpatterns = [
          name=FOLLOWING_FEED_ROUTE_NAME),
     path(CATEGORY_FEED_URL, OpinionCategoryFeed.as_view(),
          name=CATEGORY_FEED_ROUTE_NAME),
+    path(ALL_FEED_URL, OpinionAllFeed.as_view(),
+         name=ALL_FEED_ROUTE_NAME),
 ]

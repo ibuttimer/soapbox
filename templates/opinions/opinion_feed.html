@@ -62,6 +62,17 @@
                 <h3>Feeds</h3>
             </div>
             <div class="mb-2">
+                <a href="{% url 'base:all_feed' %}"
+                {% if is_all_feed %}
+                    class="btn btn-success btn__text"
+                {% else %}
+                   class="btn btn-outline-success btn__text"
+                {% endif %}
+                >
+                    {% trans "All" %}
+                </a>
+            </div>
+            <div class="mb-2">
                 <a href="{% url 'base:following_feed' %}"
                 {% if is_following_feed %}
                     class="btn btn-success btn__text"

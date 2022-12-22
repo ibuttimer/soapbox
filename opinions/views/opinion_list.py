@@ -38,7 +38,7 @@ from opinions.constants import (
     REVIEW_QUERY, IS_REVIEW_CTX, IS_FOLLOWING_FEED_CTX, IS_CATEGORY_FEED_CTX,
     FOLLOWED_CATEGORIES_CTX, CATEGORY_QUERY, ALL_CATEGORIES,
     NO_CONTENT_HELP_CTX, NO_CONTENT_MSG_CTX, USER_CTX, CATEGORY_CTX,
-    LIST_SUB_HEADING_CTX, MESSAGE_CTX
+    LIST_SUB_HEADING_CTX, MESSAGE_CTX, IS_ALL_FEED_CTX
 )
 from opinions.data_structures import OpinionData
 from opinions.enums import (
@@ -764,10 +764,9 @@ class OpinionFollowedFeed(OpinionFollowed):
         :param query_params: request query
         """
         super().set_extra_context(query_params, None)
-        self.extra_context.update({
-            IS_FOLLOWING_FEED_CTX: True,
-            IS_CATEGORY_FEED_CTX: False
-        })
+        self.extra_context.update(
+            feed_context(IS_FOLLOWING_FEED_CTX)
+        )
 
     def validate_queryset(self, query_params: dict[str, QueryArg]):
         """
@@ -791,6 +790,15 @@ class OpinionFollowedFeed(OpinionFollowed):
             self.render_no_content_help(context, "following_no_content.html")
 
         return context
+
+
+def feed_context(feed: str):
+    """ Get feed context entries """
+    return {
+        key: key == feed for key in [
+            IS_FOLLOWING_FEED_CTX, IS_CATEGORY_FEED_CTX, IS_ALL_FEED_CTX
+        ]
+    }
 
 
 class OpinionCategoryFeed(OpinionList):
@@ -877,9 +885,10 @@ class OpinionCategoryFeed(OpinionList):
             cat_obj(category.name) for category in self.user.categories.all()
         ])
 
+        self.extra_context.update(
+            feed_context(IS_CATEGORY_FEED_CTX)
+        )
         self.extra_context.update({
-            IS_FOLLOWING_FEED_CTX: False,
-            IS_CATEGORY_FEED_CTX: True,
             FOLLOWED_CATEGORIES_CTX: categories,
         })
 
@@ -913,3 +922,52 @@ class OpinionCategoryFeed(OpinionList):
                     context, template, template_ctx=template_ctx)
 
         return context
+
+
+class OpinionAllFeed(OpinionList):
+    """
+    Followed author opinion feed response
+    """
+
+    def select_template(self, query_params: dict[str, QueryArg]):
+        """
+        Select the template for the response
+        :param query_params: request query
+        """
+        reorder_query = self.is_reorder(query_params)
+        self.response_template = ListTemplate.CONTENT_TEMPLATE \
+            if reorder_query else ListTemplate.FEED_TEMPLATE
+
+        # inherited from TemplateResponseMixin via ListView
+        self.template_name = self.response_template.value
+
+    def get_title_heading(self, query_params: dict[str, QueryArg]) -> dict:
+        """
+        Get the title and page heading for context
+        :param query_params: request query
+        """
+        return {
+            TITLE_CTX: "All Feed",
+            LIST_HEADING_CTX: "All Feed",
+        }
+
+    def set_extra_context(self, query_params: dict[str, QueryArg],
+                          query_set_params: QuerySetParams):
+        """
+        Set the context extra content to be added to context
+        :param query_set_params:
+        :param query_params: request query
+        """
+        super().set_extra_context(query_params, None)
+        self.extra_context.update(
+            feed_context(IS_ALL_FEED_CTX)
+        )
+
+    def validate_queryset(self, query_params: dict[str, QueryArg]):
+        """
+        Validate the query params to get the list of items for this view.
+        (Subclasses may validate and modify the query params by overriding
+         this function)
+        :param query_params: request query
+        """
+        self.query_type = QueryType.ALL_OPINIONS

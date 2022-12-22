@@ -225,6 +225,7 @@ TAGGED_COUNT_CTX = "tagged_count"
 # templates/opinions/opinion_feed.html
 IS_FOLLOWING_FEED_CTX = "is_following_feed"
 IS_CATEGORY_FEED_CTX = "is_category_feed"
+IS_ALL_FEED_CTX = "is_all_feed"
 FOLLOWED_CATEGORIES_CTX = "followed_categories"
 CATEGORY_CTX = 'category'
 

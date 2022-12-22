@@ -25,6 +25,8 @@ from utils import append_slash
 # Base routes related
 FOLLOWING_FEED_URL = append_slash("following")
 CATEGORY_FEED_URL = append_slash("category")
+ALL_FEED_URL = append_slash("all")
 
 FOLLOWING_FEED_ROUTE_NAME = "following_feed"
 CATEGORY_FEED_ROUTE_NAME = "category_feed"
+ALL_FEED_ROUTE_NAME = "all_feed"
