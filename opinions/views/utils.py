@@ -32,11 +32,16 @@ from django.http import HttpRequest, JsonResponse
 from django.template.defaultfilters import truncatechars
 from django.template.loader import render_to_string
 from bs4 import BeautifulSoup
-from django.urls import ResolverMatch, resolve, Resolver404
+from django.urls import ResolverMatch
 
 from opinions.queries import is_following
 from soapbox import OPINIONS_APP_NAME
-from utils import Crud, app_template_path, permission_check, find_index
+from soapbox.constants import (
+    OPINION_MENU_CTX, COMMENT_MENU_CTX, MODERATOR_MENU_CTX
+)
+from utils import (
+    Crud, app_template_path, permission_check, find_index, resolve_req
+)
 from categories import (
     STATUS_DRAFT, STATUS_PUBLISHED, CATEGORY_UNASSIGNED
 )
@@ -55,7 +60,8 @@ from opinions.constants import (
     UNDER_REVIEW_OPINION_CONTENT, UNDER_REVIEW_COMMENT_CTX,
     UNDER_REVIEW_OPINION_CTX, FILTER_QUERY, REVIEW_QUERY, HTML_CTX, TITLE_CTX,
     REVIEW_FORM_CTX, IS_REVIEW_CTX, REVIEW_BUTTON_CTX, REVIEW_BUTTON_TIPS_CTX,
-    COMMENT_FORM_CTX, REFERENCE_QUERY
+    COMMENT_FORM_CTX, REFERENCE_QUERY, OPINION_IN_REVIEW_ROUTE_NAME,
+    COMMENT_IN_REVIEW_ROUTE_NAME, MODE_QUERY, SINGLE_CONTENT_ROUTE_NAMES
 )
 from opinions.enums import (
     ChoiceArg, QueryArg, QueryStatus, ReactionStatus, OpinionSortOrder,
@@ -486,6 +492,44 @@ def opinion_permissions(request: HttpRequest, context: dict = None) -> dict:
     return context
 
 
+MODERATOR_MENU_ROUTES = [
+    OPINION_IN_REVIEW_ROUTE_NAME, COMMENT_IN_REVIEW_ROUTE_NAME
+]
+
+
+def _is_moderator_review(request: HttpRequest, route: str):
+    """ Check for moderator viewing opinion/comment in review mode """
+    return route in SINGLE_CONTENT_ROUTE_NAMES and \
+        request.GET.get(MODE_QUERY, None) == ViewMode.REVIEW.arg
+
+
+def _is_moderator_menu(request: HttpRequest, route: str):
+    """ Check if route is a moderator menu route """
+    # in review routes follow route prefix convention
+    mod_menu = route in MODERATOR_MENU_ROUTES
+    if mod_menu:
+        # but with an author query they're in opinion/comment menu
+        mod_menu = AUTHOR_QUERY not in request.GET
+    else:
+        # check moderator viewing opinion/comment in review mode
+        mod_menu = _is_moderator_review(request, route)
+    return mod_menu
+
+
+def _is_content_menu(request: HttpRequest, route: str, prefix: str):
+    """ Check if route is a content menu route """
+    # exception to route prefix convention determining menu:
+    # - in review routes are in moderator menu, but with an author query
+    #   they're in opinion/comment menu
+    # - moderator viewing opinion/comment in review mode
+    content_menu = \
+        route.startswith(prefix) and not _is_moderator_menu(request, route)
+    if content_menu:
+        # check moderator viewing opinion/comment in review mode
+        content_menu = not _is_moderator_review(request, route)
+    return content_menu
+
+
 def add_opinion_context(request: HttpRequest, context: dict = None) -> dict:
     """
     Add opinion-specific context entries
@@ -495,6 +539,18 @@ def add_opinion_context(request: HttpRequest, context: dict = None) -> dict:
     """
     if context is None:
         context = {}
+    called_by = resolve_req(request)
+    if called_by:
+        for ctx, check_func in [
+            (MODERATOR_MENU_CTX,
+             lambda name: _is_moderator_menu(request, name)),
+            (OPINION_MENU_CTX,
+             lambda name: _is_content_menu(request, name, 'opinion')),
+            (COMMENT_MENU_CTX,
+             lambda name: _is_content_menu(request, name, 'comment')),
+        ]:
+            context[ctx] = check_func(called_by.url_name)
+
     opinion_model_name = Opinion.model_name().lower()
     context.update({
         f'{opinion_model_name}_follow': is_following(request.user).exists()
@@ -697,12 +753,4 @@ def resolve_ref(request: HttpRequest) -> Optional[ResolverMatch]:
     :param request: http request
     :return: resolver match or None
     """
-    match = None
-    if REFERENCE_QUERY in request.GET:
-        ref = request.GET[REFERENCE_QUERY].lower()
-        try:
-            match = resolve(ref)
-        except Resolver404:
-            pass    # unable to resolve
-
-    return match
+    return resolve_req(request, query=REFERENCE_QUERY)

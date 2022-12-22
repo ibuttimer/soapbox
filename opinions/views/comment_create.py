@@ -34,10 +34,11 @@ from django.views import View
 from categories import STATUS_PUBLISHED
 from categories.models import Status
 from opinions.constants import (
-    HTML_CTX, COMMENT_OFFSET_CTX, PK_PARAM_NAME, REFERENCE_QUERY,
-    COMMENT_ID_ROUTE_NAME, OPINION_ID_ROUTE_NAME, COMMENTS_ROUTE_NAME
+    HTML_CTX, COMMENT_OFFSET_CTX, REFERENCE_QUERY,
+    OPINION_ID_ROUTE_NAME, COMMENTS_ROUTE_NAME, SINGLE_COMMENT_ROUTE_NAMES
 )
 from opinions.contexts.comment import get_comment_bundle_context
+from opinions.views.comment_queries import get_query_from_route
 from soapbox import (
     OPINIONS_APP_NAME
 )
@@ -145,10 +146,8 @@ def get_comment_offset(
             OPINION_ID_ROUTE_NAME, COMMENTS_ROUTE_NAME
         ]:
             pass
-        elif called_by.url_name == COMMENT_ID_ROUTE_NAME:
-            get_param = {
-                Comment.id_field(): called_by.kwargs.get(PK_PARAM_NAME)
-            }
+        elif called_by.url_name in SINGLE_COMMENT_ROUTE_NAMES:
+            get_param, _ = get_query_from_route(request, called_by=called_by)
             view_comment = get_object_or_404(Comment, **get_param)
             comment_offset = view_comment.level + 1
 

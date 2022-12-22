@@ -25,7 +25,7 @@ from .misc import (
     random_string_generator, is_boolean_true, Crud, permission_name,
     permission_check, ensure_list, find_index
 )
-from .views import redirect_on_success_or_render
+from .views import redirect_on_success_or_render, resolve_req
 from .forms import update_field_widgets, error_messages, ErrorMsgs
 from .file import find_parent_of_folder
 from .models import (
@@ -49,6 +49,7 @@ __all__ = [
     'find_index',
 
     'redirect_on_success_or_render',
+    'resolve_req',
 
     'update_field_widgets',
     'error_messages',

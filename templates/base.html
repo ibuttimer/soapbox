@@ -79,15 +79,23 @@
                 <div class="collapse navbar-collapse" id="navbarToggler">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            {# TODO active page highlight #}
-                            <a class="nav-link active" aria-current="page" href="{% url 'home' %}">Home</a>
+                            <a {% if home_menu %}
+                                class="nav-link active" aria-current="page"
+                               {% else %}
+                                class="nav-link"
+                               {% endif %}
+                               href="{% url 'home' %}">Home</a>
                         </li>
                         {% if user.is_authenticated %}
                             {# --- opinion menu --- #}
                             <li class="nav-item dropdown">
                                 <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
                                    {% if opinion_create or opinion_read %}
+                                       {% if opinion_menu %}
+                                        class="nav-link dropdown-toggle active" aria-current="page"
+                                       {% else %}
                                         class="nav-link dropdown-toggle"
+                                       {% endif %}
                                     {% else %}
                                         class="nav-link dropdown-toggle disabled"
                                    {% endif %}
@@ -135,7 +143,11 @@
                             <li class="nav-item dropdown">
                                 <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
                                    {% if comment_read %}
+                                       {% if comment_menu %}
+                                        class="nav-link dropdown-toggle active" aria-current="page"
+                                       {% else %}
                                         class="nav-link dropdown-toggle"
+                                       {% endif %}
                                     {% else %}
                                         class="nav-link dropdown-toggle disabled"
                                    {% endif %}
@@ -162,7 +174,11 @@
                                 <li class="nav-item dropdown">
                                     <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
                                        {% if comment_read %}
-                                       class="nav-link dropdown-toggle"
+                                           {% if moderator_menu %}
+                                            class="nav-link dropdown-toggle active" aria-current="page"
+                                           {% else %}
+                                            class="nav-link dropdown-toggle"
+                                           {% endif %}
                                        {% else %}
                                        class="nav-link dropdown-toggle disabled"
                                        {% endif %}
@@ -196,7 +212,12 @@
                         {% endif %}
                         {# --- help --- #}
                         <li class="nav-item">
-                            <a class="nav-link active" aria-current="page" href="{% url 'help' %}">Help</a>
+                            <a {% if help_menu %}
+                                class="nav-link active" aria-current="page"
+                               {% else %}
+                                class="nav-link"
+                               {% endif %}
+                               href="{% url 'help' %}">Help</a>
                         </li>
                     </ul>
                     <form class="d-flex" role="search" method="get" action="{% url 'opinions:opinion_search' %}">
@@ -206,7 +227,12 @@
                     <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                         {% if user.is_authenticated %}
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <a {% if user_menu %}
+                                   class="nav-link dropdown-toggle active" aria-current="page"
+                                   {% else %}
+                                   class="nav-link dropdown-toggle"
+                                   {% endif %}
+                                   href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     {% if is_super %}
                                         <i class="fa-solid fa-user-ninja"></i>
                                     {% elif is_moderator %}
@@ -233,10 +259,20 @@
                             </li>
                         {% else %}
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'account_signup' %}">Register</a>
+                                <a {% if register_menu %}
+                                    class="nav-link active" aria-current="page"
+                                   {% else %}
+                                    class="nav-link"
+                                   {% endif %}
+                                   href="{% url 'account_signup' %}">Register</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'account_login' %}">Sign In</a>
+                                <a {% if sign_in_menu %}
+                                    class="nav-link active" aria-current="page"
+                                   {% else %}
+                                    class="nav-link"
+                                   {% endif %}
+                                   href="{% url 'account_login' %}">Sign In</a>
                             </li>
                         {% endif %}
                     </ul>

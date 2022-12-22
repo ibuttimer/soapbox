@@ -462,7 +462,7 @@ class OpinionDetailPreviewById(OpinionDetail):
 
     def url(self, opinion_obj: Opinion) -> str:
         """
-        Get url for opinion view/update
+        Get url for opinion preview
         :param opinion_obj: opinion
         :return: url
         """

@@ -19,6 +19,7 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
+import re
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
@@ -30,9 +31,17 @@ from soapbox import (
     USER_APP_NAME, HOME_ROUTE_NAME, IMAGE_FILE_TYPES, AVATAR_BLANK_URL,
     DEVELOPMENT, DEV_IMAGE_FILE_TYPES
 )
-from utils import app_template_path, redirect_on_success_or_render
+from soapbox.constants import (
+    USER_MENU_CTX, IS_SUPER_CTX, IS_MODERATOR_CTX, IS_AUTHOR_CTX,
+    SIGN_IN_MENU_CTX, REGISTER_MENU_CTX, LOGIN_ROUTE_NAME,
+    REGISTER_ROUTE_NAME, ACCOUNTS_URL
+)
+from utils import app_template_path, redirect_on_success_or_render, resolve_req
+from . import USER_ID_ROUTE_NAME
+from .constants import USER_USERNAME_ROUTE_NAME
 from .forms import UserForm
 from .models import User
+from .queries import is_moderator, is_author, get_social_providers
 
 
 # https://docs.djangoproject.com/en/4.1/topics/auth/default/#the-loginrequired-mixin
@@ -223,3 +232,50 @@ class UserDetailByUsername(UserDetail):
         :return: http response
         """
         return super().post(request, name, *args, **kwargs)
+
+
+# regex to match socials; e.g. '/accounts/twitter/login/'
+SOCIAL_REGEX = re.compile(
+    rf'^/{ACCOUNTS_URL}(.*)/login/', re.IGNORECASE)
+
+
+def _sign_in_route_check(request: HttpRequest, route: str):
+    """ Check if sign in route """
+    sign_in = route == LOGIN_ROUTE_NAME
+    if not sign_in:
+        # check socials
+        match = SOCIAL_REGEX.match(request.path)
+        if match:
+            sign_in = match.group(1) in get_social_providers()
+
+    return sign_in
+
+
+def add_user_context(request: HttpRequest, context: dict = None) -> dict:
+    """
+    Add base-specific context entries
+    :param request: current request
+    :param context: context to update; default None
+    :return: updated context
+    """
+    if context is None:
+        context = {}
+    called_by = resolve_req(request)
+    if called_by:
+        for ctx, check_func in [
+            (USER_MENU_CTX, lambda name: name in [
+                USER_ID_ROUTE_NAME, USER_USERNAME_ROUTE_NAME
+            ]),
+            (SIGN_IN_MENU_CTX,
+             lambda name: _sign_in_route_check(request, name)),
+            (REGISTER_MENU_CTX, lambda name: name == REGISTER_ROUTE_NAME),
+        ]:
+            context[ctx] = check_func(called_by.url_name)
+
+    context.update({
+        IS_SUPER_CTX: request.user.is_superuser,
+        IS_MODERATOR_CTX: is_moderator(request.user),
+        IS_AUTHOR_CTX: is_author(request.user),
+    })
+
+    return context

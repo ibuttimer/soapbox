@@ -421,12 +421,11 @@ class ContentTestBase(BaseUserTest):
 
     @classmethod
     def is_comment_deleted(cls, pk: int):
-        deleted = not Comment.objects.filter(**{
+        params = {
             f'{Comment.id_field()}': pk
-        }).exists()
+        }
+        deleted = not Comment.objects.filter(**params).exists()
         if not deleted:
-            comment = Comment.objects.get(**{
-                f'{Comment.id_field()}': pk
-            })
+            comment = Comment.objects.get(**params)
             deleted = comment.status.name == STATUS_DELETED
         return deleted

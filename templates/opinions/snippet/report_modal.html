@@ -15,7 +15,7 @@
                 <h5 class="modal-title" id="id--report-modal-heading">Report opinion</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="post" action="{% url 'opinions:report_opinion_id' opinion.id %}"
+            <form method="post" action="{% url 'opinions:opinion_id_report' opinion.id %}"
                   id="id--report-modal-form">
                 {# form action defaults to report opinion, but it is overridden by content of 'id--report-submit-url' #}
                 {# which is set by the click handlers on reaction buttons #}

@@ -165,7 +165,7 @@
         </div>
     {% endif %}
 
-    {% url 'opinions:review_decision_comment_id' comment.id as action %}
+    {% url 'opinions:comment_id_review_decision' comment.id as action %}
     {% with action_url=action %}
         {% include "opinions/snippet/review_form.html" %}
     {% endwith %}
@@ -181,7 +181,7 @@
          * :param new_status: new status, one of 'publish', 'preview' or 'draft'
          */
         function updateStatus(new_status) {
-            // TODO {# updateStatusPatch("{% url 'opinions:status_opinion_id' opinion.id %}", new_status); #}
+            // TODO {# updateStatusPatch("{% url 'opinions:opinion_id_status' opinion.id %}", new_status); #}
         }
 
     </script>
@@ -193,7 +193,7 @@
             *                    'under-review', 'unacceptable' or 'acceptable'
             */
             function updateReviewStatus(new_status) {
-                updateStatusPatch("{% url 'opinions:review_status_comment_id' comment.id %}", new_status);
+                updateStatusPatch("{% url 'opinions:comment_id_review_status' comment.id %}", new_status);
             }
         </script>
     {% endif %}

@@ -25,10 +25,14 @@ from collections import namedtuple
 
 from django.http import HttpRequest
 
-from user.queries import is_moderator, is_author
+from base.views import add_base_context
 from opinions.views.utils import opinion_permissions, add_opinion_context
 from categories.views import category_permissions
-from .constants import COPYRIGHT_YEAR, COPYRIGHT, VAL_TEST_PATH_PREFIX
+from user.views import add_user_context
+from .constants import (
+    COPYRIGHT_YEAR, COPYRIGHT, VAL_TEST_PATH_PREFIX, IS_DEVELOPMENT_CTX,
+    IS_TEST_CTX
+)
 from .settings import DEVELOPMENT, TEST, GOOGLE_SITE_VERIFICATION
 
 Social = namedtuple("Social", ["name", "icon", "url"])
@@ -51,17 +55,16 @@ def footer_context(request: HttpRequest) -> dict:
             Social("Instagram", "fa-brands fa-square-instagram",
                    "https://instagram.com"),
         ],
-        "is_super": request.user.is_superuser,
-        "is_moderator": is_moderator(request.user),
-        "is_author": is_author(request.user),
-        "is_development": DEVELOPMENT,
-        "is_test": TEST,
+        IS_DEVELOPMENT_CTX: DEVELOPMENT,
+        IS_TEST_CTX: TEST,
         "google_site_verification": GOOGLE_SITE_VERIFICATION
     }
     # add content permissions; key `<model_name>_<crud_op>` with boolean value
     opinion_permissions(request, context=context)
     category_permissions(request, context=context)
     # add general context updates
+    add_base_context(request, context=context)
+    add_user_context(request, context=context)
     add_opinion_context(request, context=context)
     return context
 

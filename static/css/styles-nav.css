@@ -17,6 +17,10 @@
     border-radius: 5px;
 }
 
+.active {
+    border-bottom: solid 1px var(--paradise-pink);
+}
+
 /* user icon */
 .div__user-icon {
     width: var(--user-icon-width);

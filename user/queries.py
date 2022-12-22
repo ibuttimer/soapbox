@@ -20,6 +20,10 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
+from typing import List
+
+from allauth.socialaccount.models import SocialApp
+
 from .constants import MODERATOR_GROUP, AUTHOR_GROUP
 from .models import User
 
@@ -42,3 +46,8 @@ def is_author(user: User) -> bool:
     """
     return user.groups.filter(name=AUTHOR_GROUP).exists() \
         if user else False
+
+
+def get_social_providers() -> List[str]:
+    """ Get a list of the social login providers """
+    return SocialApp.objects.values_list('provider', flat=True)

@@ -1,4 +1,3 @@
-
 #  MIT License
 #
 #  Copyright (c) 2022 Ian Buttimer
@@ -21,9 +20,11 @@
 #  FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
+from typing import Optional
 
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render, redirect
+from django.urls import ResolverMatch, resolve, Resolver404
 
 
 def redirect_on_success_or_render(request: HttpRequest, success: bool,
@@ -51,3 +52,27 @@ def redirect_on_success_or_render(request: HttpRequest, success: bool,
         # render template
         response = render(request, template_path, context=context)
     return response
+
+
+def resolve_req(
+        request: HttpRequest, query: str = None) -> Optional[ResolverMatch]:
+    """
+    Resolve a request, or a request query parameter
+    :param request: http request
+    :param query: optional query parameter to resolve
+    :return: resolver match or None
+    """
+    match = None
+    path = None
+    if query and query in request.GET:
+        path = request.GET[query].lower()
+    else:
+        path = request.path
+
+    if path:
+        try:
+            match = resolve(path)
+        except Resolver404:
+            pass    # unable to resolve
+
+    return match

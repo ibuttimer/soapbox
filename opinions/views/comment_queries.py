@@ -21,10 +21,12 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional, Tuple
 from zoneinfo import ZoneInfo
 
 from django.db.models import Q, QuerySet
+from django.http import HttpRequest
+from django.urls import ResolverMatch
 
 from categories.models import Status
 from opinions.views.opinion_queries import NON_LOOKUP_ARGS
@@ -33,7 +35,8 @@ from opinions.constants import (
     STATUS_QUERY, CONTENT_QUERY, CATEGORY_QUERY, AUTHOR_QUERY,
     ON_OR_AFTER_QUERY, ON_OR_BEFORE_QUERY, AFTER_QUERY, BEFORE_QUERY,
     EQUAL_QUERY, SEARCH_QUERY, OPINION_ID_QUERY, PARENT_ID_QUERY, HIDDEN_QUERY,
-    ID_QUERY
+    ID_QUERY, SINGLE_COMMENT_ROUTE_NAMES, PK_PARAM_NAME, COMMENT_ID_ROUTE_NAME,
+    SLUG_PARAM_NAME
 )
 from opinions.models import Opinion, Comment
 from opinions.query_params import QuerySetParams, choice_arg_query
@@ -44,7 +47,7 @@ from opinions.search import (
 )
 from opinions.views.utils import (
     NON_REORDER_COMMENT_LIST_QUERY_ARGS, DATE_QUERIES,
-    COMMENT_APPLIED_DEFAULTS_QUERY_ARGS
+    COMMENT_APPLIED_DEFAULTS_QUERY_ARGS, resolve_ref
 )
 from opinions.enums import QueryArg, QueryStatus
 
@@ -235,3 +238,28 @@ def get_comment_queryset(
                                query_set_params=query_set_params)
 
     return query_set_params.apply(Comment.objects)
+
+
+def get_query_from_route(
+    request: HttpRequest, called_by:  ResolverMatch = None
+) -> Tuple[Optional[dict], Optional[str]]:
+    """
+    Get the model query to retrieve the comment specified by the request.
+    :param request: http request
+    :param called_by: resolver match: default None
+    :return: tuple of query param or None, and route name
+    """
+    get_param = None
+    route = None
+    if not called_by:
+        called_by = resolve_ref(request)
+    if called_by:
+        route = called_by.url_name
+        if route in SINGLE_COMMENT_ROUTE_NAMES:
+            get_param = {
+                Comment.id_field(): called_by.kwargs.get(PK_PARAM_NAME)
+            } if route == COMMENT_ID_ROUTE_NAME else {
+                Comment.SLUG_FIELD: called_by.kwargs.get(SLUG_PARAM_NAME)
+            }
+
+    return get_param, route

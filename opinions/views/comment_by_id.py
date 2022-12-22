@@ -44,8 +44,8 @@ from opinions.constants import (
     TEMPLATE_COMMENT_REACTIONS, COMMENT_ID_ROUTE_NAME,
     COMMENT_SLUG_ROUTE_NAME, OPINION_CTX, COMMENT_FORM_CTX, REPORT_FORM_CTX,
     ELEMENT_ID_CTX, HTML_CTX, REFERENCE_QUERY, COMMENTS_ROUTE_NAME,
-    COMMENT_DATA_CTX, CONTENT_STATUS_CTX, OPINION_ID_ROUTE_NAME,
-    OPINION_SLUG_ROUTE_NAME, MODE_QUERY, READ_ONLY_CTX, IS_ASSIGNED_CTX,
+    COMMENT_DATA_CTX, CONTENT_STATUS_CTX, SINGLE_CONTENT_ROUTE_NAMES,
+    MODE_QUERY, READ_ONLY_CTX, IS_ASSIGNED_CTX,
     REVIEW_RECORD_CTX, STATUS_BG_CTX, IS_PREVIEW_CTX, IS_REVIEW_CTX,
     OPINION_CONTENT_STATUS_CTX, SUBMIT_URL_CTX, COMMENT_OFFSET_CTX
 )
@@ -293,10 +293,7 @@ class CommentDetail(LoginRequiredMixin, View):
                 COMMENTS_ROUTE_NAME
             ]:
                 template = CommentTemplate.COMMENT_LIST_TEMPLATE
-            elif called_by.url_name in [
-                OPINION_ID_ROUTE_NAME, OPINION_SLUG_ROUTE_NAME,
-                COMMENT_ID_ROUTE_NAME
-            ]:
+            elif called_by.url_name in SINGLE_CONTENT_ROUTE_NAMES:
                 template = CommentTemplate.BUNDLE_TEMPLATE
             else:
                 raise ValueError(
@@ -304,7 +301,9 @@ class CommentDetail(LoginRequiredMixin, View):
                     f'{request.GET[REFERENCE_QUERY]}')
 
         comment_obj.content = ""
-        comment_obj.status = Status.objects.get(name=STATUS_DELETED)
+        comment_obj.status = Status.objects.get(**{
+            f'{Status.NAME_FIELD}': STATUS_DELETED
+        })
         comment_obj.save()
 
         return get_render_comment_response(

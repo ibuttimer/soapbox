@@ -22,9 +22,12 @@
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render, redirect
 
-from base.constants import FOLLOWING_FEED_ROUTE_NAME
+from base.constants import FOLLOWING_FEED_ROUTE_NAME, CATEGORY_FEED_ROUTE_NAME
 from soapbox import BASE_APP_NAME
-from utils import app_template_path, namespaced_url
+from soapbox.constants import (
+    HOME_MENU_CTX, HELP_MENU_CTX, HELP_ROUTE_NAME, HOME_ROUTE_NAME
+)
+from utils import app_template_path, namespaced_url, resolve_req
 
 
 def get_landing(request: HttpRequest) -> HttpResponse:
@@ -64,3 +67,26 @@ def get_help(request: HttpRequest) -> HttpResponse:
         request, app_template_path(BASE_APP_NAME, "help.html"),
         context=context
     )
+
+
+def add_base_context(request: HttpRequest, context: dict = None) -> dict:
+    """
+    Add base-specific context entries
+    :param request: current request
+    :param context: context to update; default None
+    :return: updated context
+    """
+    if context is None:
+        context = {}
+    called_by = resolve_req(request)
+    if called_by:
+        for ctx, routes in [
+            (HOME_MENU_CTX, [
+                HOME_ROUTE_NAME, FOLLOWING_FEED_ROUTE_NAME,
+                CATEGORY_FEED_ROUTE_NAME
+            ]),
+            (HELP_MENU_CTX, [HELP_ROUTE_NAME]),
+        ]:
+            context[ctx] = called_by.url_name in routes
+
+    return context

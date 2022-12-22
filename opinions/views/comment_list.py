@@ -37,16 +37,16 @@ from opinions.comment_data import (
     CommentData, get_comments_review_status
 )
 from opinions.views.comment_queries import (
-    get_comment_lookup, COMMENT_ALWAYS_FILTERS, COMMENT_FILTERS_ORDER
+    get_comment_lookup, COMMENT_ALWAYS_FILTERS, COMMENT_FILTERS_ORDER,
+    get_query_from_route
 )
 from opinions.constants import (
     STATUS_QUERY, AUTHOR_QUERY, SEARCH_QUERY, COMMENT_LIST_CTX,
     CONTENT_STATUS_CTX, REPEAT_SEARCH_TERM_CTX, LIST_HEADING_CTX,
     PAGE_HEADING_CTX, TITLE_CTX, HTML_CTX, TEMPLATE_COMMENT_REACTIONS,
     TEMPLATE_REACTION_CTRLS, REVIEW_QUERY, IS_REVIEW_CTX, COMMENT_OFFSET_CTX,
-    COMMENT_ID_ROUTE_NAME, COMMENT_SLUG_ROUTE_NAME,
-    OPINION_ID_ROUTE_NAME, REFERENCE_QUERY, PK_PARAM_NAME, SLUG_PARAM_NAME,
-    NO_CONTENT_MSG_CTX, NO_CONTENT_HELP_CTX, MESSAGE_CTX
+    OPINION_ID_ROUTE_NAME, REFERENCE_QUERY, NO_CONTENT_MSG_CTX,
+    NO_CONTENT_HELP_CTX, MESSAGE_CTX, SINGLE_COMMENT_ROUTE_NAMES
 )
 from opinions.contexts.comment import comments_list_context_for_opinion
 from opinions.enums import QueryArg, QueryStatus, CommentSortOrder, SortOrder
@@ -532,14 +532,8 @@ def opinion_comments(request: HttpRequest) -> HttpResponse:
     if called_by:
         if called_by.url_name == OPINION_ID_ROUTE_NAME:
             pass
-        elif called_by.url_name in [
-            COMMENT_ID_ROUTE_NAME, COMMENT_SLUG_ROUTE_NAME
-        ]:
-            get_param = {
-                Comment.id_field(): called_by.kwargs.get(PK_PARAM_NAME)
-            } if called_by.url_name == COMMENT_ID_ROUTE_NAME else {
-                Comment.SLUG_FIELD: called_by.kwargs.get(SLUG_PARAM_NAME)
-            }
+        elif called_by.url_name in SINGLE_COMMENT_ROUTE_NAMES:
+            get_param, _ = get_query_from_route(request, called_by=called_by)
             parent = get_object_or_404(Comment, **get_param)
             comment_offset = parent.level + 1
         else:

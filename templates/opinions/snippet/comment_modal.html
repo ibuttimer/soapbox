@@ -15,7 +15,7 @@
                 <h5 class="modal-title" id="id--comment-modal-heading">Add comment</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="post" action="{% url 'opinions:comment_opinion_id' opinion.id %}"
+            <form method="post" action="{% url 'opinions:opinion_id_comment' opinion.id %}"
                   id="id--comment-modal-form">
                 {# form action defaults to comment on opinion, but it is overridden by content of 'id--comment-submit-url' #}
                 {# which is set by the click handlers on reaction buttons #}
