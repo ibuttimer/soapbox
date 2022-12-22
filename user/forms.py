@@ -33,6 +33,7 @@ from categories.models import Category
 from soapbox import (
     IMAGE_FILE_TYPES, DEVELOPMENT, DEV_IMAGE_FILE_TYPES, MIN_PASSWORD_LEN
 )
+from soapbox.settings import SUMMERNOTE_CONFIG
 from utils import update_field_widgets, error_messages, ErrorMsgs
 from .models import User
 from .constants import (
@@ -167,7 +168,8 @@ class UserForm(forms.ModelForm):
                 "placeholder": _("E-mail address"),
                 "autocomplete": "email",
             }
-        )
+        ),
+        required=False
     )
 
     bio = SummernoteTextField(blank=False)
@@ -218,8 +220,12 @@ class UserForm(forms.ModelForm):
             *[ErrorMsgs(field, max_length=True)
               for field in (FIRST_NAME, LAST_NAME)]
         )
+
+        summernote_attr = SUMMERNOTE_CONFIG.copy()
+        summernote_attr['summernote']['height'] = '240'
+
         widgets = {
-            BIO: SummernoteWidget(),
+            BIO: SummernoteWidget(attrs=summernote_attr),
         }
 
     def __init__(self, *args, **kwargs):

@@ -62,7 +62,7 @@
                 <h3>Feeds</h3>
             </div>
             <div class="mb-2">
-                <a href="{% url 'base:all_feed' %}"
+                <a href="{% url 'base:all_feed' %}" aria-label="display all opinion feed"
                 {% if is_all_feed %}
                     class="btn btn-success btn__text"
                 {% else %}
@@ -73,7 +73,7 @@
                 </a>
             </div>
             <div class="mb-2">
-                <a href="{% url 'base:following_feed' %}"
+                <a href="{% url 'base:following_feed' %}" aria-label="display following author opinion feed"
                 {% if is_following_feed %}
                     class="btn btn-success btn__text"
                 {% else %}
@@ -84,7 +84,7 @@
                 </a>
             </div>
             <div class="mb-2">
-                <a href="{% url 'base:category_feed' %}"
+                <a href="{% url 'base:category_feed' %}" aria-label="display category opinion feed"
                {% if is_category_feed %}
                    class="btn btn-success btn__text"
                {% else %}
