@@ -238,8 +238,6 @@ Testing undertaken:
 | View content unacceptable content                 | Moderator group members can view content which a review has deemed to be unacceptable                                                                                     | From moderator menu click `Moderate -> Opinion Review Unacceptable` or `Moderate -> Comment Review Unacceptable`, click the `Read`/`Review` icon on the opinion/comment card to open the content page                                                                              | Opinion/comment review       | ![pass](https://badgen.net/badge/checks/Pass/green) |
 | Search                                            | A user can perform opinion searches using the search terms listed on the `Help` page from the search box in the navbar                                                    | Enter search terms in the search box an click the `Search` button                                                                                                                                                                                                                  | Opinion search               | ![pass](https://badgen.net/badge/checks/Pass/green) |
 
-Test coverage:
-| Framework
 
 ## Responsiveness Testing
 Responsiveness testing was done using Google Chrome Developer Tools Device Mode.
@@ -363,5 +361,8 @@ Issues were logged in [GitHub Issues](https://github.com/ibuttimer/soapbox/issue
 
 [Bug list](https://github.com/ibuttimer/soapbox/labels/bug)
 
-| Issue                                                           | Description                                      |
-|-----------------------------------------------------------------|--------------------------------------------------|
+The list of open bugs at the end of the project is:
+
+| Title                                                                                                               | Labels  | Description                                                                                      |
+|---------------------------------------------------------------------------------------------------------------------|---------|--------------------------------------------------------------------------------------------------|
+| [Bug: Search by status return other users' pre-publication content](https://github.com/ibuttimer/soapbox/issues/79) | `bug`   | Search by status should not return results containing pre-publication content from other users.  |
