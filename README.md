@@ -1,3 +1,21 @@
+- [SoapBox](#soapbox)
+  - [Features](#features)
+    - [Existing Features](#existing-features)
+    - [User registration and authentication](#user-registration-and-authentication)
+    - [User roles](#user-roles)
+    - [User notifications](#user-notifications)
+    - [Content CRUD](#content-crud)
+    - [Content interaction](#content-interaction)
+    - [Content search](#content-search)
+    - [Opinion feeds](#opinion-feeds)
+    - [Moderate](#moderate)
+    - [Future enhancements](#future-enhancements)
+  - [Design](#design)
+  - [Development and Local Deployment](#development-and-local-deployment)
+  - [Cloud-based Deployment](#cloud-based-deployment)
+  - [Test](#test)
+  - [Credits](#credits)
+
 # SoapBox
 
 In the tradition of soapbox orators at Speakers' Corner in Hyde Park in London, 
@@ -8,14 +26,6 @@ The site is aimed at people seeking a platform in which to express opinions and 
 
 ###### Fig 1: Responsive Mockup
 ![Responsive Mockup](doc/media/responsive.png)
-
-Section links
-- [Features](#features)
-- [Design](#design)
-- [Development](#development-and-local-deployment)
-- [Test](#test)
-- [Cloud-based Deployment](#cloud-based-deployment)
-- [Credits](#credits)
 
 ## Features 
 
@@ -69,7 +79,7 @@ All users may view opinions and their associated comments.
 Authors may edit their opinions and comments.
 #### Content delete
 Authors may delete their opinions, resulting in the opinion and associated comments being deleted.
-Comment's may be pseudo deleted, i.e. the comment will be marked as deleted and it's contents deleted the content. A comment placeholder will remain to ensure the comment tree structure.
+Comment's may be pseudo deleted, i.e. the comment will be marked as deleted and it's contents deleted. A comment placeholder will remain to ensure the comment tree structure.
 
 ###### Fig 5: Content CRUD
 |                  Create opinion                   |                      Create comment                       |
@@ -270,7 +280,7 @@ and a Google app is needed to obtain a key and secret through the [Google Develo
 * Select `Web App, Automated App or Bot` for `Type of App`
 * Under `App info`, set
   * `Callback URI / Redirect URL` to `http://127.0.0.1:8000/accounts/twitter/login/callback/`
-  * `Website URL` to the Heroku app URL, e.g. [https://soapbox-opinions.herokuapp.com/](https://soapbox-opinions.herokuapp.com//)
+  * `Website URL` to the Heroku app URL, e.g. [https://soapbox-opinions.herokuapp.com/](https://soapbox-opinions.herokuapp.com/)
   * `Organization name` to `SoapBox`
 * Select `Save`, and copy the OAuth 2.0 Client ID and Client Secret displayed, and store securely.
 * Select `Done`
@@ -298,7 +308,7 @@ $ npm run build
 ````
 
 #### Configure authentication
-From [Configure authentication](https://django-allauth.readthedocs.io/en/latest/installation.html#post-installation)
+From [django-allauth Post-Installation](https://django-allauth.readthedocs.io/en/latest/installation.html#post-installation)
 - Add a Site for your domain in the database
   - Login to `http://&lt;domain&gt;/admin/sites/site/` as the previously created superuser, e.g. http://127.0.0.1:8000/admin/sites/site/ 
   - Add a Site for your domain (django.contrib.sites app).
@@ -337,8 +347,8 @@ The application structure is as follows:
 
 ```
 ├─ README.md            - this file
-├─ agile                - project management
 ├─ doc                  - documentation
+│  ├─ agile             - project management
 │  ├─ design            - design related documentation
 │  └─ test              - test reports
 ├─ manage.py            - application entry point
@@ -455,7 +465,7 @@ If any other settings vary from the defaults outlined in [Table 1: Configuration
 
     Involves the same procedure as outlined in [Initialise the database](#initialise-the-database) and [Create a superuser](#create-a-superuser)
     but may be run from the local machine. 
-    - From a [Development/Local Deployment](#developmentlocal-deployment) 
+    - From a [Development and Local Deployment](#development-and-local-deployment) 
       - Initialise the database
         ````shell
         $ python manage.py migrate --database=remote
@@ -487,7 +497,7 @@ If any other settings vary from the defaults outlined in [Table 1: Configuration
    Follow the same procedure as outlined in [Configure authentication](#configure-authentication) using the 
    Heroku domain as `&lt;domain&gt;`, e.g. `soapbox-opinions.herokuapp.com` 
 
-The live website is available at [https://soapbox-opinions.herokuapp.com/](https://soapbox-opinions.herokuapp.com//)
+The live website is available at [https://soapbox-opinions.herokuapp.com/](https://soapbox-opinions.herokuapp.com/)
 
 ## Test
 The tests information and results are available in [test.md](doc/test/test.md).

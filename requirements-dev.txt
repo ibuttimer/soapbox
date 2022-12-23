@@ -6,5 +6,5 @@
 # development requirements
 pycodestyle==2.10.0
 gh2md~=2.3.0
-coverage~=6.5.0
+coverage==7.0.0
 Pillow==9.3.0

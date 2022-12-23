@@ -196,6 +196,5 @@ cloudinary_python.txt
 # temp
 /doc/test/django_report/
 /doc/test/unittest_report/
-/doc/test/lighthouse/
 /data/run_scrape.py
 /data/scrape_val_views.py

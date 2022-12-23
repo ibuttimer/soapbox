@@ -14,10 +14,10 @@
     <meta name="google-site-verification" content="nSLaF9fnDohng9nLW2_KvEKKAdIk40-RHsQEQsY8-GI">
 
     
-    <link href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/css/styles.b2224c8a1d4d.css" rel="stylesheet" type="text/css">
+    <link href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/css/styles.0a394c593910.css" rel="stylesheet" type="text/css">
 
     
-<link href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/css/styles-opinion.97b5ca478420.css" rel="stylesheet" type="text/css">
+<link href="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/css/styles-opinion.c27ff17ed3af.css" rel="stylesheet" type="text/css">
 
 
     
@@ -63,13 +63,15 @@
                 <div class="collapse navbar-collapse" id="navbarToggler">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link active" aria-current="page" href="/">Home</a>
+                            <a class="nav-link" href="/">
+                                <span>Home</span>
+                            </a>
                         </li>
                         
                             
                             <li class="nav-item dropdown">
-                                <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="nav-link dropdown-toggle">
-                                    Opinion
+                                <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="nav-link dropdown-toggle active" aria-current="page">
+                                    <span class="active_page">Opinion</span>
                                 </a>
                                 <ul class="dropdown-menu">
                                     
@@ -104,7 +106,7 @@
                             
                             <li class="nav-item dropdown">
                                 <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="nav-link dropdown-toggle">
-                                    Comment
+                                    <span>Comment</span>
                                 </a>
                                 <ul class="dropdown-menu">
                                     
@@ -125,7 +127,7 @@
                             
                                 <li class="nav-item dropdown">
                                     <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="nav-link dropdown-toggle">
-                                        Moderate
+                                        <span>Moderate</span>
                                     </a>
                                     <ul class="dropdown-menu">
                                         
@@ -152,6 +154,12 @@
                                 </li>
                             
                         
+                        
+                        <li class="nav-item">
+                            <a class="nav-link" href="/help/">
+                                <span>Help</span>
+                            </a>
+                        </li>
                     </ul>
                     <form class="d-flex" role="search" method="get" action="/opinions/search/">
                         <input class="form-control me-2" type="search" placeholder="Search opinions" aria-label="Search" name="search">
@@ -161,13 +169,15 @@
                         
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    
-                                        <i class="fa-solid fa-user-plus"></i>
-                                    
-                                    &nbsp;
-                                    
-                                        Mod1
-                                    
+                                    <span>
+                                        
+                                            <i class="fa-solid fa-user-plus"></i>
+                                        
+                                        &nbsp;
+                                        
+                                            Mod1
+                                        
+                                    </span>
                                 </a>
                                 <ul class="dropdown-menu">
                                     <li>
@@ -223,7 +233,7 @@
             <p><strong>Requested by</strong> <a href="/users/6/" aria-label="view requested by user's profile">user2</a></p>
         </div>
         <div class="col-sm-3">
-            <p><strong>Created</strong> 2&nbsp;weeks, 4&nbsp;days from now</p>
+            <p><strong>Created</strong> 1&nbsp;week, 4&nbsp;days from now</p>
         </div>
         <div class="col-sm-3">
             
@@ -271,7 +281,7 @@
                 
             </div>
             <div class="col-lg-3 col-md-6">
-                <p><strong>Updated</strong> 2&nbsp;weeks, 3&nbsp;days from now</p>
+                <p><strong>Updated</strong> 1&nbsp;week, 3&nbsp;days from now</p>
             </div>
         </div>
 
@@ -315,7 +325,7 @@
 
     
     <form method="post" action="/opinions/55/review_decision/" id="id--review-form">
-        <input type="hidden" name="csrfmiddlewaretoken" value="8rMSiNpLpZW6EPj5CU23XeB2qouFijzANgVoF4V9dF12Rf2mGor4STwbelw3Wvx1">
+        <input type="hidden" name="csrfmiddlewaretoken" value="28KAkAj3zLDFvMWzEmonsc9oXuCAczU7JYVLRDoQR4zE5BHYrm8FDpSOcnAzeztE">
 
         <div id="id--review-form-errors-container">
             
@@ -393,7 +403,7 @@
                     method: 'post',
                     url: url,
                     headers: {
-                        'X-CSRFTOKEN': '8rMSiNpLpZW6EPj5CU23XeB2qouFijzANgVoF4V9dF12Rf2mGor4STwbelw3Wvx1'
+                        'X-CSRFTOKEN': csrfToken()
                     },
                     data: data,
                 }).done(function(data) {
@@ -470,28 +480,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
     
-    <!-- view_js.html start -->
-<script>
-    /**
-     * Update status of content
-     * :param patchUrl: base url to call
-     * :param new_status: new status, one of QueryStatus args
-     */
-    function updateStatusPatch(patchUrl, new_status) {
-        $.ajax({
-            url: `${patchUrl}?status=${new_status}`,
-            method: 'patch',
-            headers: {
-                'X-CSRFTOKEN': '8rMSiNpLpZW6EPj5CU23XeB2qouFijzANgVoF4V9dF12Rf2mGor4STwbelw3Wvx1'
-            }
-        }).done(function(data) {
-            redirect_rewrite_response_handler(data);
-            enableTooltips();
-        });
-    }
-</script>
-<!-- view_js.html end -->
-
+    <script src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/js/view.fbca677f7058.js"></script>
     <script>
         /**
          * Update status of current opinion
@@ -516,43 +505,9 @@
 
     
 
-
+    <script src="https://res.cloudinary.com/hrcj5dv7b/raw/upload/v1/static/js/base.6a5075062b6d.js"></script>
     <script>
-        /* Enable Bootstrap tooltips */
-        function enableTooltips() {
-            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-            const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
-        }
-
-        const REDIRECT_PROP = 'redirect';
-        const REWRITES_PROP = 'rewrites';
-        const ELEMENT_ID_PROP = 'element_id';
-        const HTML_PROP = 'html';
-
-        const replaceHtml = (data) => $("#" + data[ELEMENT_ID_PROP]).replaceWith(data[HTML_PROP]);
-
-        /**
-         * Handle a redirect/rewrite response
-         * :param data: json data
-         */
-        function redirect_rewrite_response_handler(data) {
-            if (data !== undefined) {
-                if (data.hasOwnProperty(REDIRECT_PROP)) {
-                    // redirect to new url
-                    document.location.href = data[REDIRECT_PROP];
-                } else if (data.hasOwnProperty(ELEMENT_ID_PROP)) {
-                    // replace single element's html
-                    replaceHtml(data);
-                } else if (data.hasOwnProperty(REWRITES_PROP)) {
-                    // replace multiple element's html
-                    for (let element of data[REWRITES_PROP]) {
-                        replaceHtml(element);
-                    }
-                }
-            }
-        }
-
-        enableTooltips();
+        const csrfToken = () => '28KAkAj3zLDFvMWzEmonsc9oXuCAczU7JYVLRDoQR4zE5BHYrm8FDpSOcnAzeztE';
     </script>
 
 </body></html>
