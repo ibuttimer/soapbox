@@ -1,16 +1,11 @@
-# Testing
-
 - [Testing](#testing)
   - [Pre-test setup](#pre-test-setup)
-    - [Users](#users)
-    - [Database](#database)
   - [Environment](#environment)
   - [Testing](#testing-1)
   - [Unittest Unit Testing](#unittest-unit-testing)
   - [Django Test Tools Unit Testing](#django-test-tools-unit-testing)
   - [Jest Unit Testing](#jest-unit-testing)
   - [Test Coverage](#test-coverage)
-    - [Test Coverage Reports](#test-coverage-reports)
   - [Unit Testing Summary](#unit-testing-summary)
   - [PEP8 Testing](#pep8-testing)
   - [Manual](#manual)
@@ -19,9 +14,9 @@
   - [Accessibility](#accessibility)
   - [User](#user)
   - [Validator Testing](#validator-testing)
-    - [Content scraping](#content-scraping)
   - [Issues](#issues)
-      - [Bug](#bug)
+
+# Testing
 
 ## Pre-test setup
 ### Users
@@ -153,6 +148,7 @@ See [Unit Testing Summary](#unittest-unit-testing) for usage.
 | **Command**                 | `python -m unittest discover -p "*_test.py"`                                        | `python manage.py test`                                                          | `npm test`                              |
 | **Coverage command**        | `coverage run -m unittest discover -p "*_test.py"`                                  | `coverage run manage.py test`                                                    | n/a                                     |
 | **Coverage report command** | `coverage html -d doc/test/unittest_report --title="Unittest test coverage report"` | `coverage html -d doc/test/django_report --title="Django test coverage report"`  | n/a                                     |
+| **Reported coverage**       | Unittest test coverage report: 26%                                                  | Django test coverage report: 82%                                                 | n/a                                     |
 
 
 
@@ -276,8 +272,14 @@ Lighthouse testing was carried out using a locally installed version of Lighthou
 | Comment list  | Desktop | ![Performance 95](https://img.shields.io/badge/Performance-95-brightgreen) | ![Accessibility 99](https://img.shields.io/badge/Accessibility-99-brightgreen)   | ![Best Practices 100](https://img.shields.io/badge/Best%20Practices-100-brightgreen) | ![SEO 100](https://img.shields.io/badge/SEO-100-brightgreen) | [comment-list-desktop](doc/test/lighthouse/comment-list-desktop.html) |
 
 
-
 ## Accessibility
+Accessibility testing was carried out using the [NVDA](https://www.nvaccess.org/) and [ChromeVox](https://chrome.google.com/webstore/detail/screen-reader/kgejglhpjiefppelpmljglcjbhoiplfn?hl=en) screen readers.
+
+Testing undertaken:
+
+| Feature           | Expected                                              | Action                           | Related   | Result                                              | 
+|-------------------|-------------------------------------------------------|----------------------------------|-----------|-----------------------------------------------------|
+| Audio commentary  | Audio commentary provided for important page elements | Process page using screen reader | All pages | ![Pass](https://badgen.net/badge/checks/Pass/green) |
 
 ## User
 User testing issues were logged in [GitHub Issues](https://github.com/ibuttimer/soapbox/issues?q=is%3Aissue+label%3A%22user+test%22) and identified the following issues/enhancements:

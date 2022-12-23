@@ -1,3 +1,21 @@
+- [SoapBox](#soapbox)
+  - [Features](#features)
+    - [Existing Features](#existing-features)
+    - [User registration and authentication](#user-registration-and-authentication)
+    - [User roles](#user-roles)
+    - [User notifications](#user-notifications)
+    - [Content CRUD](#content-crud)
+    - [Content interaction](#content-interaction)
+    - [Content search](#content-search)
+    - [Opinion feeds](#opinion-feeds)
+    - [Moderate](#moderate)
+    - [Future enhancements](#future-enhancements)
+  - [Design](#design)
+  - [Development and Local Deployment](#development-and-local-deployment)
+  - [Cloud-based Deployment](#cloud-based-deployment)
+  - [Test](#test)
+  - [Credits](#credits)
+
 # SoapBox
 
 In the tradition of soapbox orators at Speakers' Corner in Hyde Park in London, 
@@ -8,14 +26,6 @@ The site is aimed at people seeking a platform in which to express opinions and 
 
 ###### Fig 1: Responsive Mockup
 ![Responsive Mockup](doc/media/responsive.png)
-
-Section links
-- [Features](#features)
-- [Design](#design)
-- [Development](#development-and-local-deployment)
-- [Test](#test)
-- [Cloud-based Deployment](#cloud-based-deployment)
-- [Credits](#credits)
 
 ## Features 
 
