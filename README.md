@@ -158,9 +158,18 @@ Moderators have access to the moderator menu which allows them to:
 
 
 ### Future enhancements
-- Add user listing and search capabilities
-- Add comment search
-- Add advanced search page
+Future enhancements are logged in [GitHub Issues](https://github.com/ibuttimer/soapbox/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement).
+
+| Title                                                                                                      | Description                                                                                                          |
+|------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------|
+| [User Story: User listing](https://github.com/ibuttimer/soapbox/issues/83)                                 | As a **verified user**, I can **get a list of users**, so that **I can find another user easily**.                   |
+| [User Test: Add preset report reasons](https://github.com/ibuttimer/soapbox/issues/85)                     | User testing identified that adding preset report reasons would be helpful.                                          |
+| [User Test: Filter by most 'liked'](https://github.com/ibuttimer/soapbox/issues/87)                        | User testing identified that having the option to filter options in most 'liked' order would be helpful.             |
+| [User Test: Display number of replies on comment expander](https://github.com/ibuttimer/soapbox/issues/88) | User testing identified that providing the number of replies as a tooltip on the comment expander would be helpful.  |
+| [User Story: User listing and search capabilities](https://github.com/ibuttimer/soapbox/issues/90)         | As a **verified user**, I can **list and search for users**, so that **I can easily find user profiles**.            |
+| [User Story: Comment search](https://github.com/ibuttimer/soapbox/issues/91)                               | As a **verified user**, I can **search for comments**, so that **I can find specific comments**.                     |
+| [User Story: Advanced search page](https://github.com/ibuttimer/soapbox/issues/92)                         | As a **verified user**, I can **user the advanced search page**, so that **to easily find content**.                 |
+
 
 ## Design
 The design specification is available in [design.md](doc/design/design.md).
