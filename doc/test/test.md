@@ -60,6 +60,9 @@ The site was tested using the following methods:
 Unit testing of scripts was undertaken using [unittest](https://docs.python.org/3/library/unittest.html#module-unittest).
 The test scripts are located in the [tests](../../tests/) folder, and the naming format is `*_test.py`.
 
+**Note:** Unittest Unit Testing is currently limited to PEP8 Testing.
+
+### Unittest Unit Testing Setup
 **Note:** [Environment](#environment)
 
 The tests may be run from the project root folder:
@@ -84,6 +87,7 @@ Alternatively, if using:
 Unit testing of views was undertaken using [Django Test Tools](https://docs.djangoproject.com/en/4.1/topics/testing/tools/).
 The test scripts are located in the [django_tests](../../django_tests/) folder, and the naming format is `test_*.py`.
 
+### Django Test Tools Unit Testing Setup
 **Note 1:** [Environment](#environment)
 
 **Note 2:** Running the test full suite can take 5-6 minutes
@@ -115,6 +119,7 @@ provide the browser automation to retrieve the page content.
 
 The test scripts are located in the [jest_tests](../../jest_tests/) folder, and the naming format is `*.spec.js`.
 
+### Jest Unit Testing Setup
 **Note 1:** [Environment](#environment)
 
 **Note 2:** The test server need to be running prior to executing tests.
@@ -141,14 +146,15 @@ See [Unit Testing Summary](#unittest-unit-testing) for usage.
 
 ## Unit Testing Summary
 
-| Environment                 | [unittest](https://docs.python.org/3/library/unittest.html)                         | [Django Test Tools](https://docs.djangoproject.com/en/4.1/topics/testing/tools/) | [Jest Unit Testing](#jest-unit-testing) |
-|-----------------------------|-------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|-----------------------------------------|
-| **Location**                | [tests](../../tests/)                                                               | [django_tests](../../django_tests/)                                              | [jest_tests](../../jest_tests/)         |
-| **Naming style**            | `*_test.py`                                                                         | `test_*.py`                                                                      | `*.spec.js`                             |
-| **Command**                 | `python -m unittest discover -p "*_test.py"`                                        | `python manage.py test`                                                          | `npm test`                              |
-| **Coverage command**        | `coverage run -m unittest discover -p "*_test.py"`                                  | `coverage run manage.py test`                                                    | n/a                                     |
-| **Coverage report command** | `coverage html -d doc/test/unittest_report --title="Unittest test coverage report"` | `coverage html -d doc/test/django_report --title="Django test coverage report"`  | n/a                                     |
-| **Reported coverage**       | Unittest test coverage report: 26%                                                  | Django test coverage report: 82%                                                 | n/a                                     |
+| Environment                 | [unittest](https://docs.python.org/3/library/unittest.html)                         | [Django Test Tools](https://docs.djangoproject.com/en/4.1/topics/testing/tools/) | [Jest Unit Testing](#jest-unit-testing)             |
+|-----------------------------|-------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|-----------------------------------------------------|
+| **Location**                | [tests](../../tests/)                                                               | [django_tests](../../django_tests/)                                              | [jest_tests](../../jest_tests/)                     |
+| **Naming style**            | `*_test.py`                                                                         | `test_*.py`                                                                      | `*.spec.js`                                         |
+| **Setup**                   | [Unittest Unit Testing Setup](#unittest-unit-testing-setup)                         | [Django Test Tools Unit Testing Setup](#django-test-tools-unit-testing-setup)    | [Jest Unit Testing Setup](#jest-unit-testing-setup) |
+| **Command**                 | `python -m unittest discover -p "*_test.py"`                                        | `python manage.py test`                                                          | `npm test`                                          |
+| **Coverage command**        | `coverage run -m unittest discover -p "*_test.py"`                                  | `coverage run manage.py test`                                                    | n/a                                                 |
+| **Coverage report command** | `coverage html -d doc/test/unittest_report --title="Unittest test coverage report"` | `coverage html -d doc/test/django_report --title="Django test coverage report"`  | n/a                                                 |
+| **Reported coverage**       | Unittest test coverage report: 9%                                                   | Django test coverage report: 80%                                                 | ![pass](https://badgen.net/badge/checks/Pass/green) |
 
 
 

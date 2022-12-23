@@ -4,6 +4,8 @@ branch = True
 
 source =
     base/
+    categories/
+    opinions/
     soapbox/
     user/
     utils/
@@ -11,15 +13,14 @@ source =
 omit =
     # omit anything in third party code
     /.venvd/*
+    /.venv/*
     /node_modules/*
     # omit everything non-code folders
     /.config/*
     /.github/*
     /.idea/*
     /.vscode/*
-    /agile/*
     /doc/*
-    /media/*
     /media/*
     /static*/*
 
