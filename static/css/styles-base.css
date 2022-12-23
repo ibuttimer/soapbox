@@ -41,3 +41,11 @@ html {
 .btn__text {
     width: 7em;
 }
+
+
+/* tiny screens, 315px wide or less */
+@media screen and (max-width: 315px) {
+    .btn__text {
+        width: min-content;
+    }
+}
