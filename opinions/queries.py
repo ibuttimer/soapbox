@@ -226,6 +226,8 @@ def get_content_status(
         }
         if user:
             query_args[HideStatus.USER_FIELD] = user
+        elif current_user:
+            query_args[HideStatus.USER_FIELD] = current_user
         query = HideStatus.objects.filter(**query_args)
         hidden = query.exists()
 
