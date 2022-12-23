@@ -347,8 +347,8 @@ The application structure is as follows:
 
 ```
 ├─ README.md            - this file
-├─ agile                - project management
 ├─ doc                  - documentation
+│  ├─ agile             - project management
 │  ├─ design            - design related documentation
 │  └─ test              - test reports
 ├─ manage.py            - application entry point

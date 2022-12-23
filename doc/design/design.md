@@ -51,7 +51,7 @@ An agile methodology will be used during the application development, using Goog
 The project artifacts are:
 - [Soapbox Development](https://github.com/users/ibuttimer/projects/1)
 - [Milestones](https://github.com/ibuttimer/soapbox/milestones)
-- Project snapshots are available in the [agile](../../agile) folder and combined summary in [management_snapshots.pdf](../../agile/management_snapshots.pdf)
+- Project snapshots are available in the [agile](doc/agile) folder and combined summary in [management_snapshots.pdf](doc/agile/management_snapshots.pdf)
 
 ### User Stories
 User Stores are logged in [GitHub Issues](https://github.com/ibuttimer/soapbox/issues?q=+label%3Auserstory+)
