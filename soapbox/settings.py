@@ -45,6 +45,8 @@ from .constants import (
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+# name of main app
+MAIN_APP = Path(__file__).resolve().parent.name
 
 # required environment variables are keys of 'scheme' plus REQUIRED_ENV_VARS
 scheme = {
@@ -118,13 +120,36 @@ SUMMERNOTE_CONFIG = {
     # TODO need to figure out initSummernote for admin site to enable this
 }
 
-if env('DEVELOPMENT'):
+if DEVELOPMENT:
     ALLOWED_HOSTS = ['testserver'] \
         if env('TEST') else ['localhost', '127.0.0.1']
 else:
-    ALLOWED_HOSTS = env.list('HEROKU_HOSTNAME')
+    ALLOWED_HOSTS = env.list('HEROKU_HOSTNAME', default=[])
+    # Add Render.com URL to allowed hosts; https://render.com/docs/environment-variables
+    RENDER_EXTERNAL_HOSTNAME = env('RENDER_EXTERNAL_HOSTNAME', default=None)
+    if RENDER_EXTERNAL_HOSTNAME:
+        ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
 
 # Application definition
+
+# Set to 'cloudinary' or 's3' for cloud storage
+STORAGE_PROVIDER = 'default' if DEVELOPMENT else \
+    env('STORAGE_PROVIDER', default='default').lower()
+PROVIDERS = {
+    'default': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+    'cloudinary': 'cloudinary_storage.storage.StaticHashedCloudinaryStorage',
+    's3': 'soapbox.s3_storage.StaticStorage'
+}
+DEFAULT_STORAGE = {
+    'default': 'django.core.files.storage.FileSystemStorage',
+    'cloudinary': 'cloudinary_storage.storage.MediaCloudinaryStorage',
+    's3': 'soapbox.s3_storage.PublicMediaStorage'
+}
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -141,13 +166,30 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.twitter',
+]
+if STORAGE_PROVIDER == 'cloudinary':
+    # cloudinary-related storage apps
+    INSTALLED_APPS.extend([
+        # https://pypi.org/project/dj3-cloudinary-storage/
+        # If using for static and/or media files, make sure that cloudinary_storage
+        # is before django.contrib.staticfiles
+        'cloudinary_storage',
+        'django.contrib.staticfiles',
+        'cloudinary',
+    ])
+elif STORAGE_PROVIDER == 's3':
+    # s3-related storage apps
+    INSTALLED_APPS.extend([
+        'django.contrib.staticfiles',
+        'storages',
+    ])
+else:
+    # default storage apps
+    INSTALLED_APPS.extend([
+        'django.contrib.staticfiles',
+    ])
 
-    # https://pypi.org/project/dj3-cloudinary-storage/
-    # If using for static and/or media files, make sure that cloudinary_storage
-    # is before django.contrib.staticfiles
-    'cloudinary_storage',
-    'django.contrib.staticfiles',
-    'cloudinary',
+INSTALLED_APPS.extend([
     'django_summernote',
     BASE_APP_NAME,
     CATEGORIES_APP_NAME,
@@ -156,7 +198,7 @@ INSTALLED_APPS = [
 
     # needs to be after app with django template overrides
     'django.forms',
-]
+])
 
 # To supply custom templates to django widgets:
 # 1) Add 'django.forms' to INSTALLED_APPS; *after* the app with the overrides.
@@ -176,7 +218,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'soapbox.urls'
+# https://docs.djangoproject.com/en/4.1/ref/settings/#root-urlconf
+ROOT_URLCONF = f'{MAIN_APP}.urls'
 
 TEMPLATES = [
     {
@@ -200,18 +243,20 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'soapbox.wsgi.application'
+WSGI_APPLICATION = f'{MAIN_APP}.wsgi.application'
 
-AUTH_USER_MODEL = 'user.User'
+# https://docs.djangoproject.com/en/4.1/ref/settings/#auth-user-model
+AUTH_USER_MODEL = f'{USER_APP_NAME}.User'
 
 # 'allauth' site id
 SITE_ID = int(env('SITE_ID'))
 # 'allauth' provider specific settings
 SOCIALACCOUNT_PROVIDERS = {
+    # For each OAuth based provider, either add a ``SocialApp``
+    # (``socialaccount`` app) containing the required client
+    # credentials, or list them here:
     "google": {
-        # For each OAuth based provider, either add a ``SocialApp``
-        # (``socialaccount`` app) containing the required client
-        # credentials, or list them here:
+        # https://django-allauth.readthedocs.io/en/latest/providers.html#google
         "APP": {
         },
         # These are provider-specific settings that can only be
@@ -224,6 +269,7 @@ SOCIALACCOUNT_PROVIDERS = {
             "access_type": "online",
         }
     },
+    # https://django-allauth.readthedocs.io/en/latest/providers.html#twitter
     "twitter": {
         "APP": {
         },
@@ -269,19 +315,24 @@ DATABASES = {
     #
     # The db() method is an alias for db_url().
     'default': env.db(),
-
-    # read os.environ['REMOTE_DATABASE_URL']
-    'remote': env.db_url(
-        'REMOTE_DATABASE_URL',
-        default=f'sqlite:///{os.path.join(BASE_DIR, "temp-remote.sqlite3")}'
-    ),
-
-    # read os.environ['SQLITE_URL']
-    'extra': env.db_url(
-        'SQLITE_URL',
-        default=f'sqlite:///{os.path.join(BASE_DIR, "temp-sqlite.sqlite3")}'
-    )
 }
+if not TEST:
+    # only need default database in test mode
+    DATABASES.update({
+        # read os.environ['REMOTE_DATABASE_URL']
+        'remote': env.db_url(
+            'REMOTE_DATABASE_URL',
+            default=f'sqlite:'
+                    f'///{os.path.join(BASE_DIR, "temp-remote.sqlite3")}'
+        ),
+
+        # read os.environ['SQLITE_URL']
+        'extra': env.db_url(
+            'SQLITE_URL',
+            default=f'sqlite:'
+                    f'///{os.path.join(BASE_DIR, "temp-sqlite.sqlite3")}'
+        )
+    })
 
 
 # Password validation
@@ -313,7 +364,7 @@ LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 
 USE_I18N = True
-
+USE_L10N = True
 USE_TZ = True
 
 
@@ -329,13 +380,31 @@ USE_TZ = True
 # (unless you use cloudinary_static template tag).
 # !!
 
-# URL to use when referring to static files located in STATIC_ROOT
-STATIC_URL = 'static/'
+if STORAGE_PROVIDER == 's3':
+    # s3-related settings
+    # https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html
+    # aws settings
+    AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
+    AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
+    # ACL default is None which means the file will be private per Amazon’s
+    # default
+    AWS_DEFAULT_ACL = None
+    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+    AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
+    # s3 static settings
+    AWS_LOCATION = 'static'
+    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/'
+    # s3 public media settings
+    PUBLIC_MEDIA_LOCATION = 'media'
+    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{PUBLIC_MEDIA_LOCATION}/'
+else:
+    # URL to use when referring to static files located in STATIC_ROOT
+    STATIC_URL = 'static/'
+    MEDIA_URL = 'media/'
+
 # https://docs.djangoproject.com/en/4.1/ref/settings/#staticfiles-storage
-STATICFILES_STORAGE = \
-    'django.contrib.staticfiles.storage.StaticFilesStorage' \
-    if DEVELOPMENT else \
-    'cloudinary_storage.storage.StaticHashedCloudinaryStorage'
+STATICFILES_STORAGE = PROVIDERS[STORAGE_PROVIDER]
 # https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-STATICFILES_DIRS
 # Additional locations the staticfiles app will traverse for collectstatic
 STATICFILES_DIRS = [
@@ -349,15 +418,11 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-STATIC_ROOT
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-MEDIA_URL = 'media/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-MEDIA_ROOT
 MEDIA_ROOT = os.path.join(BASE_DIR, MEDIA_URL)
 
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-file-storage
-DEFAULT_FILE_STORAGE = \
-    'django.core.files.storage.FileSystemStorage' \
-    if DEVELOPMENT else \
-    'cloudinary_storage.storage.MediaCloudinaryStorage'
+DEFAULT_FILE_STORAGE = DEFAULT_STORAGE[STORAGE_PROVIDER]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
@@ -367,6 +432,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # url for blank avatar image
 AVATAR_BLANK_URL = env.get_value('AVATAR_BLANK_URL', default='')
 
+DJANGO_LOG_LEVEL = os.getenv('DJANGO_LOG_LEVEL', 'INFO').upper()
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -377,16 +443,21 @@ LOGGING = {
     },
     'handlers': {
         'console': {
-            'level': 'DEBUG',
+            'level': DJANGO_LOG_LEVEL,
             'filters': ['require_debug_true'],
             'class': 'logging.StreamHandler',
         }
     },
     'loggers': {
         'django.db.backends': {
-            'level': 'DEBUG',
+            'level': DJANGO_LOG_LEVEL,
             'handlers': ['console'],
-        }
+        },
+        'django': {
+            'handlers': ['console'],
+            'level': DJANGO_LOG_LEVEL,
+            'propagate': True,
+        },
     }
 }
 

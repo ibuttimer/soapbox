@@ -133,7 +133,7 @@ class ChoiceArg(Enum):
             func = trans_func
             display_func = cls._lower_str
         else:
-            display_func = cls._pass_thru()
+            display_func = cls._pass_thru
 
         return cls._find_value(display_func(display), func=func)
 
