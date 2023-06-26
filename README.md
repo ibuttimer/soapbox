@@ -227,13 +227,21 @@ There are two requirements files:
 | TEST                     | A boolean that turns on/off test mode; set to any of 'true', 'on', 'ok', 'y', 'yes', '1' to enable. Only valid when development mode is enabled.                                                                                                                                                                                                                                                                                                                                        |
 | SECRET_KEY               | [Secret key](https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-SECRET_KEY) for a particular Django installation. See [Secret Key Generation](#secret-key-generation)                                                                                                                                                                                                                                                                                                      |
 | DATABASE_URL             | [Database url](https://docs.djangoproject.com/en/4.1/ref/settings/#databases)                                                                                                                                                                                                                                                                                                                                                                                                           |
-| CLOUDINARY_URL           | [Cloudinary url](https://pypi.org/project/dj3-cloudinary-storage/)                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | AVATAR_BLANK_URL         | Url of [blank avatar](static/img/avatar_blank.svg)                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | SITE_ID                  | Id (primary key) of site in the `django_site` table of the database. See [Configure authentication](#configure-authentication).                                                                                                                                                                                                                                                                                                                                                         |
-| HEROKU_HOSTNAME          | [Hostname](https://docs.djangoproject.com/en/4.1/ref/settings/#allowed-hosts) of application on Heroku.<br>__Note:__ To specify multiple hosts, use a comma-separated list with no spaces.<br>__Note:__ Set to `localhost,127.0.0.1` in local development mode                                                                                                                                                                                                                          |
 | REMOTE_DATABASE_URL      | Url of remote PostgreSQL database resource.<br>For a Heroku app with a [Heroku Postgres](https://elements.heroku.com/addons/heroku-postgresql) addon this is available from `DATABASE_URL` in the app `Settings -> Config Vars`.<br>For an [ElephantSQL](https://www.elephantsql.com/) database this is available from `URL` in the instance details.<br>__Note:__ Only required for admin purposes, see database configuration under [Cloud-based Deployment](#cloud-based-deployment) |
 | GOOGLE_SITE_VERIFICATION | [Google Search Console](https://search.google.com/search-console) meta tag verification value for [site ownership verification](https://support.google.com/webmasters/answer/9008080?hl=en)                                                                                                                                                                                                                                                                                             |
+|                          | **Cloudinary-specific**                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| CLOUDINARY_URL           | [Cloudinary url](https://pypi.org/project/dj3-cloudinary-storage/)                                                                                                                                                                                                                                                                                                                                                                                                                      |
+|                          | **Amazon S3-specific**                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| AWS_ACCESS_KEY_ID        | The access key for your AWS account.                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| AWS_SECRET_ACCESS_KEY    | The secret key for your AWS account.                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| AWS_STORAGE_BUCKET_NAME  | AWS S3 bucket name.                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+|                          | **Heroku-specific**                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| HEROKU_HOSTNAME          | [Hostname](https://docs.djangoproject.com/en/4.1/ref/settings/#allowed-hosts) of application on Heroku.<br>__Note:__ To specify multiple hosts, use a comma-separated list with no spaces.<br>__Note:__ Set to `localhost,127.0.0.1` in local development mode                                                                                                                                                                                                                          |
 
+#### Boolean environment variables
+Set environment variables evaluating a boolean value, should be set to any of `true`, `on`, `ok`, `y`, `yes` or `1` to set true, otherwise the variable is evaluated as false.
 
 #### Environment variables
 Set environment variables corresponding to the keys in [Table 1: Configuration settings](#table-1-configuration-settings).
@@ -255,7 +263,7 @@ $ python -c "import secrets; print(secrets.token_urlsafe())"
 In order to configure social account login, the following actions must be performed.
 
 ##### Google
-The Google provider is [OAuth2](https://developers.google.com/identity/protocols/OAuth2) based, 
+The Google provider is [OAuth2](https://developers.google.com/identity/protocols/OAuth2) based,
 and a Google app is needed to obtain a key and secret through the [Google Developer Console](https://console.developers.google.com/).
 
 - Login to the [Google Developer Console](https://console.developers.google.com/)
@@ -377,11 +385,12 @@ The application structure is as follows:
 └─ utils                - utility function scripts
 ```
 
-## Cloud-based Deployment
+### Cloud-based Deployment
+#### Heroku
 
-The site was deployed on [Heroku](https://www.heroku.com).
+Use the following procedure to deploy the site on [Heroku](https://www.heroku.com).
 
-### Heroku CLI
+##### Heroku CLI
 Optionally, the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli) may be used to update the application on Heroku.
 With the Heroku CLI installed, in a terminal window, in the `soapbox` folder:
 - Log in to your Heroku account and follow the prompts to create a new SSH public key.
@@ -390,7 +399,7 @@ With the Heroku CLI installed, in a terminal window, in the `soapbox` folder:
   $ heroku login
   ```
 
-### Deployment
+##### Deployment
 The following steps were followed to deploy the website:
 - Login to Heroku in a browser
 - From the dashboard select `New -> Create new app`
@@ -414,16 +423,19 @@ The following steps were followed to deploy the website:
         1. `heroku/python`
     - Under `Config Vars` add the following environment variables
 
-        | Key                      | Value                                                                                                                                                                             |
-        |-------------------|---------------------------------------------------------------------------------------------------------------------------------|
-        | PORT                     | 8000                                                                                                                                                                              |
-        | SECRET_KEY               | [Secret key](https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-SECRET_KEY) for a particular Django installation                                                     |
-        | HEROKU_HOSTNAME          | [Hostname](https://docs.djangoproject.com/en/4.1/ref/settings/#allowed-hosts) of application on Heroku                                                                            |
-        | AVATAR_BLANK_URL         | Url of [blank avatar](static/img/avatar_blank.svg)                                                                                                                                |
-        | SITE_ID                  | Id (primary key) of site in the `django_site` table of the database. See [Configure authentication](#configure-authentication).                                                   |
-        |                          | _The following keys are automatically added when `Resources` are provisioned:_                                                                                                   |
-        | CLOUDINARY_URL           | [Cloudinary url](https://pypi.org/project/dj3-cloudinary-storage/)                                                                                                                |
-        | GOOGLE_SITE_VERIFICATION | [Google Search Console](https://search.google.com/search-console) meta tag verification value for [site ownership verification](https://support.google.com/webmasters/answer/9008080?hl=en) |
+
+###### Table 2: Heroku Configuration settings
+
+| Key                      | Value                                                                                                                                                                             |
+|-------------------|---------------------------------------------------------------------------------------------------------------------------------|
+| PORT                     | 8000                                                                                                                                                                              |
+| SECRET_KEY               | [Secret key](https://docs.djangoproject.com/en/4.1/ref/settings/#std-setting-SECRET_KEY) for a particular Django installation                                                     |
+| HEROKU_HOSTNAME          | [Hostname](https://docs.djangoproject.com/en/4.1/ref/settings/#allowed-hosts) of application on Heroku                                                                            |
+| AVATAR_BLANK_URL         | Url of [blank avatar](static/img/avatar_blank.svg)                                                                                                                                |
+| SITE_ID                  | Id (primary key) of site in the `django_site` table of the database. See [Configure authentication](#configure-authentication).                                                   |
+|                          | _The following keys are automatically added when `Resources` are provisioned:_                                                                                                   |
+| CLOUDINARY_URL           | [Cloudinary url](https://pypi.org/project/dj3-cloudinary-storage/)                                                                                                                |
+| GOOGLE_SITE_VERIFICATION | [Google Search Console](https://search.google.com/search-console) meta tag verification value for [site ownership verification](https://support.google.com/webmasters/answer/9008080?hl=en) |
 
     - Add the `DATABASE_URL` environment variable under `Config Vars`, if required
 
@@ -506,7 +518,82 @@ If any other settings vary from the defaults outlined in [Table 1: Configuration
    Follow the same procedure as outlined in [Configure authentication](#configure-authentication) using the 
    Heroku domain as `&lt;domain&gt;`, e.g. `soapbox-opinions.herokuapp.com` 
 
-The live website is available at [https://soapbox-opinions.herokuapp.com/](https://soapbox-opinions.herokuapp.com/)
+
+#### Render
+
+The site was deployed on [Render](https://www.render.com).
+
+##### Deployment
+The following steps were followed to deploy the website:
+- Login to Render in a browser
+- From the dashboard select `New -> Web Service`
+- Connect to the git repository
+- Set following
+  - `Name`, (e.g. `recipesnstuff`)
+  - Choose an appropriate region
+  - Select the git branch to deploy
+  - Select `Python 3` runtime,
+  - Set the Build command to `./build.sh`
+  - Set the Start command to `gunicorn recipesnstuff.wsgi:application`
+  - Select `Create Web Service`
+- To provision the application with a database, such as an [ElephantSQL](https://www.elephantsql.com/) database.
+  - For an [ElephantSQL](https://www.elephantsql.com/) database, follow the `Create a new instance` instructions under the `Getting started` section of the [ElephantSQL documentation](https://www.elephantsql.com/docs/index.html).
+- Create an Amazon S3 bucket using [Storing Django Static and Media Files on Amazon S3](https://testdriven.io/blog/storing-django-static-and-media-files-on-amazon-s3/).
+See [Configuring cross-origin resource sharing (CORS)](https://docs.aws.amazon.com/AmazonS3/latest/userguide/enabling-cors-examples.html) and [CORS configuration](https://docs.aws.amazon.com/AmazonS3/latest/userguide/ManageCorsUsing.html)
+regarding setting the CORS configuration for the S3 bucket.
+- Under `Environment -> Environment Variables` add the following environment variables
+
+    | Key                     | Value                                                                                                                                                                                                                                                                                                          |
+    |-------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+    | PYTHON_VERSION          | [Python version](https://render.com/docs/python-version)<br>**Note:** At time of writing the [Render Python3 environment](https://render.com/docs/native-environments) does not include the necessary Python headers to compile the `psycopg2` library for Python version 3.10.10, use *Python version 3.9.16* |
+
+  - Under `Environment -> Secret Files` add a file with the name `.env` with the same environment variables as specified in [Table 2: Heroku Configuration settings](#table-2-heroku-configuration-settings) with the following differences:
+    - The following variables are *NOT* required
+      - **HEROKU_HOSTNAME**  
+      - **CLOUDINARY_URL**
+    - Add the following variables:
+      - **DATABASE_URL**
+    - Add Amazon S3-specific settings
+
+###### Table 3: AWS S3 Configuration settings
+
+| Key                     | Value                                                                                                                                                                                  |
+|-------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| AWS_ACCESS_KEY_ID       | The access key for your AWS account.                                                                                                                                                   |
+| AWS_SECRET_ACCESS_KEY   | The secret key for your AWS account.                                                                                                                                                   |
+| AWS_STORAGE_BUCKET_NAME | AWS S3 bucket name.                                                                                                                                                                    |
+
+
+See [Table 1: Configuration settings](#table-1-configuration-settings) for details.
+
+If any other settings vary from the defaults outlined in [Table 1: Configuration settings](#table-1-configuration-settings) they must be added as well.
+
+- Select the `Manual Deploy` to deploy the application.
+
+- Initialise the database and Create a superuser
+
+  Involves the same procedure as outlined in [Initialise the database](#initialise-the-database) and [Create a superuser](#create-a-superuser)
+  but may be run from the local machine.
+  - From a [Development and Local Deployment](#development-and-local-deployment)
+    - Initialise the database
+      ````shell
+      $ python manage.py migrate --database=remote
+      ````
+    - Create a superuser
+
+      Enter `Username`, `Password` and optionally `Email address`.
+      ````shell
+      $ python manage.py createsuperuser --database=remote
+      ````
+
+    __Note:__ Ensure to specify the `--database=remote` option to apply the change to the database specified by the `REMOTE_DATABASE_URL` environment variable.
+
+- Configure authentication
+
+  Follow the same procedure as outlined in [Configure authentication](#configure-authentication) using the
+  Heroku domain as `<domain>`, e.g. `dara-planner.herokuapp.com`
+
+The live website is available at [https://recipesnstuff.onrender.com](https://recipesnstuff.onrender.com)
 
 ## Test
 The tests information and results are available in [test.md](doc/test/test.md).
